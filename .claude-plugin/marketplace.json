@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
-  "name": "deliverer",
+  "name": "slamdev-deliverer",
   "owner": {
     "name": "slamdev"
   },
