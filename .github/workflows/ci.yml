@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A second push to a branch makes the first run's answer worthless, so it is cancelled rather than
+# left to finish. `main` is exempt (`github.run_id` makes its group unique per run): its runs are the
+# record of what each commit did, and a cancelled one leaves a gap in that record.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check the tools server
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugin/mcp
+    steps:
+      - uses: actions/checkout@v7
+
+      # Pinned to the version `hacks/claude.dockerfile` develops against, so a lint that is green
+      # here is green in the bed and vice versa.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.19.0
+          cache: npm
+          cache-dependency-path: plugin/mcp/package-lock.json
+
+      # `npm ci` and NOT `--omit=dev`, which is what the install hook uses: the linter itself is a
+      # dev dependency, so the flag the users' install carries is exactly the one CI must not.
+      - run: npm ci
+
+      # `tsc` is the ONLY thing that ever reads `tsconfig.json`: the server ships unbuilt, so
+      # without this step nothing in the project enforces `erasableSyntaxOnly` or
+      # `verbatimModuleSyntax` — and both of those failures are invisible until Node's type
+      # stripping hits them in a user's session. ESLint cannot stand in for it; the `recommended`
+      # preset reads an AST, never the type system.
+      - run: npm run typecheck
+
+      # `!cancelled()` so a type error does not hide the lint findings. The two answer different
+      # questions and a run should report both.
+      - run: npm run lint
+        if: '!cancelled()'

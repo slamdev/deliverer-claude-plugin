@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+# load .env file
+
+# skip comments (#…) and blank lines so a stray blank line in .env doesn't
+# expand to an invalid `export ''` under `set -o nounset` on the next line.
+readarray -t env < <(grep -vE '^[[:space:]]*(#|$)' .env)
+export "${env[@]}"
+
+# build a claude image if it doesn't exist
+
+IMAGE_NAME="$(basename $(pwd))"
+IMAGE_TAG=$(md5sum hacks/claude.dockerfile | cut -d' ' -f1)
+IMAGE="${IMAGE_NAME}:${IMAGE_TAG}"
+if ! docker image inspect "$IMAGE" > /dev/null 2>&1; then
+    echo "Image '$IMAGE' not found. Building it now..."
+    (cd hacks && docker build -t "$IMAGE" -f claude.dockerfile .)
+fi
+
+# clean debug log file
+
+echo '' > claude.log
+
+# prepare claude data dir
+
+mkdir -p .claude-sandbox/
+mkdir -p .claude-tmp/
+
+# detect the host's local timezone so the container's clock, timestamps and git commit
+# times match the host (best-effort: resolve the /etc/localtime symlink, then fall back
+# to /etc/timezone, then UTC). Works for both Linux (/usr/share/zoneinfo/...) and macOS
+# (/var/db/timezone/zoneinfo/...) hosts.
+HOST_TZ="$( (readlink /etc/localtime 2>/dev/null || true) | sed -e 's#.*/zoneinfo/##' )"
+if [ -z "$HOST_TZ" ] && [ -r /etc/timezone ]; then HOST_TZ="$(cat /etc/timezone)"; fi
+[ -n "$HOST_TZ" ] || HOST_TZ="UTC"
+
+# run claude with with current dir mounted to a container to isolate the local environment from destructive operations
+
+docker run -it --rm \
+    -e TZ="$HOST_TZ" \
+    -e ANTHROPIC_BASE_URL \
+    -e ANTHROPIC_AUTH_TOKEN \
+    -e ANTHROPIC_DEFAULT_OPUS_MODEL \
+    -e ANTHROPIC_DEFAULT_SONNET_MODEL \
+    -e ANTHROPIC_DEFAULT_HAIKU_MODEL \
+    -e CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS \
+    -e CLAUDE_CODE_OAUTH_TOKEN \
+    -e GITHUB_TOKEN \
+    -e GITHUB_PERSONAL_ACCESS_TOKEN="$GITHUB_TOKEN" \
+    -e CONTEXT7_API_KEY \
+    -e HOST_PROJECT_DIR="$(pwd)" \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v "$HOME/.ssh:/root/.ssh/" \
+    -v "$(pwd)/.claude-sandbox:/root/.claude/" \
+    -v "$(pwd)/.claude-tmp:/tmp/" \
+    -v "$(pwd)/claude.log:/tmp/claude.log" \
+    -v "$(pwd):/opt/project" \
+    --tmpfs /root/.npm:rw,nosuid,nodev,exec \
+    --tmpfs /root/.cache:rw,nosuid,nodev,exec \
+    --tmpfs /root/.config:rw,nosuid,nodev,exec \
+    "$IMAGE" \
+      "--verbose" \
+      "--debug" \
+      "--debug-file=/tmp/claude.log" \
+      "--no-chrome" \
+      "--effort=xhigh" \
+      "$@"

@@ -1,0 +1,27 @@
+{
+  "name": "deliverer-tools-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP server the deliverer plugin ships: it drives the platform's own code review over a change-request URL. Runs UNBUILT — Node strips the types, so there is no build step and no committed artifact.",
+  "type": "module",
+  "engines": {
+    "node": "^22.18.0 || >=23.6.0"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.13.3",
+    "eslint": "^10.8.1",
+    "globals": "^17.9.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.66.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "0.3.220",
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "zod": "4.4.3"
+  }
+}

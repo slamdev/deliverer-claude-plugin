@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "deliverer",
+  "owner": {
+    "name": "slamdev"
+  },
+  "plugins": [
+    {
+      "name": "deliverer",
+      "source": {
+        "source": "git-subdir",
+        "url": "slamdev/deliverer-claude-plugin",
+        "path": "plugin"
+      }
+    }
+  ]
+}

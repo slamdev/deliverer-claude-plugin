@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "tools": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/launch.mjs"],
+      "env": {
+        "DELIVERER_CODE_REVIEW_EFFORT": "${user_config.code_review_effort}",
+        "DELIVERER_CODE_REVIEW_MODEL": "${user_config.code_review_model}",
+        "DELIVERER_CODE_REVIEW_CLAUDE_ENV_FILE": "${user_config.code_review_claude_env_file}"
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "deliverer",
+  "userConfig": {
+    "code_review_effort": {
+      "type": "string",
+      "title": "Code review effort",
+      "description": "Effort tier for the delegated code review that performs each round: low, medium, high, xhigh or max. Those five are the only values the server accepts — anything else is refused at every review start, naming the value and this set, rather than reviewed at an unknown depth. Deeper tiers cost more money and wall-clock AND raise more threads, each of which a fix wave must resolve before the PR can flip ready.",
+      "default": "high"
+    },
+    "code_review_model": {
+      "type": "string",
+      "title": "Code review model",
+      "description": "Model the delegated review runs on. An alias — opus, sonnet, haiku — is the portable way to name one, because it resolves against whatever provider the review's environment file points at; a pinned model id only means the same thing on the provider it came from. Leave empty to take that environment's own default instead.",
+      "default": "opus"
+    },
+    "code_review_claude_env_file": {
+      "type": "file",
+      "title": "Code review environment file",
+      "description": "A file in .env format (KEY=value per line, # comments, optional quotes) whose variables are handed to the Claude agent that runs each review. This is how a review is given credentials, and it is required: the server forwards no authentication of its own, so without it a review reaches the reviewer as an anonymous caller and comes back having reviewed nothing. The variables are layered OVER the server's own environment, so the file need only carry what it changes. Read once, when the server starts — an edit takes effect in a new session.",
+      "required": true
+    }
+  }
+}

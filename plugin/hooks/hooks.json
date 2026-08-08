@@ -1,0 +1,16 @@
+{
+  "description": "...",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/install-mcp-server.sh",
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  }
+}
