@@ -21,8 +21,7 @@ comment is still open.
 
 ## Steps
 
-1. **Get onto the epic branch** — the branch carrying this epic's slug, which `git branch -a` shows. Switch to it and
-   pull from the remote.
+1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote.
 2. **Find the change request** for that branch — the URL in your prompt, or the one already open for the branch.
 3. **Collect the unresolved comments**, sorting each into its kind: one prefixed `ASSUMPTION` is an **assumption**,
    anything else is a **review finding**. Read the replies, not the resolution state alone — an assumption's verdict

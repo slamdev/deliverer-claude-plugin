@@ -18,8 +18,7 @@ missing and leave what is there alone.
 
 ## Steps
 
-1. **Get onto the epic branch** — the branch carrying this epic's slug, which `git branch -a` shows. Switch to it and
-   pull from the remote.
+1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote.
 2. **Read the epic and every commit on the branch.** Together they are the whole source for the title, the description
    and the assumptions: the epic is what the work set out to do, the commits are what it did.
 3. **Open the change request as a draft**, titled and described from step 2 — the branch has to be on the remote for one

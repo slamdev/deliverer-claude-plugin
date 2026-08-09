@@ -17,17 +17,19 @@ The commits on the epic branch are what say how far it got, so implement only wh
 
 ## Steps
 
-1. **Get onto the epic branch** — the branch carrying this epic's slug, which `git branch -a` shows when it exists.
-   Switch to it and pull from the remote; when there is none, create it from an up-to-date default branch, named after
-   the epic in the style of the project's other branches.
+1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote. When it names
+   none you are the first: create it from an up-to-date default branch, named after the epic in the style of the others.
 2. **Read the ticket and the commits already on the branch.** The ticket is what the work has to do; the commits are
-   what is done. When they already cover the ticket in full, skip to the report and name the commit that covered it.
+   what is done. When they already cover the ticket in full, skip to step 5 and name the commit that covered it.
 3. **Implement what they left undone**, following the project's conventions and the nearest existing call sites. Record
-   each fork as you close it, rather than reconstructing them at the end.
+   each fork as you close it, rather than reconstructing them at the end. **Never undo work this ticket asked for to
+   turn a guard green.** A guard red for something outside this ticket — an artifact another ticket owns, work nobody
+   has done yet — stays red and goes in your report; a fix wave owns it downstream.
 4. **Commit and push to the epic branch** in the format below. Whoever commits publishes: the change request and the
    checks are built on the remote, so a commit that is not pushed has not landed. You are done when every fork you
    closed silently carries an entry in the commit message and the branch on the remote carries that commit.
-5. **Report**, as below.
+5. **Mark the ticket delivered** the way the project's own conventions do; where there is none, nothing is owed.
+6. **Report**, as below.
 
 ## What counts as an assumption
 
@@ -45,10 +47,13 @@ Clause 1 alone is taste. Clause 2 alone is a forced move. Neither is an assumpti
 
 ## Commit format
 
-One numbered entry per assumption. Drop the `Assumptions:` section when the ticket left no fork open.
+The `Ticket:` line carries this ticket's number, on **every** commit you make and whether or not a fork was left open.
+One numbered entry per assumption, and it is the `Assumptions:` section that goes when there were none.
 
 ```
 <Description of the work that has been done>
+
+Ticket: <NN>
 
 Assumptions:
 1. file: <path>; line: <number>;
@@ -60,6 +65,8 @@ Assumptions:
 
 Whoever reads this has your report and nothing else.
 
+- the epic branch's name — every dispatch after yours is handed it
 - every commit you added — hash and message — and that the branch on the remote carries them
 - how many assumptions those commits record
+- the **guards** this ticket had to satisfy and what satisfied them, and any you left red
 - when the branch already covered the ticket, the commit that covered it

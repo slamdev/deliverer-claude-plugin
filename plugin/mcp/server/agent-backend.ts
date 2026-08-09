@@ -19,6 +19,12 @@
  *    nothing downstream consumes structured findings, the prose is the deliverable, and the Threads
  *    are posted by the reviewer itself. So there is no findings parser here, no two-turn extraction
  *    and no findings-tool shim, and there must not be one added.
+ *
+ *    The result message's own **usage metadata** — the token counters, the durations, the model
+ *    that served the round — is read, and is not that. It says what the run COST and never what it
+ *    found, so no judgment is extracted and no structure of the review's is consumed. It is read
+ *    because nothing upstream can see it otherwise: the parent accounting sees the poller that
+ *    waited, which on one measured epic was $0.50 against the $8.61 the review behind it spent.
  *  - **No denied-tool list and no pre-tool guard.** The inner agent runs with permission prompting
  *    bypassed: no `disallowedTools`, no `canUseTool`, and no hook that DENIES anything. The failure
  *    mode is that a review can write, delete or push inside the delivery repository and nothing
@@ -52,7 +58,7 @@
  * plugin quietly single-provider and gave an owner authenticated any other way no way in.
  */
 import type { ReviewBackend, ReviewRequest, ReviewRun } from "./backend.ts";
-import type { ReviewEvent } from "./review-state.ts";
+import type { ReviewEvent, ReviewSpend } from "./review-state.ts";
 
 export const AGENT_BACKEND_ID = "agent";
 
@@ -126,15 +132,75 @@ const NOT_LOGGED_IN = /^\s*not logged in\b/i;
 const asNumber = (value: unknown): number | undefined =>
   typeof value === "number" && Number.isFinite(value) ? value : undefined;
 
+const asString = (value: unknown): string | undefined =>
+  typeof value === "string" && value !== "" ? value : undefined;
+
+const asRecord = (value: unknown): Record<string, unknown> | undefined =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
+
+/**
+ * The `modelUsage` entry that cost the most, with the key naming it — or nothing, on a result that
+ * reported no per-model usage at all.
+ *
+ * A review can call more than one model: a cheap one for subtasks beside the one the round was
+ * configured with. The most expensive entry is the model that actually served the review, where
+ * the first key is only whichever the SDK happened to write first.
+ */
+function costliestModel(
+  modelUsage: unknown,
+): { key: string; entry: Record<string, unknown> } | undefined {
+  let best: { key: string; entry: Record<string, unknown>; cost: number } | undefined;
+  for (const [key, value] of Object.entries(asRecord(modelUsage) ?? {})) {
+    const entry = asRecord(value);
+    if (entry === undefined) continue;
+    const cost = asNumber(entry.costUSD) ?? 0;
+    if (best === undefined || cost > best.cost) best = { key, entry, cost };
+  }
+  return best === undefined ? undefined : { key: best.key, entry: best.entry };
+}
+
+/**
+ * What a result message says the round spent. Narrowed STRUCTURALLY, like `AgentQueryMessage`
+ * above: this module imports nothing from the SDK, not even a type, so every field is checked for
+ * its shape here rather than trusted to a declaration that is not in scope.
+ *
+ * Every field it cannot find it leaves absent. Nothing is defaulted to zero — a counter the SDK
+ * did not report is one nobody measured, and `code-reviewer` is told to report unknown as unknown.
+ *
+ * `turns` is not here, because it alone has a fallback that needs the caller's own count.
+ */
+function spendFromResult(message: AgentQueryMessage): ReviewSpend {
+  const usage = asRecord(message.usage);
+  const model = costliestModel(message.modelUsage);
+  return {
+    costUsd: asNumber(message.total_cost_usd),
+    inputTokens: asNumber(usage?.input_tokens),
+    outputTokens: asNumber(usage?.output_tokens),
+    cacheReadTokens: asNumber(usage?.cache_read_input_tokens),
+    cacheCreationTokens: asNumber(usage?.cache_creation_input_tokens),
+    agentDurationMs: asNumber(message.duration_ms),
+    model: model?.key,
+    provider: asString(model?.entry.provider),
+    canonicalModel: asString(model?.entry.canonicalModel),
+  };
+}
+
 /**
  * Narrow one SDK message to a lifecycle event, or null for the ones that say nothing the lifecycle
  * has a vocabulary for. Everything verdict-shaped is deliberately absent from the `completed` event:
  * there is no findings parser (above), so `code_review_status` reports the count and the verdict as
  * `unknown` and the prose as the whole answer.
  *
+ * The spend is the exception, and it rides on EVERY event this branch can return — the two failures
+ * as much as the success. `SDKResultError` carries the identical counters, and a review that burned
+ * twelve minutes and died spent that money whether or not it produced prose. One extraction called
+ * three times, which is why it is not a second feature.
+ *
  * `assistantTurns` is how many assistant messages the caller has seen on this run, and it is what
- * the `completed` event's turn count falls back to. Passed in rather than counted here so this
- * stays a pure function of one message.
+ * the turn count falls back to. Passed in rather than counted here so this stays a pure function of
+ * one message.
  */
 export function eventFromMessage(
   message: AgentQueryMessage,
@@ -146,13 +212,16 @@ export function eventFromMessage(
     return text === null ? null : { type: "text", text };
   }
   if (message.type === "result") {
-    const costUsd = asNumber(message.total_cost_usd);
-    // `||`, not `??`. A round measured at $0.65 over 170s reported `num_turns: 0`, and 0 is a
-    // finite number — so `asNumber` accepts it and the reducer's own `?? record.turns` never falls
-    // back, publishing a zero that looks trustworthy beside the two fields the Review actor is
-    // told to distrust. The assistant messages this run actually yielded are the honest floor, so
-    // they stand in whenever the SDK's own number is absent OR zero.
-    const turns = asNumber(message.num_turns) || assistantTurns;
+    const spend: ReviewSpend = {
+      ...spendFromResult(message),
+      // `||`, not `??`. A round measured at $0.65 over 170s reported `num_turns: 0`, and 0 is a
+      // finite number — so `asNumber` accepts it and the reducer's own `?? record.turns` never falls
+      // back, publishing a zero that looks trustworthy beside the two fields the Review actor is
+      // told to distrust. The assistant messages this run actually yielded are the honest floor, so
+      // they stand in whenever the SDK's own number is absent OR zero. The token counters get no
+      // such fallback: nothing here has a second way to count them, so absent is what they report.
+      turns: asNumber(message.num_turns) || assistantTurns,
+    };
     if (message.subtype === "success") {
       const summary = typeof message.result === "string" ? message.result : "";
       // The ONE invisible failure this design can mechanically detect (PR #11 grill, agenda A11).
@@ -169,6 +238,10 @@ export function eventFromMessage(
       // no variable being present proves the credential in it is still good.
       if (NOT_LOGGED_IN.test(summary)) {
         return {
+          // Spent, and worth reporting: this round is manufactured from a `success` message, so the
+          // counters on it are real. What they measure is an agent that started, spent and
+          // reviewed nothing, which is exactly the round an owner needs to see the price of.
+          ...spend,
           type: "failed",
           message:
             `the delegated review ran but was NOT LOGGED IN, so nothing was reviewed — the ` +
@@ -179,11 +252,12 @@ export function eventFromMessage(
             `again.`,
         };
       }
-      return { type: "completed", summary, costUsd, turns };
+      return { ...spend, type: "completed", summary };
     }
     const errors = Array.isArray(message.errors) ? message.errors.map(String) : [];
     const detail = errors.length === 0 ? "" : `: ${errors.join("; ")}`;
     return {
+      ...spend,
       type: "failed",
       message: `the delegated review ended as ${String(message.subtype)}${detail}`,
     };

@@ -41,26 +41,58 @@ export const STATUSES_TUPLE = [
 export const isTerminal = (status: ReviewStatus): boolean => TERMINAL_STATUSES.includes(status);
 
 /**
+ * What one run of a review spent, as its backend reports it. One shape for the whole path — a
+ * backend event carries it, the record holds it, `stats` publishes it — so a field added here is a
+ * field the compiler then demands at every place it travels through.
+ *
+ * Every field is independently optional, and absence is the honest answer rather than a defect: a
+ * round that died before its result message arrived knows none of them. Nothing here is ever
+ * defaulted to zero, because a confident zero reads exactly like a cheap review.
+ *
+ * `costUsd` is the SDK's own list-rate arithmetic rather than an invoice — on a partner provider it
+ * says what these tokens would have cost first-party. The token counters are the portable figure,
+ * which is why `provider` travels beside them and the Review actor is told to label the dollars
+ * with it.
+ */
+export interface ReviewSpend {
+  costUsd?: number;
+  turns?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  cacheReadTokens?: number;
+  cacheCreationTokens?: number;
+  /** the INNER agent's own wall-clock — `stats.durationMs` is the record's, and they differ */
+  agentDurationMs?: number;
+  /** the model that served the round, and the provider that served that model */
+  model?: string;
+  provider?: string;
+  /** the pricing-lookup id behind `model`, which is not always the same string */
+  canonicalModel?: string;
+}
+
+/** The same fields as everything downstream of the reducer holds them: unknown is `null`. */
+export type RecordedSpend = {
+  [Field in keyof ReviewSpend]-?: NonNullable<ReviewSpend[Field]> | null;
+};
+
+/**
  * What a review backend may say. Backend-neutral on purpose: the scripted double and the real
  * Agent-SDK run (issue 05) both narrow to this, so the lifecycle has exactly one vocabulary.
+ *
+ * `completed` and `failed` both carry spend, because a round that burned twelve minutes and died
+ * spent that money exactly as one that finished did. `cancelled` carries none and must not be given
+ * any: an aborted run never receives a result message, so its spend is genuinely unrecoverable.
  */
 export type ReviewEvent =
   | { type: "preparing" }
   | { type: "running" }
   | { type: "text"; text: string }
-  | {
-      type: "completed";
-      summary?: string;
-      verdict?: string;
-      findings?: number;
-      costUsd?: number;
-      turns?: number;
-    }
-  | { type: "failed"; message: string }
+  | ({ type: "completed"; summary?: string; verdict?: string; findings?: number } & ReviewSpend)
+  | ({ type: "failed"; message: string } & ReviewSpend)
   | { type: "cancelled"; reason: string };
 
 /** One review, as the server holds it. Immutable: the reducer returns a new record or the old one. */
-export interface ReviewRecord {
+export interface ReviewRecord extends RecordedSpend {
   reviewId: string;
   prUrl: string;
   cwd: string | null;
@@ -82,9 +114,39 @@ export interface ReviewRecord {
   updatedAt: number;
   endedAt: number | null;
   events: number;
-  costUsd: number | null;
-  turns: number | null;
 }
+
+/** No spend known yet: what a record opens with, and what a run that never reported one keeps. */
+const NO_SPEND: RecordedSpend = {
+  costUsd: null,
+  turns: null,
+  inputTokens: null,
+  outputTokens: null,
+  cacheReadTokens: null,
+  cacheCreationTokens: null,
+  agentDurationMs: null,
+  model: null,
+  provider: null,
+  canonicalModel: null,
+};
+
+/**
+ * Fold an event's spend over what the record already holds, field by field: a backend that names
+ * some of them and not others must not blank the rest. Absent stays absent, so `null` survives all
+ * the way to the caller as "unknown" rather than turning into a number nobody measured.
+ */
+const mergedSpend = (record: RecordedSpend, event: ReviewSpend): RecordedSpend => ({
+  costUsd: event.costUsd ?? record.costUsd,
+  turns: event.turns ?? record.turns,
+  inputTokens: event.inputTokens ?? record.inputTokens,
+  outputTokens: event.outputTokens ?? record.outputTokens,
+  cacheReadTokens: event.cacheReadTokens ?? record.cacheReadTokens,
+  cacheCreationTokens: event.cacheCreationTokens ?? record.cacheCreationTokens,
+  agentDurationMs: event.agentDurationMs ?? record.agentDurationMs,
+  model: event.model ?? record.model,
+  provider: event.provider ?? record.provider,
+  canonicalModel: event.canonicalModel ?? record.canonicalModel,
+});
 
 export function newRecord(
   input: { reviewId: string; prUrl: string; cwd: string | null },
@@ -104,8 +166,7 @@ export function newRecord(
     updatedAt: now,
     endedAt: null,
     events: 0,
-    costUsd: null,
-    turns: null,
+    ...NO_SPEND,
   };
 }
 
@@ -138,17 +199,19 @@ export function reduce(record: ReviewRecord, event: ReviewEvent, now: number): R
     case "completed":
       return {
         ...base,
+        ...mergedSpend(record, event),
         status: "completed",
         endedAt: now,
         verdict: event.verdict ?? null,
         findings: event.findings ?? null,
         summary: event.summary ?? "",
-        costUsd: event.costUsd ?? record.costUsd,
-        turns: event.turns ?? record.turns,
       };
     case "failed":
       return {
         ...base,
+        // A round that failed still spent what it spent, and nothing else in this payload survives
+        // a non-`completed` status — so this is the one thing a dead round has to report.
+        ...mergedSpend(record, event),
         status: "failed",
         endedAt: now,
         // Kept twice, deliberately: in the transcript, where everything that landed is kept in
@@ -179,7 +242,14 @@ export interface ReviewStatusResult {
   status: ReviewStatus;
   verdict: string;
   counts: { findings: number | "unknown" };
-  stats: {
+  /**
+   * The spend fields here are `ReviewSpend`'s, published flat and whatever the status — what a
+   * round cost is a fact about the run rather than a claim about the code, so unlike everything
+   * verdict-shaped it survives a `failed` status. `durationMs` below is the RECORD's wall-clock;
+   * the inner agent's own is `agentDurationMs`, and overloading one name for both would make the
+   * poller's own waiting look like review time.
+   */
+  stats: RecordedSpend & {
     startedAt: string;
     endedAt: string | null;
     durationMs: number;
@@ -191,8 +261,6 @@ export interface ReviewStatusResult {
      * "wedged". `durationMs` rises either way and answers neither.
      */
     lastEventAt: string | null;
-    costUsd: number | null;
-    turns: number | null;
     /** the ceiling every review on this server is bounded by — a constant, so never absent */
     deadlineSec: number;
   };
@@ -229,6 +297,14 @@ export function project(
       lastEventAt: record.events === 0 ? null : new Date(record.updatedAt).toISOString(),
       costUsd: record.costUsd,
       turns: record.turns,
+      inputTokens: record.inputTokens,
+      outputTokens: record.outputTokens,
+      cacheReadTokens: record.cacheReadTokens,
+      cacheCreationTokens: record.cacheCreationTokens,
+      agentDurationMs: record.agentDurationMs,
+      model: record.model,
+      provider: record.provider,
+      canonicalModel: record.canonicalModel,
       deadlineSec: context.deadlineSec,
     },
     reason: record.reason,

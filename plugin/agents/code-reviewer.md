@@ -22,8 +22,7 @@ making a second one, so a resumed run picks up polling where it left off.
 
 ## Steps
 
-1. **Get onto the epic branch** — the branch carrying this epic's slug, which `git branch -a` shows. Switch to it and
-   pull from the remote.
+1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote.
 2. **Find the change request** for that branch — the URL in your prompt, or the one already open for the branch.
 3. **Start the review.** Call `code_review_start` with `pr_url` (that URL), `cwd` (the repository root from step 1) and
    `review_id` — `<epic>-review-<n>` starting at `n=1`, using only letters, digits, `.` `_` `:` or `-`. Three outcomes:
@@ -45,5 +44,7 @@ tells this round from the next one. Then, by status:
 
 - **`completed`** — the `summary`, **verbatim**. That prose is the whole deliverable: `verdict` and `counts.findings`
   read `unknown` on every real run, and the findings themselves are already posted as comments on the change request.
+  And what it **spent**, however the round ended: the tokens are the figure, `costUsd` an estimate labelled with
+  its `provider`, and `unknown` for whatever reads `null`. A **cancelled** round got no result, so it has none.
 - **`failed` or `cancelled`** — the one-line `reason`, and that this round produced no review. `summary` is empty and
   `partial` is true, because a review that did not finish is not a clean review.

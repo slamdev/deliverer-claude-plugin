@@ -289,8 +289,41 @@ server.registerTool(
             "when the last event landed, or null before any has. With `events`, this is the whole " +
               "of what says a live review is working rather than wedged.",
           ),
-        costUsd: z.number().nullable(),
+        costUsd: z
+          .number()
+          .nullable()
+          .describe(
+            "what the round cost in dollars, as the SDK's OWN list-rate arithmetic rather than an " +
+              "invoice: on a partner provider (see `provider`) it says what these tokens would " +
+              "have cost first-party. The token counters beside it are the provider-neutral " +
+              "figure. Null — never zero — whenever no result message arrived, which is every " +
+              "cancelled round.",
+          ),
         turns: z.number().nullable(),
+        inputTokens: z.number().nullable(),
+        outputTokens: z.number().nullable(),
+        cacheReadTokens: z.number().nullable(),
+        cacheCreationTokens: z.number().nullable(),
+        agentDurationMs: z
+          .number()
+          .nullable()
+          .describe(
+            "how long the INNER review agent ran, in milliseconds. Not `durationMs`, which is this " +
+              "record's own wall-clock and counts every second the poller waited around it.",
+          ),
+        model: z.string().nullable(),
+        provider: z
+          .string()
+          .nullable()
+          .describe(
+            "what served `model` — \"firstParty\", \"bedrock\", \"vertex\" and so on. It is what " +
+              "`costUsd` has to be labelled with, because it is what decides whether that number " +
+              "is a price or an estimate.",
+          ),
+        canonicalModel: z
+          .string()
+          .nullable()
+          .describe("the pricing-lookup id behind `model`, which is not always the same string"),
         deadlineSec: z
           .number()
           .describe(

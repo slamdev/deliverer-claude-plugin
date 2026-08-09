@@ -13,23 +13,25 @@
  * variable set.
  */
 import type { ReviewBackend, ReviewRequest, ReviewRun } from "./backend.ts";
-import type { ReviewEvent } from "./review-state.ts";
+import type { ReviewEvent, ReviewSpend } from "./review-state.ts";
 
 export const SCRIPTED_BACKEND_ID = "scripted";
 
 /**
  * One scripted event. `afterMs` is the delay BEFORE it, relative to the previous event, so a script
  * reads as a timeline rather than as a set of absolute offsets to keep consistent by hand.
+ *
+ * It carries `ReviewSpend` whole, on the terminal kinds as much as the rest, because a double that
+ * cannot produce a shape the real backend produces is useless for exactly the case you reach for it
+ * in — and the spend on a FAILED round is the half most likely to be got wrong.
  */
-export interface ScriptedEvent {
+export interface ScriptedEvent extends ReviewSpend {
   afterMs?: number;
   kind: "preparing" | "running" | "text" | "completed" | "failed";
   text?: string;
   summary?: string;
   verdict?: string;
   findings?: number;
-  costUsd?: number;
-  turns?: number;
   message?: string;
 }
 
@@ -53,8 +55,19 @@ export const DEFAULT_SCRIPT: Script = {
       summary: "Scripted review: no findings.",
       verdict: "approved",
       findings: 0,
-      costUsd: 0,
+      // A spend, rather than the zero this used to report: a default script that publishes nothing
+      // to read cannot show whether the fields reach a caller at all. The provider says `scripted`
+      // so nobody mistakes these for a measurement, and the duration is the timeline above.
+      costUsd: 0.42,
       turns: 1,
+      inputTokens: 1_200,
+      outputTokens: 340,
+      cacheReadTokens: 8_600,
+      cacheCreationTokens: 2_400,
+      agentDurationMs: 40,
+      model: "scripted-model",
+      provider: "scripted",
+      canonicalModel: "scripted-model",
     },
   ],
 };
@@ -116,6 +129,25 @@ export function parseScript(raw: string | null): Script {
   return { events, delayMultiplier };
 }
 
+/**
+ * The spend a script named, lifted out of the event that named it. Written out field by field
+ * rather than spread wholesale, so a script's `kind` and `afterMs` cannot ride into the lifecycle's
+ * vocabulary — and so adding a field to `ReviewSpend` fails here until this double reports it too.
+ * What a script left out stays absent, exactly as it does on a real round that never measured it.
+ */
+const scriptedSpend = (event: ScriptedEvent): ReviewSpend => ({
+  costUsd: event.costUsd,
+  turns: event.turns,
+  inputTokens: event.inputTokens,
+  outputTokens: event.outputTokens,
+  cacheReadTokens: event.cacheReadTokens,
+  cacheCreationTokens: event.cacheCreationTokens,
+  agentDurationMs: event.agentDurationMs,
+  model: event.model,
+  provider: event.provider,
+  canonicalModel: event.canonicalModel,
+});
+
 const toEvent = (event: ScriptedEvent): ReviewEvent => {
   switch (event.kind) {
     case "preparing":
@@ -125,16 +157,19 @@ const toEvent = (event: ScriptedEvent): ReviewEvent => {
     case "text":
       return { type: "text", text: event.text ?? "" };
     case "failed":
-      return { type: "failed", message: event.message ?? "the scripted review failed" };
+      return {
+        ...scriptedSpend(event),
+        type: "failed",
+        message: event.message ?? "the scripted review failed",
+      };
     case "completed":
     default:
       return {
+        ...scriptedSpend(event),
         type: "completed",
         summary: event.summary,
         verdict: event.verdict,
         findings: event.findings,
-        costUsd: event.costUsd,
-        turns: event.turns,
       };
   }
 };
