@@ -18,10 +18,10 @@ once, as a short **slug** — the brief's filename, the task list and the publis
 never collide.
 
 **Stage 1 is yours and nobody else's** — the human is in the room and the decisions are theirs. Every stage after it is
-one agent dispatch — **one stage, one task** (**Progress**) — and the dispatched agent's **report** is all you get
-back: what it names is what you know. The writing goes out because it wants a fresh context reading the repo first-hand
-rather than yours, spent on the interview. That is what makes the brief load-bearing: a **writer** meets the codebase
-for itself but never the conversation, so a decision the brief leaves out is one the writer closes again on its own —
+one agent dispatch — **one stage, one task** (**Progress**) — and the dispatched agent's **report** is all you get back:
+what it names is what you know. The writing goes out because it wants a fresh context reading the repo first-hand rather
+than yours, spent on the interview. That is what makes the brief load-bearing: a **writer** meets the codebase for
+itself but never the conversation, so a decision the brief leaves out is one the writer closes again on its own —
 silently, and maybe the other way. Where a report leaves you unsure, or a writer's document is wrong, re-dispatch that
 stage naming what it got wrong rather than editing the document yourself: the writer holds the context the document
 needs. Yours is the work no agent does: grill the idea, write the brief, dispatch the two writers in order, read their
@@ -51,14 +51,14 @@ and reads the repo first-hand on top of it.
    it reports.
 4. **Break it into tickets** — dispatch `tickets-writer`. It publishes one ticket per slice, numbered in dependency
    order. Keep the count and the locations it reports.
-5. **Hand the epic over** — report as below, and name the call that delivers it: `/deliverer:build <epic location>`,
-   the location being where the spec and its tickets sit together, as the project's conventions have it.
+5. **Hand the epic over** — report as below, and name the call that delivers it: `/deliverer:build <epic location>`, the
+   location being where the spec and its tickets sit together, as the project's conventions have it.
 
 ## The brief
 
 The brief is the whole **hand-off** of stage 1: whoever writes the spec has it and nothing else of the conversation.
-Write it to the temporary directory of the user's OS — not the workspace, which is for the artifacts this run publishes
-— as `<epic-slug>-brief.md`, so a later run can find the one you left. It carries:
+Write it to the temporary directory of the user's OS — not the workspace, which is for the artifacts this run
+publishes — as `<epic-slug>-brief.md`, so a later run can find the one you left. It carries:
 
 - the idea, and the problem behind it in the user's own terms
 - every decision the grilling settled, each with the grounds it was settled on

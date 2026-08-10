@@ -26,11 +26,12 @@ making a second one, so a resumed run picks up polling where it left off.
 2. **Find the change request** for that branch — the URL in your prompt, or the one already open for the branch.
 3. **Start the review.** Call `code_review_start` with `pr_url` (that URL), `cwd` (the repository root from step 1) and
    `review_id` — `<epic>-review-<n>` starting at `n=1`, using only letters, digits, `.` `_` `:` or `-`. Three outcomes:
-   - **A handle** — this round is yours. Keep its `review_id` and its `poll_after_ms`.
-   - **Refused, the id already names a finished review** — a round already ran under that id, and its prose belongs to
-     that round rather than this one. Raise `n` and call again: one round, one id.
-   - **Refused, a review is already in flight** — one review runs at a time, and it reaches a terminal status by itself.
-     `sleep 15` and call again.
+    - **A handle** — this round is yours. Keep its `review_id` and its `poll_after_ms`.
+    - **Refused, the id already names a finished review** — a round already ran under that id, and its prose belongs to
+      that round rather than this one. Raise `n` and call again: one round, one id.
+    - **Refused, a review is already in flight** — one review runs at a time, and it reaches a terminal status by
+      itself.
+      `sleep 15` and call again.
 4. **Poll to a terminal status.** `sleep 15` — the `poll_after_ms` the handle returned — then call
    `code_review_status` with your `review_id`, and repeat. You are done when `status` reads `completed`, `failed` or
    `cancelled`. Let the review end by itself: the server's own deadline ends a run that hangs, and a cancelled review
@@ -44,7 +45,7 @@ tells this round from the next one. Then, by status:
 
 - **`completed`** — the `summary`, **verbatim**. That prose is the whole deliverable: `verdict` and `counts.findings`
   read `unknown` on every real run, and the findings themselves are already posted as comments on the change request.
-  And what it **spent**, however the round ended: the tokens are the figure, `costUsd` an estimate labelled with
-  its `provider`, and `unknown` for whatever reads `null`. A **cancelled** round got no result, so it has none.
+  And what it **spent**, however the round ended: the tokens are the figure, `costUsd` an estimate labelled with its
+  `provider`, and `unknown` for whatever reads `null`. A **cancelled** round got no result, so it has none.
 - **`failed` or `cancelled`** — the one-line `reason`, and that this round produced no review. `summary` is empty and
   `partial` is true, because a review that did not finish is not a clean review.

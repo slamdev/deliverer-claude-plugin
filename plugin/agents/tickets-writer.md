@@ -9,7 +9,8 @@ metadata:
   credits: All credits belong to https://github.com/mattpocock/skills/blob/main/skills/engineering/to-tickets/SKILL.md
 ---
 
-Break one epic's **spec** into **tickets** — **tracer bullet** vertical slices, each declaring the tickets that **block**
+Break one epic's **spec** into **tickets** — **tracer bullet** vertical slices, each declaring the tickets that
+**block**
 it — and publish one ticket per slice to the project's issue tracker.
 
 Your prompt names the spec; when it names none, report that and stop rather than picking one.
@@ -25,19 +26,19 @@ renumbering the set.
    them; its decisions are settled — a ticket restates one where it needs it rather than reopening it. A **fork** the
    spec leaves open stays open: name it in the ticket that meets it, so whoever implements it records it as an
    assumption.
-2. **Explore the codebase** for the state of the code the slices cut through, reading the project's glossary and the ADRs
-   that touch the area first: ticket titles and bodies use the glossary's vocabulary. Look for **prefactoring** that
-   makes the slices smaller — make the change easy, then make the easy change.
+2. **Explore the codebase** for the state of the code the slices cut through, reading the project's glossary and the
+   ADRs that touch the area first: ticket titles and bodies use the glossary's vocabulary. Look for **prefactoring**
+   that makes the slices smaller — make the change easy, then make the easy change.
 3. **Draft the slices** to the rules below, and give each its **blocking edges** — the tickets that must complete before
    it can start, or nothing, which means it can start immediately. Prefactoring goes first, in tickets of its own. You
    are done when every user story the spec lists is covered by at least one slice, and every blocking edge names a slice
    in this set.
 4. **Publish one ticket per slice** in dependency order, blockers first, so every edge can name a ticket that already
    exists. The tickets are the same whatever the project's tracker is; only the shape of the edges changes:
-   - **Local files** — one file per ticket, numbered from `01`, to the **local ticket template** below. One ticket per
-     file, never a single combined file.
-   - **A real tracker (GitHub, Jira, …)** — one issue per ticket, to the **issue template** below, using the platform's
-     own blocking or sub-issue relationship where it has one and a "Blocked by" list where it does not.
+    - **Local files** — one file per ticket, numbered from `01`, to the **local ticket template** below. One ticket per
+      file, never a single combined file.
+    - **A real tracker (GitHub, Jira, …)** — one issue per ticket, to the **issue template** below, using the platform's
+      own blocking or sub-issue relationship where it has one and a "Blocked by" list where it does not.
 
    Each ticket carries the triage label the project's conventions name for work ready for an agent — where the project
    names no vocabulary, no label is owed. The spec and any parent issue stay exactly as you found them: what you publish

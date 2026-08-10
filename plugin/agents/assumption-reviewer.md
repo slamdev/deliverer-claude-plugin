@@ -24,8 +24,8 @@ carrying none.
 2. **Find the change request** for that branch — the URL in your prompt, or the one already open for the branch.
 3. **Collect the assumptions.** Every comment prefixed `ASSUMPTION` that carries no verdict reply is yours. Read the
    replies, not the resolution state — `override` and `escalate` leave their comments unresolved on purpose.
-4. **Adjudicate them one at a time**, giving the last one the same scrutiny as the first: read the whole set first —
-   you are the only agent that sees every fork against the finished branch — then do the legwork below and reply with
+4. **Adjudicate them one at a time**, giving the last one the same scrutiny as the first: read the whole set first — you
+   are the only agent that sees every fork against the finished branch — then do the legwork below and reply with
    exactly one verdict. You are done when every assumption from step 3 carries a verdict reply.
 5. **Report**, as below.
 

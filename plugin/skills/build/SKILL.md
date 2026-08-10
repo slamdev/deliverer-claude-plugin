@@ -13,13 +13,13 @@ Your argument names the epic; when it names none, report that and stop rather th
 
 Every stage below is one agent dispatch — **one dispatch, one task** (**Progress**) — and the dispatched agent's
 **report** is all you get back: what it names is what you know. Where a report leaves you unsure, re-dispatch the stage
-rather than going to look, and the bearings you take from the branch and the change request say which stage is owed,
-not what a finding says or whether a check is green. A **mechanical question about the tree** is yours to settle —
-does it build, does this symbol exist, what does the branch carry — because that asks whether a report's fact is true,
-not whether its judgement is right. A finding, a design, whether the work is good — those are never yours to form a
-view on. Two edges on it: **read only**, and the only things to do with what you find are **re-dispatch or report**,
-never fix. Yours is the work no agent does: read the epic for its tickets, dispatch in order, read each report, keep
-the task list current, and flip the change request ready at the end.
+rather than going to look, and the bearings you take from the branch and the change request say which stage is owed, not
+what a finding says or whether a check is green. A **mechanical question about the tree** is yours to settle — does it
+build, does this symbol exist, what does the branch carry — because that asks whether a report's fact is true, not
+whether its judgement is right. A finding, a design, whether the work is good — those are never yours to form a view on.
+Two edges on it: **read only**, and the only things to do with what you find are **re-dispatch or report**, never fix.
+Yours is the work no agent does: read the epic for its tickets, dispatch in order, read each report, keep the task list
+current, and flip the change request ready at the end.
 
 **Resume.** This epic may be part-delivered — by an earlier run of your own that was interrupted, or by hand. The epic
 branch and the change request are what say how far it got: the commits carrying a `Ticket:` line name the tickets
@@ -29,12 +29,12 @@ wave** is still owed. Start from the earliest stage whose evidence you cannot fi
 `code-reviewer` is safe, because each one resumes on its own and adds only what is missing. `code-reviewer` is the
 exception: see **Rounds**.
 
-**Dispatch.** Every dispatch carries the epic, and — once each exists — the change request's URL and the **epic
-branch's name**, so none of them has to find it again. Neither exists at the first stage-1 dispatch: that implementer
-creates the branch and names it in its report, and stage 2 reports the URL. Each later `implementer` also carries what
-the reports before it named about the **guards** that bit and what satisfied them, accumulating as the stage runs.
-That warms a cold start on work not yet done, so it goes to implementers and nowhere else: every other agent meets the
-repo first-hand, which is what its own judgement must rest on.
+**Dispatch.** Every dispatch carries the epic, and — once each exists — the change request's URL and the **epic branch's
+name**, so none of them has to find it again. Neither exists at the first stage-1 dispatch: that implementer creates the
+branch and names it in its report, and stage 2 reports the URL. Each later `implementer` also carries what the reports
+before it named about the **guards** that bit and what satisfied them, accumulating as the stage runs. That warms a cold
+start on work not yet done, so it goes to implementers and nowhere else: every other agent meets the repo first-hand,
+which is what its own judgement must rest on.
 
 ## Stages
 
@@ -46,14 +46,15 @@ repo first-hand, which is what its own judgement must rest on.
 3. **Adjudicate and review together** — dispatch `assumption-reviewer` and `code-reviewer` in one message so they run
    concurrently. `assumption-reviewer` replies a verdict — `accept`, `override` or `escalate` — to every `ASSUMPTION`
    comment. `code-reviewer` drives one **round**, whose findings the tools server posts as comments itself.
-4. **First fix wave** — dispatch `comments-addresser`. It works every unresolved comment: implementing the overrides
-   and the findings, resolving what it implements or declines, and leaving the escalations for a human. Keep the
+4. **First fix wave** — dispatch `comments-addresser`. It works every unresolved comment: implementing the overrides and
+   the findings, resolving what it implements or declines, and leaving the escalations for a human. Keep the
    **hand-off** list its report carries.
-5. **Second round** — dispatch `code-reviewer` again. It reviews the fix wave's commits, so what the first round
-   missed still gets caught.
+5. **Second round** — dispatch `code-reviewer` again. It reviews the fix wave's commits, so what the first round missed
+   still gets caught.
 6. **Second fix wave** — dispatch `comments-addresser` again, for what the second round raised.
-7. **Flip it ready** — once two rounds have completed and the last fix wave reports the checks **green**, take the change
-   request out of draft and report. Escalations and declined findings ride into the report rather than holding the flip:
+7. **Flip it ready** — once two rounds have completed and the last fix wave reports the checks **green**, take the
+   change request out of draft and report. Escalations and declined findings ride into the report rather than holding
+   the flip:
    they are what the human review is for. When the checks are not green, leave it a draft and report that instead.
 
 ## Rounds
@@ -77,8 +78,8 @@ the epic's slug so two epics can share a session — `<slug>: open the change re
 dispatches get a task each, `adjudicate assumptions` and `first round`. A resumed run opens the same set, with the
 dispatches the branch and the change request already account for created `completed`. Mark a task `in_progress` as you
 dispatch it and `completed` once you have read its report. `completed` says the dispatch is over rather than that it
-succeeded, so a round that died carries its outcome in its subject — `<slug>: second round (failed — no review)` —
-and its retry gets a task of its own.
+succeeded, so a round that died carries its outcome in its subject — `<slug>: second round (failed — no review)` — and
+its retry gets a task of its own.
 
 Stage 1 is one task for all its tickets, relabelled as each lands: `<slug>: implement every ticket (4/21)` as the
 subject and `Implementing ticket 4/21 — <ticket>` as the `activeForm`, both in the one `TaskUpdate`. The numerator is
