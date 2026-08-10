@@ -23,8 +23,8 @@ The commits on the epic branch are what say how far it got, so implement only wh
    what is done. When they already cover the ticket in full, skip to step 5 and name the commit that covered it.
 3. **Implement what they left undone**, following the project's conventions and the nearest existing call sites. Record
    each fork as you close it, rather than reconstructing them at the end. **Never undo work this ticket asked for to
-   turn a guard green.** A guard red for something outside this ticket — an artifact another ticket owns, work nobody
-   has done yet — stays red and goes in your report; a fix wave owns it downstream.
+   turn a gate green.** A gate red for something outside this ticket — an artifact another ticket owns, work nobody has
+   done yet — stays red and goes in your report; a fix wave owns it downstream.
 4. **Commit and push to the epic branch** in the format below. Whoever commits publishes: the change request and the
    checks are built on the remote, so a commit that is not pushed has not landed. You are done when every fork you
    closed silently carries an entry in the commit message and the branch on the remote carries that commit.
@@ -68,5 +68,5 @@ Whoever reads this has your report and nothing else.
 - the epic branch's name — every dispatch after yours is handed it
 - every commit you added — hash and message — and that the branch on the remote carries them
 - how many assumptions those commits record
-- the **guards** this ticket had to satisfy and what satisfied them, and any you left red
+- the **gates** this ticket had to satisfy and what satisfied them, and any you left red
 - when the branch already covered the ticket, the commit that covered it

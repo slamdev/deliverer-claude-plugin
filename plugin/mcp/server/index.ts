@@ -1,16 +1,16 @@
 /**
- * The deliverer plugin's tools server (delegated-review issues 03 and 04).
+ * The deliverer plugin's tools server (delegated-review tickets 03 and 04).
  *
- * It publishes the three tools the Review actor drives — start a review, poll it, cancel it — plus a
- * pull-only transcript resource. It owns no forge contract, forms no judgment and reads no document:
- * it drives a review backend and reports what that backend said.
+ * It publishes the three tools the `code-reviewer` agent drives — start a review, poll it, cancel
+ * it — plus a pull-only transcript resource. It owns no forge contract, forms no judgment and reads
+ * no document: it drives a review backend and reports what that backend said.
  *
- * The contract, verbatim and binding (PRD, "The MCP server"):
+ * The contract, verbatim and binding (spec, "The MCP server"):
  *
- *   code_review_start(pr_url, cwd?, review_id?)
+ *   code_review_start(change_request_url, cwd?, review_id?)
  *     → { review_id, status, transcript_uri, poll_after_ms }      returns in <1s
  *   code_review_status(review_id)
- *     → { reviewId, prUrl, status, verdict, counts, stats, reason, partial, summary }
+ *     → { reviewId, changeRequestUrl, status, verdict, counts, stats, reason, partial, summary }
  *   code_review_cancel(review_id)
  *     → { review_id, status }   the status the review HOLDS after the attempt: "cancelled" for one
  *                               that was still running, the existing terminal status for one that
@@ -78,7 +78,7 @@ for (const warning of config.warnings) {
 
 /**
  * Selecting the backend is the one startup decision that can fail, and it must not take the server
- * down with it: a process that exits here publishes NO tools at all, so the actor meets "no such
+ * down with it: a process that exits here publishes NO tools at all, so the agent meets "no such
  * tool" — which names nothing to fix and reads the same whether the plugin is misconfigured or
  * simply not installed. Instead the failure is held and returned as an error result from
  * `code_review_start` — the tool that could not do its job — naming what to fix.
@@ -94,7 +94,7 @@ async function selectBackend(): Promise<{ backend: ReviewBackend | null; error: 
   if (config.backend === AGENT_BACKEND_ID) {
     // Imported DYNAMICALLY, and only on this branch. A static import would make the WHOLE server
     // unstartable on a host whose install has not finished, so that session would have no review
-    // tools at all instead of tools that say what is missing (issue 03's whole lesson). The scripted
+    // tools at all instead of tools that say what is missing (ticket 03's whole lesson). The scripted
     // double therefore needs no Agent SDK at all, which is what keeps the fast gate independent of
     // it.
     let query: AgentQuery;
@@ -205,12 +205,12 @@ server.registerTool(
   {
     title: "Start a delegated code review",
     description:
-      "Start a code review of a change request (pull request / merge request) and return a handle " +
+      "Start a code review of a change request and return a handle " +
       "immediately — the review runs in the background and NOTHING arrives unsolicited, so " +
       `polling ${STATUS_TOOL} is the only way to see progress. Effort and model are this server's ` +
       "startup configuration and are not arguments. One review runs at a time.",
     inputSchema: {
-      pr_url: z
+      change_request_url: z
         .string()
         .describe("the change request's URL, on any forge — the review is run against this URL"),
       cwd: z
@@ -253,7 +253,7 @@ server.registerTool(
     },
     outputSchema: {
       reviewId: z.string(),
-      prUrl: z.string(),
+      changeRequestUrl: z.string(),
       status: z.enum(STATUSES_TUPLE),
       verdict: z
         .string()

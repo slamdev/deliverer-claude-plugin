@@ -26,7 +26,7 @@ missing and leave what is there alone.
    is the change request: bring its title and description up to date rather than opening a second, and leave its draft
    state as you found it.
 4. **Mirror the assumptions.** Each commit message carries an `Assumptions:` section, or no assumptions at all. Post one
-   comment per entry, in the format below, as a thread that requires resolution. You are done when every assumption on
+   comment per entry, in the format below, as a comment that requires resolution. You are done when every assumption on
    the branch carries exactly one comment — one that is already resolved is still that assumption's comment, so leave it
    as it is rather than posting a second.
 5. **Report**, as below.

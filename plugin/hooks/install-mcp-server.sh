@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # SessionStart hook — put the tools server and its dependencies in the plugin's PERSISTENT DATA
-# DIRECTORY, and keep them current (delegated-review issue 03).
+# DIRECTORY, and keep them current (delegated-review ticket 03).
 #
 # Why a hook at all: the plugin ships the server as source with no build step and no vendored
 # dependencies, so something has to install them on the user's machine. Doing it at session start
-# means the owner never builds anything by hand (PRD user story 11), and because the data directory
+# means the owner never builds anything by hand (spec user story 11), and because the data directory
 # survives plugin updates the install is paid ONCE PER HOST rather than per session or per bed
 # (user story 13).
 #
@@ -15,7 +15,7 @@
 # and `mcp/launch.mjs` runs it from there.
 #
 # Why a stamp rather than an existence check: an update that changes the bundled dependency manifest
-# leaves `node_modules` exactly as present as before (PRD user story 12). So a copy of the bundled
+# leaves `node_modules` exactly as present as before (spec user story 12). So a copy of the bundled
 # manifest and lockfile is kept under the data directory and compared byte for byte; a difference in
 # either reinstalls. The stamp is written ONLY after a successful install and removed before one
 # starts, so a failed install can never leave behind the marker that would skip the next session's

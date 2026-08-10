@@ -1,11 +1,11 @@
 /**
- * The scripted review backend — a shipped test double, not scaffolding (delegated-review issue 04).
+ * The scripted review backend — a shipped test double, not scaffolding (delegated-review ticket 04).
  *
  * It replays a short event sequence with a delay multiplier and answers, in seconds and for free,
  * every question about the lifecycle that a real review answers in minutes and for money:
  * cancellation, ordering, terminal absorption and the deadline. In the prototype this design came
  * from it was the single highest-leverage piece, which is why it ships rather than being thrown away
- * (PRD user story 27).
+ * (spec user story 27).
  *
  * It is selected through `DELIVERER_REVIEW_BACKEND=scripted` and scripted through
  * `DELIVERER_REVIEW_SCRIPT` — the same environment the server already reads for effort and model.

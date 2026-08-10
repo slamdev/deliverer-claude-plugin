@@ -1,10 +1,10 @@
 /**
- * What a review backend is (delegated-review issue 04).
+ * What a review backend is (delegated-review ticket 04).
  *
  * The lifecycle owns the state machine, the store, the deadline and the tool contract; a backend
  * owns nothing but "run this review and tell me what happens". Two of them exist by design: the
  * scripted double that ships beside the server (`./scripted-backend.ts`) and the real Agent-SDK run
- * that drives the platform's own code review (issue 05). Because the double is selected through the
+ * that drives the platform's own code review (ticket 05). Because the double is selected through the
  * same environment the server already reads for effort and model, the whole lifecycle is testable
  * with no LLM and no forge.
  */
@@ -13,7 +13,7 @@ import type { ReviewEvent } from "./review-state.ts";
 /** Everything a backend is told. Effort and model are startup configuration, never per-call inputs. */
 export interface ReviewRequest {
   reviewId: string;
-  prUrl: string;
+  changeRequestUrl: string;
   /** the delivery worktree the review runs in, or null when the caller named none */
   cwd: string | null;
   effort: string | null;

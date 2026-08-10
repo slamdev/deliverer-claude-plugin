@@ -81,7 +81,7 @@ the decision-rich part and noted as a prototype's.
 **What to build:** the end-to-end behaviour this ticket makes work, from the user's perspective — not a layer-by-layer
 implementation list.
 
-**Blocked by:** the numbers and titles of the tickets that gate this one, or "None — can start immediately".
+**Blocked by:** the numbers and titles of the tickets that block this one, or "None — can start immediately".
 
 **Status:** the triage label the project's conventions name for work ready for an agent.
 

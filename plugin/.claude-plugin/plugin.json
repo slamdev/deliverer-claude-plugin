@@ -11,7 +11,7 @@
     "code_review_effort": {
       "type": "string",
       "title": "Code review effort",
-      "description": "Effort tier for the delegated code review that performs each round: low, medium, high, xhigh or max. Those five are the only values the server accepts — anything else is refused at every review start, naming the value and this set, rather than reviewed at an unknown depth. Deeper tiers cost more money and wall-clock AND raise more threads, each of which a fix wave must resolve before the PR can flip ready.",
+      "description": "Effort tier for the delegated code review that performs each round: low, medium, high, xhigh or max. Those five are the only values the server accepts — anything else is refused at every review start, naming the value and this set, rather than reviewed at an unknown depth. Deeper tiers cost more money and wall-clock AND raise more comments, each of which a fix wave must resolve before the change request can flip ready.",
       "default": "high"
     },
     "code_review_model": {

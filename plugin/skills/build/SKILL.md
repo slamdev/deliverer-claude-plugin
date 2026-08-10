@@ -32,7 +32,7 @@ exception: see **Rounds**.
 **Dispatch.** Every dispatch carries the epic, and — once each exists — the change request's URL and the **epic branch's
 name**, so none of them has to find it again. Neither exists at the first stage-1 dispatch: that implementer creates the
 branch and names it in its report, and stage 2 reports the URL. Each later `implementer` also carries what the reports
-before it named about the **guards** that bit and what satisfied them, accumulating as the stage runs. That warms a cold
+before it named about the **gates** that bit and what satisfied them, accumulating as the stage runs. That warms a cold
 start on work not yet done, so it goes to implementers and nowhere else: every other agent meets the repo first-hand,
 which is what its own judgement must rest on.
 

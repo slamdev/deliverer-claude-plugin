@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * The MCP server's entry point as `plugin/.mcp.json` spawns it — and the ONE file of the server that
- * runs out of the plugin directory (delegated-review issue 03).
+ * runs out of the plugin directory (delegated-review ticket 03).
  *
  * It exists because the server must not run from here. Its dependencies are installed into the
  * plugin's persistent data directory by the `SessionStart` hook, and the source is copied in beside
@@ -47,7 +47,7 @@ const INSTALL_STAMP = [".deliverer-deps-stamp", "package.json"];
 /**
  * How long to wait for the install hook, and why waiting is necessary at all.
  *
- * **Measured (delegated-review issue 03, Claude Code 2.1.220): the host spawns this server BEFORE the
+ * **Measured (delegated-review ticket 03, Claude Code 2.1.220): the host spawns this server BEFORE the
  * `SessionStart` install hook has finished.** On a cold host the first session therefore reaches this
  * file while `node_modules` and the copied source are still arriving — and without a wait, that
  * session's review tool is simply absent, which is a silent packaging failure for exactly the session

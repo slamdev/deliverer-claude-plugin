@@ -1,9 +1,9 @@
 /**
  * The real review backend: the platform's own code review, driven through the Agent SDK
- * (delegated-review issue 05).
+ * (delegated-review ticket 05).
  *
  * It is the DEFAULT backend — a server nobody configured runs this one, because the alternative
- * default would be a server that replayed a script and reported a Round nobody ran. It owns nothing
+ * default would be a server that replayed a script and reported a round nobody ran. It owns nothing
  * of the lifecycle: it starts one SDK query, narrows what comes back to the lifecycle's five events,
  * and stops when told to. The state machine, the store, the deadline and the tool contract all live
  * in `./lifecycle.ts` and `./review-state.ts`.
@@ -12,11 +12,12 @@
  *
  *  - **The prompt form is what decides what gets reviewed.** `/code-review <effort> --comment <url>`
  *    reviews the change request AND posts the findings as inline comments itself. A bare ref reviews
- *    the local working diff and finds nothing, because the PR's commits are not in that tree.
+ *    the local working diff and finds nothing, because the change request's commits are not in
+ *    that tree.
  *  - **No structured output format.** Measured across three identical prototype runs, setting one
  *    cost roughly 1.7× the money and 1.9× the time to return ZERO findings while still reporting
  *    success — a silent failure with nothing to detect it by. There is also nothing to parse for:
- *    nothing downstream consumes structured findings, the prose is the deliverable, and the Threads
+ *    nothing downstream consumes structured findings, the prose is the deliverable, and the comments
  *    are posted by the reviewer itself. So there is no findings parser here, no two-turn extraction
  *    and no findings-tool shim, and there must not be one added.
  *
@@ -44,11 +45,11 @@
  *    `stream_event` messages, same one-batch arrival), and the child writes no stderr at all.
  *
  * Effort, model and the inner agent's environment come from the server's startup configuration
- * (`./config.ts`), never from a caller: no Review actor can quietly review at a different depth, on
- * a different model, or as a different identity than the owner configured. The model is passed
- * VERBATIM and unchecked — an alias (`opus`, the shipped default) resolves against whatever provider
- * the environment file selects, which is why one is portable where a pinned id is not — and an EMPTY
- * model means take that environment's own default instead.
+ * (`./config.ts`), never from a caller: no `code-reviewer` agent can quietly review at a different
+ * depth, on a different model, or as a different identity than the owner configured. The model is
+ * passed VERBATIM and unchecked — an alias (`opus`, the shipped default) resolves against whatever
+ * provider the environment file selects, which is why one is portable where a pinned id is not —
+ * and an EMPTY model means take that environment's own default instead.
  *
  * **How the review is authenticated.** Nothing here reads, forwards or names a credential. The
  * plugin's `code_review_claude_env_file` option — required — names a `.env` file, `./config.ts`
@@ -97,11 +98,11 @@ export type AgentQuery = (params: AgentQueryParams) => AsyncIterable<AgentQueryM
  * failing open, where an unrecognised tier either errors the round or silently reviews at the
  * command's own default. An absent or empty tier is omitted entirely, leaving that default.
  */
-export function reviewPrompt(prUrl: string, effort: string | null): string {
+export function reviewPrompt(changeRequestUrl: string, effort: string | null): string {
   const tier = effort === null ? "" : effort.trim();
   return tier === ""
-    ? `${REVIEW_COMMAND} --comment ${prUrl}`
-    : `${REVIEW_COMMAND} ${tier} --comment ${prUrl}`;
+    ? `${REVIEW_COMMAND} --comment ${changeRequestUrl}`
+    : `${REVIEW_COMMAND} ${tier} --comment ${changeRequestUrl}`;
 }
 
 /** The text of every text block in an assistant message, or null when there is none. */
@@ -124,7 +125,7 @@ function assistantText(message: AgentQueryMessage): string | null {
 
 /**
  * The SDK's own not-logged-in answer, anchored to the START of the result so a REVIEW whose prose
- * discusses a login bug cannot fail its own Round. The separator between the two clauses has been
+ * discusses a login bug cannot fail its own round. The separator between the two clauses has been
  * seen as both `·` and `-`, so only the first clause is matched.
  */
 const NOT_LOGGED_IN = /^\s*not logged in\b/i;
@@ -216,10 +217,11 @@ export function eventFromMessage(
       ...spendFromResult(message),
       // `||`, not `??`. A round measured at $0.65 over 170s reported `num_turns: 0`, and 0 is a
       // finite number — so `asNumber` accepts it and the reducer's own `?? record.turns` never falls
-      // back, publishing a zero that looks trustworthy beside the two fields the Review actor is
-      // told to distrust. The assistant messages this run actually yielded are the honest floor, so
-      // they stand in whenever the SDK's own number is absent OR zero. The token counters get no
-      // such fallback: nothing here has a second way to count them, so absent is what they report.
+      // back, publishing a zero that looks trustworthy beside the two fields the `code-reviewer`
+      // agent is told to distrust. The assistant messages this run actually yielded are the honest
+      // floor, so they stand in whenever the SDK's own number is absent OR zero. The token counters
+      // get no such fallback: nothing here has a second way to count them, so absent is what they
+      // report.
       turns: asNumber(message.num_turns) || assistantTurns,
     };
     if (message.subtype === "success") {
@@ -227,8 +229,8 @@ export function eventFromMessage(
       // The ONE invisible failure this design can mechanically detect (PR #11 grill, agenda A11).
       // An unauthenticated run is classified by the SDK as `success` with an empty `errors` array
       // and this exact prose — an agent did start, emit text and exit cleanly, so nothing upstream
-      // is lying — and mapping it to `completed` publishes a Round whose whole prose says nobody
-      // reviewed anything, which is the PRD's largest named risk arriving green. There is no error
+      // is lying — and mapping it to `completed` publishes a round whose whole prose says nobody
+      // reviewed anything, which is the spec's largest named risk arriving green. There is no error
       // to propagate: MCP's error channel works and the domain status field works; the
       // misclassification is upstream, so the server has to manufacture the failure from the one
       // observable that differs. It is a FIXED STRING, not a judgment, and it extracts nothing and
@@ -346,7 +348,7 @@ export function createAgentBackend(deps: AgentBackendDeps): ReviewBackend {
         // `eventFromMessage` reports when the SDK's own `num_turns` says zero.
         let assistantTurns = 0;
         for await (const message of deps.query({
-          prompt: reviewPrompt(request.prUrl, request.effort),
+          prompt: reviewPrompt(request.changeRequestUrl, request.effort),
           options,
         })) {
           if (aborted) return;

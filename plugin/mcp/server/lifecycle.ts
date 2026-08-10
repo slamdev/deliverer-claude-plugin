@@ -1,5 +1,5 @@
 /**
- * The review lifecycle: start, poll, cancel (delegated-review issue 04).
+ * The review lifecycle: start, poll, cancel (delegated-review ticket 04).
  *
  * Everything the three tools do that is not protocol lives here — validation, the one-in-flight
  * rule, the caller-supplied handle, the deadline, and the wiring of a backend's events into the
@@ -28,12 +28,12 @@
  *
  * The record has to be failed and not merely abandoned (PR #11 review round 2): releasing the slot
  * alone leaves a `pending` record no eviction and no deadline can ever move, and
- * `agents/code-reviewer.md` tells the actor to retry under the SAME id — so the retry branch would
- * hand that dead handle back for ever, and the actor would poll it every 15 s until the stretch's
+ * `agents/code-reviewer.md` tells that agent to retry under the SAME id — so the retry branch would
+ * hand that dead handle back for ever, and the agent would poll it every 15 s until the run's
  * budget was gone. The wedge would have moved from the slot to the id, not gone.
  *
  * They are untested because both defects are unreachable at the PUBLISHED TOOL SURFACE, which is
- * the only seam the PRD's Testing Decisions permit — the reducer is deliberately not one. The
+ * the only seam the spec's Testing Decisions permit — the reducer is deliberately not one. The
  * scripted double takes one script per server, so two reviews on one server necessarily behave the
  * same way and the second is terminal before a leaked timer could reach it; the shipped agent
  * backend's only synchronous emit is `preparing`, and its failure path goes through a rejected
@@ -58,13 +58,13 @@ export class ToolError extends Error {
 
 /**
  * How long a caller should wait before polling again. A hint, not a rule: nothing enforces it, and
- * the scripted double outruns it by design. It exists because the Review actor is told that nothing
- * arrives unsolicited, and an actor with no interval invents one.
+ * the scripted double outruns it by design. It exists because the `code-reviewer` agent is told
+ * that nothing arrives unsolicited, and an agent with no interval invents one.
  *
- * It must equal the interval the SHIPPED actor sleeps for (`agents/code-reviewer.md`'s `sleep 15`).
+ * It must equal the interval the SHIPPED agent sleeps for (`agents/code-reviewer.md`'s `sleep 15`).
  * Nothing pins the two against each other, so they are kept in step by hand: shipping two numbers
  * guarantees one is wrong, and the one the server published was the dead one — the role never read
- * the hint (grill A6). 15 s is the right number on the measurements: a healthy Round runs ~122 s,
+ * the hint (grill A6). 15 s is the right number on the measurements: a healthy round runs ~122 s,
  * so ~8 polls, where 2 s would have been ~60 and ~1800 at the deadline (`./config.ts`'s
  * `DEADLINE_SEC`).
  */
@@ -93,7 +93,7 @@ export function reviewIdFromTranscriptUri(uri: string): string | null {
 }
 
 export interface StartInput {
-  pr_url: unknown;
+  change_request_url: unknown;
   cwd?: unknown;
   review_id?: unknown;
 }
@@ -151,17 +151,20 @@ function requireString(value: unknown, field: string): string {
  * The change-request URL. Validated for SHAPE only — no forge is named here:
  * a check for a particular host would make the plugin quietly single-forge.
  */
-function validatePrUrl(value: unknown): string {
-  const raw = requireString(value, "pr_url");
-  if (/\s/.test(raw)) throw new ToolError("pr_url must not contain whitespace");
+function validateChangeRequestUrl(value: unknown): string {
+  const raw = requireString(value, "change_request_url");
+  if (/\s/.test(raw))
+    throw new ToolError("change_request_url must not contain whitespace");
   let parsed: URL;
   try {
     parsed = new URL(raw);
   } catch {
-    throw new ToolError(`pr_url is not a URL: "${raw}"`);
+    throw new ToolError(`change_request_url is not a URL: "${raw}"`);
   }
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    throw new ToolError(`pr_url must be an http(s) URL, got "${parsed.protocol}//"`);
+    throw new ToolError(
+      `change_request_url must be an http(s) URL, got "${parsed.protocol}//"`,
+    );
   }
   return raw;
 }
@@ -253,7 +256,7 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
 
   return {
     start(input) {
-      const prUrl = validatePrUrl(input.pr_url);
+      const changeRequestUrl = validateChangeRequestUrl(input.change_request_url);
       const cwd = validateCwd(input.cwd);
       const suppliedId =
         input.review_id === undefined || input.review_id === null
@@ -267,9 +270,9 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
       //
       // …but only while that review is still LIVE (PR #11 grill, agenda A1). Handing back a TERMINAL
       // record made a second round inherit the first one's result whole: both rounds get byte-identical
-      // spawn contexts, so an actor picking the same id twice would report round 1's prose verbatim,
-      // the stretch's `completedRound()` would pass, and the PR would flip ready having had ONE round
-      // — undetectable afterwards, because a round leaves no forge artifact to count.
+      // spawn contexts, so an agent picking the same id twice would report round 1's prose verbatim,
+      // the run's two-completed-rounds bar would pass, and the change request would flip ready having
+      // had ONE round — undetectable afterwards, because a round leaves no forge artifact to count.
       // Terminal records stay addressable through `code_review_status` for their whole TTL; what is
       // refused is re-STARTING under their id, which the retry branch was never for.
       if (suppliedId !== null) {
@@ -289,7 +292,7 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
         const running = deps.store.get(inFlightId);
         // What this says is deliberately NOT "poll it or cancel it" (PR #11 grill, agenda A12). The
         // only shipped caller may take neither: `agents/code-reviewer.md` forbids cancelling
-        // outright, and a round-2 actor does not hold round 1's id to poll. The slot is released by
+        // outright, and a round-2 agent does not hold round 1's id to poll. The slot is released by
         // a terminal event or by the deadline the server owns and nothing else — so the honest,
         // actionable facts are which review holds it, how long it has held it, and that it ends by
         // itself.
@@ -306,7 +309,7 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
       }
 
       const reviewId = suppliedId ?? `rev-${crypto.randomUUID()}`;
-      const record = newRecord({ reviewId, prUrl, cwd }, now());
+      const record = newRecord({ reviewId, changeRequestUrl, cwd }, now());
       deps.store.put(record);
       inFlightId = reviewId;
       // The slot is claimed BEFORE the backend starts, so a backend that emits synchronously finds
@@ -321,7 +324,7 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
         run = deps.backend.start(
           {
             reviewId,
-            prUrl,
+            changeRequestUrl,
             cwd,
             effort: deps.effort,
             model: deps.model,
@@ -334,9 +337,9 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
         if (inFlightId === reviewId) {
           // The record `put` above must not survive as an unmovable `pending` either: it is not
           // terminal, so `store.evict` never drops it; `arm()` was never reached, so no deadline can
-          // fail it; and `agents/code-reviewer.md` tells the actor to retry under the SAME id,
+          // fail it; and `agents/code-reviewer.md` tells that agent to retry under the SAME id,
           // which would hit the retry branch above and hand back this dead handle for ever — an
-          // actor polling a frozen record every 15 s until the stretch's budget is gone. Failing it
+          // agent polling a frozen record every 15 s until the run's budget is gone. Failing it
           // turns the documented retry into what it says it is: the id addresses that review, and
           // that review says it never started (PR #11 review round 2).
           apply(reviewId, {

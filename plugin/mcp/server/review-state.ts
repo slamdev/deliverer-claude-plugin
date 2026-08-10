@@ -1,5 +1,5 @@
 /**
- * The review lifecycle's state and its reducer (delegated-review issue 04).
+ * The review lifecycle's state and its reducer (delegated-review ticket 04).
  *
  * One record per review, one pure function that folds a backend event into it, and one projection
  * that turns a record into what `code_review_status` publishes. Two rules are load-bearing and live
@@ -13,7 +13,7 @@
  *    the exact lie this prevents: an approving verdict beside prose describing two crash-level
  *    bugs. A review that never finished must never be reportable as clean.
  *
- * This module is deliberately **not a seam** (PRD, "Testing Decisions"): every behaviour above is
+ * This module is deliberately **not a seam** (spec, "Testing Decisions"): every behaviour above is
  * observable at the tool surface, and the suite pins it there.
  */
 
@@ -51,8 +51,8 @@ export const isTerminal = (status: ReviewStatus): boolean => TERMINAL_STATUSES.i
  *
  * `costUsd` is the SDK's own list-rate arithmetic rather than an invoice — on a partner provider it
  * says what these tokens would have cost first-party. The token counters are the portable figure,
- * which is why `provider` travels beside them and the Review actor is told to label the dollars
- * with it.
+ * which is why `provider` travels beside them and the `code-reviewer` agent is told to label the
+ * dollars with it.
  */
 export interface ReviewSpend {
   costUsd?: number;
@@ -77,7 +77,7 @@ export type RecordedSpend = {
 
 /**
  * What a review backend may say. Backend-neutral on purpose: the scripted double and the real
- * Agent-SDK run (issue 05) both narrow to this, so the lifecycle has exactly one vocabulary.
+ * Agent-SDK run (ticket 05) both narrow to this, so the lifecycle has exactly one vocabulary.
  *
  * `completed` and `failed` both carry spend, because a round that burned twelve minutes and died
  * spent that money exactly as one that finished did. `cancelled` carries none and must not be given
@@ -94,7 +94,7 @@ export type ReviewEvent =
 /** One review, as the server holds it. Immutable: the reducer returns a new record or the old one. */
 export interface ReviewRecord extends RecordedSpend {
   reviewId: string;
-  prUrl: string;
+  changeRequestUrl: string;
   cwd: string | null;
   status: ReviewStatus;
   /** set ONLY by a completion event — never inferred, so an unfinished run has nothing to report */
@@ -149,12 +149,12 @@ const mergedSpend = (record: RecordedSpend, event: ReviewSpend): RecordedSpend =
 });
 
 export function newRecord(
-  input: { reviewId: string; prUrl: string; cwd: string | null },
+  input: { reviewId: string; changeRequestUrl: string; cwd: string | null },
   now: number,
 ): ReviewRecord {
   return {
     reviewId: input.reviewId,
-    prUrl: input.prUrl,
+    changeRequestUrl: input.changeRequestUrl,
     cwd: input.cwd,
     status: "pending",
     verdict: null,
@@ -238,7 +238,7 @@ export const UNKNOWN = "unknown";
 /** Exactly the nine keys the tool contract names — no more, so a consumer can rely on the shape. */
 export interface ReviewStatusResult {
   reviewId: string;
-  prUrl: string;
+  changeRequestUrl: string;
   status: ReviewStatus;
   verdict: string;
   counts: { findings: number | "unknown" };
@@ -267,8 +267,8 @@ export interface ReviewStatusResult {
   /**
    * Why a non-completed run ended, verbatim; empty when the run is alive or completed. It replaced
    * `transcript` in this payload rather than joining it (grill A6): a deadline-length run costs
-   * ~120 polls, and returning the whole accumulated stream on each one grows the driver's context
-   * with the reviewer's verbosity until the actor hits a ceiling the server's deadline never
+   * ~120 polls, and returning the whole accumulated stream on each one grows the polling agent's
+   * context with the reviewer's verbosity until it hits a ceiling the server's deadline never
    * reaches. The full stream stays available, pull-only, at `code-review://transcript/<id>`.
    */
   reason: string;
@@ -283,7 +283,7 @@ export function project(
   const done = record.status === "completed";
   return {
     reviewId: record.reviewId,
-    prUrl: record.prUrl,
+    changeRequestUrl: record.changeRequestUrl,
     status: record.status,
     verdict: done ? (record.verdict ?? UNKNOWN) : UNKNOWN,
     counts: { findings: done && record.findings !== null ? record.findings : UNKNOWN },

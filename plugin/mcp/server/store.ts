@@ -1,15 +1,15 @@
 /**
- * The review store: `get` / `put` / `list` / `evict`, with TTL eviction (delegated-review issue 04).
+ * The review store: `get` / `put` / `list` / `evict`, with TTL eviction (delegated-review ticket 04).
  *
- * The interface exists so that a daemon deployment is later a swap rather than a rewrite (PRD, "The
+ * The interface exists so that a daemon deployment is later a swap rather than a rewrite (spec, "The
  * MCP server"). Today the only implementation keeps records in memory for the life of the stdio
  * process, which is exactly as long as the session that spawned it.
  *
  * **Only terminal records expire.** A review that is still `pending`, `preparing` or `running` is
  * never evicted, however long it has been quiet: a deep round can go minutes without an event, and
  * evicting one out from under its own poll loop would turn a slow review into an unknown-id error —
- * the one error the Review actor is told means "this handle was never real". The clock therefore
- * starts at the terminal timestamp, not at the last update.
+ * the one error the `code-reviewer` agent is told means "this handle was never real". The clock
+ * therefore starts at the terminal timestamp, not at the last update.
  */
 import type { ReviewRecord } from "./review-state.ts";
 import { isTerminal } from "./review-state.ts";

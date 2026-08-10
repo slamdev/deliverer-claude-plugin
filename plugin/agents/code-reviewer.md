@@ -24,8 +24,9 @@ making a second one, so a resumed run picks up polling where it left off.
 
 1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote.
 2. **Find the change request** for that branch — the URL in your prompt, or the one already open for the branch.
-3. **Start the review.** Call `code_review_start` with `pr_url` (that URL), `cwd` (the repository root from step 1) and
-   `review_id` — `<epic>-review-<n>` starting at `n=1`, using only letters, digits, `.` `_` `:` or `-`. Three outcomes:
+3. **Start the review.** Call `code_review_start` with `change_request_url` (that URL), `cwd` (the repository root from
+   step 1) and `review_id` — `<epic>-review-<n>` starting at `n=1`, using only letters, digits, `.` `_` `:` or `-`.
+   Three outcomes:
     - **A handle** — this round is yours. Keep its `review_id` and its `poll_after_ms`.
     - **Refused, the id already names a finished review** — a round already ran under that id, and its prose belongs to
       that round rather than this one. Raise `n` and call again: one round, one id.

@@ -1,6 +1,6 @@
 /**
  * The server's startup configuration: the plugin's `userConfig` options, substituted into this
- * process's environment by the host through `plugin/.mcp.json` (delegated-review issue 03).
+ * process's environment by the host through `plugin/.mcp.json` (delegated-review ticket 03).
  *
  * Nothing here re-defaults anything. The shipped defaults live in the manifest — measured to reach a
  * server's `env` even when nobody has opened the configuration dialog (ticket 02) — so a second copy
@@ -8,7 +8,7 @@
  * therefore reported ABSENT, not silently replaced with what the manifest happens to say today.
  *
  * That principle governs the three DECLARED options only. The variables added for the review
- * lifecycle (issue 04) — the backend selector, the scripted double's script and the store's TTL —
+ * lifecycle (ticket 04) — the backend selector, the scripted double's script and the store's TTL —
  * are not plugin options at all: the manifest declares exactly three, and these reach the process
  * through the inherited environment rather than through `${user_config.*}`. They therefore have
  * nowhere else to be defaulted, and their defaults live here. That is also why only the declared
