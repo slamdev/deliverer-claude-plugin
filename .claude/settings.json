@@ -14,22 +14,12 @@
     "defaultMode": "bypassPermissions"
   },
   "model": "opus[1m]",
-  "effort": "xhigh",
-  "ultracode": false,
-  "alwaysThinkingEnabled": true,
-  "feedbackSurveyRate": 0,
-  "showClearContextOnPlanAccept": true,
-  "showThinkingSummaries": true,
-  "autoCompactEnabled": false,
-  "spinnerTipsEnabled": false,
-  "skipDangerousModePermissionPrompt": true,
-  "theme": "auto",
   "enableAllProjectMcpServers": true,
   "enabledPlugins": {
     "plugin-dev@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
     "claude-md-management@claude-plugins-official": true,
-    "mattpocock-skills@mattpocock": true
+    "mattpocock-skills@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -37,12 +27,16 @@
         "source": "github",
         "repo": "anthropics/claude-plugins-official"
       }
-    },
-    "mattpocock": {
-      "source": {
-        "source": "github",
-        "repo": "mattpocock/skills"
-      }
     }
-  }
+  },
+  "feedbackSurveyRate": 0,
+  "spinnerTipsEnabled": false,
+  "alwaysThinkingEnabled": true,
+  "ultracode": false,
+  "showClearContextOnPlanAccept": true,
+  "showThinkingSummaries": true,
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "auto",
+  "autoCompactEnabled": false,
+  "effort": "xhigh"
 }

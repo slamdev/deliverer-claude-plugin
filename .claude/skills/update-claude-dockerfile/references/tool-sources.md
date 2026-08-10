@@ -1,106 +1,55 @@
-# Tool sources & changelogs
+# Per-tool notes
 
-Cached "where to look" for every pinned tool in `hacks/claude.dockerfile`. The slow part
-of this skill is reading changelogs; the *avoidable* slow part is each subagent
-rediscovering where a tool's releases and notes even live. This file removes that
-rediscovery: paste the matching **latest-version command**, **changelog URL**, and
-**tag → ARG transform** straight into the subagent's `[source_hint]` so it goes directly
-to fetching and summarising.
+Gotchas for the pinned tools in `hacks/claude.dockerfile` — the things a version number alone
+doesn't tell you. Mechanics live in `../scripts/tools.sh`: it holds which tools are pinned, the
+command that resolves each one's latest version, and the tag → `ARG` transform. What's here is
+only what the script can't decide for you.
 
-The version values shown below (e.g. `v24.16.0`) are illustrative — they show the
-*style* to preserve, not a target. The command always tells you the real latest.
+Most tools need nothing beyond the sweep. The three below do.
 
-> **Last verified:** 2026-08-06 — every command below was run and returned the then-current
-> pinned version. If a host reorganises its API, fix the entry here so the fix is shared.
+> **Last verified:** 2026-08-10 — every source resolved to the then-current pin.
+> When a host reorganises its API, fix the matching `kind` branch in `tools.sh` so the fix is shared.
 
-## Keeping this file in sync
+## node — nodejs.org, not GitHub
 
-This file only stays useful if it mirrors the Dockerfile's pinned tools. Whenever a run
-notices the Dockerfile has **gained** a pinned tool absent from this file, or **lost** one
-that's still here, fix it in the same pass:
+The Dockerfile downloads the static tarball from `nodejs.org/dist/${NODE_VERSION}/...`, so a
+GitHub tag is not what's fetched, and the tarball's existence is what makes a version real.
 
-- New tool → add it to the GitHub table (if it's a plain GitHub `releases/latest` tool) or
-  give it its own block (if it needs a non-GitHub source or special handling). Record its
-  latest-version command, changelog URL, and tag → ARG transform.
-- Removed tool → delete its entry.
+The sweep **stays on whatever major the pin already tracks** (v24 LTS today), because crossing a
+major is a deliberate call, not a routine bump. When the next LTS ships, raising the line is a
+decision to put to the user — say so in the report rather than moving the pin silently.
 
-A tool missing from this file isn't fatal — the subagent falls back to source discovery —
-but it's slow, which is exactly what this file exists to prevent. The skill's
-`SKILL.md` tells you to do this.
+Per-major changelog: <https://github.com/nodejs/node/blob/main/doc/changelogs/CHANGELOG_V24.md>.
+The sweep drops each release's per-commit dump and keeps its Notable Changes; for the narrative
+behind a major, <https://nodejs.org/en/blog>.
 
-## GitHub tools (standard `releases/latest`)
+## claude (Claude Code) — npm index, separate binary host
 
-For every tool in this table, the latest **stable** version is:
+Three things diverge here:
 
-```sh
-curl -fsSL https://api.github.com/repos/<owner>/<repo>/releases/latest | jq -r .tag_name
-```
+- **`latest` is the dist-tag to follow.** There is also a `stable` tag that commonly lags `latest`
+  by a few patches. Don't switch to it — just don't be alarmed when the two disagree.
+- **The binary host lags npm** by minutes after a publish. The sweep HEAD-checks
+  `downloads.claude.ai/claude-code-releases/<version>/linux-x64/claude` before proposing a bump, so
+  an `error:artifact not downloadable yet` row means the release is real but not yet mirrored —
+  re-run shortly, or pin the newest version that does resolve.
+- **The changelog skips patch numbers** now and then (no `## 2.1.164` section, say). A gap is
+  expected, not a fetch failure.
 
-`releases/latest` already excludes pre-releases and drafts. The **changelog** for each tag
-is that release's **body**: browse `https://github.com/<owner>/<repo>/releases`, or read
-`.body` from `https://api.github.com/repos/<owner>/<repo>/releases` to walk the whole range
-in one fetch.
+Changelog: <https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md>.
 
-| Tool | ARG | `owner/repo` | Tag → ARG value | Changelog notes |
-|------|-----|--------------|-----------------|-----------------|
-| jq | `JQ_VERSION` | `jqlang/jq` | `jq-1.8.1` → **as-is** (keep `jq-`) | |
-| yq | `YQ_VERSION` | `mikefarah/yq` | `v4.53.3` → **as-is** (keep `v`) | |
-| buildx | `BUILDX_VERSION` | `docker/buildx` | `v0.34.1` → **as-is** (keep `v`) | |
-| ripgrep | `RG_VERSION` | `BurntSushi/ripgrep` | `15.1.0` → **as-is** (no prefix) | Root `CHANGELOG.md` is richer than the release body |
-| gh | `GH_VERSION` | `cli/cli` | `v2.93.0` → **strip leading `v`** → `2.93.0` | URL re-adds the `v` |
-| delta | `DELTA_VERSION` | `dandavison/delta` | `0.19.2` → **as-is** (no prefix) | |
-| fzf | `FZF_VERSION` | `junegunn/fzf` | `v0.73.1` → **strip leading `v`** → `0.73.1` | Root `CHANGELOG.md`; URL re-adds the `v` |
+## docker — static tarball, both arches
 
-## Special cases (non-GitHub or extra handling)
+The Dockerfile pulls the **static** CLI tarball, so a published tarball is authoritative and the
+GitHub tag isn't. The image builds for amd64 and arm64 and the two arch directories can publish
+out of step, so the sweep confirms the aarch64 tarball exists before proposing the version it
+found under x86_64.
 
-### node (Node.js) — nodejs.org
+Engine release notes cover the CLI, and they're HTML with no raw source — the sweep prints
+<https://docs.docker.com/engine/release-notes/> for you to `WebFetch` rather than fetching it.
 
-- **ARG:** `NODE_VERSION`, `v24.16.0` (keep the leading `v`). The Dockerfile pins the **v24 LTS** line and
-  downloads the static tarball from `nodejs.org/dist/${NODE_VERSION}/...`, so the GitHub tag isn't what's fetched.
-- **Latest stable (within the pinned v24 LTS line):**
-  ```sh
-  curl -fsSL https://nodejs.org/dist/index.json \
-    | jq -r 'map(select(.version | startswith("v24.")))[0].version'
-  ```
-  `index.json` is sorted newest-first, so the first `v24.*` entry is the latest v24 release. Crossing a major
-  (to v26 when it ships as the next LTS) is a deliberate call — don't do it silently; note it instead.
-- **Changelog:** <https://github.com/nodejs/node/blob/main/doc/changelogs/CHANGELOG_V24.md> (per-major
-  changelog; narrative notes at <https://nodejs.org/en/blog>).
+## ripgrep and fzf — richer changelog than the release body
 
-### claude (Claude Code) — Anthropic
-
-- **ARG:** `CLAUDE_VERSION`, bare `2.1.170` (also appears as a path segment in the download URL).
-- **Latest stable:** `curl -fsSL https://registry.npmjs.org/@anthropic-ai/claude-code | jq -r '."dist-tags".latest'`
-  The `latest` dist-tag is the one to use. Note there is also a `stable` dist-tag that commonly lags
-  `latest` by a few patch releases — don't switch to it, just don't be alarmed when the two disagree.
-- **Verify it's downloadable before bumping** — the binary host can lag npm by a few minutes:
-  ```sh
-  curl -fsIL -o /dev/null -w '%{http_code}\n' \
-    https://downloads.claude.ai/claude-code-releases/<version>/linux-x64/claude
-  ```
-  must be `200`. If not yet published, use the newest version that is.
-- **Changelog:** <https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md>
-  (raw markdown, one `##` section per version — easy to walk the range). The changelog
-  occasionally skips a patch number (e.g. no `2.1.164` section); a 404 there is expected, not an error.
-
-### docker (Docker CLI, static binary) — download.docker.com
-
-- **ARG:** `DOCKER_CLI_VERSION`, bare `29.5.3`. The Dockerfile pulls the **static** tarball, so the
-  GitHub tag isn't authoritative — a published tarball is.
-- **Latest stable:**
-  ```sh
-  curl -fsSL https://download.docker.com/linux/static/stable/x86_64/ \
-    | grep -oE 'docker-[0-9]+\.[0-9]+\.[0-9]+\.tgz' | sort -V | tail -1
-  ```
-  → highest `docker-<version>.tgz`. The `X.Y.Z`-only regex skips `-rc`/`-beta`/`-tp` and the
-  `docker-rootless-extras-*` siblings. Confirm the same version also exists under
-  `.../static/stable/aarch64/` (the build targets both arches).
-- **Changelog:** <https://docs.docker.com/engine/release-notes/> (Engine notes cover the CLI).
-
-## Not pinned — do not add rows for these
-
-- **`debian:13.3-slim`** base image — out of scope; apt manages its packages.
-- Anything installed via **`apt-get`**, and anything still pulled with a literal `latest` tag, or a ref
-  that tracks a **moving** branch head / tag (something that resolves differently over time). A git ref
-  pinned to an immutable **commit SHA** would be in scope (its own special-case block + the commit-pinned
-  prompt variant in `SKILL.md`), but the Dockerfile currently has none.
+Both keep a root `CHANGELOG.md` that's fuller than what the GitHub release body carries. The sweep
+reads release bodies uniformly; if one comes back thin, `WebFetch` the raw `CHANGELOG.md` from the
+repo's default branch before writing the summary.
