@@ -4,6 +4,7 @@
   "owner": {
     "name": "slamdev"
   },
+  "allowCrossMarketplaceDependenciesOn": ["claude-plugins-official"],
   "plugins": [
     {
       "name": "deliverer",
