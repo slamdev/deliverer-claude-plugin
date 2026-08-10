@@ -126,7 +126,8 @@ what moved.
 │   │   ├── code-reviewer.md               drives one review round via the MCP server
 │   │   └── comments-addresser.md          unresolved comments → fixes, declines, hand-offs
 │   ├── mcp/                               the tools server — ships UNBUILT (Node strips the types)
-│   │   ├── launch.mjs                     what .mcp.json runs; resolves the staged copy
+│   │   ├── launch.mjs                     what .mcp.json runs; resolves the staged copy, starts the
+│   │   │                                  install hook when nothing else has
 │   │   ├── server/index.ts                the three tools + the transcript resource
 │   │   ├── server/lifecycle.ts            start / poll / cancel, one-in-flight, the deadline
 │   │   ├── server/review-state.ts         the record, the reducer, the published projection
@@ -245,6 +246,26 @@ environment file is **required even scripted** (its absence is refused at `code_
 no configured identity must never run), and `DELIVERER_REVIEW_SCRIPT` takes JSON
 (`{"events":[{"afterMs":10,"kind":"completed",…}]}`) if you need a timeline other than the default happy path, such as a
 failed or cancelled round.
+
+### Exercising the install by hand
+
+`launch.mjs` is the other piece nothing runs for you, and it decides whether a session has a review tool at all. Point
+it at a throwaway data directory and it behaves exactly as it does under the host:
+
+```
+CLAUDE_PLUGIN_DATA=$(mktemp -d) node plugin/mcp/launch.mjs < /dev/null
+```
+
+Empty, that installs the dependencies, publishes the source and starts the server. The states worth walking after any
+change to the launcher or the hook, each of which reports differently: an install already present (starts at once), one
+still running when the wait runs out (`DELIVERER_REVIEW_INSTALL_WAIT_MS=1000` against an empty directory), one that runs
+and fails (`PATH` without `npm`), a hook that cannot be started (`chmod -x` it — the launcher retries through `bash`,
+which is the only recovery from an install that dropped the executable bit), and the launcher's own installer switched
+off (`DELIVERER_REVIEW_SELF_INSTALL=0`, which is also what keeps a rig from starting a real `npm ci`).
+
+Two launchers and a hook against one empty data directory is the case the install's lock exists for, and it is worth
+re-running whenever either side of it moves: exactly one `npm ci`, one stamp, no `ERR_MODULE_NOT_FOUND` and no lock left
+behind.
 
 ## Shipping
 

@@ -54,8 +54,9 @@ You are needed for the conversation at the start and the merge at the end. Every
 2. **Point the code review at credentials.** Claude Code asks for the plugin's options when you enable it, and you can
    change them later from `/plugin`. The one that must be set is the **code review environment file** — see below.
 
-3. **Start a new session.** The first session on a new machine sets the plugin up in the background and can take a
-   minute; if a review fails in that very first session, starting another one fixes it.
+3. **Give it a few seconds.** The first time on a new machine, the plugin sets itself up in the background — from the
+   session you installed in, or from the next one you start, whichever comes first. If a review fails before that
+   finishes, starting another session fixes it.
 
 4. **Tell the skills where your issues live** — once per repository:
 
@@ -146,6 +147,11 @@ change is high-stakes, turn it up.
 **"the review round will not work in this session"** — Node or npm was not on the `PATH` when the session started, or
 the very first session on this machine started faster than the setup behind it. Check `node --version` (22.18+ or
 23.6+), then start a new session.
+
+**"nothing is installed at …"** — the tools server started before its setup had produced anything, so this session
+has no review tool. The sentence right after it says which case you are in, and they need different things: the setup is
+still running (start another session once it settles), it ran and failed (its own output is immediately above and says
+why), or nothing could start it at all (the plugin looks incompletely installed — reinstall it).
 
 **Reviews are refused, mentioning the environment file** — the path is wrong, the file is unreadable, it is not in
 `.env` format, or everything in it is commented out. Fix the file and start a new session; it is read at session start.
