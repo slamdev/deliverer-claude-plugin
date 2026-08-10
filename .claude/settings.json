@@ -19,13 +19,20 @@
     "plugin-dev@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
     "claude-md-management@claude-plugins-official": true,
-    "mattpocock-skills@claude-plugins-official": true
+    "mattpocock-skills@claude-plugins-official": true,
+    "context7@context7-marketplace": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
       "source": {
         "source": "github",
         "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    "context7-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "upstash/context7"
       }
     }
   },
