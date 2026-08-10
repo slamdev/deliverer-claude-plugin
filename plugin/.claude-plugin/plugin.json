@@ -1,6 +1,12 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "deliverer",
+  "dependencies": [
+    {
+      "name": "mattpocock-skills",
+      "marketplace": "claude-plugins-official"
+    }
+  ],
   "userConfig": {
     "code_review_effort": {
       "type": "string",
