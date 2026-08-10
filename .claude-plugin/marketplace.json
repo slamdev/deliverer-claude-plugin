@@ -4,7 +4,9 @@
   "owner": {
     "name": "slamdev"
   },
-  "allowCrossMarketplaceDependenciesOn": ["claude-plugins-official"],
+  "allowCrossMarketplaceDependenciesOn": [
+    "claude-plugins-official"
+  ],
   "plugins": [
     {
       "name": "deliverer",
@@ -12,7 +14,13 @@
         "source": "git-subdir",
         "url": "slamdev/deliverer-claude-plugin",
         "path": "plugin"
-      }
+      },
+      "dependencies": [
+        {
+          "name": "mattpocock-skills",
+          "marketplace": "claude-plugins-official"
+        }
+      ]
     }
   ]
 }
