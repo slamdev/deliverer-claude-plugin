@@ -138,7 +138,7 @@ what moved.
 ├── .claude-plugin/marketplace.json      the marketplace entry (git-subdir → plugin/)
 ├── CONTEXT.md                           the glossary / ubiquitous language
 ├── docs/
-│   ├── adrs/                              architectural decisions (empty today)
+│   ├── adrs/                              architectural decisions — fifteen, all on the plugin itself
 │   ├── specs/<slug>/                      specs and tickets for work on THIS repo
 │   └── agents/                            how the contributor skills behave here
 │       ├── issue-tracker.md                → local markdown under docs/specs/, never gh issue

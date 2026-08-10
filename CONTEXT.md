@@ -85,6 +85,11 @@ _Avoid_: ruling, judgement, review
 The evidence a verdict, a declined finding or a reopened ADR stands on: a spec line, an ADR, a caller that breaks, a
 concrete failure scenario. Never taste. _Avoid_: reason, justification, rationale
 
+**ADR**:
+A repository's record of one architectural decision — hard to reverse, surprising without context, and the result of a
+real trade-off. Standing grounds: a verdict or a declined review finding may rest on one, and a spec that contradicts
+one reopens it explicitly rather than overriding it in silence. _Avoid_: design doc, decision record, RFC
+
 **Directive**:
 The change an `override` verdict states, for a fix wave to implement as written. _Avoid_: instruction, request, fix
 

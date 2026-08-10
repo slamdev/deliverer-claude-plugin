@@ -1,61 +1,68 @@
 # deliverer-claude-plugin
 
-A Claude Code plugin. `plugin/` is the product — everything published lives there, nothing outside it ships.
-`CONTRIBUTING.md` is the contributor's manual (structure, the contribution flow, the container, CI); `CONTEXT.md` is the
-glossary.
+A Claude Code plugin: `plugin/` is the product, and everything outside it exists to build that.
 
-## What ships, and when
+- **`CONTRIBUTING.md`** — read for the contribution flow, the `./claude` container, the project tree, or what CI does
+  and does not check; and before changing how contribution itself works.
+- **`CONTEXT.md`** — the glossary. Read before naming a domain concept in prose, a commit, a spec or a ticket.
 
-- Only `plugin/` reaches users. `.claude-plugin/marketplace.json` publishes that subdirectory from `main` — no build, no
-  artifact, no version field, no release step. A merge inside `plugin/` is live on a user's next plugin update; a change
-  anywhere else never reaches them.
-- **Never** add `deliverer` to `enabledPlugins` in `.claude/settings.json`, and never run `/deliverer:*` against this
-  repo. Its absence is deliberate — see CONTRIBUTING.md § No dogfooding. Contribute with the `mattpocock-skills` flow
-  (`grill-with-docs` → `to-spec` → `to-tickets` → `implement`) instead.
+## What ships
+
+Only `plugin/` reaches users. `.claude-plugin/marketplace.json` publishes that subdirectory straight from the default
+branch — no build, no artifact, no version field and no release step to update. A merge inside `plugin/` is live on a
+user's next plugin update; a change anywhere else never reaches them.
+
+## No dogfooding
+
+Contribute with the `mattpocock-skills` flow — `grill-with-docs` → `to-spec` → `to-tickets` → `implement`. `deliverer`
+stays out of `enabledPlugins` in `.claude/settings.json` and `/deliverer:*` never runs against this repo: the absence is
+deliberate, and CONTRIBUTING.md § No dogfooding gives the three reasons.
 
 ## The tools server (`plugin/mcp/`)
 
-- The only checks that exist — run both from `plugin/mcp` (`npm ci` first if `node_modules/` is missing):
+The only checks that exist — no test suite, and the whole of CI — run from `plugin/mcp` (`npm ci` first if
+`node_modules/` is missing):
 
-  ```
-  npm run typecheck && npm run lint
-  ```
+```
+npm run typecheck && npm run lint
+```
 
-  There is no test suite. No markdown, manifest or shell script is checked anywhere. Behaviour is verified by hand.
-- The server **ships unbuilt** — Node strips the types at runtime, so `tsc --noEmit` is the only thing enforcing what
-  makes that possible: no enums, namespaces, decorators or parameter properties (`erasableSyntaxOnly`); import the
-  extension the file really has (`./config.ts`, never `./config.js`); mark every type-only import `type`
-  (`verbatimModuleSyntax`). Break one and it fails in a user's session, not here.
-- Exercise the review lifecycle with the **scripted backend** — a canned event timeline, no model and no money. Command
-  in CONTRIBUTING.md § What CI does not check.
-- Comments in `server/` carry the reasoning, citing the grill item or review round a decision came from, and
-  `lifecycle.ts` marks defensive code that must not be deleted. Don't strip them as dead code.
+Everything else is verified **by hand**: markdown, the manifests, the shell hooks, and the server's own behaviour. When
+behaviour moves, exercise the review lifecycle against the **scripted backend** — a canned event timeline, no model and
+no money — before calling the change done. CONTRIBUTING.md § What CI does not check has the command.
+
+The server **ships unbuilt**: Node's type stripping runs the TypeScript as-is, so `tsc --noEmit` is the only thing
+holding up the three options that make that possible. `plugin/mcp/tsconfig.json` names them and what each one prevents;
+a violation gets past you and surfaces in a user's session.
+
+Comments in `server/` carry the reasoning, citing the grill item or review round a decision came from. Keep them,
+including the blocks `lifecycle.ts` marks as defensive.
 
 ## Writing
 
-- **Use `CONTEXT.md`'s words**: change request (never PR/MR), ticket (never issue/task), round, fix wave, fork,
-  assumption, verdict. Every entry lists the synonyms it displaces under `_Avoid_`. A term you need that is missing is a
-  signal — either the language is invented, or it is a real gap for `/mattpocock-skills:domain-modeling`.
+- **Use the glossary's words**: change request (not PR), ticket (not issue), fork, assumption, verdict, round, fix wave.
+  `CONTEXT.md` lists the synonyms each term displaces under `_Avoid_`. A term you need that is missing is a signal —
+  either the language is invented, or it is a real gap for `/mattpocock-skills:domain-modeling`.
+- **The doc stack cites one way.** `CONTEXT.md` sits at the bottom, `docs/adrs/` above it, `docs/specs/` on top: a
+  document cites downward only. `CONTEXT.md` cites nothing — it defines the words *spec*, *ticket* and *ADR*, and names
+  no particular one. An ADR uses glossary terms and names no spec or ticket. A spec or ticket links the ADR that settled
+  a decision instead of restating it, which keeps the ADR the one place that decision changes.
+- ADRs in `docs/adrs/` are rare: hard to reverse, surprising without context, **and** the result of a real trade-off.
+  Miss any of the three and skip it.
 - `plugin/skills/*/SKILL.md` and `plugin/agents/*.md` are prose written to be read by a model, in a deliberate register.
   Use `/mattpocock-skills:writing-for-agents` when you touch them.
 - Wrapping, enforced by nothing: server TypeScript ~100 columns, markdown 120.
-- Commit subjects are plain lowercase imperative ("cleanup the docs"). This repo does **not** use the
-  `Ticket:` / `Assumptions:` commit format — that is what the plugin imposes on repositories it delivers into.
-- ADRs in `docs/adrs/` are rare: hard to reverse, surprising without context, **and** the result of a real trade-off.
-  Miss any of the three and skip it.
+- Commit subjects are plain lowercase imperative ("cleanup the docs"), and stay bare. The `Ticket:` / `Assumptions:`
+  format is what the plugin imposes on the repositories it delivers into, not what this repo uses.
 
-## Agent skills
+## How the contributor skills behave here
 
-### Issue tracker
-
-Issues and specs live as markdown files under `docs/specs/<feature-slug>/` in this repo. See
-`docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-The five canonical triage roles, used verbatim as `Status:` values on each issue file. See
-`docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context: one `CONTEXT.md` plus `docs/adrs/` at the repo root. See `docs/agents/domain.md`.
+- **Ask with `AskUserQuestion`.** Every question to the human goes through that tool — the grilling rounds above all,
+  and including where a skill's own text asks its questions in prose, which this rule overrides. Open-ended is not an
+  exemption: put the plausible answers in the options and let the free-text escape carry anything else. Up to four
+  questions per call, and `multiSelect` when the answers are not exclusive.
+- **`docs/agents/issue-tracker.md`** — read when a skill says publish, fetch or triage an issue, spec or ticket: they
+  live as markdown under `docs/specs/`, never as `gh issue`.
+- **`docs/agents/triage-labels.md`** — read when setting an issue's `Status:` line; five canonical roles, used verbatim.
+- **`docs/agents/domain.md`** — read when exploring the codebase or recording a decision; single-context, one
+  `CONTEXT.md` plus `docs/adrs/`.
