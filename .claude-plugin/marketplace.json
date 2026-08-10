@@ -10,11 +10,7 @@
   "plugins": [
     {
       "name": "deliverer",
-      "source": {
-        "source": "git-subdir",
-        "url": "slamdev/deliverer-claude-plugin",
-        "path": "plugin"
-      },
+      "source": "./plugin",
       "dependencies": [
         {
           "name": "mattpocock-skills",
