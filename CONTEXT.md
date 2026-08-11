@@ -85,6 +85,11 @@ _Avoid_: ruling, judgement, review
 The evidence a verdict, a declined finding or a reopened ADR stands on: a spec line, an ADR, a caller that breaks, a
 concrete failure scenario. Never taste. _Avoid_: reason, justification, rationale
 
+**Claim**:
+A statement of fact a document rests on that nobody has checked, carried with the path that would settle it. Never a
+finding: the reader's own first-hand look is what makes it a fact or kills it. _Avoid_: fact, finding, established,
+given
+
 **ADR**:
 A repository's record of one architectural decision — hard to reverse, surprising without context, and the result of a
 real trade-off. Standing grounds: a verdict or a declined review finding may rest on one, and a spec that contradicts
@@ -182,3 +187,8 @@ comments. Never a task list, and never what a finding says. _Avoid_: state, prog
 **Frontier**:
 The open questions a grilling still has to close. Stage 1 of a refinement is done when it is empty and the human
 confirms a shared understanding. _Avoid_: backlog, queue, open items
+
+**Sweep**:
+A fact-finding dispatch a grilling makes to settle a question of fact, carrying the subject it was asked to settle. A
+question on the frontier that turns on that subject waits for the sweep; every other question is asked now. _Avoid_:
+sub-agent, exploration, lookup, research

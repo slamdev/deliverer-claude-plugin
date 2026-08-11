@@ -23,18 +23,26 @@ beside it.
 
 1. **Read the brief in full.** Every decision it records is **settled** — you write it up rather than deciding it again.
    Every **fork** it leaves open stays open: it is the human's to close, and it rides into the spec as an open question.
+   Every **claim** it marks is a statement of fact nobody has checked, and step 3 is where you settle it.
 2. **Explore the repo** for the state of the code the spec lands on, reading the project's glossary and the ADRs that
    touch the area first. Use the glossary's own vocabulary throughout the spec. Where the spec has to contradict an ADR,
    say so with the grounds for reopening it rather than overriding it silently.
-3. **Sketch the seams** the feature gets tested at. Prefer an existing seam to a new one, and the highest seam to a
+3. **Settle every claim the brief marks**, down the path it names beside each one. Your own first-hand look is what
+   makes a claim a fact or kills it — it is the one thing in the brief you check rather than write up. A claim your
+   reading kills stays out of the spec and goes to your report as a correction: a decision was resting on it, and the
+   human who made that decision needs it back. One you can settle neither way goes to your report too, rather than into
+   the spec as a fork — a fork is a decision a reasonable engineer could go either way on, and a claim is a question of
+   fact nobody chose. You are done when every claim the brief marks is a fact you write up, a correction in your report,
+   or an unknown in it.
+4. **Sketch the seams** the feature gets tested at. Prefer an existing seam to a new one, and the highest seam to a
    lower one; the fewer seams across the codebase the better, and one is ideal. Where a new seam is unavoidable, propose
    it at the highest point it can sit and carry it to your report — nobody here approves it, so it reaches the human
    through you.
-4. **Write the spec to the template below and publish it** where the project's conventions put a spec, carrying the
+5. **Write the spec to the template below and publish it** where the project's conventions put a spec, carrying the
    triage label those conventions name for work ready for an agent — where the project names no vocabulary, no label is
    owed. You are done when the published spec carries every section of the template, and every decision and open fork
    from step 1.
-5. **Report**, as below.
+6. **Report**, as below.
 
 ## Spec template
 
@@ -104,5 +112,7 @@ Whoever reads this has your report and nothing else.
 - the spec's location — the dispatch after yours is handed it
 - the seams you named, and any new one you proposed
 - every open fork the spec carries, one line each — those are still the human's
+- every **claim** the brief marked that your reading killed, with what you found instead, and every one you could settle
+  neither way
 - every ADR the spec contradicts, with its grounds, or that it contradicts none
 - every term the spec needed that the glossary does not carry

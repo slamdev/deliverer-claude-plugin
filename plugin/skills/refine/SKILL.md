@@ -22,10 +22,12 @@ one agent dispatch — **one stage, one task** (**Progress**) — and the dispat
 what it names is what you know. The writing goes out because it wants a fresh context reading the repo first-hand rather
 than yours, spent on the interview. That is what makes the brief load-bearing: a **writer** meets the codebase for
 itself but never the conversation, so a decision the brief leaves out is one the writer closes again on its own —
-silently, and maybe the other way. Where a report leaves you unsure, or a writer's document is wrong, re-dispatch that
-stage naming what it got wrong rather than editing the document yourself: the writer holds the context the document
-needs. Yours is the work no agent does: grill the idea, write the brief, dispatch the two writers in order, read their
-reports, and hand the epic to the human.
+silently, and maybe the other way. Where a report leaves you unsure, or a writer's document is wrong, put the stage back
+to the writer naming what it got wrong rather than editing the document yourself: the writer holds the context the
+document needs. **Continue that writer while it is still addressable** — it is still holding the context that wrote the
+document, so the correction costs a patch where a cold dispatch pays for the whole write again; dispatch a cold one once
+it is not. Yours is the work no agent does: grill the idea, write the brief, dispatch the two writers in order, read
+their reports, and hand the epic to the human.
 
 **Resume.** This idea may be part-refined — by an earlier run of your own that was interrupted, or by hand. The
 artifacts are what say how far it got: the brief on disk says stage 2 ran, a published spec says stage 3 ran, published
@@ -38,13 +40,19 @@ spec's location instead — once the spec is published it is the record, so the 
 the conversation behind it. Paths rather than contents: a writer handed the path opens the whole document for itself,
 and reads the repo first-hand on top of it.
 
+**Sequencing.** A stage the next one reads is unfinished until its **report** is in hand, and an acknowledgement is not
+a report: a writer you continue may answer you at once and finish its work in the background, and until the report lands
+that stage has not run. Wait for the report itself. A `sleep` or a poll stands in for none — pick a duration too short
+and you ask again, too long and the epic waits on your guess.
+
 ## Stages
 
 1. **Grill the idea** — run the `mattpocock-skills:grilling` skill on it, with `mattpocock-skills:domain-modeling`
    alongside, so terms and decisions land in the project's glossary and ADRs as they crystallise. Those two skills own
-   how the interview runs, apart from how a question reaches the human, which is **Asking** below; when either is not
-   installed, report that and stop rather than improvising an interview. You are done on grilling's own bar: the
-   frontier empty, and the user's confirmation that you have reached a shared understanding.
+   how the interview runs, apart from how a question reaches the human, which is **Asking** below, and what a **sweep**
+   in flight holds back, which is **Sweeps** below; when either is not installed, report that and stop rather than
+   improvising an interview. You are done on grilling's own bar: the frontier empty, and the user's confirmation that
+   you have reached a shared understanding.
 2. **Write the brief** — as **The brief** below. You are done when a fresh agent could carry the design forward from it
    without the conversation.
 3. **Write the spec** — dispatch `spec-writer`. It publishes the spec to the project's issue tracker. Keep the location
@@ -63,6 +71,28 @@ answers become the options, the free-text escape carries anything else, and your
 Four questions is one call's limit and a frontier is often wider. Carry the rest into further calls rather than trimming
 the frontier to fit — the human answers in batches, and every question the round holds still reaches them.
 
+## Sweeps
+
+Dispatching a **sweep** never holds up the interview, and a question the sweep is about to answer never reaches the
+human before it lands. Both hold at once, because the subject you sent the sweep out to settle is what separates them.
+
+Name that subject as you dispatch — the question of fact the sweep is out there to close. You hold it for the rest of
+the interview and write it down nowhere: not in the brief, which hands the spec writer the design rather than the
+interview's bookkeeping, and not in the task list, which carries one task per stage and nothing else.
+
+- **Test every pending question against that subject.** A question that turns on it — one you cannot answer well without
+  what the sweep is out to find — waits for the sweep, and every other question goes into the round now. That is a check
+  you can run rather than a guess: the question needs those facts or it does not.
+- **An empty round leaves the sweep as the only thing to wait for.** When the hold takes every question out of the
+  round, wait for the sweep rather than asking anyway. That breaks nothing: what never waits on a sweep is the question
+  the sweep does not touch, and this round holds none of those.
+- **A sweep that contradicts a settled decision reopens it.** Where its facts undercut the premise the human decided on,
+  say what changed and put the decision back to them as a **fork**. An answer carried on a premise that turned out false
+  is a decision silently assumed, which is the one thing this stage exists to prevent.
+
+The two interview skills keep the rest — how a round is paced, and how it reads. Yours is where a sweep meets the
+**frontier**, and nothing beyond it.
+
 ## The brief
 
 The brief is the whole **hand-off** of stage 1: whoever writes the spec has it and nothing else of the conversation.
@@ -73,6 +103,13 @@ publishes — as `<epic-slug>-brief.md`, so a later run can find the one you lef
 - every decision the grilling settled, each with the grounds it was settled on
 - every **fork** the grilling left open, and that it is the human's to close
 - the artifacts the session landed or touched — glossary entries, ADRs, prior specs, code — by path, never copied in
+- every **claim** the design rests on that the session never checked, each with the path that would settle it — a fact
+  the human handed you, a precedent you took to generalise, a tool you took to have a feature
+
+Those are written as claims and never as findings. The writer's own first-hand look is what turns one into a fact or
+kills it, and a claim dressed as a fact is the one nobody thinks to check. So the brief carries what the session decided
+and what it never checked, and never a finding of its own — no section of facts the session established, nothing at all
+the writer is handed to take on trust.
 
 Redact secrets and personal data: the brief outlives the session, on a disk nobody is watching.
 
@@ -92,6 +129,6 @@ The human who ran this sat through stage 1, so your report is what came of it ra
 - how many tickets, and which of them can start immediately
 - every fork the grilling left open, one line each — those are the human's to close
 - every glossary entry and ADR the session landed
-- what the writers raised for a human — a seam newly proposed, an ADR the spec contradicts, a user story no ticket
-  covers, a term the glossary does not carry
+- what the writers raised for a human — a seam newly proposed, an ADR the spec contradicts, a **claim** of yours a
+  writer killed or could settle neither way, a user story no ticket covers, a term the glossary does not carry
 - the call that delivers the epic: `/deliverer:build <epic location>`
