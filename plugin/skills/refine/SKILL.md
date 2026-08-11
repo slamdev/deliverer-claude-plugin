@@ -42,9 +42,9 @@ and reads the repo first-hand on top of it.
 
 1. **Grill the idea** — run the `mattpocock-skills:grilling` skill on it, with `mattpocock-skills:domain-modeling`
    alongside, so terms and decisions land in the project's glossary and ADRs as they crystallise. Those two skills own
-   how the interview runs; when either is not installed, report that and stop rather than improvising an interview. You
-   are done on grilling's own bar: the frontier empty, and the user's confirmation that you have reached a shared
-   understanding.
+   how the interview runs, apart from how a question reaches the human, which is **Asking** below; when either is not
+   installed, report that and stop rather than improvising an interview. You are done on grilling's own bar: the
+   frontier empty, and the user's confirmation that you have reached a shared understanding.
 2. **Write the brief** — as **The brief** below. You are done when a fresh agent could carry the design forward from it
    without the conversation.
 3. **Write the spec** — dispatch `spec-writer`. It publishes the spec to the project's issue tracker. Keep the location
@@ -53,6 +53,15 @@ and reads the repo first-hand on top of it.
    order. Keep the count and the locations it reports.
 5. **Hand the epic over** — report as below, and name the call that delivers it: `/deliverer:build <epic location>`, the
    location being where the spec and its tickets sit together, as the project's conventions have it.
+
+## Asking
+
+Every question the grilling puts to the human goes through the `AskUserQuestion` tool, including where grilling's own
+text formats its questions as numbered prose — this overrides that. Open-ended is not an exemption: the plausible
+answers become the options, the free-text escape carries anything else, and your recommended answer leads the list.
+
+Four questions is one call's limit and a frontier is often wider. Carry the rest into further calls rather than trimming
+the frontier to fit — the human answers in batches, and every question the round holds still reaches them.
 
 ## The brief
 
