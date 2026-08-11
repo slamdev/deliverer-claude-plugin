@@ -123,9 +123,11 @@ no section that hands the writer facts to trust.
   catch the observed miss: a merge gate and an attestation policy both turn on whether the build tool has a snapshot
   mode, which is exactly what that sweep was asked for.
 - **D2. The subject is named at dispatch and persisted nowhere.** The orchestrator names what it asked the sweep to
-  settle when it dispatches it, and tests pending questions against what it named. It is not written to the brief — the
-  brief is a hand-off to the spec writer, which has no use for interview bookkeeping — and not to the task list, which
-  is one task per stage and nothing else.
+  settle when it dispatches it, and tests pending questions against what it named. Nothing durable is owed: a resumed
+  run never needs the subject, because a run interrupted mid-interview redoes the interview — the refinement
+  conversation ADR 0013 already excepts from its durable-mark rule. It stays out of the brief, a hand-off to the spec
+  writer that has no use for interview bookkeeping, and out of the task list, where a task per sweep would fill the
+  human's window with that bookkeeping through the longest stage of the run.
 - **D3. An empty round means waiting is correct, and the text says so.** When the hold leaves nothing to ask, the sweep
   is the only thing left to wait for. The non-blocking property being protected is that questions the sweep does not
   touch never wait for it; when it touches all of them, nothing is delayed that the property covers. This is stated

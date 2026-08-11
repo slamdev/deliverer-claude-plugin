@@ -30,18 +30,20 @@ beside it.
 3. **Settle every claim the brief marks**, down the path it names beside each one. Your own first-hand look is what
    makes a claim a fact or kills it — it is the one thing in the brief you check rather than write up. A claim your
    reading kills stays out of the spec and goes to your report as a correction: a decision was resting on it, and the
-   human who made that decision needs it back. One you can settle neither way goes to your report too, rather than into
-   the spec as a fork — a fork is a decision a reasonable engineer could go either way on, and a claim is a question of
-   fact nobody chose. You are done when every claim the brief marks is a fact you write up, a correction in your report,
-   or an unknown in it.
+   human who made that decision needs it back. That decision goes with it — it rides into the spec as an open question
+   marked the human's to close, beside the forks the brief left open, rather than written up as settled on a premise you
+   just disproved. One you can settle neither way goes to your report too, rather than into the spec as a fork — a fork
+   is a decision a reasonable engineer could go either way on, and a claim is a question of fact nobody chose. You are
+   done when every claim the brief marks is settled first-hand, killed, or recorded as unsettleable.
 4. **Sketch the seams** the feature gets tested at. Prefer an existing seam to a new one, and the highest seam to a
    lower one; the fewer seams across the codebase the better, and one is ideal. Where a new seam is unavoidable, propose
    it at the highest point it can sit and carry it to your report — nobody here approves it, so it reaches the human
    through you.
 5. **Write the spec to the template below and publish it** where the project's conventions put a spec, carrying the
    triage label those conventions name for work ready for an agent — where the project names no vocabulary, no label is
-   owed. You are done when the published spec carries every section of the template, and every decision and open fork
-   from step 1.
+   owed. You are done when the published spec carries every section of the template, every claim that survived step 3
+   written up as the fact it now is, and every decision and open fork from step 1 — a decision whose claim step 3 killed
+   counts as carried when it is there as an open question rather than as a settled one.
 6. **Report**, as below.
 
 ## Spec template
@@ -113,6 +115,6 @@ Whoever reads this has your report and nothing else.
 - the seams you named, and any new one you proposed
 - every open fork the spec carries, one line each — those are still the human's
 - every **claim** the brief marked that your reading killed, with what you found instead, and every one you could settle
-  neither way
+  neither way — or that every claim it marked survived
 - every ADR the spec contradicts, with its grounds, or that it contradicts none
 - every term the spec needed that the glossary does not carry

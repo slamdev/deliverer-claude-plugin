@@ -2,7 +2,7 @@
 
 Status: ready-for-agent
 
-**Blocked by:** 01 — A stage is unfinished until its report is in hand.
+**Blocked by:** None — can start immediately.
 
 **What to build:** A human being interviewed stops answering questions that a **sweep** already in flight is about to
 invalidate. Before asking anything, the orchestrator tests each pending question against the subject it sent the sweep

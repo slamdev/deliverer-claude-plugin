@@ -40,23 +40,28 @@ spec's location instead — once the spec is published it is the record, so the 
 the conversation behind it. Paths rather than contents: a writer handed the path opens the whole document for itself,
 and reads the repo first-hand on top of it.
 
-**Sequencing.** A stage the next one reads is unfinished until its **report** is in hand, and an acknowledgement is not
-a report: a writer you continue may answer you at once and finish its work in the background, and until the report lands
-that stage has not run. Wait for the report itself. A `sleep` or a poll stands in for none — pick a duration too short
-and you ask again, too long and the epic waits on your guess.
+**Sequencing.** A stage you dispatched in this run is unfinished until its **report** is in hand, and an acknowledgement
+is not a report: a writer you continue may answer you at once and finish its work in the background, and until the
+report lands that stage has not run. Wait for the report itself. A `sleep` or a poll stands in for none — pick a
+duration too short and you ask again, too long and the epic waits on your guess. A **dispatch** you continued that never
+reports is dispatched cold instead — the same move at its higher price, and it keeps the run going where stopping hands
+the human a half-written epic to re-run.
 
 ## Stages
 
 1. **Grill the idea** — run the `mattpocock-skills:grilling` skill on it, with `mattpocock-skills:domain-modeling`
    alongside, so terms and decisions land in the project's glossary and ADRs as they crystallise. Those two skills own
    how the interview runs, apart from how a question reaches the human, which is **Asking** below, and what a **sweep**
-   in flight holds back, which is **Sweeps** below; when either is not installed, report that and stop rather than
-   improvising an interview. You are done on grilling's own bar: the frontier empty, and the user's confirmation that
-   you have reached a shared understanding.
+   holds back and what it reopens, which is **Sweeps** below; when either is not installed, report that and stop rather
+   than improvising an interview. You are done on grilling's own bar: the frontier empty, and the user's confirmation
+   that you have reached a shared understanding.
 2. **Write the brief** — as **The brief** below. You are done when a fresh agent could carry the design forward from it
    without the conversation.
 3. **Write the spec** — dispatch `spec-writer`. It publishes the spec to the project's issue tracker. Keep the location
-   it reports.
+   it reports. A **claim** its reading killed took a decision down with it: say what the writer found and put that
+   decision back to the human as a **fork** before stage 4 runs, then put the stage back to the writer to fold their
+   answer into the published spec. The tickets are cut from the spec once it is the record, so an answer that reaches
+   stage 4 any other way is one the record does not carry.
 4. **Break it into tickets** — dispatch `tickets-writer`. It publishes one ticket per slice, numbered in dependency
    order. Keep the count and the locations it reports.
 5. **Hand the epic over** — report as below, and name the call that delivers it: `/deliverer:build <epic location>`, the
@@ -86,6 +91,9 @@ interview's bookkeeping, and not in the task list, which carries one task per st
 - **An empty round leaves the sweep as the only thing to wait for.** When the hold takes every question out of the
   round, wait for the sweep rather than asking anyway. That breaks nothing: what never waits on a sweep is the question
   the sweep does not touch, and this round holds none of those.
+- **A landed sweep's subject holds nothing.** Once its **report** is in hand, every question that subject was holding
+  goes into the next round, with the premise corrected where the sweep's facts changed it. The hold lasts as long as the
+  flight and no longer — a subject that outlives its sweep takes questions off the frontier that nothing is coming for.
 - **A sweep that contradicts a settled decision reopens it.** Where its facts undercut the premise the human decided on,
   say what changed and put the decision back to them as a **fork**. An answer carried on a premise that turned out false
   is a decision silently assumed, which is the one thing this stage exists to prevent.
@@ -108,8 +116,8 @@ publishes — as `<epic-slug>-brief.md`, so a later run can find the one you lef
 
 Those are written as claims and never as findings. The writer's own first-hand look is what turns one into a fact or
 kills it, and a claim dressed as a fact is the one nobody thinks to check. So the brief carries what the session decided
-and what it never checked, and never a finding of its own — no section of facts the session established, nothing at all
-the writer is handed to take on trust.
+and what it never checked, and no section of facts the session established, however that section is headed. What a
+**sweep** settled rides in the **grounds** beside the decision it settled, where the contract already carries evidence.
 
 Redact secrets and personal data: the brief outlives the session, on a disk nobody is watching.
 
@@ -118,8 +126,10 @@ Redact secrets and personal data: the brief outlives the session, on a disk nobo
 The task list is the human's window on the run. **One stage, one task** — one each for stages 1 to 4, since stage 5 is
 the report itself. Create all four as the run opens, named from the stage they serve and prefixed with the epic's slug
 so two epics can share a session: `<slug>: grill the idea`. Mark a task `in_progress` as you enter its stage and
-`completed` once its artifact exists — for stages 3 and 4, once you have read the writer's report. A resumed run opens
-the same four, with the stages whose artifacts it found created `completed`.
+`completed` once its artifact exists — for stages 3 and 4, once you have read the writer's report. Putting a stage back
+to its writer flips its task to `in_progress` again, and `completed` once the corrected report lands: a correction is
+the same stage rather than a new one, so it gets no task of its own. A resumed run opens the same four, with the stages
+whose artifacts it found created `completed`.
 
 ## What to report
 
@@ -130,5 +140,6 @@ The human who ran this sat through stage 1, so your report is what came of it ra
 - every fork the grilling left open, one line each — those are the human's to close
 - every glossary entry and ADR the session landed
 - what the writers raised for a human — a seam newly proposed, an ADR the spec contradicts, a **claim** of yours a
-  writer killed or could settle neither way, a user story no ticket covers, a term the glossary does not carry
+  writer killed or could settle neither way, a user story no ticket covers, a term the glossary does not carry — or
+  that every claim you marked survived the writer's reading
 - the call that delivers the epic: `/deliverer:build <epic location>`

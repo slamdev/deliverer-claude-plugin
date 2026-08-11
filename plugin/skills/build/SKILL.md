@@ -36,11 +36,11 @@ before it named about the **gates** that bit and what satisfied them, accumulati
 start on work not yet done, so it goes to implementers and nowhere else: every other agent meets the repo first-hand,
 which is what its own judgement must rest on.
 
-**Sequencing.** A stage the next one reads is unfinished until its **report** is in hand, and an acknowledgement is not
-a report: a dispatch may answer you at once and finish its work in the background, and until the report lands that stage
-has not run. That holds inside stage 1 too, where the next implementer starts on the last one's report. Wait for the
-report itself. A `sleep` or a poll stands in for none — pick a duration too short and you dispatch again, too long and
-the epic waits on your guess.
+**Sequencing.** A stage you dispatched in this run is unfinished until its **report** is in hand, and an acknowledgement
+is not a report: a dispatch may answer you at once and finish its work in the background, and until the report lands
+that stage has not run. That holds inside stage 1 too, where the next implementer starts on the last one's report. Wait
+for the report itself. A `sleep` or a poll stands in for none — pick a duration too short and you dispatch again, too
+long and the epic waits on your guess.
 
 ## Stages
 

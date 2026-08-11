@@ -2,7 +2,8 @@
 
 Status: ready-for-agent
 
-**Blocked by:** 02 — Hold the questions a sweep in flight could reprice.
+**Blocked by:** 01 — A stage is unfinished until its report is in hand; 02 — Hold the questions a sweep in flight could
+reprice.
 
 **What to build:** The brief stops handing the **writer** anything to take on trust. It names the statements the design
 rests on that the session never verified, each with the path that would settle it, and it names them as **claims** —

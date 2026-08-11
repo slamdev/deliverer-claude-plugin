@@ -86,9 +86,8 @@ The evidence a verdict, a declined finding or a reopened ADR stands on: a spec l
 concrete failure scenario. Never taste. _Avoid_: reason, justification, rationale
 
 **Claim**:
-A statement of fact a document rests on that nobody has checked, carried with the path that would settle it. Never a
-finding: the reader's own first-hand look is what makes it a fact or kills it. _Avoid_: fact, finding, established,
-given
+A statement of fact a document rests on that nobody has checked. Never a finding: the reader's own first-hand look is
+what makes it a fact or kills it. _Avoid_: fact, finding, established, given
 
 **ADR**:
 A repository's record of one architectural decision — hard to reverse, surprising without context, and the result of a
@@ -165,8 +164,8 @@ execution
 
 **Orchestrator**:
 The agent that reads the epic, dispatches every stage and keeps the task list — and never forms a view on a finding, a
-design, or whether the work is good. Read-only, and its only moves are re-dispatch or report, never fix. _Avoid_:
-coordinator, driver, manager
+design, or whether the work is good. Read-only: what it does with a stage that went wrong is put it back to an agent —
+continued or cold — or report it, never fix it. _Avoid_: coordinator, driver, manager
 
 **Dispatch**:
 One agent invocation. It carries paths rather than contents, so the agent opens the document for itself and meets the
