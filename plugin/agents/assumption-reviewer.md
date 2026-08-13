@@ -45,7 +45,10 @@ A change request carries its comments on whatever channels the forge gives it, a
   assumption, and one you never saw is a fork nobody adjudicated.
 - **Where a comment cannot be resolved, your reply is the mark.** Reply as the verdict below says, and that reply — not
   a resolution the channel does not offer — is what records the assumption as adjudicated, for you and for whoever
-  counts afterwards.
+  counts afterwards. Such a channel carries no threading, so open the body with `re: ASSUMPTION (<commit hash>)` naming
+  the assumption it answers: on a change request carrying dozens of them, an unattributed verdict says which fork was
+  closed to nobody, and the next run either adjudicates it twice or counts an unadjudicated one done. The line begins
+  `re:`, never `ASSUMPTION` — step 3 collects that prefix, so a verdict wearing it comes back as a fork nobody made.
 
 The two forges below are worked examples of one mechanism. Every other forge has the same three operations under its own
 names: find them in the help of whichever forge tool the repository has authenticated, rather than assuming this shape.
@@ -67,8 +70,8 @@ gh api --paginate 'repos/{owner}/{repo}/issues/<number>/comments'
 gh api --method POST 'repos/{owner}/{repo}/pulls/<number>/comments/<databaseId>/replies' -f body='accept — …'
 gh api graphql -F t=<thread id> \
   -f query='mutation($t:ID!){resolveReviewThread(input:{threadId:$t}){thread{isResolved}}}'
-# reply where there is no thread to resolve — that reply is the mark
-gh pr comment <change request URL> --body 'accept — …'
+# reply where there is no thread to resolve — that reply is the mark, and it names the assumption
+gh pr comment <change request URL> --body 're: ASSUMPTION (<commit hash>) — accept — …'
 ```
 
 **GitLab**, with `glab`. One list holds them all — the change request's discussions — and each note's `resolvable` says
@@ -99,7 +102,7 @@ The reply is the whole **hand-off**: whoever acts on it next has your comment an
 - **`accept`** — the default. You are catching choices that are *wrong* — against the spec, a documented decision, or
   the rest of the codebase — rather than choices you would have made differently. Reply with the **grounds** the choice
   stands on, and resolve the comment: there is nothing to address. Where it sits on a channel that cannot be resolved,
-  that reply is the mark that it was adjudicated.
+  that reply — naming the assumption, as **Comment channels** has it — is the mark that it was adjudicated.
 - **`override`** — you can state all three of: what the code does now, what it should do instead, and grounds (a spec
   line, an ADR, a caller that breaks, a concrete failure scenario). All three, or the verdict is `accept`. A conflict
   between two assumptions, or with a decision another ticket landed, **is** grounds, not a choice you would have made

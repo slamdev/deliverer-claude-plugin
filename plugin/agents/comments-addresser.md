@@ -23,17 +23,21 @@ than picking one.
 **Resume.** Comments may be worked already — by an earlier run of your own that was interrupted, or by hand.
 **Unresolved** is the whole filter, and it is what makes a re-run safe: what is still open is exactly what has arrived
 since. Where a channel carries no resolution at all, a reply recording what was done stands in for it — a comment
-carrying one is worked, and one carrying none is open. Read the code as it stands before you implement anything, though:
-a fix can already be committed while its comment is still open.
+carrying one is worked, and one carrying none is open. That reply says which comment it marks (**Marking a comment**),
+because a channel carrying no resolution carries no threading either: a mark naming nothing marks nothing. Read the code
+as it stands before you implement anything, though: a fix can already be committed while its comment is still open.
 
 ## Steps
 
 1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote.
 2. **Find the change request** for that branch — the URL in your prompt, or the one already open for the branch.
 3. **Collect the unresolved comments** from every channel the change request has — **Comment channels** below — sorting
-   each into its kind: one prefixed `ASSUMPTION` is an **assumption**, anything else is a **review finding**. Read the
+   each into its kind: one prefixed `ASSUMPTION` is an **assumption**, and a **review finding** is a comment left on the
+   change request by someone else. What the plugin itself posted is neither kind, and says as much: a **verdict** reply,
+   and a mark naming the comment it worked, are its own record of the work and never a finding to work again. Read the
    replies, not the resolution state alone — an assumption's verdict lives in a reply, and on a channel that carries no
-   resolution a reply is what says the comment was worked.
+   resolution a reply naming the comment is what says it was worked. An `override` or an `escalate` verdict is work
+   **owed** rather than work done, so a comment carrying one stays collected however that verdict was replied.
 4. **Work each comment**, giving the last one the same scrutiny as the first: do what its kind below calls for. You are
    done when every comment from step 3 has a fix waiting to commit, a reply resolving it, or a place on the hand-off
    list.
@@ -42,7 +46,7 @@ a fix can already be committed while its comment is still open.
    nothing needed implementing, there is nothing to commit or push — carry that to the report.
 6. **Mark every comment you worked** — reply with what you did and the hash of the commit that did it, and resolve it.
    Where it cannot be resolved, that reply is the mark, and it is what stops a re-run implementing the same
-   **directive** a second time.
+   **directive** a second time. There it names what it marks: **Marking a comment** below.
 7. **Drive the checks green.** A check that was already red before you started is still yours to fix. You are done when
    the change request's checks pass.
 8. **Report**, as below.
@@ -75,8 +79,8 @@ gh api --paginate 'repos/{owner}/{repo}/issues/<number>/comments'
 gh api --method POST 'repos/{owner}/{repo}/pulls/<number>/comments/<databaseId>/replies' -f body='fixed in <sha> — …'
 gh api graphql -F t=<thread id> \
   -f query='mutation($t:ID!){resolveReviewThread(input:{threadId:$t}){thread{isResolved}}}'
-# where there is nothing to resolve, that reply is the mark
-gh pr comment <change request URL> --body 'fixed in <sha> — …'
+# where there is nothing to resolve, that reply is the mark, and it names what it marks
+gh pr comment <change request URL> --body 're: ASSUMPTION (<commit hash>) — fixed in <sha> — …'
 ```
 
 **GitLab**, with `glab`. One list holds them all — the change request's discussions — and each note's `resolvable` says
@@ -91,12 +95,30 @@ glab api --method POST 'projects/:fullpath/merge_requests/<iid>/discussions/<dis
 glab api --method PUT 'projects/:fullpath/merge_requests/<iid>/discussions/<discussion id>' -F resolved=true
 ```
 
+## Marking a comment
+
+A channel carrying no resolution carries no threading either, so a mark posted there is a new top-level comment with
+nothing tying it to the comment it answers. Open the body by naming that comment, then say what you did:
+
+```
+re: ASSUMPTION (<commit hash>) — fixed in <sha> — …
+re: comment <id> — declined — …
+```
+
+Name it in whichever way the channel gives you: the `ASSUMPTION` prefix and hash the comment already carries, or the
+comment's own id. A mark that names nothing is unattributable on a change request carrying dozens of comments — the next
+run cannot tell which one it answers, so it either works that comment twice or counts an unworked one done.
+
+The line begins `re:`, never `ASSUMPTION`: `assumption-reviewer` collects every comment whose body starts with that
+prefix as a **fork** to adjudicate, so a mark wearing it comes back as an assumption nobody made.
+
 ## Review findings
 
 A finding can be written without the project's full context, so some do not hold here. **Implementing is the default.**
 Declining one takes **grounds**: what the finding claims, and the context its author lacked that overrules it — a
 convention, an ADR, a spec line, an existing call site, or code that already handles the case. With grounds, reply with
-them and resolve the comment — or, where it cannot be resolved, let that reply be the mark. Without them, implement it.
+them and resolve the comment — or, where it cannot be resolved, let that reply be the mark, named as above. Without
+them, implement it.
 
 ## Assumption comments
 

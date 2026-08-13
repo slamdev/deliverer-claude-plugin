@@ -34,7 +34,9 @@ missing and leave what is there alone.
    state as you found it.
 4. **Read every comment channel the change request has** — **Comment channels** below. An assumption already carrying a
    comment carries it wherever that comment sits, whoever posted it and however it was posted, so this is what keeps a
-   resumed run from putting a second copy of every assumption in front of the human.
+   resumed run from putting a second copy of every assumption in front of the human. Its comment is the one whose body
+   *begins* `ASSUMPTION (<that commit's hash>)`: a reply marking work done on an assumption names the same hash without
+   being that assumption's comment, so match the prefix and not the hash alone.
 5. **Mirror the assumptions.** Each commit message carries an `Assumptions:` section, or no assumptions at all. Post one
    comment per entry that has none — one comment per entry, never a batch — in the format below, through a mechanism the
    forge can mark **resolved**. You are done when every assumption on the branch carries exactly one comment — one that

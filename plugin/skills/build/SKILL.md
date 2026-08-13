@@ -24,12 +24,17 @@ read each report, keep the task list current, and flip the change request ready 
 **Resume.** This epic may be part-delivered — by an earlier run of your own that was interrupted, or by hand. The epic
 branch and the change request are what say how far it got: the commits carrying a `Ticket:` line name the tickets
 implemented, and one without it is not a ticket; whether a change request is open for the branch says whether stage 2
-ran; an `ASSUMPTION` comment carrying a **verdict** reply says stage 3 adjudicated it; unresolved comments say a **fix
-wave** is still owed. Where a comment sits somewhere that cannot be marked **resolved** at all, a reply recording the
-work done is that mark, so one carrying such a reply is not work still owed — otherwise a delivered epic reads as
-perpetually owing a wave. Start from the earliest stage whose evidence you cannot find — re-dispatching any agent but
-`code-reviewer` is safe, because each one resumes on its own and adds only what is missing. `code-reviewer` is the
-exception: see **Rounds**.
+ran. Start from the earliest stage whose evidence you cannot find — re-dispatching any agent but `code-reviewer` is
+safe, because each one resumes on its own and adds only what is missing. `code-reviewer` is the exception: see
+**Rounds**.
+
+**The adjudication and the fix waves leave you no evidence to read.** What they leave behind is a comment's replies, and
+telling a **verdict** that owes a change from a reply recording the change made is a judgement about what those replies
+say — not a mechanical fact, so not yours. A resumed run therefore counts no comments: dispatch `assumption-reviewer`
+and `comments-addresser` again and let each read its own filter. One meeting a fully adjudicated change request replies
+nothing and reports it; one meeting no unresolved comment commits nothing and reports that. It is the rule **Rounds**
+already applies to a round — spend the dispatch whenever it is in doubt, because a spent dispatch costs time while a
+skipped wave flips a change request ready with an **override** unimplemented and an **escalation** nobody has seen.
 
 **Dispatch.** Every dispatch carries the epic, and — once each exists — the change request's URL and the **epic branch's
 name**, so none of them has to find it again. Neither exists at the first stage-1 dispatch: that implementer creates the
