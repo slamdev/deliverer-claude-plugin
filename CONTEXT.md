@@ -149,7 +149,8 @@ answer for a figure nobody measured, and never zero. _Avoid_: cost, usage, price
 
 **Gate**:
 Whatever the repository enforces before a commit lands. Work a ticket asked for is never undone to turn one green; a
-gate red for work outside the ticket stays red and goes in the report. _Avoid_: guard, pre-commit, local checks
+gate red for work outside the ticket stays red, and is recorded on the commit as well as in the report. _Avoid_: guard,
+pre-commit, local checks
 
 **Check**:
 Whatever the forge runs on a change request; **green** is all of them passing. A fix wave owns them whether or not it
