@@ -163,6 +163,40 @@ function costliestModel(
 }
 
 /**
+ * One token counter summed across every `modelUsage` entry, or nothing when no entry reported it.
+ *
+ * This is where a DELEGATING review's tokens are, and the reason the counters are read here at all
+ * (build-run-defects ticket 06). The platform's review command does its work through sub-agents, so
+ * the result message's own aggregate counters come back as zeros — one observed round published
+ * `$5.01` beside a confident `0` while the per-model map held ~48,200 output and ~344,100
+ * cache-creation tokens. Every entry in that map is real spend: the cheap model a subtask ran on
+ * cost money exactly as the one the round was configured with did, so the entries SUM rather than
+ * one of them winning. That is the opposite of `costliestModel` above, which picks a single entry
+ * because a label cannot be added up — one map, two readings, both deliberate.
+ *
+ * The field names here are the map's own camelCase ones and NOT the aggregate counters'
+ * snake_case: the two shapes ride on the same message and are narrowed separately for that reason.
+ */
+function summedTokens(modelUsage: unknown, field: string): number | undefined {
+  let total: number | undefined;
+  for (const value of Object.values(asRecord(modelUsage) ?? {})) {
+    const count = asNumber(asRecord(value)?.[field]);
+    if (count === undefined) continue;
+    total = (total ?? 0) + count;
+  }
+  return total;
+}
+
+/**
+ * A counter nobody measured and a counter measured at zero are the same answer: unknown.
+ * `CONTEXT.md` defines **spend** so that unknown is the honest answer for a figure nobody measured
+ * and never zero, and a confident zero beside a real dollar figure reads as a cheap review.
+ * Dropping the zero here rather than publishing it is also what lets the source behind it stand in.
+ */
+const measured = (count: number | undefined): number | undefined =>
+  count === undefined || count === 0 ? undefined : count;
+
+/**
  * What a result message says the round spent. Narrowed STRUCTURALLY, like `AgentQueryMessage`
  * above: this module imports nothing from the SDK, not even a type, so every field is checked for
  * its shape here rather than trusted to a declaration that is not in scope.
@@ -170,17 +204,38 @@ function costliestModel(
  * Every field it cannot find it leaves absent. Nothing is defaulted to zero — a counter the SDK
  * did not report is one nobody measured, and `code-reviewer` is told to report unknown as unknown.
  *
- * `turns` is not here, because it alone has a fallback that needs the caller's own count.
+ * The token counters have two sources, and the source is chosen ONCE PER MESSAGE rather than once
+ * per counter: the per-model usage whenever the message carries any, which is where a delegating
+ * review's tokens survive, and the aggregate counters otherwise, which are correct whenever the
+ * review did its own work and are all a result reporting no per-model usage has.
+ *
+ * Choosing per counter mixed the two scopes into one row. The SDK declares all four per-model
+ * counters as required numbers on a non-optional map, so a real zero ARRIVES rather than being
+ * absent, and `measured()` inside a `??` turned that zero into a source switch: 137 aggregate input
+ * tokens published beside 1,840,000 per-model cache reads, with nothing on the row saying which
+ * figure came from where (build-run-defects review, finding 13). Choosing first makes that row
+ * unreachable instead of merely unlikely, and leaves `measured()` the one job its own comment
+ * describes. Nothing reads a transcript off disk for any of it: the counters are already on the
+ * message this function is handed.
+ *
+ * `turns` is not here, because it alone falls back to something not on the message.
  */
 function spendFromResult(message: AgentQueryMessage): ReviewSpend {
   const usage = asRecord(message.usage);
   const model = costliestModel(message.modelUsage);
+  const perModel = asRecord(message.modelUsage);
+  // An empty map is a message with no per-model usage, not a message reporting four zeros.
+  const fromPerModel = perModel !== undefined && Object.keys(perModel).length > 0;
+  const tokens = (perModelField: string, aggregateField: string): number | undefined =>
+    measured(
+      fromPerModel ? summedTokens(perModel, perModelField) : asNumber(usage?.[aggregateField]),
+    );
   return {
     costUsd: asNumber(message.total_cost_usd),
-    inputTokens: asNumber(usage?.input_tokens),
-    outputTokens: asNumber(usage?.output_tokens),
-    cacheReadTokens: asNumber(usage?.cache_read_input_tokens),
-    cacheCreationTokens: asNumber(usage?.cache_creation_input_tokens),
+    inputTokens: tokens("inputTokens", "input_tokens"),
+    outputTokens: tokens("outputTokens", "output_tokens"),
+    cacheReadTokens: tokens("cacheReadInputTokens", "cache_read_input_tokens"),
+    cacheCreationTokens: tokens("cacheCreationInputTokens", "cache_creation_input_tokens"),
     agentDurationMs: asNumber(message.duration_ms),
     model: model?.key,
     provider: asString(model?.entry.provider),
@@ -215,14 +270,15 @@ export function eventFromMessage(
   if (message.type === "result") {
     const spend: ReviewSpend = {
       ...spendFromResult(message),
-      // `||`, not `??`. A round measured at $0.65 over 170s reported `num_turns: 0`, and 0 is a
-      // finite number — so `asNumber` accepts it and the reducer's own `?? record.turns` never falls
-      // back, publishing a zero that looks trustworthy beside the two fields the `code-reviewer`
-      // agent is told to distrust. The assistant messages this run actually yielded are the honest
-      // floor, so they stand in whenever the SDK's own number is absent OR zero. The token counters
-      // get no such fallback: nothing here has a second way to count them, so absent is what they
-      // report.
-      turns: asNumber(message.num_turns) || assistantTurns,
+      // `measured()` does the same work here that it does for the token counters. A round measured
+      // at $0.65 over 170s reported `num_turns: 0`, and 0 is a finite number — so `asNumber` accepts
+      // it and the reducer's own `?? record.turns` never falls back, publishing a zero that looks
+      // trustworthy beside the two fields the `code-reviewer` agent is told to distrust. The
+      // assistant messages this run actually yielded are the honest floor, so they stand in whenever
+      // the SDK's own number is absent OR zero. What is particular to `turns` is only where its
+      // fallback comes FROM — the caller's own count, not a second set of counters on the message —
+      // which is why this one line sits here rather than in `spendFromResult`.
+      turns: measured(asNumber(message.num_turns)) ?? assistantTurns,
     };
     if (message.subtype === "success") {
       const summary = typeof message.result === "string" ? message.result : "";

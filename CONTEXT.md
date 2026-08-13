@@ -123,9 +123,14 @@ unready
 Taking a change request out of draft — earned by two completed rounds and green checks, and by nothing else. Escalations
 and declined findings ride into the report rather than holding it. _Avoid_: approved, signed off, done
 
+**Channel**:
+One of the places a forge carries a change request's comments. Which channels exist, and whether one can mark a comment
+resolved, are the forge's own. _Avoid_: stream, surface, location
+
 **Comment**:
-One resolvable conversation on a change request. Unresolved is the whole filter a fix wave works from. _Avoid_: thread,
-note, discussion
+One conversation on a change request, carried on one of its channels. Unresolved is the whole filter a fix wave works
+from: the channel's own resolution state where it has one, and carrying no reply recording the work where it has none.
+_Avoid_: thread, note, discussion
 
 **Assumption comment**:
 A comment carrying one assumption verbatim from the commit that recorded it, marked out from every other comment by an
@@ -149,7 +154,8 @@ answer for a figure nobody measured, and never zero. _Avoid_: cost, usage, price
 
 **Gate**:
 Whatever the repository enforces before a commit lands. Work a ticket asked for is never undone to turn one green; a
-gate red for work outside the ticket stays red and goes in the report. _Avoid_: guard, pre-commit, local checks
+gate red for work outside the ticket stays red, and is recorded on the commit as well as in the report. _Avoid_: guard,
+pre-commit, local checks
 
 **Check**:
 Whatever the forge runs on a change request; **green** is all of them passing. A fix wave owns them whether or not it
@@ -180,8 +186,9 @@ A dispatched agent that meets the codebase first-hand but never the conversation
 load-bearing. _Avoid_: author, generator
 
 **Bearings**:
-What a resumed run reads its position from: the artifacts on disk, the commits on the branch, the change request and its
-comments. Never a task list, and never what a finding says. _Avoid_: state, progress, checkpoint
+What a resumed run reads its position from: the artifacts on disk, the commits on the branch, and whether a change
+request is open. Never a task list, never what a finding says, and never a comment's replies — a stage whose only
+evidence would be those is dispatched again instead. _Avoid_: state, progress, checkpoint
 
 **Frontier**:
 The open questions a grilling still has to close. Stage 1 of a refinement is done when it is empty and the human
