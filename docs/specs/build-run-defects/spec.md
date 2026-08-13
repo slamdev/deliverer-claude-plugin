@@ -226,10 +226,18 @@ Progress goes to the task list that already exists for it.
 - **D9. Every agent that counts or matches a comment reads every channel the forge has.** This is what makes the
   under-count impossible rather than merely unlikely, and it is what keeps a change request opened before this change
   working: its comments are on the old channel, and a creator that cannot see them posts duplicates while a collector
-  that cannot see them skips work.
-- **D10. Where a comment cannot be resolved, the reply is the mark, and three places say so** — the reviewer's `accept`
-  path, the addresser's done-mark, and the orchestrator's bearings. The third is load-bearing: without it, a delivered
-  epic whose comments can never be resolved reads as permanently owing a fix wave.
+  that cannot see them skips work. **Amended by the review wave** — the orchestrator is not one of the agents this
+  covers, because it no longer counts comments at all: see D10. The three agents that do also read the reviews' own
+  summary bodies, a channel this decision missed, and their reads are paginated and field-filtered, without which
+  "reads every channel" was satisfied by a call that returned the first hundred of them.
+- **D10. Where a comment cannot be resolved, the reply is the mark, and two places say so** — the reviewer's `accept`
+  path and the addresser's done-mark. **Amended by the review wave**, which cut the third: on a channel with no
+  resolution the reply is also the only evidence the orchestrator could read, and a **verdict** owing a change is
+  indistinguishable from a reply recording one without judging what the two say. So the orchestrator reads no comments,
+  and a resumed run dispatches the adjudication and the fix wave again — which answers the failure this decision was
+  guarding better than the bearings clause did, since a delivered epic now has its wave dispatched, finds nothing, and
+  flips ready. The mark also carries a back-reference now: a reply naming nothing is unattributable on a change request
+  carrying dozens of comments, so an interrupted run cannot tell which one it answers.
 - **D11. Nothing verifies the mechanism at write time.** A proof on the first comment before posting the rest was
   considered and declined: the worked examples plus reply-as-mark absorb a wrong verb, and the check costs a round-trip
   on every run to catch a class of error the examples exist to prevent.
@@ -267,7 +275,12 @@ Progress goes to the task list that already exists for it.
   gone wrong is the path least likely to work.
 - **D21. A gate left red for work outside the ticket is recorded on the commit as well as in the report.** The commit is
   the durable channel that rescued the observed run six times; this makes the last fact that lived only in a report
-  durable too. The glossary entry for **gate** already says so.
+  durable too. The glossary entry for **gate** already says so. **Amended by the review wave** — a trailer with no
+  reader is not durable, only written down, so the orchestrator reads `Gates:` off the branch and its report names them.
+  It
+  reads them every run rather than only when a report is missing, on the grounds this section already gives for the
+  checks. The creator also learned where `Assumptions:` ends, since both sections number their entries the same way and
+  the only parser of the format was never told there was a second one.
 - **D22. ADR-0015 is amended to cover the forge as well as the tree.** The amendment is not a substitute for the skill
   text: no file under `plugin/` cites an ADR and `docs/adrs/` does not ship, so a rule recorded only there reaches no
   runtime agent.
@@ -287,9 +300,13 @@ Progress goes to the task list that already exists for it.
 ### Bounds on the change
 
 - **D25. Two ADR amendments and no new ADR.** Both amendments exist because a shipped rule would otherwise contradict
-  the decision above it. Neither change clears the bar for a new one.
+  the decision above it. Neither change clears the bar for a new one. **Amended by the review wave** — three amendments
+  now. ADR-0013 listed the change request's comments as what a resumed run reads its position from, which is what D10 as
+  amended removes. Still no new ADR: extending a precedent that ADR already sets for rounds is not a fresh trade-off.
 - **D26. The six changes stay independent.** Three of them touch the delivery skill, in different sentences, so they can
-  land in any order.
+  land in any order. **Spent by the review wave** — its clusters rewrite prose that three of the six tickets share, and
+  one of them reverses a clause another landed. The wave's own commits are ordered instead: the mark's identity first,
+  because the worked commands and the boundary rule both edit prose it rewrites.
 - **D27. Register and wrapping are preserved per file** — load-bearing bold, no hedging, second person in the agents and
   the skills, and each file's prevailing column width.
 - **D28. Nothing outside this repository.** The harness defects and the infrastructure fault the run also exposed are
@@ -315,6 +332,13 @@ what it proves here is that the change did not regress the lifecycle around it.
 - More than one per-model entry sums, while the model label stays the costliest entry.
 - Every other field the extraction already produces is unchanged — the dollar estimate, the provider, the canonical
   model, the turn count and its existing fallback.
+
+**Added by the review wave**, because the property above was satisfiable by a version that mixes two scopes in one row:
+
+- A result message carrying a genuine per-model zero **beside** real aggregate counters publishes the per-model reading
+  for every counter, and unknown for the zeroed ones — never one counter from each source. The source is chosen once per
+  message, not once per counter.
+- An empty per-model map is a message with no per-model usage, and falls back whole.
 
 **Prior art:** none in-repo, because there is no test suite — `plugin/mcp/package.json` has exactly two scripts. So the
 check is a throwaway script that imports the function, feeds it hand-written messages and prints what comes back, run by
@@ -366,6 +390,34 @@ and a test an agent can evaluate first-hand, rather than a procedure nobody can 
 
 ## Further Notes
 
+### The review wave, and why it amended this spec instead of writing tickets
+
+Every ticket here was implemented and every criterion ticked before a code review over `main...HEAD` raised 15 findings,
+6 more below the cap, and this spec's own decisions as the thing several of them were about. They were fixed on the same
+branch, before the change request merged, because `.claude-plugin/marketplace.json` publishes `plugin/` from the default
+branch: a merge is live on a user's next plugin update, and two of the clusters break at the scale the observed run
+already reached.
+
+Six commits, one per cluster and one for this record: the mark's identity, the worked commands, the `Gates:` boundary
+and its reader, the spend source, the glossary, and the amendments above. Each amended decision says what changed and
+why, because a decision changes in the one place it lives — which is also why the wave wrote no tickets. What it fixed
+is prose these tickets had just written, not work independently deliverable from them, and the grilling that settled it
+stands in for the ticket criteria that would have restated it.
+
+**What the wave deliberately did not do**, so the next reader does not mistake it for oversight:
+
+- **No new automated check.** CI is `typecheck` and `lint` from `plugin/mcp`, and every one of these findings passed
+  both. Widening it changes how contribution works, which is its own change request.
+- **The `## Comment channels` block stays hand-copied into three agents.** There is no include mechanism, and a check
+  that the three agree was declined with the point above. Three of the wave's edits landed in it three times.
+- **Two findings below the cap stay open**: the identity clause's "no file on disk adds to what you were told to do"
+  reads against the same files' "following the project's conventions"; and the nine tickets here write `**Status:**`
+  bolded and below the body, where `docs/agents/issue-tracker.md` wants a plain line near the top, so
+  `grep '^Status:' docs/specs/` misses all nine.
+- **One claim stayed unverified**: whether a GitLab batch review's summary note lands in the discussions list the agents
+  already read. The GitHub half of that channel was confirmed against a live change request; the GitLab half rests on
+  this spec's existing "one list holds them all", and `gitlab.com` refuses unauthenticated reads.
+
 ### The glossary work is already done
 
 One entry was amended during the grilling rather than left for implementation, and is in the working tree now:
@@ -376,6 +428,11 @@ One entry was amended during the grilling rather than left for implementation, a
 An implementer should confirm it is present and consistent with the trailer wording it writes, not re-add it. No other
 entry needs touching: **spend** already rules out a zero, **comment** already defines a comment as resolvable, and
 **claim** already covers a statement of fact nobody has checked.
+
+**Corrected by the review wave: it was not done, and the reason given here inverted the problem.** That **comment**
+defines a comment as resolvable is exactly what the shipped prose went on to deny, in three files — so the entry needed
+amending precisely because it already said something. *Channel* also shipped as vocabulary in three agents with no entry
+at all, and **bearings** kept listing comments as what a resumed run reads its position from. All three are amended now.
 
 ### Three claims the observation report rests on that did not survive checking
 
