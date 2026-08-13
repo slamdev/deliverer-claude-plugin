@@ -63,25 +63,46 @@ names: find them in the help of whichever forge tool the repository has authenti
 `<number>` and `<iid>` are the ones in the change request's URL; `{owner}`, `{repo}` and `:fullpath` expand from the
 repository you are already in.
 
-**GitHub**, with `gh`. Review threads carry resolution and live in GraphQL; the change request's issue comments carry
-none, so what is open there is what carries no reply recording the work.
+**Every body you post goes through a file.** Write what you are posting to a file and pass that file, never the text
+itself: an apostrophe in your **grounds** ends a single-quoted argument, and a backtick or a `$` inside a double-quoted
+one runs a command or expands a variable, so a body written one way and posted another is one the human reads changed.
+
+**A read that comes back truncated is a comment you never saw**, which **unresolved** counts as worked. Two shapes cause
+it, and both are handled below: a collection paginated in name only, and a response so large the tool that ran the
+command hands you the first fragment of one enormous line.
+
+**GitHub**, with `gh`. Three channels, and only the first carries resolution: the review threads, in GraphQL; the
+reviews' own summary bodies, which a review submitted with no inline comment leaves behind and which no thread holds;
+and the change request's issue comments. What is open on the last two is what carries no reply recording the work.
 
 ```sh
-# what is unresolved — the threads whose isResolved is false, with the comment id a reply needs
-gh api graphql -F owner='{owner}' -F repo='{repo}' -F number=<number> -f query='
-  query($owner:String!,$repo:String!,$number:Int!){ repository(owner:$owner,name:$repo){
-    pullRequest(number:$number){ reviewThreads(first:100){ nodes{ id isResolved path line
-      comments(first:100){ nodes{ databaseId body } } } } } } }' \
+# unresolved threads — every page of them, each with its newest comments and the id a reply needs
+gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<number> -f query='
+  query($owner:String!,$repo:String!,$number:Int!,$endCursor:String){ repository(owner:$owner,name:$repo){
+    pullRequest(number:$number){ reviewThreads(first:100, after:$endCursor){ pageInfo{ hasNextPage endCursor }
+      nodes{ id isResolved path line comments(last:100){ nodes{ databaseId body } } } } } } }' \
   --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)'
-# the other channel in full — nothing there has a state to filter on
-gh api --paginate 'repos/{owner}/{repo}/issues/<number>/comments'
+# the reviews' own summary bodies — a review with no inline comment leaves no thread to find
+gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<number> -f query='
+  query($owner:String!,$repo:String!,$number:Int!,$endCursor:String){ repository(owner:$owner,name:$repo){
+    pullRequest(number:$number){ reviews(first:100, after:$endCursor){ pageInfo{ hasNextPage endCursor }
+      nodes{ id body state author{login} } } } } }'
+# the issue comments — one object per line, and only the fields you read
+gh api --paginate 'repos/{owner}/{repo}/issues/<number>/comments' --jq '.[] | {id, login: .user.login, body}'
 # mark one you worked: reply with what you did and the commit that did it, then resolve
-gh api --method POST 'repos/{owner}/{repo}/pulls/<number>/comments/<databaseId>/replies' -f body='fixed in <sha> — …'
+gh api --method POST 'repos/{owner}/{repo}/pulls/<number>/comments/<databaseId>/replies' -F body=@<the reply file>
 gh api graphql -F t=<thread id> \
   -f query='mutation($t:ID!){resolveReviewThread(input:{threadId:$t}){thread{isResolved}}}'
-# where there is nothing to resolve, that reply is the mark, and it names what it marks
-gh pr comment <change request URL> --body 're: ASSUMPTION (<commit hash>) — fixed in <sha> — …'
+# where there is nothing to resolve, that reply is the mark, and its body names what it marks
+gh pr comment <change request URL> --body-file <the reply file>
 ```
+
+`--paginate` on a GraphQL query does nothing unless the query takes `$endCursor` and asks for the `pageInfo` fields
+above: without them the first hundred come back as the whole answer, with no error and nothing to notice. The comments
+nested inside a thread cannot be paginated in the same query, because one query carries one cursor — `last:100` is what
+makes that bound safe, since a **verdict** and a mark are a thread's newest comments and never its oldest. The `--jq` on
+the issue comments is not tidying: unfiltered, that channel returns every comment as one line of tens of fields, and one
+line is what cannot be read a piece at a time.
 
 **GitLab**, with `glab`. One list holds them all — the change request's discussions — and each note's `resolvable` says
 whether it can be marked resolved; `resolved` is then what your filter reads.
@@ -91,7 +112,7 @@ whether it can be marked resolved; `resolved` is then what your filter reads.
 glab api --paginate 'projects/:fullpath/merge_requests/<iid>/discussions'
 # mark one you worked: reply, then resolve
 glab api --method POST 'projects/:fullpath/merge_requests/<iid>/discussions/<discussion id>/notes' \
-  -f body='fixed in <sha> — …'
+  -F body=@<the reply file>
 glab api --method PUT 'projects/:fullpath/merge_requests/<iid>/discussions/<discussion id>' -F resolved=true
 ```
 
@@ -103,11 +124,13 @@ nothing tying it to the comment it answers. Open the body by naming that comment
 ```
 re: ASSUMPTION (<commit hash>) — fixed in <sha> — …
 re: comment <id> — declined — …
+re: review <id> — …
 ```
 
-Name it in whichever way the channel gives you: the `ASSUMPTION` prefix and hash the comment already carries, or the
-comment's own id. A mark that names nothing is unattributable on a change request carrying dozens of comments — the next
-run cannot tell which one it answers, so it either works that comment twice or counts an unworked one done.
+Name it in whichever way the channel gives you: the `ASSUMPTION` prefix and hash the comment already carries, the
+comment's own id, or the id of the review whose summary body you worked. A mark naming nothing is unattributable on a
+change request carrying dozens of comments — the next run cannot tell which one it answers, so it either works that
+comment twice or counts an unworked one done.
 
 The line begins `re:`, never `ASSUMPTION`: `assumption-reviewer` collects every comment whose body starts with that
 prefix as a **fork** to adjudicate, so a mark wearing it comes back as an assumption nobody made.
@@ -119,6 +142,11 @@ Declining one takes **grounds**: what the finding claims, and the context its au
 convention, an ADR, a spec line, an existing call site, or code that already handles the case. With grounds, reply with
 them and resolve the comment — or, where it cannot be resolved, let that reply be the mark, named as above. Without
 them, implement it.
+
+**A review's summary body is one comment carrying however many findings the human typed into it.** It is still one
+comment and gets one mark, so that mark accounts for *every* point the body raised — each one implemented, each one
+declined with its grounds, or each one on the hand-off list. A mark that answers the first point and passes over the
+second has under-counted the work inside a comment instead of across a channel, which costs the same.
 
 ## Assumption comments
 

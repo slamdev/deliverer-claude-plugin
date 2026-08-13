@@ -55,24 +55,45 @@ names: find them in the help of whichever forge tool the repository has authenti
 `<number>` and `<iid>` are the ones in the change request's URL; `{owner}`, `{repo}` and `:fullpath` expand from the
 repository you are already in.
 
-**GitHub**, with `gh`. Review threads carry resolution and live in GraphQL; the change request's issue comments carry
-none.
+**Every verdict you reply goes through a file.** Write the reply to a file and pass that file, never the text itself: an
+apostrophe in your **grounds** ends a single-quoted argument, and a backtick or a `$` inside a double-quoted one runs a
+command or expands a variable — so the verdict the human reads is not the one you reached.
+
+**A read that comes back truncated is a fork nobody adjudicated.** Two shapes cause it, and both are handled below: a
+collection paginated in name only, and a response so large the tool that ran the command hands you the first fragment of
+one enormous line.
+
+**GitHub**, with `gh`. Three channels: the review threads, which carry resolution and live in GraphQL; the reviews' own
+summary bodies, which a review submitted with no inline comment leaves behind and which no thread holds; and the change
+request's issue comments, which carry no resolution at all.
 
 ```sh
-# collect — every thread, its resolution state, and the comment id a reply needs
-gh api graphql -F owner='{owner}' -F repo='{repo}' -F number=<number> -f query='
-  query($owner:String!,$repo:String!,$number:Int!){ repository(owner:$owner,name:$repo){
-    pullRequest(number:$number){ reviewThreads(first:100){ nodes{ id isResolved path line
-      comments(first:100){ nodes{ databaseId body } } } } } } }'
-# collect — the channel with no resolution state at all
-gh api --paginate 'repos/{owner}/{repo}/issues/<number>/comments'
+# collect — every page of threads, each with its newest comments and the id a reply needs
+gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<number> -f query='
+  query($owner:String!,$repo:String!,$number:Int!,$endCursor:String){ repository(owner:$owner,name:$repo){
+    pullRequest(number:$number){ reviewThreads(first:100, after:$endCursor){ pageInfo{ hasNextPage endCursor }
+      nodes{ id isResolved path line comments(last:100){ nodes{ databaseId body } } } } } } }'
+# collect — the reviews' own summary bodies, which leave no thread behind
+gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<number> -f query='
+  query($owner:String!,$repo:String!,$number:Int!,$endCursor:String){ repository(owner:$owner,name:$repo){
+    pullRequest(number:$number){ reviews(first:100, after:$endCursor){ pageInfo{ hasNextPage endCursor }
+      nodes{ id body state author{login} } } } } }'
+# collect — the channel with no resolution state at all, one object per line
+gh api --paginate 'repos/{owner}/{repo}/issues/<number>/comments' --jq '.[] | {id, login: .user.login, body}'
 # reply on a thread, then resolve it
-gh api --method POST 'repos/{owner}/{repo}/pulls/<number>/comments/<databaseId>/replies' -f body='accept — …'
+gh api --method POST 'repos/{owner}/{repo}/pulls/<number>/comments/<databaseId>/replies' -F body=@<the verdict file>
 gh api graphql -F t=<thread id> \
   -f query='mutation($t:ID!){resolveReviewThread(input:{threadId:$t}){thread{isResolved}}}'
-# reply where there is no thread to resolve — that reply is the mark, and it names the assumption
-gh pr comment <change request URL> --body 're: ASSUMPTION (<commit hash>) — accept — …'
+# reply where there is no thread to resolve — that reply is the mark, and its body names the assumption
+gh pr comment <change request URL> --body-file <the verdict file>
 ```
+
+`--paginate` on a GraphQL query does nothing unless the query takes `$endCursor` and asks for the `pageInfo` fields
+above: without them the first hundred come back as the whole answer, with no error and nothing to notice. The comments
+nested inside a thread cannot be paginated in the same query, because one query carries one cursor — `last:100` is what
+makes that bound safe, since an assumption's verdict reply is a thread's newest comment and never its oldest. The `--jq`
+on the issue comments is not tidying: unfiltered, that channel returns every comment as one line of tens of fields, and
+one line is what cannot be read a piece at a time.
 
 **GitLab**, with `glab`. One list holds them all — the change request's discussions — and each note's `resolvable` says
 whether it can be marked resolved; one carrying a `position` is anchored to a diff line.
@@ -81,7 +102,8 @@ whether it can be marked resolved; one carrying a `position` is anchored to a di
 # collect — every discussion, with resolvable and resolved on each of its notes
 glab api --paginate 'projects/:fullpath/merge_requests/<iid>/discussions'
 # reply, then resolve
-glab api --method POST 'projects/:fullpath/merge_requests/<iid>/discussions/<discussion id>/notes' -f body='accept — …'
+glab api --method POST 'projects/:fullpath/merge_requests/<iid>/discussions/<discussion id>/notes' \
+  -F body=@<the verdict file>
 glab api --method PUT 'projects/:fullpath/merge_requests/<iid>/discussions/<discussion id>' -F resolved=true
 ```
 

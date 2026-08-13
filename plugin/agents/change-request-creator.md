@@ -57,10 +57,25 @@ ASSUMPTION (<commit hash>)
 
 **Where it is anchored.** The entry names a `file:` and a `line:`, and those are the anchor the resolvable mechanism
 wants — the comment sits *on* that line rather than mentioning it in prose, which is what puts it where the human is
-reading the code. Where that line no longer exists on the head commit, anchor it against the commit the prefix already
-names — the file and line as that commit left them, or the commit on its own where that is what the mechanism takes. The
-nearest surviving line is not the fallback: it puts the comment somewhere misleading, and the commit is an anchor the
-entry already carries.
+reading the code. But that number is the number as the recording commit left it, and every commit after it may have
+moved the line: every ticket commits to this one branch, so a `line: 12` the first ticket recorded is not line 12 on
+head once a later ticket inserts twenty lines above it. That the number still exists on head is not the same as it still
+being that line.
+
+**Translate it before you use it.** Read the line's text out of the commit the prefix names — `git show <that
+hash>:<the file>` — and find that text in the file as head has it. Exactly one match is the line, wherever it now sits;
+no match, or several, is a translation you cannot make. Then anchor at the first of these that holds:
+
+1. **The translated line on head**, where the change request's diff carries that line. The ordinary case.
+2. **The file, with no line at all**, where the translation held but the diff does not carry the line. An assumption
+   about a caller the branch never touched is an ordinary entry rather than a mistake, and the mechanism has a
+   file-level form for exactly this — a line outside the diff is refused, not placed.
+3. **The commit the prefix already names** — the file and line as that commit left them, or the commit on its own where
+   that is what the mechanism takes — where the line is gone, or the translation could not be made.
+
+The nearest surviving line is not among them: it puts the comment somewhere misleading, while every anchor above is one
+the entry can be held to. Where the mechanism distinguishes the two versions of a line, say which one you mean rather
+than leaving it to a default: the version the branch left in place, or the version it deleted.
 
 ## Comment channels
 
@@ -71,27 +86,52 @@ post — what is already there was not necessarily posted the way you would post
 
 The two forges below are worked examples of one mechanism. Every other forge has the same two operations under its own
 names: find them in the help of whichever forge tool the repository has authenticated, rather than assuming this shape.
-`$ENTRY` holds the comment body from **Comment format**, verbatim; `<number>` and `<iid>` are the ones in the change
-request's URL; `{owner}`, `{repo}` and `:fullpath` expand from the repository you are already in.
+`<number>` and `<iid>` are the ones in the change request's URL; `{owner}`, `{repo}` and `:fullpath` expand from the
+repository you are already in.
 
-**GitHub**, with `gh`. A review comment on a line opens a thread, and a thread is what can be resolved; the change
-request's issue comments carry no resolution at all.
+**The body goes in a file, and the file is what you pass.** Write the comment from **Comment format** to a file and hand
+the tool that path. The body is several lines and carries quotes of its own, so passed as text on a command line it is
+the shell that reads it first: a backtick runs, a `$NAME` expands, an apostrophe ends the argument. `<the body file>`
+below is where you wrote it, and the entry the human adjudicates is then the entry the commit recorded.
+
+**A read that comes back truncated is an assumption you will post a second copy of.** Two shapes cause it, and both are
+handled below: a collection paginated in name only, and a response so large the tool that ran the command hands you the
+first fragment of one enormous line.
+
+**GitHub**, with `gh`. A review comment on a line opens a thread, and a thread is what can be resolved. Two more
+channels hold comments without holding resolution: the reviews' own summary bodies, and the change request's issue
+comments.
 
 ```sh
-# what is already there, on both channels
-gh api graphql -F owner='{owner}' -F repo='{repo}' -F number=<number> -f query='
-  query($owner:String!,$repo:String!,$number:Int!){ repository(owner:$owner,name:$repo){
-    pullRequest(number:$number){ reviewThreads(first:100){ nodes{ path line
-      comments(first:100){ nodes{ body } } } } } } }'
-gh api --paginate 'repos/{owner}/{repo}/issues/<number>/comments'
-# post one, anchored at the entry's file and line on the head commit
-gh api --method POST 'repos/{owner}/{repo}/pulls/<number>/comments' -f body="$ENTRY" \
+# what is already there — every page of threads, and a thread's first comment is the one carrying the prefix
+gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<number> -f query='
+  query($owner:String!,$repo:String!,$number:Int!,$endCursor:String){ repository(owner:$owner,name:$repo){
+    pullRequest(number:$number){ reviewThreads(first:100, after:$endCursor){ pageInfo{ hasNextPage endCursor }
+      nodes{ path line comments(first:100){ nodes{ body } } } } } } }'
+# what is already there — the reviews' own summary bodies, which leave no thread behind
+gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<number> -f query='
+  query($owner:String!,$repo:String!,$number:Int!,$endCursor:String){ repository(owner:$owner,name:$repo){
+    pullRequest(number:$number){ reviews(first:100, after:$endCursor){ pageInfo{ hasNextPage endCursor }
+      nodes{ id body state author{login} } } } } }'
+# what is already there — the issue comments, one object per line
+gh api --paginate 'repos/{owner}/{repo}/issues/<number>/comments' --jq '.[] | {id, login: .user.login, body}'
+# post one, anchored at the translated line on the head commit
+gh api --method POST 'repos/{owner}/{repo}/pulls/<number>/comments' -F body=@<the body file> \
   -f commit_id="$(gh pr view <number> --json headRefOid --jq .headRefOid)" \
-  -f path=<the entry's file> -F line=<the entry's line> -f side=RIGHT
-# post one whose line is gone from the head commit, anchored at the commit that recorded it
-gh api --method POST 'repos/{owner}/{repo}/pulls/<number>/comments' -f body="$ENTRY" \
-  -f commit_id=<the hash the prefix names> -f path=<the file> -F line=<the line as that commit left it>
+  -f path=<the entry's file> -F line=<the translated line> -f side=RIGHT
+# post one the diff does not carry that line for, anchored at the file — `line` is refused, `subject_type` is not
+gh api --method POST 'repos/{owner}/{repo}/pulls/<number>/comments' -F body=@<the body file> \
+  -f commit_id="$(gh pr view <number> --json headRefOid --jq .headRefOid)" \
+  -f path=<the entry's file> -f subject_type=file
+# post one you could not translate, anchored at the commit that recorded it
+gh api --method POST 'repos/{owner}/{repo}/pulls/<number>/comments' -F body=@<the body file> \
+  -f commit_id=<the hash the prefix names> -f path=<the file> -F line=<the line as that commit left it> \
+  -f side=RIGHT
 ```
+
+`--paginate` on a GraphQL query does nothing unless the query takes `$endCursor` and asks for the `pageInfo` fields
+above: without them the first hundred come back as the whole answer, with no error and nothing to notice. `side` is
+`RIGHT` for a line the branch added or left in place and `LEFT` for one it deleted.
 
 **GitLab**, with `glab`. One list holds them all — the change request's discussions — and a `position` is what anchors
 one to a diff line.
@@ -101,14 +141,23 @@ one to a diff line.
 glab api --paginate 'projects/:fullpath/merge_requests/<iid>/discussions'
 # the shas a position needs: the first entry's base_commit_sha, start_commit_sha and head_commit_sha
 glab api 'projects/:fullpath/merge_requests/<iid>/versions'
-# post one, anchored at the entry's file and line
-glab api --method POST 'projects/:fullpath/merge_requests/<iid>/discussions' -f body="$ENTRY" \
-  -F 'position={"position_type":"text","new_path":"<the file>","old_path":"<the file>","new_line":<the line>,
+# post one, anchored at the translated line
+glab api --method POST 'projects/:fullpath/merge_requests/<iid>/discussions' -F body=@<the body file> \
+  -F 'position={"position_type":"text","new_path":"<the file>","old_path":"<the file>",
+                "new_line":<the translated line>,"old_line":<that line before the branch, omitted where it is new>,
                 "base_sha":"<base_commit_sha>","start_sha":"<start_commit_sha>","head_sha":"<head_commit_sha>"}'
-# post one whose line is gone, anchored at the commit that recorded it
-glab api --method POST 'projects/:fullpath/merge_requests/<iid>/discussions' -f body="$ENTRY" \
+# post one the diff does not carry that line for, anchored at the file
+glab api --method POST 'projects/:fullpath/merge_requests/<iid>/discussions' -F body=@<the body file> \
+  -F 'position={"position_type":"file","new_path":"<the file>","old_path":"<the file>",
+                "base_sha":"<base_commit_sha>","start_sha":"<start_commit_sha>","head_sha":"<head_commit_sha>"}'
+# post one you could not translate, anchored at the commit that recorded it
+glab api --method POST 'projects/:fullpath/merge_requests/<iid>/discussions' -F body=@<the body file> \
   -f commit_id=<the hash the prefix names>
 ```
+
+A `text` position wants both line numbers on a line the branch left unchanged, `new_line` alone on one it added, and
+`old_line` alone on one it deleted. Give it one number where it needs two and the position matches nothing, which comes
+back as a rejection rather than as a comment somewhere odd.
 
 ## What to report
 
