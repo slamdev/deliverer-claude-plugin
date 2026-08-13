@@ -204,19 +204,32 @@ const measured = (count: number | undefined): number | undefined =>
  * Every field it cannot find it leaves absent. Nothing is defaulted to zero — a counter the SDK
  * did not report is one nobody measured, and `code-reviewer` is told to report unknown as unknown.
  *
- * The token counters have two sources and read them in that order: the per-model usage first, where
- * a delegating review's tokens survive, then the aggregate counters, which are correct whenever the
- * review did its own work and are all a result reporting no per-model usage has. A zero from either
- * one is not a figure, so it falls through to the next and then to absent. Nothing reads a
- * transcript off disk for them: the counters are already on the message this function is handed.
+ * The token counters have two sources, and the source is chosen ONCE PER MESSAGE rather than once
+ * per counter: the per-model usage whenever the message carries any, which is where a delegating
+ * review's tokens survive, and the aggregate counters otherwise, which are correct whenever the
+ * review did its own work and are all a result reporting no per-model usage has.
  *
- * `turns` is not here, because it alone has a fallback that needs the caller's own count.
+ * Choosing per counter mixed the two scopes into one row. The SDK declares all four per-model
+ * counters as required numbers on a non-optional map, so a real zero ARRIVES rather than being
+ * absent, and `measured()` inside a `??` turned that zero into a source switch: 137 aggregate input
+ * tokens published beside 1,840,000 per-model cache reads, with nothing on the row saying which
+ * figure came from where (build-run-defects review, finding 13). Choosing first makes that row
+ * unreachable instead of merely unlikely, and leaves `measured()` the one job its own comment
+ * describes. Nothing reads a transcript off disk for any of it: the counters are already on the
+ * message this function is handed.
+ *
+ * `turns` is not here, because it alone falls back to something not on the message.
  */
 function spendFromResult(message: AgentQueryMessage): ReviewSpend {
   const usage = asRecord(message.usage);
   const model = costliestModel(message.modelUsage);
-  const tokens = (perModel: string, aggregate: string): number | undefined =>
-    measured(summedTokens(message.modelUsage, perModel)) ?? measured(asNumber(usage?.[aggregate]));
+  const perModel = asRecord(message.modelUsage);
+  // An empty map is a message with no per-model usage, not a message reporting four zeros.
+  const fromPerModel = perModel !== undefined && Object.keys(perModel).length > 0;
+  const tokens = (perModelField: string, aggregateField: string): number | undefined =>
+    measured(
+      fromPerModel ? summedTokens(perModel, perModelField) : asNumber(usage?.[aggregateField]),
+    );
   return {
     costUsd: asNumber(message.total_cost_usd),
     inputTokens: tokens("inputTokens", "input_tokens"),
@@ -257,14 +270,15 @@ export function eventFromMessage(
   if (message.type === "result") {
     const spend: ReviewSpend = {
       ...spendFromResult(message),
-      // `||`, not `??`. A round measured at $0.65 over 170s reported `num_turns: 0`, and 0 is a
-      // finite number — so `asNumber` accepts it and the reducer's own `?? record.turns` never falls
-      // back, publishing a zero that looks trustworthy beside the two fields the `code-reviewer`
-      // agent is told to distrust. The assistant messages this run actually yielded are the honest
-      // floor, so they stand in whenever the SDK's own number is absent OR zero. The token counters
-      // get no such fallback: nothing here has a second way to count them, so absent is what they
-      // report.
-      turns: asNumber(message.num_turns) || assistantTurns,
+      // `measured()` does the same work here that it does for the token counters. A round measured
+      // at $0.65 over 170s reported `num_turns: 0`, and 0 is a finite number — so `asNumber` accepts
+      // it and the reducer's own `?? record.turns` never falls back, publishing a zero that looks
+      // trustworthy beside the two fields the `code-reviewer` agent is told to distrust. The
+      // assistant messages this run actually yielded are the honest floor, so they stand in whenever
+      // the SDK's own number is absent OR zero. What is particular to `turns` is only where its
+      // fallback comes FROM — the caller's own count, not a second set of counters on the message —
+      // which is why this one line sits here rather than in `spendFromResult`.
+      turns: measured(asNumber(message.num_turns)) ?? assistantTurns,
     };
     if (message.subtype === "success") {
       const summary = typeof message.result === "string" ? message.result : "";
