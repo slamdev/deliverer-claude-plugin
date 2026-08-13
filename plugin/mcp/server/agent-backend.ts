@@ -163,6 +163,40 @@ function costliestModel(
 }
 
 /**
+ * One token counter summed across every `modelUsage` entry, or nothing when no entry reported it.
+ *
+ * This is where a DELEGATING review's tokens are, and the reason the counters are read here at all
+ * (build-run-defects ticket 06). The platform's review command does its work through sub-agents, so
+ * the result message's own aggregate counters come back as zeros — one observed round published
+ * `$5.01` beside a confident `0` while the per-model map held ~48,200 output and ~344,100
+ * cache-creation tokens. Every entry in that map is real spend: the cheap model a subtask ran on
+ * cost money exactly as the one the round was configured with did, so the entries SUM rather than
+ * one of them winning. That is the opposite of `costliestModel` above, which picks a single entry
+ * because a label cannot be added up — one map, two readings, both deliberate.
+ *
+ * The field names here are the map's own camelCase ones and NOT the aggregate counters'
+ * snake_case: the two shapes ride on the same message and are narrowed separately for that reason.
+ */
+function summedTokens(modelUsage: unknown, field: string): number | undefined {
+  let total: number | undefined;
+  for (const value of Object.values(asRecord(modelUsage) ?? {})) {
+    const count = asNumber(asRecord(value)?.[field]);
+    if (count === undefined) continue;
+    total = (total ?? 0) + count;
+  }
+  return total;
+}
+
+/**
+ * A counter nobody measured and a counter measured at zero are the same answer: unknown.
+ * `CONTEXT.md` defines **spend** so that unknown is the honest answer for a figure nobody measured
+ * and never zero, and a confident zero beside a real dollar figure reads as a cheap review.
+ * Dropping the zero here rather than publishing it is also what lets the source behind it stand in.
+ */
+const measured = (count: number | undefined): number | undefined =>
+  count === undefined || count === 0 ? undefined : count;
+
+/**
  * What a result message says the round spent. Narrowed STRUCTURALLY, like `AgentQueryMessage`
  * above: this module imports nothing from the SDK, not even a type, so every field is checked for
  * its shape here rather than trusted to a declaration that is not in scope.
@@ -170,17 +204,25 @@ function costliestModel(
  * Every field it cannot find it leaves absent. Nothing is defaulted to zero — a counter the SDK
  * did not report is one nobody measured, and `code-reviewer` is told to report unknown as unknown.
  *
+ * The token counters have two sources and read them in that order: the per-model usage first, where
+ * a delegating review's tokens survive, then the aggregate counters, which are correct whenever the
+ * review did its own work and are all a result reporting no per-model usage has. A zero from either
+ * one is not a figure, so it falls through to the next and then to absent. Nothing reads a
+ * transcript off disk for them: the counters are already on the message this function is handed.
+ *
  * `turns` is not here, because it alone has a fallback that needs the caller's own count.
  */
 function spendFromResult(message: AgentQueryMessage): ReviewSpend {
   const usage = asRecord(message.usage);
   const model = costliestModel(message.modelUsage);
+  const tokens = (perModel: string, aggregate: string): number | undefined =>
+    measured(summedTokens(message.modelUsage, perModel)) ?? measured(asNumber(usage?.[aggregate]));
   return {
     costUsd: asNumber(message.total_cost_usd),
-    inputTokens: asNumber(usage?.input_tokens),
-    outputTokens: asNumber(usage?.output_tokens),
-    cacheReadTokens: asNumber(usage?.cache_read_input_tokens),
-    cacheCreationTokens: asNumber(usage?.cache_creation_input_tokens),
+    inputTokens: tokens("inputTokens", "input_tokens"),
+    outputTokens: tokens("outputTokens", "output_tokens"),
+    cacheReadTokens: tokens("cacheReadInputTokens", "cache_read_input_tokens"),
+    cacheCreationTokens: tokens("cacheCreationInputTokens", "cache_creation_input_tokens"),
     agentDurationMs: asNumber(message.duration_ms),
     model: model?.key,
     provider: asString(model?.entry.provider),
