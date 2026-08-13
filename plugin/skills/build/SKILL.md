@@ -14,18 +14,20 @@ Your argument names the epic; when it names none, report that and stop rather th
 Every stage below is one agent dispatch — **one dispatch, one task** (**Progress**) — and the dispatched agent's
 **report** is all you get back: what it names is what you know. Where a report leaves you unsure, re-dispatch the stage
 rather than going to look, and the bearings you take from the branch and the change request say which stage is owed, not
-what a finding says or whether a check is green. A **mechanical question about the tree** is yours to settle — does it
-build, does this symbol exist, what does the branch carry — because that asks whether a report's fact is true, not
-whether its judgement is right. A finding, a design, whether the work is good — those are never yours to form a view on.
-Two edges on it: **read only**, and the only things to do with what you find are **re-dispatch or report**, never fix.
-Yours is the work no agent does: read the epic for its tickets, dispatch in order, read each report, keep the task list
-current, and flip the change request ready at the end.
+what a finding says. A **mechanical question about the tree or the forge** is yours to settle — does it build, does this
+symbol exist, what does the branch carry, are the change request's **checks** green — because that asks whether a
+report's fact is true, not whether its judgement is right. A finding, a design, whether the work is good — those are
+never yours to form a view on. Two edges on it: **read only**, and the only things to do with what you find are
+**re-dispatch or report**, never fix. Yours is the work no agent does: read the epic for its tickets, dispatch in order,
+read each report, keep the task list current, and flip the change request ready at the end.
 
 **Resume.** This epic may be part-delivered — by an earlier run of your own that was interrupted, or by hand. The epic
 branch and the change request are what say how far it got: the commits carrying a `Ticket:` line name the tickets
 implemented, and one without it is not a ticket; whether a change request is open for the branch says whether stage 2
 ran; an `ASSUMPTION` comment carrying a **verdict** reply says stage 3 adjudicated it; unresolved comments say a **fix
-wave** is still owed. Start from the earliest stage whose evidence you cannot find — re-dispatching any agent but
+wave** is still owed. Where a comment sits somewhere that cannot be marked **resolved** at all, a reply recording the
+work done is that mark, so one carrying such a reply is not work still owed — otherwise a delivered epic reads as
+perpetually owing a wave. Start from the earliest stage whose evidence you cannot find — re-dispatching any agent but
 `code-reviewer` is safe, because each one resumes on its own and adds only what is missing. `code-reviewer` is the
 exception: see **Rounds**.
 
@@ -58,10 +60,12 @@ long and the epic waits on your guess.
 5. **Second round** — dispatch `code-reviewer` again. It reviews the fix wave's commits, so what the first round missed
    still gets caught.
 6. **Second fix wave** — dispatch `comments-addresser` again, for what the second round raised.
-7. **Flip it ready** — once two rounds have completed and the last fix wave reports the checks **green**, take the
-   change request out of draft and report. Escalations and declined findings ride into the report rather than holding
-   the flip:
-   they are what the human review is for. When the checks are not green, leave it a draft and report that instead.
+7. **Flip it ready** — once two rounds have completed and you have read the change request's **checks** green on the
+   forge, take the change request out of draft and report. The fix wave reports them too, and the two accounts agreeing
+   is the ordinary case; where they disagree, put the stage back rather than choosing between them — a report and the
+   forge disagreeing is exactly what a re-dispatch is for. Escalations and declined findings ride into the report rather
+   than holding the flip: they are what the human review is for. When the checks are not green, leave it a draft and
+   report that instead.
 
 ## Rounds
 
@@ -78,6 +82,10 @@ A round is one `code-reviewer` dispatch, and **two rounds that reached `complete
 
 The task list is the human's window on the run. You write to it; you take your bearings from the branch and the change
 request, as **Resume** has it.
+
+**A signal that needs no action needs no message.** Progress goes to the task list, which is where the human is already
+looking — an idle notice for a dispatch you have already accounted for asks nothing of you, so nothing is owed for it. A
+signal that does ask something is not one of those: a **report** to read, a stage that went wrong, a round to put back.
 
 **One dispatch, one task.** Create one per dispatch as the run opens, named from the stage it serves and prefixed with
 the epic's slug so two epics can share a session — `<slug>: open the change request`. Stage 3's two concurrent
