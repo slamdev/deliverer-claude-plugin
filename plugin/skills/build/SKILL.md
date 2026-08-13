@@ -28,6 +28,12 @@ ran. Start from the earliest stage whose evidence you cannot find — re-dispatc
 safe, because each one resumes on its own and adds only what is missing. `code-reviewer` is the exception: see
 **Rounds**.
 
+**The commits carry one fact that is not about progress.** A commit's `Gates:` section names a **gate** its ticket left
+red for work outside it, and reading those off the branch is something you do every run rather than only when a report
+fails to arrive: a second path that runs only once something has already gone wrong is the path least likely to work.
+Carry them into your report beside the ones the reports named, and where a report names none while a commit names one,
+the commit is the account to trust — it is the record that survives a report not arriving.
+
 **The adjudication and the fix waves leave you no evidence to read.** What they leave behind is a comment's replies, and
 telling a **verdict** that owes a change from a reply recording the change made is a judgement about what those replies
 say — not a mechanical fact, so not yours. A resumed run therefore counts no comments: dispatch `assumption-reviewer`
@@ -114,4 +120,5 @@ Whoever reads this has your report and nothing else.
 - how many assumptions were adjudicated `accept`, `override` and `escalate`
 - every hand-off, one line each — the escalations and anything else still waiting on a human
 - every finding the fix waves declined, one line each, with its grounds
+- every **gate** left red for work outside its ticket, one line each — from the commits as well as from the reports
 - whether the checks ended green

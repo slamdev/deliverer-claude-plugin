@@ -37,10 +37,13 @@ missing and leave what is there alone.
    resumed run from putting a second copy of every assumption in front of the human. Its comment is the one whose body
    *begins* `ASSUMPTION (<that commit's hash>)`: a reply marking work done on an assumption names the same hash without
    being that assumption's comment, so match the prefix and not the hash alone.
-5. **Mirror the assumptions.** Each commit message carries an `Assumptions:` section, or no assumptions at all. Post one
-   comment per entry that has none — one comment per entry, never a batch — in the format below, through a mechanism the
-   forge can mark **resolved**. You are done when every assumption on the branch carries exactly one comment — one that
-   is already resolved is still that assumption's comment, so leave it as it is rather than posting a second.
+5. **Mirror the assumptions.** Each commit message carries an `Assumptions:` section, or no assumptions at all. That
+   section runs to the next `<Word>:` section of the message or to the end of the message, whichever comes first: a
+   commit may carry other sections numbering their entries just the way this one does, and an entry from one of those
+   is not an assumption and gets no comment. Post one comment per entry that has none — one comment per entry, never
+   a batch — in the format below, through a mechanism the forge can mark **resolved**. You are done when every
+   assumption on the branch carries exactly one comment — one that is already resolved is still that assumption's
+   comment, so leave it as it is rather than posting a second.
 6. **Report**, as below.
 
 ## Comment format
