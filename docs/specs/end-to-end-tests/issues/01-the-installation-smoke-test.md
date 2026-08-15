@@ -33,31 +33,31 @@ Files: a new `e2e-tests/` at the repository root. `docs/specs/end-to-end-tests/s
 Decisions — What is built, How a run is set up, What the runs are configured with.
 `docs/adrs/0016-the-end-to-end-tests-install-the-plugin-rather-than-attaching-it.md`.
 
-- [ ] `e2e-tests/` is its own package with its own manifest and TypeScript configuration, sharing nothing with the
+- [x] `e2e-tests/` is its own package with its own manifest and TypeScript configuration, sharing nothing with the
       tools server's package.
-- [ ] TypeScript runs through Node's native type stripping — no transform, no build step, no emitted artifact — and the
+- [x] TypeScript runs through Node's native type stripping — no transform, no build step, no emitted artifact — and the
       typecheck is the only thing that reads the TypeScript configuration, as ADR-0001 has it for the server.
-- [ ] The tests run under Node's own test runner, not Jest, which was measured unable to reach the criterion above: it
+- [x] The tests run under Node's own test runner, not Jest, which was measured unable to reach the criterion above: it
       loads modules through its own runtime and never reaches Node's stripper, so with no transform configured a type
       annotation fails to parse, and no option turns that off. The spec's §What is built carries the measurement.
-- [ ] Nothing under `e2e-tests/` is published; only `plugin/` ships, and the marketplace entry is untouched.
-- [ ] A run creates a **run directory** outside the repository carrying its own plugin configuration directory, its own
+- [x] Nothing under `e2e-tests/` is published; only `plugin/` ships, and the marketplace entry is untouched.
+- [x] A run creates a **run directory** outside the repository carrying its own plugin configuration directory, its own
       temporary directory and its session records.
-- [ ] The plugin installed is a **staged copy** of the working tree, and its contents match the working tree's plugin
+- [x] The plugin installed is a **staged copy** of the working tree, and its contents match the working tree's plugin
       directory including files that have not been committed.
-- [ ] The official marketplace is added before the plugin's own, and installing the plugin brings `mattpocock-skills`
+- [x] The official marketplace is added before the plugin's own, and installing the plugin brings `mattpocock-skills`
       with it rather than anything installing it separately.
-- [ ] The three options are written at **user** scope in the run's own configuration directory: the effort tier `low`,
+- [x] The three options are written at **user** scope in the run's own configuration directory: the effort tier `low`,
       the model `sonnet`, and the environment file the repository's own `.env`, handed over whole.
-- [ ] No individual credential is read, classified or forwarded by the harness, so it works unchanged whichever way the
+- [x] No individual credential is read, classified or forwarded by the harness, so it works unchanged whichever way the
       contributor authenticates.
-- [ ] The session runs in an empty directory inside the **run directory** and loads user and project setting sources
+- [x] The session runs in an empty directory inside the **run directory** and loads user and project setting sources
       only, so project scope has nothing to load — never the contributor's machine defaults, and never this
       repository's own settings or `CLAUDE.md`.
-- [ ] The test asserts both `/deliverer:*` commands, all seven agents, and all three review tools are present in the
+- [x] The test asserts both `/deliverer:*` commands, all seven agents, and all three review tools are present in the
       session.
-- [ ] The test involves no repository on the forge and asks no model for more than a trivial turn.
-- [ ] Every artefact the run produced is left in the **run directory** whether the test passed or failed.
-- [ ] Each file's prevailing column width is matched — 120 **characters**, not bytes; em dashes make byte counts
+- [x] The test involves no repository on the forge and asks no model for more than a trivial turn.
+- [x] Every artefact the run produced is left in the **run directory** whether the test passed or failed.
+- [x] Each file's prevailing column width is matched — 120 **characters**, not bytes; em dashes make byte counts
       overrun a correctly-wrapped line.
-- [ ] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
+- [x] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
