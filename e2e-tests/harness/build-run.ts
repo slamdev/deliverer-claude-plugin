@@ -38,7 +38,6 @@ import { createUnattendedSeat, type ResponderRecord } from "./responder.ts";
 import {
   createRunDirectory,
   scriptedBackendKeptOut,
-  sessionEnvironment,
   SCRIPTED_BACKEND_VARIABLES,
   type RunDirectory,
 } from "./run-directory.ts";
@@ -61,8 +60,10 @@ const DIFF_FILE = "delivered.diff";
  * The scripted review double, and what it would have done had it arrived.
  *
  * `reachedSession` is the whole bar and it is asked of the environment the session was actually
- * given. `fromContributor` is what was kept out of it, which a diagnostic reports: a contributor
- * whose shell selects the double every day should be told their run reviewed something anyway.
+ * given — the object `driveRun` handed to the host, carried back on the outcome, and not a second
+ * one built the same way (`./run.ts` says what that cost). `fromContributor` is what was kept out of
+ * it, which a diagnostic reports: a contributor whose shell selects the double every day should be
+ * told their run reviewed something anyway.
  */
 export interface ScriptedBackend {
   readonly fromContributor: Record<string, string>;
@@ -134,11 +135,14 @@ export function buildRun(fixtureName: string): BuildRunBuilder {
       );
 
       const epic = await readEpic(runDirectory.cloneDir, fixture.tracker, fixture.epic?.slug ?? "");
-      const scriptedBackend = await readScriptedBackend(runDirectory);
-      if (Object.keys(scriptedBackend.fromContributor).length > 0) {
+      // Read before the run, because a contributor who has the double selected wants telling now
+      // rather than after twenty minutes of delivery. What actually reached the session is read off
+      // the run once it is over, which is the only place that fact exists.
+      const fromContributor = await scriptedBackendKeptOut();
+      if (Object.keys(fromContributor).length > 0) {
         t.diagnostic(
           `kept the scripted review double out of the session: ` +
-            `${Object.keys(scriptedBackend.fromContributor).join(", ")} is set in this ` +
+            `${Object.keys(fromContributor).join(", ")} is set in this ` +
             `contributor's environment and every round of this run is a real one anyway`,
         );
       }
@@ -161,6 +165,10 @@ export function buildRun(fixtureName: string): BuildRunBuilder {
           /\bround/i.test(report) && (await flippedReady(runDirectory, repo)),
       });
 
+      const scriptedBackend: ScriptedBackend = {
+        fromContributor,
+        reachedSession: scriptedBackendIn(run.environment),
+      };
       const spend: Spend = { ceilingUsd: ceilings.spendUsd, runUsd: run.costUsd, besideRunUsd: 0 };
       t.diagnostic(
         `the run took ${minutes(run.durationMs)} and cost $${run.costUsd.toFixed(2)}, reported ` +
@@ -238,15 +246,14 @@ export function verify(outcome: BuildOutcome): Promise<Verdict> {
   );
 }
 
-/** What the double would have selected, and what the session was actually given. */
-async function readScriptedBackend(runDirectory: RunDirectory): Promise<ScriptedBackend> {
-  const environment = await sessionEnvironment(runDirectory);
-  const reachedSession: Record<string, string> = {};
+/** Which of the double's two knobs one environment carries, and with what value. */
+function scriptedBackendIn(environment: NodeJS.ProcessEnv): Record<string, string> {
+  const found: Record<string, string> = {};
   for (const variable of SCRIPTED_BACKEND_VARIABLES) {
     const value = environment[variable];
-    if (value !== undefined) reachedSession[variable] = value;
+    if (value !== undefined) found[variable] = value;
   }
-  return { fromContributor: await scriptedBackendKeptOut(), reachedSession };
+  return found;
 }
 
 /** Whether the change request has been taken out of **draft**, which is stage 7 having run. */

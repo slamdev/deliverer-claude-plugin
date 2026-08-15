@@ -27,7 +27,7 @@
  * drive.
  */
 import type { CanUseTool, PermissionResult } from "@anthropic-ai/claude-agent-sdk";
-import { askAgent } from "./agent.ts";
+import { askAgent, costOf } from "./agent.ts";
 import { RESPONDER_ROUND_CEILING_USD } from "./ceilings.ts";
 import type { Fixture } from "./fixture.ts";
 import type { RunDirectory } from "./run-directory.ts";
@@ -69,6 +69,7 @@ export interface ResponderRecord {
   readonly rounds: number;
   readonly answers: readonly AnsweredQuestion[];
   readonly fallbacks: number;
+  /** what it spent answering them, the attempts that failed and were retried among them */
   readonly costUsd: number;
   /** every failure it met, so a claim is settled on what happened rather than on a guess */
   readonly failures: readonly string[];
@@ -106,6 +107,10 @@ export function createResponder(runDirectory: RunDirectory, fixture: Fixture): R
         costUsd += asked.costUsd;
         chosen = asked.answers;
       } catch (error) {
+        // An attempt that failed still spent what it spent, and the ceiling covers the whole of what
+        // a run costs — including the dollar a round can burn reaching its own ceiling and being
+        // retried (`./agent.ts`).
+        costUsd += costOf(error);
         failures.push(`round ${rounds}, attempt ${attempt}: ${String(error)}`);
       }
     }

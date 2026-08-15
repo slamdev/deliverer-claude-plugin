@@ -209,8 +209,8 @@ export async function observeSession(
 }
 
 /**
- * The MCP servers once none of them is `pending` any more, or whatever they are when the deadline
- * runs out.
+ * The MCP servers once there is at least one and none of them is `pending` any more, or whatever
+ * they are when the deadline runs out.
  *
  * It never throws on a server that failed or never settled: that is a finding about the plugin,
  * and a matcher naming it reads better than an exception from inside the harness. A control
@@ -235,7 +235,15 @@ async function settledMcpServers(
     } catch {
       return observed;
     }
-    if (!observed.some((server) => server.status === "pending")) return observed;
+    // An EMPTY list is not a settled one. The host answers this before it has registered the
+    // plugin's server, and `[].some(pending)` is false — so a wait that accepted it would release
+    // the turn at once and `init` would arrive with the server absent, which is the timing failure
+    // this whole module exists to prevent (a review round found it). A run whose install genuinely
+    // brought up no server waits out the deadline and is then reported by the matcher, which names
+    // the plugin's own defect rather than a race in the harness.
+    if (observed.length > 0 && !observed.some((server) => server.status === "pending")) {
+      return observed;
+    }
     if (Date.now() >= deadline) return observed;
     await new Promise((resolve) => setTimeout(resolve, MCP_POLL_MS));
   }

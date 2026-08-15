@@ -40,6 +40,34 @@ export interface AgentAnswer {
   readonly costUsd: number;
 }
 
+/**
+ * A turn that ended without an answer, carrying what it spent getting there.
+ *
+ * **A failed turn costs money, and the caller has to be able to add it up.** A turn that reasons its
+ * way to its own ceiling and is stopped has spent that ceiling; a turn the host classified as
+ * anything but `success` has spent whatever it did before it stopped. Thrown bare, that figure goes
+ * with the exception — and the **responder**, which retries a round and carries on, would then
+ * report a spend short by every attempt that failed. A review round found exactly that: the spend
+ * ceiling under-counted by whatever the harness's own agents burned on the way to a retry.
+ *
+ * So every path out of `askAgent` carries the cost, and a caller that keeps accounting reads it off
+ * the failure the same way it reads it off the answer.
+ */
+export class AgentFailed extends Error {
+  readonly costUsd: number;
+
+  constructor(message: string, costUsd: number, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = "AgentFailed";
+    this.costUsd = costUsd;
+  }
+}
+
+/** What a caught failure spent: this agent's own figure, and nothing for anything else thrown. */
+export function costOf(failure: unknown): number {
+  return failure instanceof AgentFailed ? failure.costUsd : 0;
+}
+
 export async function askAgent(request: AgentRequest): Promise<AgentAnswer> {
   const stopped = new AbortController();
   if (request.ceiling.aborted) stopped.abort(request.ceiling.reason);
@@ -69,13 +97,24 @@ export async function askAgent(request: AgentRequest): Promise<AgentAnswer> {
 
   let structured: unknown;
   let costUsd = 0;
-  for await (const message of session) {
-    if (message.type !== "result") continue;
-    costUsd = message.total_cost_usd;
-    if (message.subtype !== "success") {
-      throw new Error(`${request.purpose} ended as ${message.subtype} rather than answering`);
+  try {
+    for await (const message of session) {
+      if (message.type !== "result") continue;
+      costUsd = message.total_cost_usd;
+      if (message.subtype !== "success") {
+        throw new AgentFailed(
+          `${request.purpose} ended as ${message.subtype} rather than answering`,
+          costUsd,
+        );
+      }
+      structured = message.structured_output;
     }
-    structured = message.structured_output;
+  } catch (error) {
+    // Whatever went wrong, the cost leaves with it. A turn stopped by the abort signal or dropped
+    // by the transport reports nothing of its own, so what is carried is what the last result said
+    // — nothing at all where none arrived, which is the honest figure rather than a guess.
+    if (error instanceof AgentFailed) throw error;
+    throw new AgentFailed(`${request.purpose} failed: ${String(error)}`, costUsd, { cause: error });
   }
   return { structured, costUsd };
 }

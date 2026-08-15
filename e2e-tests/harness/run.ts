@@ -14,9 +14,15 @@
  *
  * The ceilings are enforced here because this is the only place that knows both what a run has
  * spent and how long it has been going. The wall clock is the harness's own timer, since nothing
- * else would stop a wedged orchestrator; the spend is the SDK's, whose option was measured to bind
- * against the provider the environment file selects (ticket 02 settled it) and which reports a run
- * it stopped rather than raising a failure of its own.
+ * else would stop a wedged orchestrator. The spend takes two, and it takes two because the SDK's
+ * figure is fixed when the query is built: `maxBudgetUsd` was measured to bind against the provider
+ * the environment file selects (ticket 02 settled it) and reports a run it stopped rather than
+ * raising a failure of its own, but it covers the SESSION and cannot hear about a dollar the
+ * **responder** spends in the human's seat an hour later. So the harness watches the pair itself —
+ * what the session has reported spending plus what was spent beside it — and stops the run when
+ * together they pass the ceiling. Without that second guard a refinement could reach the whole
+ * ceiling and the responder's spend ride on top of it, with nothing noticing until after the run,
+ * which reports but cannot un-spend (a review round found exactly that).
  *
  * **The input stream is held open for the whole run, and that is load-bearing.** A **dispatch**
  * does not block the orchestrator: the agent goes away to work and a notification brings the
@@ -57,8 +63,8 @@ const STDERR_LINES_KEPT = 60;
  */
 const IDLE_GRACE_MS = 10 * 60 * 1000;
 
-/** How often that silence is checked. */
-const IDLE_POLL_MS = 15_000;
+/** How often that silence, and what has been spent beside the run, are checked. */
+const WATCH_POLL_MS = 15_000;
 
 export interface RunOptions {
   readonly runDirectory: RunDirectory;
@@ -69,7 +75,13 @@ export interface RunOptions {
   readonly ceilings: Ceilings;
   /** the human's seat: everything allowed, every question answered (`./responder.ts`) */
   readonly canUseTool: CanUseTool;
-  /** what the harness's own agents have spent, so one ceiling covers the whole run */
+  /**
+   * What the harness's own agents have spent so far, so one ceiling covers the whole run.
+   *
+   * Asked repeatedly while the run is going rather than once at the start — at the start the answer
+   * is nothing, because nobody has been asked anything yet. It is what the harness's own spend watch
+   * adds to the session's own figure.
+   */
   readonly spentElsewhere: () => number;
   /**
    * How far the run had got, in one line, for a ceiling to report.
@@ -123,6 +135,17 @@ export interface RunOutcome {
   readonly numTurns: number;
   readonly sessionId: string;
   readonly stderr: readonly string[];
+  /**
+   * The environment the session was actually given — the object handed to `query()` and no
+   * recomputation of it.
+   *
+   * A bar on what reached a run has to be asked of what reached it. `assertNoScriptedBackend` asks
+   * whether the scripted review double got into the session, and a review round found it asking
+   * that of a freshly built environment instead: built by the same helper that strips those two
+   * variables, so the answer was no whatever the run had been given. Carried out here, the two can
+   * diverge and the assertion is able to fail for the reason it names.
+   */
+  readonly environment: NodeJS.ProcessEnv;
 }
 
 export async function driveRun(options: RunOptions): Promise<RunOutcome> {
@@ -170,7 +193,10 @@ export async function driveRun(options: RunOptions): Promise<RunOutcome> {
       // it to.
       permissionMode: "bypassPermissions",
       canUseTool: options.canUseTool,
-      maxBudgetUsd: Math.max(ceilings.spendUsd - options.spentElsewhere(), 0),
+      // The whole ceiling, because this figure is fixed here and can only ever be about the session:
+      // what is spent beside it is not the session's to know, and the watch below is what holds the
+      // pair of them to the same ceiling.
+      maxBudgetUsd: ceilings.spendUsd,
       abortController: stopped,
       env: environment,
       stderr: (data: string) => {
@@ -187,12 +213,32 @@ export async function driveRun(options: RunOptions): Promise<RunOutcome> {
   let resultsSeen = 0;
   let streamFailure: unknown;
   let lastHeardFrom = Date.now();
+
+  /**
+   * The ceiling held against the run AND what was spent beside it, while there is still a run to
+   * stop.
+   *
+   * The session reports its running total on every result, so this figure moves at the end of each
+   * turn and stands still inside one — it is as tight as anything watching from outside can be, and
+   * the SDK's own `maxBudgetUsd` is what covers a single turn running away. What this one catches is
+   * the pair: a run at nine tenths of the ceiling with a responder answering rounds beside it.
+   */
+  let spendCeilingReached = false;
+  const holdSpendBetweenThem = (): void => {
+    if (spendCeilingReached) return;
+    if ((result?.total_cost_usd ?? 0) + options.spentElsewhere() <= ceilings.spendUsd) return;
+    spendCeilingReached = true;
+    stopped.abort(new Error("the spend ceiling"));
+  };
+
   // Silence is the backstop: a run that has reported at least once and then said nothing at all
-  // for the grace period is over, whatever its report happened to say.
-  const idle = setInterval(() => {
+  // for the grace period is over, whatever its report happened to say. The spend is watched on the
+  // same beat, because what is spent beside the run moves while the run itself says nothing.
+  const watch = setInterval(() => {
     if (result !== undefined && Date.now() - lastHeardFrom >= IDLE_GRACE_MS) closeInput?.();
-  }, IDLE_POLL_MS);
-  idle.unref();
+    holdSpendBetweenThem();
+  }, WATCH_POLL_MS);
+  watch.unref();
 
   try {
     for await (const message of session) {
@@ -200,6 +246,7 @@ export async function driveRun(options: RunOptions): Promise<RunOutcome> {
       if (message.type !== "result") continue;
       result = message;
       resultsSeen += 1;
+      holdSpendBetweenThem();
       const report = message.subtype === "success" ? message.result : "";
       if (await options.finished?.(report) === true) closeInput?.();
     }
@@ -210,7 +257,7 @@ export async function driveRun(options: RunOptions): Promise<RunOutcome> {
     streamFailure = error;
   } finally {
     clearTimeout(timer);
-    clearInterval(idle);
+    clearInterval(watch);
     closeInput?.();
   }
 
@@ -225,12 +272,20 @@ export async function driveRun(options: RunOptions): Promise<RunOutcome> {
         `stopped. Its session records are in ${runDirectory.configDir}.`,
     });
   }
-  if (result?.subtype === "error_max_budget_usd") {
+  if (spendCeilingReached || result?.subtype === "error_max_budget_usd") {
+    // Two ways to arrive and they are worth telling apart: the host stops a SESSION that reached the
+    // ceiling on its own, and the harness stops a run whose spend and the harness's own beside it
+    // passed it between them.
+    const stoppedBy = spendCeilingReached
+      ? `the harness stopped the run: what the session had spent and what was spent beside it ` +
+        `passed the ceiling between them`
+      : `the host stopped the run itself`;
     throw new CeilingReached("spend", `$${ceilings.spendUsd}`, {
       elapsedMs,
       spentUsd,
-      detail: `the host stopped the run itself. It had reached ${await options.progress()}, at ` +
-        `${result.num_turns} turns. Its session records are in ${runDirectory.configDir}.`,
+      detail: `${stoppedBy}. It had reached ${await options.progress()}, ` +
+        `${result === undefined ? "with no turn reported" : `at ${result.num_turns} turns`}. Its ` +
+        `session records are in ${runDirectory.configDir}.`,
     });
   }
   if (result === undefined) {
@@ -251,6 +306,7 @@ export async function driveRun(options: RunOptions): Promise<RunOutcome> {
     numTurns: result.num_turns,
     sessionId: result.session_id,
     stderr,
+    environment,
   };
 }
 

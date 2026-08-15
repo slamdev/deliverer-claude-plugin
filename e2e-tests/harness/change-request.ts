@@ -87,7 +87,10 @@ export interface AssumptionComment {
   readonly commit: string;
   /** its first line, so a failure can quote the fork rather than only count it */
   readonly opening: string;
-  /** how many answers it carries — the replies on its thread, or the `re:` comments naming it */
+  /**
+   * how many answers it carries: the replies on its thread, or the `re:` comments dealt to it where
+   * several forks share the hash that names them (`dealt` below says why they are dealt)
+   */
   readonly answers: number;
   /** the verdict one of them named — `accept`, `override`, `escalate` — where one did */
   readonly verdict: string | null;
@@ -295,25 +298,63 @@ async function readAssumptionComments(
   const unthreaded = [...jsonLines(conversation.stdout), ...jsonLines(summaries.stdout)]
     .map((entry) => String(entry.body ?? ""))
     .filter((body) => body.trim() !== "");
+  const answersUnder = new Map<string, string[]>();
+  const forksUnder = new Map<string, number>();
+  for (const body of unthreaded) {
+    const answer = RE_ASSUMPTION.exec(body);
+    if (answer !== null) {
+      const commit = (answer[1] ?? "").toLowerCase();
+      answersUnder.set(commit, [...(answersUnder.get(commit) ?? []), body]);
+      continue;
+    }
+    const fork = ASSUMPTION.exec(body);
+    if (fork === null) continue;
+    const commit = (fork[1] ?? "").toLowerCase();
+    forksUnder.set(commit, (forksUnder.get(commit) ?? 0) + 1);
+  }
   for (const body of unthreaded) {
     const named = ASSUMPTION.exec(body);
     if (named === null) continue;
     const commit = (named[1] ?? "").toLowerCase();
-    const answers = unthreaded.filter((other) => {
-      const answered = RE_ASSUMPTION.exec(other);
-      return answered !== null && (answered[1] ?? "").toLowerCase() === commit;
-    });
     comments.push({
       channel: "conversation",
       commit,
       opening: firstLine(body),
-      answers: answers.length,
-      verdict: verdictIn(answers),
+      ...dealt(commit, answersUnder, forksUnder),
       resolved: false,
     });
   }
 
   return comments;
+}
+
+/**
+ * The answers one fork gets, where several forks share the hash that names them.
+ *
+ * An answer on this channel names the COMMIT and never the entry inside it — the prefix
+ * `plugin/agents/change-request-creator.md` gives it carries the hash and nothing else — so one
+ * `re:` under a commit that recorded two assumptions cannot say which of the two it closed. Counting
+ * it for both is what a review round found: two forks would come back adjudicated on one reply, and
+ * `assertAssumptionsAdjudicated` would pass a change request carrying a fork nobody closed.
+ *
+ * So the answers are DEALT OUT rather than matched: one apiece, in the order both were posted, which
+ * is the most a channel with no threading can honestly support — N answers close N forks and the
+ * rest carry none. The last fork under a hash takes whatever is left over, so a single fork answered
+ * three times still reads as answered three times and only a genuine shortfall reads as a shortfall.
+ *
+ * Both maps are the state of the deal and are consumed as it goes, so this is called once per fork
+ * in the order the forks were posted and never twice for the same one.
+ */
+function dealt(
+  commit: string,
+  answersUnder: Map<string, string[]>,
+  forksUnder: Map<string, number>,
+): { answers: number; verdict: string | null } {
+  const left = (forksUnder.get(commit) ?? 1) - 1;
+  forksUnder.set(commit, left);
+  const queue = answersUnder.get(commit) ?? [];
+  const mine = queue.splice(0, left === 0 ? queue.length : 1);
+  return { answers: mine.length, verdict: verdictIn(mine) };
 }
 
 /**
