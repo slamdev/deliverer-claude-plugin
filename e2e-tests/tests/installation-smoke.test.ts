@@ -24,28 +24,13 @@ import {
 import {
   installPluginUnderTest,
   readOptionsAtUserScope,
-  type PluginOptions,
+  REVIEW_OPTIONS,
 } from "../harness/install.ts";
 import { directoryContents, workingTreePluginContents } from "../harness/working-tree.ts";
 import { observeSession } from "../harness/session.ts";
-import { readShippedSurface, REPOSITORY_ENV_FILE } from "../harness/repository.ts";
+import { readShippedSurface } from "../harness/repository.ts";
 import { createRunDirectory } from "../harness/run-directory.ts";
 import { stageWorkingTree } from "../harness/staged-copy.ts";
-
-/**
- * The three options this run configures the plugin with, set through the plugin's own option
- * channel so the path an owner configures is the path under test.
- *
- * The delegated review is pointed at the cheapest thing that is still the real arrangement — the
- * `sonnet` model and the `low` effort tier — and at the repository's own environment file, handed
- * over whole. This test never starts a round; a build run against the same install would, and
- * these are the values it would run at.
- */
-const REVIEW_OPTIONS: PluginOptions = {
-  code_review_effort: "low",
-  code_review_model: "sonnet",
-  code_review_claude_env_file: REPOSITORY_ENV_FILE,
-};
 
 /** The plugin's declared dependency, which `/deliverer:refine` stops at stage 1 without. */
 const DECLARED_DEPENDENCY = "mattpocock-skills";

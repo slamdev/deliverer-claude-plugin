@@ -9,8 +9,11 @@
  * with, what the install wrote, what the loaded plugin contains. None of them asserts a mechanism.
  */
 import assert from "node:assert/strict";
+import { minutes } from "./ceilings.ts";
 import type { PluginOptions } from "./install.ts";
+import type { RefineOutcome } from "./refine-run.ts";
 import type { SessionSurface } from "./session.ts";
+import type { Verdict } from "./verifier.ts";
 import type { FileFingerprint } from "./working-tree.ts";
 
 /**
@@ -23,6 +26,11 @@ const REVIEW_TOOLS = ["code_review_start", "code_review_status", "code_review_ca
 
 /** The host's own answer when a session has no credentials, which it reports as a SUCCESS. */
 const NOT_LOGGED_IN = /^\s*not logged in\b/i;
+
+/** A collected stream, one line per line, indented under whatever labelled it. */
+function quoted(lines: readonly string[]): string {
+  return lines.join("\n    ");
+}
 
 /** Everything in `expected` that `actual` does not have, in the order it was expected. */
 function missingFrom(expected: readonly string[], actual: readonly string[]): string[] {
@@ -243,4 +251,232 @@ export function assertTrivialTurnAnswered(surface: SessionSurface): void {
       `the session answered something other than the word it was asked for: ${surface.reply}`,
     );
   }
+}
+
+/* -------------------------------------------------------------------------------------------- *
+ * A whole run of `/deliverer:refine` (end-to-end-tests ticket 02).
+ *
+ * Every one of these asserts an OUTCOME: what is in the working tree the run published into, what
+ * the forge has, what the responder was asked, what the run directory kept. None of them looks
+ * inside the run — not at a message, not at a dispatch, not at a tool call.
+ * -------------------------------------------------------------------------------------------- */
+
+/** The run reached its report rather than stopping on the way. */
+export function assertRunFinished(outcome: RefineOutcome): void {
+  if (outcome.run.resultSubtype !== "success") {
+    assert.fail(
+      `the run ended as ${outcome.run.resultSubtype} rather than success after ` +
+        `${minutes(outcome.run.durationMs)} and ${outcome.run.numTurns} turns. Its session ` +
+        `records are in ${outcome.runDirectory.root}.` +
+        `${outcome.run.stderr.length === 0 ? "" : `\n  stderr: ${quoted(outcome.run.stderr)}`}`,
+    );
+  }
+  if (outcome.run.report.trim() === "") {
+    assert.fail(
+      `the run finished and reported nothing. Stage 5 is the report, and a run that hands the ` +
+        `human nothing has not finished — whatever it left in the working tree.`,
+    );
+  }
+}
+
+/**
+ * The grilling ran, and the responder answered it out of the fixture's brief.
+ *
+ * Two failures hide here and neither is the other. A run that asked NOTHING skipped stage 1: a
+ * brief an earlier run left in the operating system's temporary directory is proof to a refinement
+ * that the grilling already happened, which is what `./brief.ts` collects each run's own away to
+ * prevent and this catches when prevention did not reach. A run whose questions were answered by
+ * the harness's fallback was answered by nobody: the recommended option went back because the
+ * responder could not, so the epic that came out is not the one the fixture's brief describes.
+ */
+export function assertGrillingAnswered(outcome: RefineOutcome): void {
+  const answered = outcome.responder;
+  if (answered.rounds === 0) {
+    assert.fail(
+      `the run never put a question to the responder, so stage 1 did not run and this epic is ` +
+        `whatever an earlier one left behind. A refinement treats a brief in the operating ` +
+        `system's temporary directory as proof that the grilling already happened, and one was ` +
+        `already sitting there when this run started: ` +
+        `${outcome.briefs.beforeRun.join(", ") || "none that this harness could see"}. A run ` +
+        `collects its own on the way out; one a killed run left behind is removed by hand.`,
+    );
+  }
+  // A round that failed and was answered on the retry is not a finding: the answer still came from
+  // the brief. What is a finding is an answer that never did.
+  if (answered.fallbacks > 0) {
+    const fell = answered.answers
+      .filter((answer) => answer.fallback)
+      .map((answer) => answer.question);
+    assert.fail(
+      `${answered.fallbacks} of ${answered.answers.length} questions were answered by the ` +
+        `harness's own fallback rather than from the fixture's brief, so this epic is not ` +
+        `the one the brief describes.\n` +
+        `  fell back on: ${fell.join("; ") || "none"}\n` +
+        `  the responder reported: ${answered.failures.join("; ") || "nothing"}`,
+    );
+  }
+}
+
+/** Exactly one epic appeared in the working tree, where the fixture's conventions put one. */
+export function assertEpicPublished(outcome: RefineOutcome): void {
+  const published = outcome.epicsAfter.filter((slug) => !outcome.epicsBefore.includes(slug));
+  if (published.length !== 1) {
+    assert.fail(
+      `the run published ${published.length} epics under ` +
+        `${outcome.fixture.trackerRoot}/ where exactly one was expected: ` +
+        `${published.join(", ") || "none at all"}. Before the run there were ` +
+        `${outcome.epicsBefore.join(", ") || "none"}; after it, ` +
+        `${outcome.epicsAfter.join(", ") || "none"}.`,
+    );
+  }
+}
+
+/** The spec is published, where the conventions put it, carrying the label they name. */
+export function assertSpecPublished(outcome: RefineOutcome): void {
+  const epic = outcome.epic;
+  if (epic.specPath === null) {
+    assert.fail(
+      `the run published no spec at ${epic.directory}/spec.md, which is where this fixture's ` +
+        `conventions put one. What it left there instead: ` +
+        `${[...epic.otherFiles, ...epic.tickets.map((ticket) => ticket.path)].join(", ")
+          || "nothing"}`,
+    );
+  }
+  if (epic.specText.trim().length < 500) {
+    assert.fail(
+      `the spec at ${epic.specPath} is ${epic.specText.trim().length} characters long, which is ` +
+        `too short to be one. A spec states the problem, the solution, its user stories and the ` +
+        `decisions behind them.`,
+    );
+  }
+  assertTriageLabel(outcome, epic.specPath ?? "", epic.specTriageLabel, "the spec");
+}
+
+/**
+ * One file per ticket, numbered from `01`, each declaring what blocks it.
+ *
+ * The numbers are the contract and not the presentation: delivery records a ticket on its commits
+ * by number, so a set that skips one or starts at `1` is a set whose edges name something that is
+ * not there.
+ */
+export function assertTicketsPublished(outcome: RefineOutcome): void {
+  const epic = outcome.epic;
+  if (epic.tickets.length === 0) {
+    assert.fail(
+      `the run published no tickets under ${epic.directory}/issues/. A spec with no tickets is ` +
+        `half an epic: stage 4 is what cuts it into slices.` +
+        `${epic.otherFiles.length === 0 ? "" : ` It left ${epic.otherFiles.join(", ")} instead.`}`,
+    );
+  }
+
+  const unnumbered = epic.tickets.filter((ticket) => ticket.number === null);
+  if (unnumbered.length > 0) {
+    assert.fail(
+      `${unnumbered.length} ticket files carry no number: ` +
+        `${unnumbered.map((ticket) => ticket.file).join(", ")}. Tickets are numbered from ` +
+        `01, and a blocking edge names a ticket by its number.`,
+    );
+  }
+
+  const numbers = epic.tickets
+    .map((ticket) => ticket.number ?? 0)
+    .sort((left, right) => left - right);
+  const expected = numbers.map((_, index) => index + 1);
+  if (numbers.join(",") !== expected.join(",")) {
+    assert.fail(
+      `the tickets are numbered ${numbers.join(", ")} where a set of ${numbers.length} is ` +
+        `numbered ${expected.join(", ")} — from 01, with nothing skipped and nothing repeated.`,
+    );
+  }
+  const unpadded = epic.tickets.filter((ticket) => !/^\d\d/.test(ticket.file));
+  if (unpadded.length > 0) {
+    assert.fail(
+      `${unpadded.map((ticket) => ticket.file).join(", ")} do not carry a two-digit number, so ` +
+        `they sort out of order the moment there are ten of them.`,
+    );
+  }
+
+  const silent = epic.tickets.filter((ticket) => !ticket.declaresBlockingEdges);
+  if (silent.length > 0) {
+    assert.fail(
+      `${silent.length} of ${epic.tickets.length} tickets declare no blocking edges: ` +
+        `${silent.map((ticket) => ticket.file).join(", ")}. Every ticket says what blocks it, or ` +
+        `that nothing does — that is what puts them in dependency order.`,
+    );
+  }
+
+  for (const ticket of epic.tickets) {
+    assertTriageLabel(outcome, ticket.path, ticket.triageLabel, `ticket ${ticket.file}`);
+  }
+}
+
+/** The label this fixture's conventions name for work ready for an agent, where they name one. */
+function assertTriageLabel(
+  outcome: RefineOutcome,
+  path: string,
+  found: string | null,
+  what: string,
+): void {
+  const expected = outcome.fixture.readyForAgentLabel;
+  if (expected === null || found === expected) return;
+  assert.fail(
+    `${what} at ${path} carries ` +
+      `${found === null ? "no triage label" : `the triage label ${found}`} where this ` +
+      `fixture's conventions name ${expected} for work that is ready for an agent. ` +
+      `Whatever picks the work up next reads that line.`,
+  );
+}
+
+/**
+ * The run pushed nothing.
+ *
+ * This is what lets the repository stand rather than be thrown away: with nothing written back, no
+ * two runs can reach each other. Asked of the FORGE and not of the clone, because a clone whose own
+ * branch moved says nothing about what was published to it.
+ */
+export function assertNothingPushed(outcome: RefineOutcome): void {
+  if (outcome.remoteHeadAfterRun !== outcome.standingRepo.headBeforeRun) {
+    assert.fail(
+      `${outcome.standingRepo.fullName} moved from ${outcome.standingRepo.headBeforeRun} to ` +
+        `${outcome.remoteHeadAfterRun} during the run. A refinement pushes nothing, and a ` +
+        `standing repo one run can write to is one the next run inherits.`,
+    );
+  }
+}
+
+/**
+ * The run directory kept the session records — the orchestrator's and every dispatched agent's.
+ *
+ * Refinement dispatches two **writers**, so a run with no dispatched records at all is one whose
+ * failures are only readable as the reports that summarised them.
+ */
+export function assertSessionRecordsKept(outcome: RefineOutcome, dispatchedFloor: number): void {
+  const records = outcome.records;
+  if (records.sessions.length === 0) {
+    assert.fail(
+      `the run left no session records under ${records.root}, so nothing about it can be read ` +
+        `afterwards. Every run gets its own configuration directory precisely so they land there.`,
+    );
+  }
+  if (records.dispatched.length < dispatchedFloor) {
+    assert.fail(
+      `the run kept ${records.dispatched.length} dispatched agents' session records where at ` +
+        `least ${dispatchedFloor} were expected — refinement dispatches a spec writer and a ` +
+        `tickets writer, and a failure inside either is only readable from its own record. Kept: ` +
+        `${records.dispatched.join(", ") || "none"}`,
+    );
+  }
+}
+
+/** The verifier passed on both of the questions no assertion could settle. */
+export function assertVerdictPassed(verdict: Verdict): void {
+  if (verdict.passed) return;
+  const failed = verdict.judgements
+    .filter((judgement) => !judgement.passed)
+    .map((judgement) => `${judgement.subject}: ${judgement.grounds}`);
+  assert.fail(
+    `the verifier judged what the run delivered and failed it: ${verdict.summary}\n` +
+      `  ${failed.join("\n  ") || "(it named no failing judgement, which is a verdict this " +
+        "harness cannot read)"}`,
+  );
 }

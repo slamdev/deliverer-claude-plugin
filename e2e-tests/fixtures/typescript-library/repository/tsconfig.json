@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+
+    // The library runs unbuilt: Node strips the types, so `tsc --noEmit` is the only thing that
+    // reads this file. These three keep the source runnable — no construct type stripping cannot
+    // erase, real `.ts` extensions on the imports, and no import elision to remove.
+    "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true
+  },
+  "include": ["src/**/*.ts"]
+}

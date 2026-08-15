@@ -1,0 +1,5 @@
+{
+  "description": "A small TypeScript library of fixed-width terminal helpers, its unit tests, its typecheck and a working CI workflow. Its CLAUDE.md names markdown files under docs/specs as the tracker convention, which is what lets the assertions name where an epic lands.",
+  "trackerRoot": "docs/specs",
+  "readyForAgentLabel": "ready-for-agent"
+}

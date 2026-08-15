@@ -54,43 +54,43 @@ where the spec carried estimates, and one ticket is one context: what is not wri
 Files: `e2e-tests/`. `docs/specs/end-to-end-tests/spec.md` §Implementation Decisions — The repositories, The fixtures,
 The test surface; §Testing Decisions; §Further Notes.
 
-- [ ] A **fixture** is a directory, and the first one carries a small TypeScript library, its unit tests, its typecheck,
+- [x] A **fixture** is a directory, and the first one carries a small TypeScript library, its unit tests, its typecheck,
       a working CI workflow, and a `CLAUDE.md` naming markdown files as the tracker convention.
-- [ ] A second fixture can be added as a directory without changing the harness or disturbing the tests that exist.
-- [ ] The **standing repo** is created when absent and force-synced from the fixture when it has drifted, so a run
+- [x] A second fixture can be added as a directory without changing the harness or disturbing the tests that exist.
+- [x] The **standing repo** is created when absent and force-synced from the fixture when it has drifted, so a run
       cannot execute against a stale fixture; the run clones it and pushes nothing.
-- [ ] The **standing repo** is private, under the account the forge token authenticates as, and named for the test and
+- [x] The **standing repo** is private, under the account the forge token authenticates as, and named for the test and
       the fixture rather than the run, since it outlives every run.
-- [ ] A test is written against a fluent builder, with every mechanical assertion behind a named matcher, so that when
+- [x] A test is written against a fluent builder, with every mechanical assertion behind a named matcher, so that when
       the plugin's output moves the matchers move once.
-- [ ] A run carries a wall-clock ceiling of ninety minutes and a spend ceiling of twenty-five dollars, both constants in
+- [x] A run carries a wall-clock ceiling of ninety minutes and a spend ceiling of twenty-five dollars, both constants in
       one place, overridable per test, and both failing loud with what the run had reached.
-- [ ] A ceiling being reached is reported distinctly from a run that finished and failed its assertions, so a slow run
+- [x] A ceiling being reached is reported distinctly from a run that finished and failed its assertions, so a slow run
       can be told from a stuck one.
-- [ ] What the run actually took and cost is recorded as a comment on this ticket, because ticket 04 publishes
+- [x] What the run actually took and cost is recorded as a comment on this ticket, because ticket 04 publishes
       measurements where the spec carried estimates and reads them from here.
-- [ ] Each run has its own temporary directory, and neither a brief left by a previous run nor anything the harness
+- [x] Each run has its own temporary directory, and neither a brief left by a previous run nor anything the harness
       staged can cause refinement to skip stage 1.
-- [ ] The answers the **responder** reads live in the fixture directory and are never written where refinement looks
+- [x] The answers the **responder** reads live in the fixture directory and are never written where refinement looks
       for a brief of its own.
-- [ ] The **responder** runs on `sonnet`, answers each question from the fixture's brief, prefers the recommended option
+- [x] The **responder** runs on `sonnet`, answers each question from the fixture's brief, prefers the recommended option
       where the brief is silent, and confirms the shared understanding once the frontier empties.
-- [ ] Questions reach the responder as structured data through the session's permission callback; no terminal output is
+- [x] Questions reach the responder as structured data through the session's permission callback; no terminal output is
       parsed and no keystrokes are sent.
-- [ ] Mechanical matchers assert a published **spec** and one file per **ticket**, numbered from `01`, each declaring
+- [x] Mechanical matchers assert a published **spec** and one file per **ticket**, numbered from `01`, each declaring
       its **blocking edges**, at the location the fixture's conventions name.
-- [ ] The **verifier** runs on `opus`, returns a structured verdict, and judges only what no assertion can settle —
+- [x] The **verifier** runs on `opus`, returns a structured verdict, and judges only what no assertion can settle —
       whether the spec coheres, whether the tickets cover its **user stories**.
-- [ ] Both the mechanical assertions and the verifier's verdict must pass for the test to pass.
-- [ ] Nothing is asserted below the seam of the whole run: no mid-run message stream, no tools-server interception.
-- [ ] The **run directory** keeps the session records of every dispatched agent, not only the orchestrator's, and
+- [x] Both the mechanical assertions and the verifier's verdict must pass for the test to pass.
+- [x] Nothing is asserted below the seam of the whole run: no mid-run message stream, no tools-server interception.
+- [x] The **run directory** keeps the session records of every dispatched agent, not only the orchestrator's, and
       survives whether the test passed or failed.
-- [ ] Where the permission callback does not carry a full grilling, or the spend ceiling does not bind against the
+- [x] Where the permission callback does not carry a full grilling, or the spend ceiling does not bind against the
       provider the environment file selects, that is reported as the **claim** §Further Notes recorded rather than
       worked around.
-- [ ] Each file's prevailing column width is matched — 120 **characters**, not bytes; em dashes make byte counts
+- [x] Each file's prevailing column width is matched — 120 **characters**, not bytes; em dashes make byte counts
       overrun a correctly-wrapped line.
-- [ ] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
+- [x] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
 
 ## Comments
 
@@ -113,3 +113,60 @@ Triaging ticket 04 added one criterion here: what the run actually took and cost
 ticket. Ticket 04's central bar is that the figures it publishes are measurements rather than the spec's estimates, and
 nothing named a place for a measurement to be written down. One ticket is one context, so what is not on a ticket file
 does not reach it.
+
+---
+
+> *This was recorded by the implementation of this ticket.*
+
+**What the run actually took and cost.** The **run** itself took **20m 12s** and cost **$5.82**. The whole test, which
+also stages the plugin, installs it, brings the **standing repo** into step, clones it and runs the **verifier**, took
+**21m 52s** and cost **$6.36** — the run, the **responder** at $0.16 over six rounds of questions (twelve in all), and
+the verifier at $0.39. It published a **spec** and **six tickets**. Both ceilings were the spec's estimates and
+**neither had to be raised**: the run finished inside a fifth of the ninety minutes and a quarter of the twenty-five
+dollars, so ticket 04 publishes those two figures as the ceilings in force, in `e2e-tests/harness/ceilings.ts`. What
+the build test costs is ticket 03's to measure, and a delivery is the more expensive of the two.
+
+**Claim 1 held: the permission callback carries a whole grilling.** §Further Notes recorded it as measured on one
+trivial question, never across the rounds a real refinement asks and never with the plugin's own skill putting them.
+Across six rounds and twelve questions from `mattpocock-skills:grilling` under `/deliverer:refine`, every question
+reached the callback as structured data — its text, its header, its options with their descriptions, and whether it
+took more than one answer — and every answer returned through the callback reached the model verbatim, free text
+included. Nothing parsed a terminal and no keystroke was sent. Three details worth carrying to ticket 03. The host
+warns that `canUseTool` is not consulted under `permissionMode: bypassPermissions`, and that is true of every tool
+*except* `AskUserQuestion`, which is a dialog rather than a permission and still arrives. An answer goes back as
+`{behavior: "allow", updatedInput: {...input, answers}}`, keyed by each question's own text. And the rounds are not all
+grilling: round six was a **fork** the `spec-writer` reopened by killing a **claim**, put back to the human exactly as
+the skill says it should be — so a responder that only answers interview questions is not enough.
+
+**Claim 2 held: the spend ceiling binds.** The SDK's `maxBudgetUsd` was measured against the provider `.env` selects
+here — a subscription token — with a deliberately tiny ceiling: the run stopped after one turn with
+`subtype: error_max_budget_usd`, `terminal_reason: budget_exhausted` and a non-zero `total_cost_usd`, so spend is both
+reported and enforced. Two things a caller has to know. The host raises *after* reporting the result it stopped, so a
+harness that only catches the throw loses the figures. And it injects the remaining budget into the run's own
+conversation, so the run under test can see what it has left — which is worth knowing before reading a run that wrapped
+up early.
+
+**A third finding, which no claim had named: a one-shot prompt ends a run several stages early.** A **dispatch** does
+not block the orchestrator — the agent goes away to work and a notification brings the orchestrator back when its
+**report** lands — so a run's own turn ends several times before the run does. Driven with a one-shot prompt, the first
+of those closed the session: `/deliverer:refine` ended `success` with its `spec-writer` still working, having published
+nothing and reported nothing. A green light for a run that delivered a fraction of an epic. Holding the SDK's input
+stream open for the whole run fixes it — the session then takes the notification and carries on by itself, exactly as
+the interactive session a user drives does — and the harness decides a run is over on a report naming
+`/deliverer:build`, with total silence for ten minutes as the backstop. This run came back to work twice that way.
+**Ticket 03 inherits it**: a delivery has seven stages of dispatches, and every one of them would have ended its run.
+
+**The brief does not land in the run's own temporary directory.** The spec's §How a run is set up gives each run its
+own temporary directory because refinement writes the **brief** to the operating system's and treats one on disk as
+proof that stage 1 already ran. That binds everything which *reads* `TMPDIR` and misses the writer it was for: an
+orchestrator told to use the temporary directory of the user's OS writes `/tmp/<slug>-brief.md`, a path it knows. It
+cost a run to find out — the first full run of this test reached stage 3 in ninety seconds, having taken its bearings
+from a brief a probe had left there an hour earlier, and never grilled anything. The criterion is met a different way:
+each run collects its own brief out of the shared directory when it finishes, into the **run directory** where a run's
+leavings belong, and never touches one older than itself. The matcher that catches a grilling which never happened is
+the backstop for a run killed before it could collect.
+
+**Two things observed in passing.** The **standing repo**'s freshness bar fired for real: the fixture's `CLAUDE.md` was
+edited between runs, the tree comparison saw the drift and force-pushed, so the run executed against the fixture on
+disk rather than the one pushed an hour before. And the run pushed nothing — the clone ended with the epic, the
+glossary and two ADRs all untracked, and the forge's branch at the commit the run cloned.

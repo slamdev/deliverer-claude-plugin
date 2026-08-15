@@ -23,7 +23,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { execute } from "./command.ts";
-import { readMarketplaceEntry } from "./repository.ts";
+import { readMarketplaceEntry, REPOSITORY_ENV_FILE } from "./repository.ts";
 import { runEnvironment, type RunDirectory } from "./run-directory.ts";
 import type { StagedCopy } from "./staged-copy.ts";
 
@@ -52,6 +52,24 @@ export interface PluginOptions {
   readonly code_review_model: string;
   readonly code_review_claude_env_file: string;
 }
+
+/**
+ * What every run configures the plugin with, through the plugin's own option channel so the path an
+ * owner configures is the path under test.
+ *
+ * The delegated review is pointed at the cheapest thing that is still the real arrangement — the
+ * `sonnet` model and the `low` effort tier — and at the repository's own environment file, handed
+ * over whole. A refinement never starts a round; a delivery against the same install would, and
+ * these are the values it runs at.
+ *
+ * One copy, because both tests install the same plugin the same way: a second copy is one that goes
+ * stale in whichever test nobody ran.
+ */
+export const REVIEW_OPTIONS: PluginOptions = {
+  code_review_effort: "low",
+  code_review_model: "sonnet",
+  code_review_claude_env_file: REPOSITORY_ENV_FILE,
+};
 
 export interface Installation {
   /** `plugin@marketplace` — how the host names the install, and the key its options sit under */

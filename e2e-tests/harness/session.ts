@@ -27,9 +27,7 @@ import {
   type SDKMessage,
   type SDKUserMessage,
 } from "@anthropic-ai/claude-agent-sdk";
-import { readEnvFileWhole } from "./env-file.ts";
-import { REPOSITORY_ENV_FILE } from "./repository.ts";
-import { runEnvironment, type RunDirectory } from "./run-directory.ts";
+import { sessionEnvironment, type RunDirectory } from "./run-directory.ts";
 
 /**
  * What the session is asked. A whole turn is what proves the session can reach a model at all —
@@ -106,7 +104,7 @@ export async function observeSession(
   // the run's directories: whatever the file says wins over what the shell happened to export,
   // which is what the `./claude` wrapper does with the same file, and neither can move the run out
   // of its own configuration and temporary directories.
-  const environment = runEnvironment(runDirectory, await readEnvFileWhole(REPOSITORY_ENV_FILE));
+  const environment = await sessionEnvironment(runDirectory);
 
   // Everything the run produced is on disk by the time the ceiling fires, so the failure is still
   // readable afterwards — it is only the process that goes.
