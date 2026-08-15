@@ -11,32 +11,26 @@
  */
 import type { TestContext } from "node:test";
 import {
-  CeilingReached,
   DEFAULT_CEILINGS,
+  holdSpendCeiling,
   minutes,
   type Ceilings,
+  type Spend,
 } from "./ceilings.ts";
 import { briefsBeforeRun, collectBriefs, type Briefs } from "./brief.ts";
 import { listEpics, readEpic, type PublishedEpic } from "./epic.ts";
 import { loadFixture, type Fixture } from "./fixture.ts";
+import { remoteHead } from "./forge.ts";
 import { installPluginUnderTest, REVIEW_OPTIONS } from "./install.ts";
 import { createResponder, type ResponderRecord } from "./responder.ts";
 import { createRunDirectory, type RunDirectory } from "./run-directory.ts";
 import { driveRun, readSessionRecords, type RunOutcome, type SessionRecords } from "./run.ts";
-import { cloneStandingRepo, remoteHead, type StandingRepo } from "./standing-repo.ts";
+import { cloneStandingRepo, type StandingRepo } from "./standing-repo.ts";
 import { stageWorkingTree } from "./staged-copy.ts";
 import { verifyEpic, type Verdict } from "./verifier.ts";
 
 /** The test's half of the standing repo's name. Never the run's: the repository outlives it. */
 const TEST_NAME = "refine";
-
-/** What one run cost, in the three places a run spends. */
-export interface Spend {
-  readonly ceilingUsd: number;
-  runUsd: number;
-  responderUsd: number;
-  verifierUsd: number;
-}
 
 export interface RefineOutcome {
   readonly runDirectory: RunDirectory;
@@ -47,6 +41,8 @@ export interface RefineOutcome {
   /** the epics in the working tree before the run, and after it */
   readonly epicsBefore: readonly string[];
   readonly epicsAfter: readonly string[];
+  /** the ones that appeared, which is what the run published — worked out once, here */
+  readonly epicsPublished: readonly string[];
   /** what the forge has the standing repo's branch at, once the run is over */
   readonly remoteHeadAfterRun: string;
   readonly records: SessionRecords;
@@ -60,22 +56,20 @@ export interface RefineOutcome {
 }
 
 export interface RefineRunBuilder {
-  /** an idea other than the fixture's own, for a test that wants one */
-  withIdea(idea: string): RefineRunBuilder;
-  /** a ceiling other than the default, for a test that costs less than a delivery */
+  /**
+   * Ceilings other than the epic's own, for a test that costs less than a delivery.
+   *
+   * Whatever a test passes here it also passes to `testTimeout`, or the runner kills a raised
+   * ceiling before it can report (`./ceilings.ts`).
+   */
   withCeilings(ceilings: Partial<Ceilings>): RefineRunBuilder;
   start(t: TestContext): Promise<RefineOutcome>;
 }
 
 export function refineRun(fixtureName: string): RefineRunBuilder {
-  let idea: string | undefined;
   let ceilings: Ceilings = DEFAULT_CEILINGS;
 
   const builder: RefineRunBuilder = {
-    withIdea(given) {
-      idea = given;
-      return builder;
-    },
     withCeilings(given) {
       ceilings = { ...ceilings, ...given };
       return builder;
@@ -98,14 +92,8 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
           ` at ${standingRepo.headBeforeRun.slice(0, 12)}`,
       );
 
-      const epicsBefore = await listEpics(runDirectory.cloneDir, fixture.trackerRoot);
+      const epicsBefore = await listEpics(runDirectory.cloneDir, fixture.tracker);
       const responder = createResponder(runDirectory, fixture);
-      const spend: Spend = {
-        ceilingUsd: ceilings.spendUsd,
-        runUsd: 0,
-        responderUsd: 0,
-        verifierUsd: 0,
-      };
 
       // Taken before the run and collected after it, whichever way the run ends: a brief left in
       // the operating system's temporary directory is what makes the NEXT run skip its grilling
@@ -118,7 +106,7 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
         run = await driveRun({
           runDirectory,
           cwd: runDirectory.cloneDir,
-          command: `/deliverer:${TEST_NAME} ${idea ?? fixture.idea}`,
+          command: `/deliverer:${TEST_NAME} ${fixture.idea}`,
           ceilings,
           canUseTool: responder.canUseTool,
           spentElsewhere: () => responder.record().costUsd,
@@ -138,29 +126,27 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
       }
       const briefs: Briefs = { beforeRun: briefsBefore, collected };
       const answered = responder.record();
-      spend.runUsd = run.costUsd;
-      spend.responderUsd = answered.costUsd;
+      const spend: Spend = {
+        ceilingUsd: ceilings.spendUsd,
+        runUsd: run.costUsd,
+        besideRunUsd: answered.costUsd,
+      };
       t.diagnostic(
-        `the run took ${minutes(run.durationMs)} and cost $${run.costUsd.toFixed(2)}, coming ` +
-          `back to work ${run.turnsTaken} times after a dispatch, with ${answered.rounds} ` +
+        `the run took ${minutes(run.durationMs)} and cost $${run.costUsd.toFixed(2)}, reported ` +
+          `${run.resultsSeen} times as its dispatches came back, with ${answered.rounds} ` +
           `rounds of questions (${answered.answers.length} in all) answered for ` +
           `$${answered.costUsd.toFixed(2)}`,
       );
 
-      // The session's own ceiling could not have caught this: the responder spends beside the run
-      // rather than inside it, and one ceiling covers the whole of what a run costs.
-      const spent = spend.runUsd + spend.responderUsd;
-      if (spent > ceilings.spendUsd) {
-        throw new CeilingReached("the spend", {
-          elapsedMs: run.durationMs,
-          spentUsd: spent,
-          detail: `the run itself cost $${spend.runUsd.toFixed(2)} and the responder beside it ` +
-            `$${spend.responderUsd.toFixed(2)}.`,
-        });
-      }
+      holdSpendCeiling(
+        spend,
+        run.durationMs,
+        `the run itself cost $${spend.runUsd.toFixed(2)} and the responder beside it ` +
+          `$${spend.besideRunUsd.toFixed(2)}.`,
+      );
 
-      const epicsAfter = await listEpics(runDirectory.cloneDir, fixture.trackerRoot);
-      const published = epicsAfter.filter((slug) => !epicsBefore.includes(slug));
+      const epicsAfter = await listEpics(runDirectory.cloneDir, fixture.tracker);
+      const epicsPublished = epicsAfter.filter((slug) => !epicsBefore.includes(slug));
       return {
         runDirectory,
         fixture,
@@ -169,6 +155,7 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
         responder: answered,
         epicsBefore,
         epicsAfter,
+        epicsPublished,
         remoteHeadAfterRun: await remoteHead(runDirectory, standingRepo.url),
         records: await readSessionRecords(runDirectory),
         briefs,
@@ -177,8 +164,8 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
         // matcher is what names that as the failure it is.
         epic: await readEpic(
           runDirectory.cloneDir,
-          fixture.trackerRoot,
-          published[0] ?? "(nothing published)",
+          fixture.tracker,
+          epicsPublished[0] ?? "(nothing published)",
         ),
         ceiling: t.signal,
       };
@@ -188,23 +175,12 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
 }
 
 /**
- * The verdict on what the run delivered, with what it cost folded into the run's own accounting.
+ * The verdict on what the run delivered.
  *
  * Separate from `start` because the mechanical assertions run first: a verdict on an epic that was
- * never published costs money to be told what a matcher already said.
+ * never published costs money to be told what a matcher already said. What it cost rides on the
+ * verdict rather than on the run's `Spend`, because by the time this runs the run is over.
  */
-export async function verify(outcome: RefineOutcome): Promise<Verdict> {
-  const verdict = await verifyEpic(
-    outcome.runDirectory,
-    outcome.fixture,
-    outcome.epic,
-    outcome.ceiling,
-  );
-  outcome.spend.verifierUsd = verdict.costUsd;
-  return verdict;
-}
-
-/** What the whole run cost, the harness's own two agents included. */
-export function totalSpend(spend: Spend): number {
-  return spend.runUsd + spend.responderUsd + spend.verifierUsd;
+export function verify(outcome: RefineOutcome): Promise<Verdict> {
+  return verifyEpic(outcome.runDirectory, outcome.fixture, outcome.epic, outcome.ceiling);
 }

@@ -33,8 +33,9 @@ character is.
   stays a blank line — paragraphs survive wrapping. `\r\n` is normalised to `\n` first.
 - **Trailing whitespace on a wrapped line is dropped; whitespace inside a line is left exactly as it was.** Nothing
   collapses runs of spaces, because aligned output depends on them.
-- **`width` must be a positive integer.** Zero, a negative or a fraction is a `RangeError` carrying the value, the
-  way `truncate` already refuses one.
+- **`width` must be a positive integer.** A negative or a fraction is a `RangeError` carrying the value, the way
+  `truncate` already refuses one — and zero is refused too, which `truncate` allows. Truncating to zero columns has an
+  answer, the empty string; wrapping to zero columns has none, because every word would break forever.
 - **No new dependencies, and no change to the two functions that exist.** The tests are `node:test` files beside the
   source, the typecheck stays `tsc --noEmit`, and CI keeps running both.
 

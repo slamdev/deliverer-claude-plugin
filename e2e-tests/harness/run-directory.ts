@@ -44,6 +44,40 @@ import { REPOSITORY_ENV_FILE } from "./repository.ts";
 /** Where run directories are made. Outside the repository, so no run is ever a change to it. */
 const RUN_ROOT = join(tmpdir(), "deliverer-e2e");
 
+/**
+ * The scripted review double's two knobs, kept OUT of everything a run starts (ticket 03).
+ *
+ * The real delegated review is the default and the double is opt-in, so nothing in the harness need
+ * select it — and that is exactly how it would arrive by accident rather than by choice.
+ * CONTRIBUTING teaches `DELIVERER_REVIEW_BACKEND=scripted` as the way to exercise the lifecycle,
+ * and the harness hands the repository's environment file to the session WHOLE and never reads it.
+ * Left in that file or in the contributor's shell it reaches the session, from there the tools
+ * server the session starts, and every **round** replays a canned timeline: all seven stages pass
+ * having reviewed nothing.
+ *
+ * So it is kept from arriving rather than trusted to be absent. The selector is the one that
+ * decides; the script beside it is inert without one and goes with it, because a knob for a backend
+ * nobody selected is a knob nobody meant to leave behind either.
+ */
+export const SCRIPTED_BACKEND_VARIABLES = ["DELIVERER_REVIEW_BACKEND", "DELIVERER_REVIEW_SCRIPT"];
+
+/**
+ * The test runner's own two variables, kept out for a reason it took a **run** to find (ticket 03).
+ *
+ * These tests run under `node --test`, which marks its children with `NODE_TEST_CONTEXT` and
+ * `NODE_TEST_WORKER_ID`. The harness hands the session the environment it inherited, so both reach
+ * every process a run starts — including the **fixture**'s own `npm test`, which is `node --test`
+ * again. It sees the mark, decides it is being run recursively, **skips every test file and exits
+ * zero**: measured, and reported by an orchestrator that met it in every implementer, reviewer and
+ * fix wave of a delivery.
+ *
+ * A **gate** that is green because nothing ran is the worst kind of green. It is what an
+ * implementer reads before committing, and this fixture's gates are the whole reason its codebase
+ * carries unit tests. The forge's **checks** run in an environment of their own and were green
+ * throughout, so nothing broken was delivered — but the gate was not being asked the question.
+ */
+export const RUNNER_VARIABLES = ["NODE_TEST_CONTEXT", "NODE_TEST_WORKER_ID"];
+
 export interface RunDirectory {
   /** the directory itself, named for the test and the moment it was made */
   readonly root: string;
@@ -111,7 +145,7 @@ export function runEnvironment(
   runDirectory: RunDirectory,
   layered: Record<string, string> = {},
 ): NodeJS.ProcessEnv {
-  return {
+  const environment: NodeJS.ProcessEnv = {
     ...process.env,
     ...layered,
     CLAUDE_CONFIG_DIR: runDirectory.configDir,
@@ -119,6 +153,33 @@ export function runEnvironment(
     TMP: runDirectory.tempDir,
     TEMP: runDirectory.tempDir,
   };
+  // Deleted rather than emptied: an empty value is a value, and both of the things that read these
+  // read the variable rather than asking whether it is worth reading. The scripted backend's two
+  // come from the contributor — their environment file or their shell — and the runner's two from
+  // the process this harness is itself running inside.
+  for (const variable of [...SCRIPTED_BACKEND_VARIABLES, ...RUNNER_VARIABLES]) {
+    delete environment[variable];
+  }
+  return environment;
+}
+
+/**
+ * What a contributor's own environment would have selected, before it was kept out.
+ *
+ * Read for the diagnostic and for the matcher, so a run that would have reviewed nothing says so
+ * out loud rather than passing quietly on a variable nobody remembered leaving set.
+ */
+export async function scriptedBackendKeptOut(): Promise<Record<string, string>> {
+  const contributors: NodeJS.ProcessEnv = {
+    ...process.env,
+    ...(await readEnvFileWhole(REPOSITORY_ENV_FILE)),
+  };
+  const found: Record<string, string> = {};
+  for (const variable of SCRIPTED_BACKEND_VARIABLES) {
+    const value = contributors[variable];
+    if (value !== undefined) found[variable] = value;
+  }
+  return found;
 }
 
 /**

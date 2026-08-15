@@ -9,9 +9,13 @@
  * with, what the install wrote, what the loaded plugin contains. None of them asserts a mechanism.
  */
 import assert from "node:assert/strict";
+import type { BuildOutcome } from "./build-run.ts";
 import { minutes } from "./ceilings.ts";
+import type { ChangeRequest } from "./change-request.ts";
+import { DEFAULT_BRANCH } from "./forge.ts";
 import type { PluginOptions } from "./install.ts";
 import type { RefineOutcome } from "./refine-run.ts";
+import type { ObservedRun } from "./run.ts";
 import type { SessionSurface } from "./session.ts";
 import type { Verdict } from "./verifier.ts";
 import type { FileFingerprint } from "./working-tree.ts";
@@ -237,7 +241,7 @@ export function assertTrivialTurnAnswered(surface: SessionSurface): void {
   if (surface.resultSubtype !== "success") {
     assert.fail(
       `the session's trivial turn ended as ${surface.resultSubtype} rather than success` +
-        `${surface.stderr.length === 0 ? "" : `\n  stderr: ${surface.stderr.join("\n    ")}`}`,
+        `${surface.stderr.length === 0 ? "" : `\n  stderr: ${quoted(surface.stderr)}`}`,
     );
   }
   if (NOT_LOGGED_IN.test(surface.reply)) {
@@ -254,7 +258,7 @@ export function assertTrivialTurnAnswered(surface: SessionSurface): void {
 }
 
 /* -------------------------------------------------------------------------------------------- *
- * A whole run of `/deliverer:refine` (end-to-end-tests ticket 02).
+ * A whole run, of either skill (end-to-end-tests tickets 02 and 03).
  *
  * Every one of these asserts an OUTCOME: what is in the working tree the run published into, what
  * the forge has, what the responder was asked, what the run directory kept. None of them looks
@@ -262,7 +266,7 @@ export function assertTrivialTurnAnswered(surface: SessionSurface): void {
  * -------------------------------------------------------------------------------------------- */
 
 /** The run reached its report rather than stopping on the way. */
-export function assertRunFinished(outcome: RefineOutcome): void {
+export function assertRunFinished(outcome: ObservedRun): void {
   if (outcome.run.resultSubtype !== "success") {
     assert.fail(
       `the run ended as ${outcome.run.resultSubtype} rather than success after ` +
@@ -273,8 +277,38 @@ export function assertRunFinished(outcome: RefineOutcome): void {
   }
   if (outcome.run.report.trim() === "") {
     assert.fail(
-      `the run finished and reported nothing. Stage 5 is the report, and a run that hands the ` +
-        `human nothing has not finished — whatever it left in the working tree.`,
+      `the run finished and reported nothing. The last stage of either skill is the report, and ` +
+        `a run that hands the human nothing has not finished — whatever it left behind.`,
+    );
+  }
+}
+
+/**
+ * The run directory kept the session records — the orchestrator's and every dispatched agent's.
+ *
+ * A run with no dispatched records at all is one whose failures are only readable as the reports
+ * that summarised them, which is the whole reason every run gets a configuration directory of its
+ * own. `dispatches` is what the skill under test dispatches, in words, so a floor that is not met
+ * says what was expected rather than only how many were counted.
+ */
+export function assertSessionRecordsKept(
+  outcome: ObservedRun,
+  dispatchedFloor: number,
+  dispatches: string,
+): void {
+  const records = outcome.records;
+  if (records.sessions.length === 0) {
+    assert.fail(
+      `the run left no session records under ${records.root}, so nothing about it can be read ` +
+        `afterwards. Every run gets its own configuration directory precisely so they land there.`,
+    );
+  }
+  if (records.dispatched.length < dispatchedFloor) {
+    assert.fail(
+      `the run kept ${records.dispatched.length} dispatched agents' session records where at ` +
+        `least ${dispatchedFloor} were expected — ${dispatches}, and a failure inside any of ` +
+        `them is only readable from its own record. Kept: ` +
+        `${records.dispatched.join(", ") || "none"}`,
     );
   }
 }
@@ -319,11 +353,11 @@ export function assertGrillingAnswered(outcome: RefineOutcome): void {
 
 /** Exactly one epic appeared in the working tree, where the fixture's conventions put one. */
 export function assertEpicPublished(outcome: RefineOutcome): void {
-  const published = outcome.epicsAfter.filter((slug) => !outcome.epicsBefore.includes(slug));
+  const published = outcome.epicsPublished;
   if (published.length !== 1) {
     assert.fail(
       `the run published ${published.length} epics under ` +
-        `${outcome.fixture.trackerRoot}/ where exactly one was expected: ` +
+        `${outcome.fixture.tracker.root}/ where exactly one was expected: ` +
         `${published.join(", ") || "none at all"}. Before the run there were ` +
         `${outcome.epicsBefore.join(", ") || "none"}; after it, ` +
         `${outcome.epicsAfter.join(", ") || "none"}.`,
@@ -342,13 +376,8 @@ export function assertSpecPublished(outcome: RefineOutcome): void {
           || "nothing"}`,
     );
   }
-  if (epic.specText.trim().length < 500) {
-    assert.fail(
-      `the spec at ${epic.specPath} is ${epic.specText.trim().length} characters long, which is ` +
-        `too short to be one. A spec states the problem, the solution, its user stories and the ` +
-        `decisions behind them.`,
-    );
-  }
+  // Whether it is a REAL spec — coherent, about this idea, with user stories worth cutting — is
+  // the verifier's, and a length floor here would be an opinion dressed as a fact.
   assertTriageLabel(outcome, epic.specPath ?? "", epic.specTriageLabel, "the spec");
 }
 
@@ -444,39 +473,263 @@ export function assertNothingPushed(outcome: RefineOutcome): void {
   }
 }
 
-/**
- * The run directory kept the session records — the orchestrator's and every dispatched agent's.
+/* -------------------------------------------------------------------------------------------- *
+ * A whole run of `/deliverer:build` (end-to-end-tests ticket 03).
  *
- * Refinement dispatches two **writers**, so a run with no dispatched records at all is one whose
- * failures are only readable as the reports that summarised them.
+ * All of these read the forge — the **change request**, the commits on the **epic branch**, its
+ * comments and its **checks** — except the one that counts **rounds**, which a round leaves no
+ * record of anywhere else (`./report.ts` says why, and why that is the spec's own answer).
+ * -------------------------------------------------------------------------------------------- */
+
+/**
+ * The one change request a delivery opened.
+ *
+ * Every matcher below needs it, so each of them fails the same way when there is none rather than
+ * throwing on a null — a delivery that opened nothing has already been reported by
+ * `assertChangeRequestOpened`, and a reader should not have to read a stack trace to hear it twice.
  */
-export function assertSessionRecordsKept(outcome: RefineOutcome, dispatchedFloor: number): void {
-  const records = outcome.records;
-  if (records.sessions.length === 0) {
+function delivered(outcome: BuildOutcome, what: string): ChangeRequest {
+  if (outcome.changeRequest === null) {
     assert.fail(
-      `the run left no session records under ${records.root}, so nothing about it can be read ` +
-        `afterwards. Every run gets its own configuration directory precisely so they land there.`,
+      `there is no single change request on ${outcome.repo.fullName} to check ${what} against. ` +
+        `The repository carries ${outcome.changeRequests.length}: ` +
+        `${outcome.changeRequests.map((request) => request.url).join(", ") || "none at all"}`,
     );
   }
-  if (records.dispatched.length < dispatchedFloor) {
+  return outcome.changeRequest;
+}
+
+/**
+ * The delivery opened exactly one change request, from a branch of its own.
+ *
+ * One, because a second is a delivery that lost its **bearings** — it takes them from whether a
+ * change request is open for the branch, so two of them is a run that would resume itself wrongly.
+ */
+export function assertChangeRequestOpened(outcome: BuildOutcome): void {
+  if (outcome.changeRequests.length !== 1) {
     assert.fail(
-      `the run kept ${records.dispatched.length} dispatched agents' session records where at ` +
-        `least ${dispatchedFloor} were expected — refinement dispatches a spec writer and a ` +
-        `tickets writer, and a failure inside either is only readable from its own record. Kept: ` +
-        `${records.dispatched.join(", ") || "none"}`,
+      `the delivery left ${outcome.changeRequests.length} change requests on ` +
+        `${outcome.repo.fullName} where exactly one was expected: ` +
+        `${outcome.changeRequests.map((request) => `${request.url} (${request.state})`).join(", ")
+          || "none at all"}. Stage 2 opens one for the epic branch.`,
     );
   }
+  const opened = delivered(outcome, "the branch it was opened from");
+  if (opened.branch === "" || opened.branch === DEFAULT_BRANCH) {
+    assert.fail(
+      `${opened.url} was opened from ${opened.branch || "no branch this harness could read"} ` +
+        `rather than from an epic branch of its own.`,
+    );
+  }
+}
+
+/**
+ * No value of the scripted review double's selector reached the session.
+ *
+ * The double is opt-in and the real review is the default, so this is not about what the harness
+ * chose — it is about what a contributor's own environment file or shell would have handed it. One
+ * line left in either and every **round** replays a canned timeline: all seven stages pass having
+ * reviewed nothing, which is a green test that reviewed nothing.
+ */
+export function assertNoScriptedBackend(outcome: BuildOutcome): void {
+  const reached = Object.entries(outcome.scriptedBackend.reachedSession);
+  if (reached.length === 0) return;
+  assert.fail(
+    `the session was given ${reached.map(([name, value]) => `${name}=${value}`).join(", ")}, so ` +
+      `its tools server may have replayed a scripted review instead of running one. Nothing in ` +
+      `the harness sets it; it arrives from the contributor's environment file or shell, and the ` +
+      `run directory is supposed to keep it out.`,
+  );
+}
+
+/**
+ * Every ticket the epic lists has a commit naming it.
+ *
+ * The `Ticket:` line is the contract — delivery takes its own bearings from it — so a ticket with
+ * no commit is a ticket stage 1 never implemented, whatever the run reported.
+ */
+export function assertEveryTicketCommitted(outcome: BuildOutcome): void {
+  const request = delivered(outcome, "the tickets it implemented");
+  const expected = outcome.epic.tickets.map((ticket) => ticket.number);
+  if (expected.length === 0 || expected.some((number) => number === null)) {
+    assert.fail(
+      `the epic at ${outcome.epic.directory} carries no numbered tickets, so there is nothing to ` +
+        `hold the commits to. This is the fixture failing rather than the plugin.`,
+    );
+  }
+
+  const committed = new Set(
+    request.commits
+      .map((commit) => commit.ticket)
+      .filter((ticket): ticket is number => ticket !== null),
+  );
+  const missing = expected.filter((number) => !committed.has(number ?? -1));
+  if (missing.length > 0) {
+    // The commits that named no ticket are quoted, because the likeliest way to reach here is a
+    // `Ticket:` line worded differently rather than a ticket nobody implemented — and delivery
+    // takes its own bearings from that line, so the two are both findings and want telling apart.
+    const anonymous = request.commits
+      .filter((commit) => commit.ticket === null)
+      .map((commit) => `${commit.hash.slice(0, 12)} ${commit.subject}`);
+    assert.fail(
+      `${missing.length} of the epic's ${expected.length} tickets have no commit naming them on ` +
+        `${request.url}: ${missing.join(", ")}. The branch carries ${request.commits.length} ` +
+        `commits, naming tickets ${[...committed].sort().join(", ") || "none"}.` +
+        `${anonymous.length === 0 ? "" : `\n  naming no ticket:\n  ${anonymous.join("\n  ")}`}`,
+    );
+  }
+}
+
+/**
+ * Every **assumption** the branch recorded carries an **assumption comment**, and each of those
+ * carries a **verdict** reply.
+ *
+ * Both halves, because they are different stages failing. A commit's entry with no comment is stage
+ * 2 not mirroring it — a fork the human never sees. A comment with no verdict is stage 3 not
+ * adjudicating it — a fork nobody closed, on a change request that was flipped ready anyway.
+ *
+ * **The verdict is counted structurally and not read.** What the adjudication promises is a reply
+ * on the thread, or a comment opening `re: ASSUMPTION (<hash>)` where the channel carries no
+ * threading; what it does NOT promise is the word `accept` in the prose, because a verdict is
+ * stated as its **grounds**. So an answer is what this asserts, and which verdict it named rides
+ * along for the reader (`./change-request.ts`).
+ *
+ * A branch that recorded no assumptions at all passes this vacuously, and says so: an implementer
+ * that had no fork to leave open is an ordinary outcome, not something to fail a delivery over.
+ */
+export function assertAssumptionsAdjudicated(outcome: BuildOutcome): void {
+  const request = delivered(outcome, "its assumptions");
+
+  const uncommented: string[] = [];
+  for (const commit of request.commits) {
+    if (commit.assumptions === 0) continue;
+    const comments = request.assumptionComments.filter((comment) =>
+      commit.hash.startsWith(comment.commit),
+    );
+    if (comments.length < commit.assumptions) {
+      uncommented.push(
+        `${commit.hash.slice(0, 12)} (${commit.subject}) recorded ${commit.assumptions} and ` +
+          `carries ${comments.length}`,
+      );
+    }
+  }
+  if (uncommented.length > 0) {
+    assert.fail(
+      `${uncommented.length} commits recorded more assumptions than the change request carries ` +
+        `comments for, so a fork the code closed silently is in front of nobody:\n` +
+        `  ${uncommented.join("\n  ")}`,
+    );
+  }
+
+  const unadjudicated = request.assumptionComments.filter((comment) => comment.answers === 0);
+  if (unadjudicated.length > 0) {
+    assert.fail(
+      `${unadjudicated.length} of ${request.assumptionComments.length} assumption comments on ` +
+        `${request.url} carry no verdict reply, so the fork each one names was never closed:\n` +
+        `  ${unadjudicated.map((comment) => comment.opening).join("\n  ")}`,
+    );
+  }
+}
+
+/**
+ * Two **rounds** completed, which is the bar stage 7 waits on.
+ *
+ * Read out of the run's own report, because a round leaves no other record: the tools server holds
+ * its state in memory for the life of the session, and the findings it posts are comments like any
+ * other. The spec rejected watching the review tool calls as a second seam and said the round's own
+ * reported outcome carries what is needed; this is that outcome (`./report.ts`).
+ */
+export function assertRoundsCompleted(outcome: BuildOutcome, floor: number): void {
+  const completed = outcome.roundsCompleted;
+  if (completed === null) {
+    assert.fail(
+      `the run's report does not say how many rounds completed, and nothing else records one. ` +
+        `Stage 7 waits on ${floor}, and the report is asked for the count in so many words — so ` +
+        `this is either a report that stopped saying it or a reader that stopped recognising how ` +
+        `it says it. The report:\n  ${quoted(outcome.run.report.split("\n"))}`,
+    );
+  }
+  if (completed < floor) {
+    assert.fail(
+      `the run reported ${completed} completed rounds where stage 7 waits on ${floor}. A change ` +
+        `request flipped ready on fewer is one shipping a review nobody did.`,
+    );
+  }
+}
+
+/**
+ * The change request was **flipped ready** — taken out of draft.
+ *
+ * That is stage 7 having run, and it is earned by two completed rounds and green checks and by
+ * nothing else. A delivery that left it a draft reported why; this says it happened.
+ */
+export function assertFlippedReady(outcome: BuildOutcome): void {
+  const request = delivered(outcome, "whether it was flipped ready");
+  if (request.isDraft) {
+    assert.fail(
+      `${request.url} is still a draft. Stage 7 takes it out of draft once two rounds have ` +
+        `completed and the checks are green, so either it did not run or it found one of those ` +
+        `wanting. The run reported:\n  ${quoted(outcome.run.report.split("\n"))}`,
+    );
+  }
+}
+
+/**
+ * The **checks** are green — all of them, and there is at least one.
+ *
+ * The empty case is the interesting one, and it is reported as what it is rather than as a pass: a
+ * change request with no checks at all is not green, it is unjudged, and the fixture ships a CI
+ * workflow precisely so that green means something. §Further Notes recorded exactly this as a
+ * **claim** — that a freshly created private repository's workflow runs reach the plugin as checks
+ * in time for stage 7 — and a run that finds none has settled it the other way.
+ */
+export function assertChecksGreen(outcome: BuildOutcome): void {
+  const request = delivered(outcome, "its checks");
+  if (request.checks.length === 0) {
+    assert.fail(
+      `${request.url} carries no checks at all, so "the checks are green" says nothing. The ` +
+        `fixture ships a CI workflow that runs on every change request; a fresh private ` +
+        `repository whose workflow runs never reached the plugin is the claim §Further Notes ` +
+        `recorded, and this run has settled it.`,
+    );
+  }
+  const red = request.checks.filter((check) => !isGreen(check.status, check.conclusion));
+  if (red.length > 0) {
+    const named = red.map((check) => `${check.name} (${check.conclusion || check.status})`);
+    assert.fail(
+      `${red.length} of ${request.checks.length} checks on ${request.url} are not green: ` +
+        `${named.join(", ")}. Stage 7 flips a change request ready on green, so either the fix ` +
+        `waves left the branch red or the flip did not wait.`,
+    );
+  }
+  // A check the forge skipped is not a check that passed. Counting one as green is right — a job
+  // that had no work for this change request is nobody's failure — but a change request whose
+  // every check was skipped is as unjudged as one carrying none, which is the case above.
+  if (!request.checks.some((check) => check.conclusion === "SUCCESS")) {
+    const named = request.checks.map((check) => `${check.name} (${check.conclusion})`);
+    assert.fail(
+      `no check on ${request.url} actually ran and passed — ${named.join(", ")}. A workflow that ` +
+        `was skipped leaves the change request as unjudged as one with no checks at all, and the ` +
+        `fixture ships its CI workflow so that green means something.`,
+    );
+  }
+}
+
+/** What the forge calls a check that passed, or one it had no work for. */
+function isGreen(status: string, conclusion: string): boolean {
+  if (status !== "" && status !== "COMPLETED") return false;
+  return ["SUCCESS", "SKIPPED", "NEUTRAL"].includes(conclusion);
 }
 
 /** The verifier passed on both of the questions no assertion could settle. */
 export function assertVerdictPassed(verdict: Verdict): void {
   if (verdict.passed) return;
-  const failed = verdict.judgements
-    .filter((judgement) => !judgement.passed)
-    .map((judgement) => `${judgement.subject}: ${judgement.grounds}`);
+  const failed = verdict.subjects
+    .filter((subject) => !subject.passed)
+    .map((subject) => `${subject.subject}: ${subject.grounds}`);
   assert.fail(
     `the verifier judged what the run delivered and failed it: ${verdict.summary}\n` +
-      `  ${failed.join("\n  ") || "(it named no failing judgement, which is a verdict this " +
+      `  ${failed.join("\n  ") || "(it named no failing subject, which is a verdict this " +
         "harness cannot read)"}`,
   );
 }

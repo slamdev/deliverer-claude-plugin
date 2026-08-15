@@ -40,7 +40,7 @@ import {
   type SDKMessage,
   type SDKUserMessage,
 } from "@anthropic-ai/claude-agent-sdk";
-import { CeilingReached, type Ceilings } from "./ceilings.ts";
+import { CeilingReached, minutes, type Ceilings } from "./ceilings.ts";
 import { sessionEnvironment, type RunDirectory } from "./run-directory.ts";
 
 /** How much of the host's stderr to keep for a failure to quote. It is unbounded; this is not. */
@@ -76,16 +76,32 @@ export interface RunOptions {
    *
    * A stopped run leaves no outcome for a test to read, so whatever the caller knows about its
    * progress has to reach the failure from here or not at all — and "it answered nine rounds of
-   * questions" is the difference between a slow run and a stuck one.
+   * questions" is the difference between a slow run and a stuck one. It may go and look: a delivery
+   * leaves its progress on the forge rather than in the harness's own counters.
    */
-  readonly progress: () => string;
+  readonly progress: () => string | Promise<string>;
   /**
    * Whether a report is the run's last word, so a finished run is not waited out.
    *
    * Optional: the grace period stands in for it, and a run whose report this does not recognise
-   * finishes late rather than not at all.
+   * finishes late rather than not at all. It may go and look, for the same reason `progress` may —
+   * and a caller that reads the forge here is reading what a human watching would read, not what
+   * the run is doing.
    */
-  readonly finished?: (report: string) => boolean;
+  readonly finished?: (report: string) => boolean | Promise<boolean>;
+}
+
+/**
+ * A run, as everything that judges one sees it: what it did, where its leavings are, and what it
+ * kept.
+ *
+ * Both builders' outcomes carry these three, which is what lets the matchers that judge a **run**
+ * rather than what it delivered — it finished, its session records are there — be written once.
+ */
+export interface ObservedRun {
+  readonly runDirectory: RunDirectory;
+  readonly run: RunOutcome;
+  readonly records: SessionRecords;
 }
 
 export interface RunOutcome {
@@ -96,8 +112,14 @@ export interface RunOutcome {
   /** what the run cost in all: the host reports a session's running total on every result */
   readonly costUsd: number;
   readonly durationMs: number;
-  /** how many times the run came back to work after a dispatch went away with a stage */
-  readonly turnsTaken: number;
+  /**
+   * how many times the host reported a finished turn.
+   *
+   * More than one means the run went idle waiting on a **dispatch** and was brought back by the
+   * notification when its **report** landed — which is the whole reason the input stream is held
+   * open, and worth seeing in a diagnostic.
+   */
+  readonly resultsSeen: number;
   readonly numTurns: number;
   readonly sessionId: string;
   readonly stderr: readonly string[];
@@ -162,7 +184,7 @@ export async function driveRun(options: RunOptions): Promise<RunOutcome> {
   });
 
   let result: Extract<SDKMessage, { type: "result" }> | undefined;
-  let turnsTaken = 0;
+  let resultsSeen = 0;
   let streamFailure: unknown;
   let lastHeardFrom = Date.now();
   // Silence is the backstop: a run that has reported at least once and then said nothing at all
@@ -177,9 +199,9 @@ export async function driveRun(options: RunOptions): Promise<RunOutcome> {
       lastHeardFrom = Date.now();
       if (message.type !== "result") continue;
       result = message;
-      turnsTaken += 1;
+      resultsSeen += 1;
       const report = message.subtype === "success" ? message.result : "";
-      if (options.finished?.(report) === true) closeInput?.();
+      if (await options.finished?.(report) === true) closeInput?.();
     }
   } catch (error) {
     // The host raises after reporting a run it stopped itself — a budget it reached arrives as a
@@ -195,21 +217,20 @@ export async function driveRun(options: RunOptions): Promise<RunOutcome> {
   const elapsedMs = Date.now() - started;
   const spentUsd = (result?.total_cost_usd ?? 0) + options.spentElsewhere();
   if (wallClockReached) {
-    throw new CeilingReached("the ninety-minute wall clock", {
+    throw new CeilingReached("wall-clock", minutes(ceilings.wallClockMs), {
       elapsedMs,
       spentUsd,
-      detail: `it had reached ${options.progress()}, ` +
+      detail: `it had reached ${await options.progress()}, ` +
         `${result === undefined ? "still going" : `at ${result.num_turns} turns`}, when it was ` +
         `stopped. Its session records are in ${runDirectory.configDir}.`,
     });
   }
   if (result?.subtype === "error_max_budget_usd") {
-    throw new CeilingReached("the spend", {
+    throw new CeilingReached("spend", `$${ceilings.spendUsd}`, {
       elapsedMs,
       spentUsd,
-      detail: `the host stopped the run itself at the ceiling of $${ceilings.spendUsd}. It had ` +
-        `reached ${options.progress()}, at ${result.num_turns} turns. Its session records are in ` +
-        `${runDirectory.configDir}.`,
+      detail: `the host stopped the run itself. It had reached ${await options.progress()}, at ` +
+        `${result.num_turns} turns. Its session records are in ${runDirectory.configDir}.`,
     });
   }
   if (result === undefined) {
@@ -226,7 +247,7 @@ export async function driveRun(options: RunOptions): Promise<RunOutcome> {
     report: result.subtype === "success" ? result.result : "",
     costUsd: result.total_cost_usd,
     durationMs: elapsedMs,
-    turnsTaken,
+    resultsSeen,
     numTurns: result.num_turns,
     sessionId: result.session_id,
     stderr,

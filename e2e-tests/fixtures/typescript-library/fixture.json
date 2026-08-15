@@ -1,5 +1,10 @@
 {
-  "description": "A small TypeScript library of fixed-width terminal helpers, its unit tests, its typecheck and a working CI workflow. Its CLAUDE.md names markdown files under docs/specs as the tracker convention, which is what lets the assertions name where an epic lands.",
-  "trackerRoot": "docs/specs",
-  "readyForAgentLabel": "ready-for-agent"
+  "description": "A small TypeScript library of fixed-width terminal helpers, its unit tests, its typecheck and a working CI workflow. Its CLAUDE.md names markdown files under docs/specs as the tracker convention, and the three paths below are that same declaration in the form a matcher can read. epicSlug names the directory the epic in epic/ lands at, which a delivery is handed and a refinement never sees.",
+  "tracker": {
+    "root": "docs/specs",
+    "specFile": "spec.md",
+    "ticketsDirectory": "issues"
+  },
+  "readyForAgentLabel": "ready-for-agent",
+  "epicSlug": "column-alignment"
 }

@@ -5,14 +5,16 @@
  * This reads; `./matchers.ts` judges. The split is what keeps a failure able to say what was there
  * instead of only what was not.
  *
- * Where to look comes from the **fixture**, which declares the tracker root its repository's
- * conventions name. The shape inside it is the plugin's own contract and not the fixture's: one
- * directory per **epic**, the **spec** at `spec.md`, and one file per **ticket** under `issues/`,
- * numbered from `01`. A fixture that put its epics somewhere else changes the first and none of the
- * rest.
+ * **Where to look is the fixture's to say, and what to find there is the plugin's.** The tracker
+ * root, the spec's filename and the directory the tickets go in are all a repository's own
+ * conventions, so they are read off the fixture (`./fixture.ts`) rather than written down here —
+ * that is what keeps a fixture which lays its tracker out differently a directory rather than a
+ * harness edit. What the plugin promises whatever those paths are — one file per **ticket**,
+ * numbered from `01`, each declaring its **blocking edges** — is asserted in `./matchers.ts`.
  */
 import { readFile, readdir } from "node:fs/promises";
 import { join, posix, relative, sep } from "node:path";
+import type { TrackerConventions } from "./fixture.ts";
 
 /** Where a ticket declares what blocks it, in either shape the writer's templates use. */
 const BLOCKING_EDGES =
@@ -53,9 +55,12 @@ export interface PublishedEpic {
 }
 
 /** Every epic in the working tree, by slug. Taken before a run and after it. */
-export async function listEpics(cloneDir: string, trackerRoot: string): Promise<string[]> {
+export async function listEpics(
+  cloneDir: string,
+  tracker: TrackerConventions,
+): Promise<string[]> {
   try {
-    const entries = await readdir(join(cloneDir, trackerRoot), { withFileTypes: true });
+    const entries = await readdir(join(cloneDir, tracker.root), { withFileTypes: true });
     return entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
   } catch {
     return [];
@@ -64,33 +69,36 @@ export async function listEpics(cloneDir: string, trackerRoot: string): Promise<
 
 export async function readEpic(
   cloneDir: string,
-  trackerRoot: string,
+  tracker: TrackerConventions,
   slug: string,
 ): Promise<PublishedEpic> {
-  const directory = posix.join(trackerRoot, slug);
-  const absolute = join(cloneDir, trackerRoot, slug);
+  const directory = posix.join(tracker.root, slug);
+  const absolute = join(cloneDir, tracker.root, slug);
   const files = await filesUnder(absolute);
+  const inTickets = `${tracker.ticketsDirectory}/`;
 
-  const specPath = files.includes("spec.md") ? posix.join(directory, "spec.md") : null;
+  const specPath = files.includes(tracker.specFile)
+    ? posix.join(directory, tracker.specFile)
+    : null;
   const specText = specPath === null ? "" : await readFile(join(cloneDir, specPath), "utf8");
 
   const tickets: PublishedTicket[] = [];
   const otherFiles: string[] = [];
   for (const file of files) {
-    if (file === "spec.md") continue;
-    if (!file.startsWith("issues/")) {
+    if (file === tracker.specFile) continue;
+    if (!file.startsWith(inTickets)) {
       otherFiles.push(posix.join(directory, file));
       continue;
     }
-    const name = file.slice("issues/".length);
+    const name = file.slice(inTickets.length);
     if (name.includes("/") || !name.endsWith(".md")) {
       otherFiles.push(posix.join(directory, file));
       continue;
     }
-    const text = await readFile(join(absolute, "issues", name), "utf8");
+    const text = await readFile(join(absolute, tracker.ticketsDirectory, name), "utf8");
     const number = TICKET_NUMBER.exec(name)?.[1];
     tickets.push({
-      path: posix.join(directory, "issues", name),
+      path: posix.join(directory, tracker.ticketsDirectory, name),
       file: name,
       number: number === undefined ? null : Number(number),
       declaresBlockingEdges: BLOCKING_EDGES.test(text),

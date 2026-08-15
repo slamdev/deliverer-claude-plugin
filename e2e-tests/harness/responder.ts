@@ -26,19 +26,14 @@
  * test on it: a run answered by the harness's own default is a run the fixture's brief did not
  * drive.
  */
-import { query, type CanUseTool, type PermissionResult } from "@anthropic-ai/claude-agent-sdk";
+import type { CanUseTool, PermissionResult } from "@anthropic-ai/claude-agent-sdk";
+import { askAgent } from "./agent.ts";
+import { RESPONDER_ROUND_CEILING_USD } from "./ceilings.ts";
 import type { Fixture } from "./fixture.ts";
-import { sessionEnvironment, type RunDirectory } from "./run-directory.ts";
+import type { RunDirectory } from "./run-directory.ts";
 
 /** The model it answers on. The harness's own choice; it says nothing about the plugin. */
 const RESPONDER_MODEL = "sonnet";
-
-/**
- * What one round of answers may cost. Not the run's ceiling — that is the run's — but a guard on a
- * responder that has started reasoning about the epic instead of answering four questions from a
- * brief. A round costs a fraction of this in practice.
- */
-const ROUND_CEILING_USD = 1;
 
 /**
  * How many times a round is attempted before the fallback takes it.
@@ -137,6 +132,53 @@ export function createResponder(runDirectory: RunDirectory, fixture: Fixture): R
   };
 }
 
+/**
+ * The human's seat with nobody in it, for a run that is not supposed to ask (ticket 03).
+ *
+ * A delivery has no grilling: what it cannot settle it **escalates**, which is a comment left for a
+ * human and a line in its report rather than a question put to one. So there is no **brief** to
+ * answer from and nothing here reads one.
+ *
+ * It still answers, because a callback that never returns hangs the run until a ceiling stops it,
+ * and a wedged delivery is the worst reading of a question this harness could give. The recommended
+ * option goes back, every answer is recorded as the fallback it is, and a test reports what was
+ * asked: a delivery that had to ask is worth a contributor's attention even when the run finished.
+ */
+export function createUnattendedSeat(): Responder {
+  const answers: AnsweredQuestion[] = [];
+  const failures: string[] = [];
+  let rounds = 0;
+
+  const canUseTool: CanUseTool = async (toolName, input): Promise<PermissionResult> => {
+    if (toolName !== ASK_TOOL) return { behavior: "allow", updatedInput: input };
+
+    rounds += 1;
+    const questions = askedQuestions(input);
+    if (questions.length === 0) {
+      failures.push(`round ${rounds} carried no questions this callback could read`);
+      return { behavior: "allow", updatedInput: input };
+    }
+    const answered: Record<string, string> = {};
+    for (const question of questions) {
+      const answer = recommended(question);
+      answered[question.question] = answer;
+      answers.push({ question: question.question, answer, fallback: true });
+    }
+    return { behavior: "allow", updatedInput: { ...input, answers: answered } };
+  };
+
+  return {
+    canUseTool,
+    record: () => ({
+      rounds,
+      answers: [...answers],
+      fallbacks: answers.length,
+      costUsd: 0,
+      failures: [...failures],
+    }),
+  };
+}
+
 /** One round of questions, answered from the brief. */
 async function ask(
   runDirectory: RunDirectory,
@@ -144,39 +186,22 @@ async function ask(
   questions: readonly AskedQuestion[],
   signal: AbortSignal,
 ): Promise<{ answers: Map<string, string>; costUsd: number }> {
-  const stopped = new AbortController();
-  if (signal.aborted) stopped.abort(signal.reason);
-  else signal.addEventListener("abort", () => stopped.abort(signal.reason), { once: true });
-
-  const session = query({
+  const answer = await askAgent({
+    runDirectory,
+    purpose: "the responder's answers to one round of questions",
+    model: RESPONDER_MODEL,
     prompt: promptFor(fixture, questions),
-    options: {
-      // The run's own empty directory, so nothing the responder does lands in the clone and its
-      // session records stay out of the run's.
-      cwd: runDirectory.sessionDir,
-      model: RESPONDER_MODEL,
-      // No tools and no settings: the brief is in the prompt, and the responder has no business
-      // reading the repository the grilling is about. It answers as the human, who has not read it.
-      tools: [],
-      settingSources: [],
-      maxBudgetUsd: ROUND_CEILING_USD,
-      abortController: stopped,
-      env: await sessionEnvironment(runDirectory),
-      outputFormat: { type: "json_schema", schema: ANSWER_SCHEMA },
-    },
+    schema: ANSWER_SCHEMA,
+    ceilingUsd: RESPONDER_ROUND_CEILING_USD,
+    // The run's own empty directory, so nothing the responder does lands in the clone and its
+    // session records stay out of the run's.
+    cwd: runDirectory.sessionDir,
+    // No tools: the brief is in the prompt, and the responder has no business reading the
+    // repository the grilling is about. It answers as the human, who has not read it either.
+    tools: [],
+    ceiling: signal,
   });
-
-  let structured: unknown;
-  let costUsd = 0;
-  for await (const message of session) {
-    if (message.type !== "result") continue;
-    costUsd = message.total_cost_usd;
-    if (message.subtype !== "success") {
-      throw new Error(`the responder's own turn ended as ${message.subtype}`);
-    }
-    structured = message.structured_output;
-  }
-  return { answers: matched(structured, questions), costUsd };
+  return { answers: matched(answer.structured, questions), costUsd: answer.costUsd };
 }
 
 /** The shape an answer comes back in, so nothing here parses prose. */
