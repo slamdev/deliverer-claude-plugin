@@ -145,12 +145,16 @@ what moved.
 │       ├── issue-tracker.md                → local markdown under docs/specs/, never gh issue
 │       ├── triage-labels.md                → the five Status: values
 │       └── domain.md                       → single-context: CONTEXT.md + docs/adrs/
+├── e2e-tests/                           the end-to-end harness — installs the plugin, drives whole runs
+│   ├── harness/                           the run directory, the staged copy, the builder and the matchers
+│   ├── fixtures/typescript-library/       the repository a run is driven against, its brief and its epic
+│   └── tests/                             three tests; CI never runs them, two spend real money
 ├── hacks/claude.dockerfile              the pinned image
 ├── claude                               the wrapper
 ├── .claude/settings.json                model opus[1m], effort xhigh, enabled plugins, bypassPermissions
 ├── .claude/CLAUDE.md                    project instructions
 ├── .claude/skills/                      repo-local skills
-└── .github/workflows/ci.yml             typecheck + lint
+└── .github/workflows/ci.yml             typecheck + lint over both packages; never the tests
 ```
 
 ## The contribution flow
@@ -203,19 +207,32 @@ Implements the work, using `/tdd` at the seams the spec named. Work one ticket a
 
 ## CI
 
-`.github/workflows/ci.yml` runs on pushes to `main` and on every pull request. One job, `check`, entirely inside
-`plugin/mcp`:
+`.github/workflows/ci.yml` runs on pushes to `main` and on every change request. One job, `check`, over both packages
+this repository has: the tools server in `plugin/mcp` and the end-to-end **harness** in `e2e-tests`. One `setup-node`,
+then the other three steps once for each package:
 
 | Step                | What and why                                                                                |
 |---------------------|---------------------------------------------------------------------------------------------|
 | `setup-node`        | pinned to **24.19.0** — the dockerfile's `NODE_VERSION`, so green in CI means green locally |
 | `npm ci`            | **with** dev dependencies, unlike the install hook's `--omit=dev`: the linter is a dev dep  |
-| `npm run typecheck` | `tsc --noEmit` — the only thing that ever reads `tsconfig.json`                             |
-| `npm run lint`      | `eslint .`, guarded by `if: '!cancelled()'` so a type error cannot hide lint findings       |
+| `npm run typecheck` | `tsc --noEmit` — the only thing that ever reads either `tsconfig.json`                      |
+| `npm run lint`      | `eslint .`, guarded by `if: '!cancelled()'` so one failure cannot hide another's findings   |
+
+Its dependency cache is keyed on both lockfiles, and every step names its own working directory while the job sets no
+default. That default used to be `plugin/mcp`, which is how a harness step appended without one would have checked the
+server a second time and gone green — the failure that looks exactly like a harness that passes. From the server's lint
+onwards every step carries `!cancelled()`, so a failure in one package never decides whether the other was checked.
 
 The typecheck matters more than it looks. The server **ships unbuilt** — Node strips the types at runtime — so there is
 no build step to catch anything. `tsc` is what enforces `erasableSyntaxOnly` and `verbatimModuleSyntax`, and without it
-those failures surface only when Node's type stripping hits them in a user's session.
+those failures surface only when Node's type stripping hits them in a user's session. The harness runs unbuilt the same
+way and is held to the same three options, so that one step is equally all that stands between it and a test that dies
+parsing itself.
+
+**CI never runs the end-to-end tests**, and § The end-to-end tests below says what running them takes. They install the
+plugin, create repositories on the forge and spend real money, so nothing here adds a paid job, a schedule, or a button
+on the forge that starts one — and no credential of any kind is a repository secret. Typechecking and linting the
+harness is what keeps it from rotting between the rare occasions anybody runs it.
 
 Superseded runs are cancelled per branch; `main` is exempt (its concurrency group includes the run id) because its runs
 are the record of what each commit did.
@@ -224,15 +241,19 @@ are the record of what each commit did.
 
 Know this before you rely on a green tick:
 
-- **There is no test suite.** `package.json` has exactly two scripts: `lint` and `typecheck`.
+- **The tests exist and CI runs none of them.** `e2e-tests/` drives whole `/deliverer:refine` and `/deliverer:build`
+  **runs**, and CI typechecks and lints that harness without ever running it — a run spends real money, so somebody
+  has to mean it. Nothing else has tests at all: `plugin/mcp/package.json` has exactly two scripts, `lint` and
+  `typecheck`.
 - **No markdown is checked.** The skills, the agents, `README.md` and `CONTEXT.md` are the bulk of the product and
   nothing lints, wraps or spell-checks them.
-- **Nothing runs the server, the launcher, or the SessionStart hook.** No manifest is validated against its `$schema`
-  either.
+- **Nothing in CI runs the server, the launcher, or the SessionStart hook.** No manifest is validated against its
+  `$schema` either.
 
-So behaviour is verified by hand. The **scripted backend** exists for exactly this: it replays a canned event timeline
-in milliseconds, so you can exercise the whole lifecycle — cancellation, ordering, terminal absorption, the deadline —
-with no model, no forge and no money.
+So behaviour is verified deliberately: by hand with the two procedures below, or in one command by the end-to-end tests
+after them, which spend real money every time. The **scripted backend** is what makes the by-hand route cheap: it
+replays a canned event timeline in milliseconds, so you can exercise the whole lifecycle — cancellation, ordering,
+terminal absorption, the deadline — with no model, no forge and no money.
 
 ```
 printf 'ANTHROPIC_API_KEY=not-a-real-key\n' > /tmp/review.env
@@ -261,11 +282,88 @@ change to the launcher or the hook, each of which reports differently: an instal
 still running when the wait runs out (`DELIVERER_REVIEW_INSTALL_WAIT_MS=1000` against an empty directory), one that runs
 and fails (`PATH` without `npm`), a hook that cannot be started (`chmod -x` it — the launcher retries through `bash`,
 which is the only recovery from an install that dropped the executable bit), and the launcher's own installer switched
-off (`DELIVERER_REVIEW_SELF_INSTALL=0`, which is also what keeps a rig from starting a real `npm ci`).
+off (`DELIVERER_REVIEW_SELF_INSTALL=0`, which is also what keeps a caller that must not install from starting a real
+`npm ci`).
 
 Two launchers and a hook against one empty data directory is the case the install's lock exists for, and it is worth
 re-running whenever either side of it moves: exactly one `npm ci`, one stamp, no `ERR_MODULE_NOT_FOUND` and no lock left
 behind.
+
+### The end-to-end tests
+
+`e2e-tests/` is the **harness**: it installs the plugin the way a user does — from a **staged copy** of your working
+tree, so a test covers what is in front of you rather than what is on the branch — and drives whole **runs** against it.
+It is the automated counterpart to the two procedures above, at a much higher seam: nothing is asserted below a complete
+run, only what a human could read afterwards. Three tests, and CI runs none of them:
+
+- **The installation smoke test.** One command and, in seconds, you know the plugin still installs and still presents
+  both commands, all seven agents and all three review tools. No repository on the forge and no model asked for more
+  than one trivial turn — cheap enough to run after any change to a manifest, the hook or the launcher.
+- **The refine happy path.** `/deliverer:refine` against a **standing repo**, with a **responder** answering the
+  grilling in your place out of the **fixture**'s own **brief**. It asserts a published **spec** and one file per
+  **ticket**, and then a **verifier** judges whether what came out is any good.
+- **The build happy path.** `/deliverer:build` against a **throwaway repo** created for the run: all seven stages, two
+  real **rounds** through the tools server and both **fix waves**. It asserts a commit naming every ticket, a
+  **verdict** on every **assumption**, and the **change request** **flipped ready** with its **checks** green — then
+  the verifier judges the code behind it against the **epic**.
+
+**What they take and spend, measured rather than estimated.** The refinement took **21m 52s and $6.36** — the run
+itself 20m 12s and $5.82, the responder $0.16 across six rounds of questions, the verifier $0.39 — and published a spec
+and six tickets. The delivery was measured twice: **23m 12s and $7.40**, then **22m 14s and $6.85**, each flipping its
+change request ready with green checks. Run together, which is what `npm test` does, the whole suite took **23m**, and
+the two runs with their verdicts came to **$13.28**, then **$13.14** — the two long tests overlap, so the suite is the
+slower of them plus a rounding error. The smoke test is seconds and effectively free.
+
+**The ceilings.** A run may take **ninety minutes** and spend **twenty-five dollars**: `DEFAULT_CEILINGS` in
+`e2e-tests/harness/ceilings.ts`, overridable per test. Neither has been raised — the longest run measured took 21m 23s
+and the most expensive spent $6.96, so both figures are still the spec's own estimates. Reaching one is reported as a
+ceiling rather than as a failed assertion, so a slow run can be told from a stuck one. What would move them is a bigger
+**fixture**: this one's tickets are three functions with unit tests, and a fixture with a service in it would be felt
+here first.
+
+**What they need.** The `./claude` container has all of it already, which is where to run them from:
+
+- **`.env` at the repository root**, the same file the wrapper loads. It is handed to every session whole and no
+  individual credential is read out of it, so it works whichever way you authenticate to a model.
+- **A forge token `gh` can see.** `gh` and `git` are run with the environment the harness inherited rather than with
+  that file, so `GITHUB_TOKEN` has to be exported — which is what `./claude` does with the line already in your `.env`.
+- **Permission to create private repositories**, and to delete them for the build test. A deletion the harness cannot
+  make is reported and leaves the repository standing, never a test that had otherwise passed turned red.
+- **Node, `git`, `gh` and the Claude CLI** — the versions the dockerfile pins; the plugin is installed with the same
+  binary you would install it with. The harness runs unbuilt under Node's type stripping, so its manifest asks for
+  `^22.18.0 || >=23.6.0`.
+- **Disk**: roughly 350 MB per run under the operating system's temporary directory, nearly all of it the tools
+  server's installed dependencies and the official marketplace's clone. Nothing is cleaned up.
+
+One thing they deliberately do **not** take is the **scripted backend**. `DELIVERER_REVIEW_BACKEND` and
+`DELIVERER_REVIEW_SCRIPT` are stripped from every process a run starts, so the variable the section above taught you to
+set cannot reach a delivery and leave every stage passing having reviewed nothing.
+
+**How to run them.**
+
+```
+cd e2e-tests
+npm ci
+npm test                                       # all three, concurrently, with no retries
+node --test tests/installation-smoke.test.ts   # one of them: here, the cheap one
+```
+
+**What a run leaves behind.** Each test makes a **run directory** under the operating system's temporary directory, at
+`deliverer-e2e/<test>-<timestamp>-<suffix>/`, and prints its path as its first diagnostic — a failing run is read there
+rather than reproduced. Nothing in it is ever removed, passed or failed:
+
+- `config/` — the run's own `CLAUDE_CONFIG_DIR`: both marketplaces, the install, the plugin's three options at user
+  scope, and under `projects/` the session records of every dispatched agent, not only the orchestrator's.
+- `clone/` — the working tree the run published into: a refinement's whole **epic**, or a delivery's commits.
+- `staged-plugin/` and `fixture-repo/` — the copy of the plugin that was installed, and the fixture as it was built
+  into a repository before the forge was brought into step with it.
+- `tmp/` and `session/` — the run's own temporary directory, and where a session with no clone runs.
+- the root itself — the **brief** the run wrote, collected out of the shared temporary directory when it finished, and
+  `delivered.diff`, the diff a delivery's change request carried.
+
+On the forge, the refine test's **standing repo** stays — it is cloned and never written back to, so it is brought into
+step with the fixture rather than recreated. The build test's **throwaway repo** is deleted when the test passes and
+left standing, with its branch and change request, when it fails: the change request is the evidence.
 
 ## Shipping
 

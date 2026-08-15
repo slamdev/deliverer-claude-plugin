@@ -16,35 +16,70 @@ permissions:
   contents: read
 
 jobs:
+  # Two packages, one job. EVERY step that runs anything names its own `working-directory` and the
+  # job sets no default, because the default this job used to carry was `plugin/mcp`: a harness step
+  # appended without one would have checked the server a second time and reported green, which is
+  # the failure that looks exactly like a harness that passes. With no default, a step that forgets
+  # runs at the repository root and fails loudly instead.
   check:
-    name: Check the tools server
+    name: Check the tools server and the end-to-end harness
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: plugin/mcp
     steps:
       - uses: actions/checkout@v7
 
       # Pinned to the version `hacks/claude.dockerfile` develops against, so a lint that is green
-      # here is green in the bed and vice versa.
+      # here is green in the bed and vice versa. Both lockfiles are keys of the cache: keyed on the
+      # server's alone, a change to the harness's dependencies would restore a cache that never held
+      # them.
       - uses: actions/setup-node@v7
         with:
           node-version: 24.19.0
           cache: npm
-          cache-dependency-path: plugin/mcp/package-lock.json
+          cache-dependency-path: |
+            plugin/mcp/package-lock.json
+            e2e-tests/package-lock.json
 
       # `npm ci` and NOT `--omit=dev`, which is what the install hook uses: the linter itself is a
       # dev dependency, so the flag the users' install carries is exactly the one CI must not.
-      - run: npm ci
+      - name: Install the tools server's dependencies
+        working-directory: plugin/mcp
+        run: npm ci
 
       # `tsc` is the ONLY thing that ever reads `tsconfig.json`: the server ships unbuilt, so
       # without this step nothing in the project enforces `erasableSyntaxOnly` or
       # `verbatimModuleSyntax` — and both of those failures are invisible until Node's type
       # stripping hits them in a user's session. ESLint cannot stand in for it; the `recommended`
       # preset reads an AST, never the type system.
-      - run: npm run typecheck
+      - name: Typecheck the tools server
+        working-directory: plugin/mcp
+        run: npm run typecheck
 
       # `!cancelled()` so a type error does not hide the lint findings. The two answer different
-      # questions and a run should report both.
-      - run: npm run lint
+      # questions and a run should report both — and from here on the same reasoning reaches across
+      # the two packages: a failure in one must never decide whether the other was checked at all.
+      - name: Lint the tools server
+        working-directory: plugin/mcp
+        run: npm run lint
+        if: '!cancelled()'
+
+      # The harness runs unbuilt under Node's type stripping exactly as the server does, and is held
+      # to the same three options for the same reason (`e2e-tests/tsconfig.json` names them). The
+      # typecheck and the lint below are the WHOLE of what CI does with it: the tests themselves are
+      # never run here, because they install the plugin, create repositories on the forge and spend
+      # real money — so no credential of any kind is a repository secret. What this buys is that the
+      # harness still compiles and still lints between the rare, deliberate occasions anybody runs
+      # it.
+      - name: Install the harness's dependencies
+        working-directory: e2e-tests
+        run: npm ci
+        if: '!cancelled()'
+
+      - name: Typecheck the end-to-end harness
+        working-directory: e2e-tests
+        run: npm run typecheck
+        if: '!cancelled()'
+
+      - name: Lint the end-to-end harness
+        working-directory: e2e-tests
+        run: npm run lint
         if: '!cancelled()'
