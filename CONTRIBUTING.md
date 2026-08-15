@@ -146,6 +146,7 @@ what moved.
 │       ├── triage-labels.md                → the five Status: values
 │       └── domain.md                       → single-context: CONTEXT.md + docs/adrs/
 ├── e2e-tests/                           the end-to-end harness — installs the plugin, drives whole runs
+│   ├── README.md                          what a run costs per stage, and how to work that out from its records
 │   ├── harness/                           the run directory, the staged copy, the builder and the matchers
 │   ├── fixtures/typescript-library/       the repository a run is driven against, its brief and its epic
 │   └── tests/                             three tests; CI never runs them, two spend real money
@@ -313,6 +314,11 @@ and six tickets. The delivery was measured twice: **23m 12s and $7.40**, then **
 change request ready with green checks. Run together, which is what `npm test` does, the whole suite took **23m**, and
 the two runs with their verdicts came to **$13.28**, then **$13.14** — the two long tests overlap, so the suite is the
 slower of them plus a rounding error. The smoke test is seconds and effectively free.
+
+Those are the figures the harness reports, which are the **orchestrator** and its **dispatches** and nothing else — a
+delivery's **rounds** run as their own processes and their **spend** is not in them. `e2e-tests/README.md` breaks a
+measured pair of runs down per stage, says what the reported figure leaves out, and gives the method for doing it
+again from any **run directory**.
 
 **The ceilings.** A run may take **ninety minutes** and spend **twenty-five dollars**: `DEFAULT_CEILINGS` in
 `e2e-tests/harness/ceilings.ts`, overridable per test. Neither has been raised — the longest run measured took 21m 23s
