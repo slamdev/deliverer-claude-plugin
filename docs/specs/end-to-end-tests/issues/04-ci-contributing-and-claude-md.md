@@ -50,29 +50,29 @@ Files: `.github/workflows/ci.yml`, `CONTRIBUTING.md`, `.claude/CLAUDE.md`.
 The measurements are read from the comments on `docs/specs/end-to-end-tests/issues/02-the-refine-happy-path.md` and
 `docs/specs/end-to-end-tests/issues/03-the-build-happy-path.md`.
 
-- [ ] CI typechecks and lints `e2e-tests/` in the existing job, with the harness's steps naming their own working
+- [x] CI typechecks and lints `e2e-tests/` in the existing job, with the harness's steps naming their own working
       directory rather than inheriting the job's `plugin/mcp` default, so neither package's check stands in for the
       other's.
-- [ ] The job's name matches what it now checks, and its dependency cache is keyed on the harness's lockfile as well as
+- [x] The job's name matches what it now checks, and its dependency cache is keyed on the harness's lockfile as well as
       the server's.
-- [ ] The tools server's typecheck and lint still run and still report independently, and a failure in either package
+- [x] The tools server's typecheck and lint still run and still report independently, and a failure in either package
       does not decide whether the other was checked.
-- [ ] CI does not run the end-to-end tests, creates no repository, spends no money, and gains no repository secret.
-- [ ] CONTRIBUTING says what the tests are, what they cost in time and money, what they need to run, how to run them,
+- [x] CI does not run the end-to-end tests, creates no repository, spends no money, and gains no repository secret.
+- [x] CONTRIBUTING says what the tests are, what they cost in time and money, what they need to run, how to run them,
       and what a run leaves behind.
-- [ ] CONTRIBUTING's project tree, its CI section and its no-test-suite bullet are corrected with it, so the file does
+- [x] CONTRIBUTING's project tree, its CI section and its no-test-suite bullet are corrected with it, so the file does
       not contradict its own new section.
-- [ ] CLAUDE.md no longer claims the only checks that exist run from the tools server, and says where the end-to-end
+- [x] CLAUDE.md no longer claims the only checks that exist run from the tools server, and says where the end-to-end
       tests sit — run deliberately, by hand, and no part of the two commands CI runs.
-- [ ] The figures published are the ones the runs actually measured, read from the comments tickets 02 and 03 left on
+- [x] The figures published are the ones the runs actually measured, read from the comments tickets 02 and 03 left on
       their own ticket files, and never the spec's estimates.
-- [ ] The ceilings published are the ones the harness carries, and where a measured run forced one up from the spec's
+- [x] The ceilings published are the ones the harness carries, and where a measured run forced one up from the spec's
       figure, that is stated rather than left as a ceiling the happy path cannot fit inside.
-- [ ] Nothing under `e2e-tests/` is changed by this ticket; its files are the three documents.
-- [ ] Neither document contradicts the other, itself, the spec, or `CONTEXT.md`.
-- [ ] Each file's prevailing column width is matched — 120 **characters**, not bytes; em dashes make byte counts
+- [x] Nothing under `e2e-tests/` is changed by this ticket; its files are the three documents.
+- [x] Neither document contradicts the other, itself, the spec, or `CONTEXT.md`.
+- [x] Each file's prevailing column width is matched — 120 **characters**, not bytes; em dashes make byte counts
       overrun a correctly-wrapped line.
-- [ ] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
+- [x] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
 
 ## Comments
 
