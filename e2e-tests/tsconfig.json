@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+
+    /**
+     * The same three options the tools server is held to, for the same reason (ADR-0001, applied to
+     * the harness by end-to-end-tests ticket 01): this source RUNS unbuilt under Node's type
+     * stripping, so `tsc --noEmit` is the only thing that ever reads this file and the only thing
+     * standing between an unerasable construct and a test that dies parsing itself.
+     *
+     *  - `erasableSyntaxOnly` refuses every construct type stripping cannot erase — enums,
+     *    namespaces, decorators, parameter properties.
+     *  - `allowImportingTsExtensions` because stripping needs the extension the file really has:
+     *    `./run-directory.ts`, not `./run-directory.js`.
+     *  - `verbatimModuleSyntax` because a stripped file has no import elision — a type-only import
+     *    that is not marked `type` becomes a runtime import of something that does not exist.
+     */
+    "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true
+  },
+  "include": ["harness/**/*.ts", "tests/**/*.ts"]
+}

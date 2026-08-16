@@ -198,3 +198,45 @@ confirms a shared understanding. _Avoid_: backlog, queue, open items
 A fact-finding dispatch a grilling makes to settle a question of fact, carrying the subject it was asked to settle. A
 question on the frontier that turns on that subject waits for the sweep; every other question is asked now. _Avoid_:
 sub-agent, exploration, lookup, research
+
+### Verification
+
+**Harness**:
+Everything an end-to-end test is written against and runs under: the builder a test is written with, the matchers it
+asserts through, the fixtures it runs against and the run directory it leaves behind. It verifies the plugin and is no
+part of it — nothing in it ships. _Avoid_: framework, rig, test infrastructure
+
+**Throwaway repo**:
+One private repository on the forge that a test creates for its own use, drives a run against, and destroys once it
+passes. A failing test leaves it standing — the change request is the evidence. What a run pushes is why it exists: a
+repository the next run inherits would hand it a branch to resume rather than a happy path to walk. _Avoid_: sandbox,
+scratch repo, test repo, fixture repo
+
+**Standing repo**:
+One private repository on the forge that outlives every test and is only ever cloned from. It is what a run that pushes
+nothing needs instead of a throwaway repo — with nothing written back, no two runs can reach each other. _Avoid_: shared
+repo, permanent repo, upstream, origin
+
+**Fixture**:
+What a throwaway repo or a standing repo is built from: a codebase, the conventions it declares, and — where the run
+under test is a build — the epic already published in it. One directory per fixture, named, so a new test brings its own
+rather than bending the last one's. _Avoid_: template, scaffold, seed, sample
+
+**Staged copy**:
+The plugin's working tree committed into a temporary repository, so an install takes what is on disk rather than what is
+on the branch. It is what makes a test cover work nobody has committed yet. _Avoid_: snapshot, build, artifact, checkout
+
+**Run directory**:
+Everything one test's run left on disk — the session records, the install it ran against, the staged copy and the
+verdict. It outlives the test, in a location no repository is watching, because a run that went wrong is only readable
+afterwards. _Avoid_: workspace, temp dir, output, artifacts
+
+**Responder**:
+The agent that answers a grilling's questions in the human's place, from the fixture's own brief, and confirms the
+shared understanding once the frontier empties. It stands in for the human and for nobody else: it forms no view on
+whether the answers were used well. _Avoid_: user simulator, stand-in, answerer
+
+**Verifier**:
+The agent that judges what a run delivered, on exactly the questions no assertion can settle — whether a spec coheres,
+whether the tickets cover the user stories, whether the code is plausible. What a test can assert mechanically is never
+its business. _Avoid_: judge, grader, evaluator, reviewer

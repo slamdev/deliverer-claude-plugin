@@ -2,8 +2,8 @@
 
 A Claude Code plugin: `plugin/` is the product, and everything outside it exists to build that.
 
-- **`CONTRIBUTING.md`** — read for the contribution flow, the `./claude` container, the project tree, or what CI does
-  and does not check; and before changing how contribution itself works.
+- **`CONTRIBUTING.md`** — read for the contribution flow, the `./claude` container, the project tree, what CI does and
+  does not check, or how to run the end-to-end tests; and before changing how contribution itself works.
 - **`CONTEXT.md`** — the glossary. Read before naming a domain concept in prose, a commit, a spec or a ticket.
 
 ## What ships
@@ -18,18 +18,29 @@ Contribute with the `mattpocock-skills` flow — `grill-with-docs` → `to-spec`
 stays out of `enabledPlugins` in `.claude/settings.json` and `/deliverer:*` never runs against this repo: the absence is
 deliberate, and CONTRIBUTING.md § No dogfooding gives the three reasons.
 
-## The tools server (`plugin/mcp/`)
+## What is checked
 
-The only checks that exist — no test suite, and the whole of CI — run from `plugin/mcp` (`npm ci` first if
+Two packages carry every automated check there is, and CI runs both of them and nothing else (`npm ci` first if
 `node_modules/` is missing):
 
 ```
-npm run typecheck && npm run lint
+(cd plugin/mcp && npm run typecheck && npm run lint)   # the tools server
+(cd e2e-tests  && npm run typecheck && npm run lint)   # the end-to-end harness
 ```
+
+Both packages run unbuilt: `e2e-tests/tsconfig.json` holds the harness to the same three options as the server's, for
+the reason the next section gives.
+
+The end-to-end tests themselves are no part of those two commands and no part of CI. `e2e-tests/` installs the plugin
+and drives whole **runs** against a real forge, so the two happy-path tests take tens of minutes and spend real money
+each: they are run deliberately, by hand. CONTRIBUTING.md § The end-to-end tests says what they take, what they need
+and how to run them.
 
 Everything else is verified **by hand**: markdown, the manifests, the shell hooks, and the server's own behaviour. When
 behaviour moves, exercise the review lifecycle against the **scripted backend** — a canned event timeline, no model and
 no money — before calling the change done. CONTRIBUTING.md § What CI does not check has the command.
+
+## The tools server (`plugin/mcp/`)
 
 The server **ships unbuilt**: Node's type stripping runs the TypeScript as-is, so `tsc --noEmit` is the only thing
 holding up the three options that make that possible. `plugin/mcp/tsconfig.json` names them and what each one prevents;
