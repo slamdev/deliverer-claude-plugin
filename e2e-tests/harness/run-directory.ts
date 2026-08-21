@@ -78,6 +78,31 @@ export const SCRIPTED_BACKEND_VARIABLES = ["DELIVERER_REVIEW_BACKEND", "DELIVERE
  */
 export const RUNNER_VARIABLES = ["NODE_TEST_CONTEXT", "NODE_TEST_WORKER_ID"];
 
+/**
+ * The two host settings a **run** is required to have, pinned rather than inherited (README §
+ * Claude Code's own settings).
+ *
+ * These are what the plugin asks a user to set, and neither of them makes it here on its own:
+ *
+ *  - **the todo tools**, which Claude Code leaves off by default. Without them an **orchestrator**
+ *    has no task list to keep, and a run whose progress is invisible is not the run these tests are
+ *    written against — the contracts about who writes to the task list, and about a signal that
+ *    needs no message because progress goes there instead, all assume it exists.
+ *  - **agent teams**, which change how the agents a session **dispatches** are run, and with them
+ *    the one-stage-one-dispatch arrangement both commands are built on.
+ *
+ * Pinned ABOVE the environment file and the contributor's shell because of where the wrong value
+ * comes from: this repository's own `.claude/settings.json` turns agent teams ON for the
+ * contribution flow, and Claude Code hands its settings' environment to every command a session
+ * runs — so `npm test` from inside a contribution session inherits `1` for the one that must be `0`
+ * and nothing at all for the one that must be `1`. What would arrive otherwise is whatever the
+ * machine running the tests happens to believe, which is nobody's choice about a run.
+ */
+export const HOST_SETTINGS: Record<string, string> = {
+  CLAUDE_CODE_ENABLE_TODO_TOOLS: "1",
+  CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: "0",
+};
+
 export interface RunDirectory {
   /** the directory itself, named for the test and the moment it was made */
   readonly root: string;
@@ -125,17 +150,19 @@ export async function createRunDirectory(testName: string): Promise<RunDirectory
 }
 
 /**
- * The environment every process a run starts is given, in three layers: the contributor's own,
- * then whatever the caller layers over it, then the run's two directories, which nothing overrides.
+ * The environment every process a run starts is given, in four layers: the contributor's own, then
+ * whatever the caller layers over it, then the two host settings above, then the run's two
+ * directories. Nothing overrides the last two.
  *
  * The inherited environment is kept rather than replaced. `PATH`, `HOME` and the rest are what let
  * `git`, `claude` and `npm` start at all, and a bare map would leave a session unable to run the
  * install hook it is being tested for.
  *
- * The middle layer is the repository's environment file, handed to a session whole
+ * The second layer is the repository's environment file, handed to a session whole
  * (`./env-file.ts`). It sits ABOVE the inherited environment, exactly as the `./claude` wrapper
- * puts the same file above the same shell, and BELOW the two directories, so no line in it can
- * move a run out of its own configuration directory and into another run's.
+ * puts the same file above the same shell, and BELOW the host settings and the two directories, so
+ * no line in it can move a run out of its own configuration directory and into another run's, or
+ * give it a host it is not meant to run under.
  *
  * `TMP` and `TEMP` ride along beside `TMPDIR` because they are the same fact under different names
  * on different platforms, and the brief must land in the run's own directory whichever one a
@@ -148,6 +175,7 @@ export function runEnvironment(
   const environment: NodeJS.ProcessEnv = {
     ...process.env,
     ...layered,
+    ...HOST_SETTINGS,
     CLAUDE_CONFIG_DIR: runDirectory.configDir,
     TMPDIR: runDirectory.tempDir,
     TMP: runDirectory.tempDir,

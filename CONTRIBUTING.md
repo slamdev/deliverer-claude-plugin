@@ -341,6 +341,13 @@ here first.
 - **Disk**: roughly 350 MB per run under the operating system's temporary directory, nearly all of it the tools
   server's installed dependencies and the official marketplace's clone. Nothing is cleaned up.
 
+**Two host settings they set for themselves.** A **run** needs Claude Code's todo tools on and its experimental agent
+teams off — the two settings the README asks a user for — so `HOST_SETTINGS` in `e2e-tests/harness/run-directory.ts`
+pins both above the environment file and above your shell, rather than hoping they arrive. They would not: the todo
+tools are off by default, and this repository's own `.claude/settings.json` turns agent teams **on** for the
+contribution flow and Claude Code passes that to every command a session runs, so `npm test` from inside a contribution
+session would hand a run exactly the pair of values it must not have.
+
 One thing they deliberately do **not** take is the **scripted backend**. `DELIVERER_REVIEW_BACKEND` and
 `DELIVERER_REVIEW_SCRIPT` are stripped from every process a run starts, so the variable the section above taught you to
 set cannot reach a delivery and leave every stage passing having reviewed nothing.

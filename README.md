@@ -33,6 +33,9 @@ You are needed for the conversation at the start and the merge at the end. Every
 ## Requirements
 
 - **Claude Code**, and a Claude subscription or API credentials
+- **two settings in Claude Code itself** — the todo tools on, the experimental agent teams off (see [Claude Code's own
+  settings](#claude-codes-own-settings)). Without the first a run has no task list to report its progress on; with the
+  second its stages stop being dispatched one at a time
 - **Node.js** 22.18+ or 23.6+, and **npm**, on your `PATH`
 - a **git repository with a remote**, and the CLI for your forge authenticated (`gh` for GitHub, `glab` for GitLab) —
   the plugin works through change requests, so it has to be able to open and comment on them
@@ -94,6 +97,31 @@ control — it holds a credential.
 
 If the file is missing, unreadable, not in `.env` format, or assigns nothing, every review is refused with a message
 saying exactly that, rather than quietly running as whatever identity happened to be lying around.
+
+### Claude Code's own settings
+
+Two more settings belong to Claude Code rather than to the plugin, and `/plugin` does not reach them. Put them in your
+settings file — `~/.claude/settings.json`, or a repository's `.claude/settings.json`:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_ENABLE_TODO_TOOLS": "1",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "0"
+  }
+}
+```
+
+**`CLAUDE_CODE_ENABLE_TODO_TOOLS=1`** — required. The task list is where both commands report progress, and Claude Code
+leaves the todo tools off by default: without them an unattended run that takes an hour tells you nothing until it
+finishes.
+
+**`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=0`** — required. Agent teams change how Claude Code runs the agents a session
+dispatches, which cuts across the orchestration both commands are built on — one stage, one dispatch, reported before
+the next starts. Set it to `0` explicitly rather than trusting the default: a value from a wider settings scope, or from
+your shell, is enough to turn it back on.
+
+Both are read when a session starts, so an edit to either takes effect in your next session.
 
 ## Using it
 
@@ -158,6 +186,13 @@ why), or nothing could start it at all (the plugin looks incompletely installed 
 
 **Reviews are refused, mentioning the effort tier** — the effort option must be exactly one of `low`, `medium`, `high`,
 `xhigh` or `max`.
+
+**A run reports nothing until it ends, and no task list appears** — the todo tools are off. Set
+`CLAUDE_CODE_ENABLE_TODO_TOOLS=1` (see [Claude Code's own settings](#claude-codes-own-settings)) and start a new
+session.
+
+**Stages run over each other, or a dispatch never reports back** — the experimental agent teams feature is on, and it
+changes how a session's agents are run. Set `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=0` and start a new session.
 
 **`/deliverer:refine` stops and says a skill is missing** — `mattpocock-skills` is not installed or not enabled. Check
 `/plugin`.
