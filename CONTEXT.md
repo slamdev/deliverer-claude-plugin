@@ -156,8 +156,9 @@ What one round cost — its tokens, and a dollar estimate labelled with the prov
 answer for a figure nobody measured, and never zero. _Avoid_: cost, usage, price
 
 **Gate**:
-Whatever the repository enforces before a commit lands. Work a ticket asked for is never undone to turn one green; a
-gate red for work outside the ticket stays red, and is recorded on the commit as well as in the report. _Avoid_: guard,
+Whatever the repository enforces before a commit lands. Work that was asked for is never undone to turn one green; a
+gate red for work nobody asked for stays red, and is recorded on the commit as well as in the report. What was asked for
+is the ticket where a ticket is being committed, and the comments being cleared where one is not. _Avoid_: guard,
 pre-commit, local checks
 
 **Check**:

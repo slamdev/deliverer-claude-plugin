@@ -45,12 +45,14 @@ may be fixed already with nothing anywhere saying so.
    resolution a reply naming the comment is what says it was worked. An `override` or an `escalate` verdict is work
    **owed** rather than work done, so a comment carrying one stays collected however that verdict was replied.
 4. **Work each comment, and every point the prose raised**, giving the last one the same scrutiny as the first: do what
-   its kind below calls for, and **Review findings** covers the prose. You are done when every comment from step 3 has a
-   fix waiting to commit, a reply resolving it, or a place on the hand-off list, and every point the prose raised has a
-   fix waiting to commit, the **grounds** you declined it on, or a place on that list.
-5. **Commit and push to the epic branch**, following the project's conventions and the nearest existing call sites.
-   Whoever commits publishes: step 7's checks run on the remote, so a commit that is not pushed has not landed. When
-   nothing needed implementing, there is nothing to commit or push — carry that to the report.
+   its kind below calls for, following the project's conventions and the nearest existing call sites, and
+   **Review findings** covers the prose. You are done when every comment from step 3 has a fix waiting to commit, a
+   reply resolving it, or a place on the hand-off list, and every point the prose raised has a fix waiting to commit,
+   the **grounds** you declined it on, or a place on that list.
+5. **Commit and push to the epic branch** in the format below. Whoever commits publishes: step 7's checks run on the
+   remote, so a commit that is not pushed has not landed. When nothing needed implementing, there is nothing to commit
+   or push — carry that to the report. You are done when every fix from step 4 is committed and on the remote, every
+   fork you closed silently carries an entry in a commit message, and every gate you left red carries one too.
 6. **Mark every comment you worked** — reply with what you did and the hash of the commit that did it, and resolve it.
    Where it cannot be resolved, that reply is the mark, and it is what stops a re-run implementing the same
    **directive** a second time. There it names what it marks: **Marking a comment** below.
@@ -176,11 +178,53 @@ verdict is what decides your work:
 
 The last two are hand-offs: leave them unresolved and carry them to the report.
 
+## Commit format
+
+Your commit carries **no `Ticket:` line**, and that is deliberate: it is not a ticket's work. A finding spans whichever
+tickets the code it touches came from, or none at all, so there is no number to carry here and none to invent — every
+commit on this branch that carries that line is one that delivered a ticket, and yours is not.
+
+One numbered entry per **fork** you closed silently, and it is the `Assumptions:` section that goes when you closed
+none — the same for `Gates:`, one numbered entry per **gate** you left red, gone when every gate you met is green. A
+report can fail to arrive; the commit is what the branch carries either way.
+
+**The bar for an assumption entry — both clauses, or it doesn't count:**
+
+> A different reasonable engineer could have gone the other way, **AND** going the other way would change behaviour the
+> spec cares about.
+
+Clause 1 alone is taste. Clause 2 alone is a forced move. Neither is a fork you closed.
+
+**Nothing adjudicates the forks you record.** The assumption comments were posted and the **verdicts** replied before
+your wave existed, and nothing after you mirrors an entry of yours into a comment — so a fork you closed ships
+**unratified**, and the human meets it on this commit rather than as an adjudicated comment. That is what the entry is
+for: off the commit, that fork exists nowhere at all.
+
+**What may stay red is narrower than a ticket's.** You have no ticket, so what stays red is a gate red for work **no
+comment asked for** — an artifact another ticket owns, work nobody has done yet — and `outside:` names that work.
+Everything a comment did ask for is yours to turn green, and so is every gate an earlier commit on this branch left red:
+that commit's `Gates:` section handed it downstream to your wave, which makes it work you were asked for. A gate goes
+green by fixing it — work a comment asked for stays done.
+
+```
+<Description of the work that has been done>
+
+Assumptions:
+1. file: <path>; line: <number>;
+   assumed: <the branch of the fork you took>;
+   reason: "<why you took it>"
+
+Gates:
+1. gate: <what stayed red, and how it is run>;
+   outside: <the work no comment asked for, which it belongs to>
+```
+
 ## What to report
 
 Whoever reads this has your report and nothing else.
 
 - every commit you added — hash and message — and that the branch on the remote carries them
+- every **gate** you left red, one line each — and the work no comment asked for that it belongs to
 - every finding you declined, one line each, with its grounds
 - every hand-off, one line each — those are the only ones still waiting on someone else
 - whether the checks ended green

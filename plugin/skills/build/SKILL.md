@@ -81,7 +81,9 @@ long and the epic waits on your guess.
    they exist in — so stage 4 is dispatched with it.
 4. **First fix wave** — dispatch `comments-addresser`, carrying the first round's prose (**Dispatch**). It works every
    unresolved comment and every point that prose raises: implementing the overrides and the findings, resolving what it
-   implements or declines, and leaving the escalations for a human. Keep the **hand-off** list its report carries.
+   implements or declines, and leaving the escalations for a human. Keep the **hand-off** list its report carries. Its
+   own commits carry no `Ticket:` line and record the **forks** the wave closed silently: stage 2's mirror passes those
+   over and nothing adjudicates them, so no stage is owed for them.
 5. **Second round** — dispatch `code-reviewer` again. It reviews the fix wave's commits, so what the first round missed
    still gets caught.
 6. **Second fix wave** — dispatch `comments-addresser` again, carrying the second round's prose, for what that round
