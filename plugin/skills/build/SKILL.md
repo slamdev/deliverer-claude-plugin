@@ -38,9 +38,9 @@ the commit is the account to trust — it is the record that survives a report n
 telling a **verdict** that owes a change from a reply recording the change made is a judgement about what those replies
 say — not a mechanical fact, so not yours. A resumed run therefore counts no comments: dispatch `assumption-reviewer`
 and `comments-addresser` again and let each read its own filter. One meeting a fully adjudicated change request replies
-nothing and reports it; one meeting no unresolved comment commits nothing and reports that. It is the rule **Rounds**
-already applies to a round — spend the dispatch whenever it is in doubt, because a spent dispatch costs time while a
-skipped wave flips a change request ready with an **override** unimplemented and an **escalation** nobody has seen.
+nothing and reports it; one meeting no unresolved comment commits nothing and reports that. That is what makes either
+dispatch worth spending whenever it is in doubt: one with nothing to do costs time, while a skipped wave flips a change
+request ready with an **override** unimplemented and an **escalation** nobody has seen.
 
 **Dispatch.** Every dispatch carries the epic, and — once each exists — the change request's URL and the **epic branch's
 name**, so none of them has to find it again. Neither exists at the first stage-1 dispatch: that implementer creates the
@@ -84,7 +84,8 @@ long and the epic waits on your guess.
    is the ordinary case; where they disagree, put the stage back rather than choosing between them — a report and the
    forge disagreeing is exactly what a re-dispatch is for. Escalations and declined findings ride into the report rather
    than holding the flip: they are what the human review is for. When the checks are not green, leave it a draft and
-   report that instead.
+   report that instead. When the bar cannot be met — no round completed, or one did and the second cannot — leave it a
+   draft the same way, and report the review stage as a **hand-off** with the reason each round ended on.
 
 ## Rounds
 
@@ -95,10 +96,11 @@ A round is one `code-reviewer` dispatch, and **two rounds that reached `complete
   exist nowhere else where it did not, and the fix wave after it is dispatched with all of it either way. Nothing of the
   round itself lands on the change request — not the prose, and no record that a round ran — so your **report** is where
   a human meets the review.
-- **`failed` or `cancelled`** — that round produced no review, so it is not one of the two. Dispatch `code-reviewer`
-  again: it opens a fresh round under a fresh id.
-- **Rounds leave nothing to count.** A resumed run cannot read off how many already ran. When the count is in doubt,
-  spend a round — an extra round costs time, while flipping ready on one round ships a review nobody did.
+- **`failed` or `cancelled`** — that round produced no review, so it is not one of the two. Its report carries the
+  one-line `reason` it ended on: a `failed` round's reason opens with a code naming the cause, and a `cancelled` round's
+  carries none. A fresh `code-reviewer` dispatch does not carry on that round — it opens a fresh round under a fresh id.
+- **Rounds leave nothing to count.** A resumed run cannot read off how many already ran, and the count is what the bar
+  rests on: flipping ready on one round ships a review nobody did.
 
 ## Progress
 
@@ -114,8 +116,8 @@ the epic's slug so two epics can share a session — `<slug>: open the change re
 dispatches get a task each, `adjudicate assumptions` and `first round`. A resumed run opens the same set, with the
 dispatches the branch and the change request already account for created `completed`. Mark a task `in_progress` as you
 dispatch it and `completed` once you have read its report. `completed` says the dispatch is over rather than that it
-succeeded, so a round that died carries its outcome in its subject — `<slug>: second round (failed — no review)` — and
-its retry gets a task of its own.
+succeeded, so a round that died carries its outcome in its subject — `<slug>: second round (failed — no review)`. A
+round you spend after one that died is another dispatch, so it gets a task of its own.
 
 Stage 1 is one task for all its tickets, relabelled as each lands: `<slug>: implement every ticket (4/21)` as the
 subject and `Implementing ticket 4/21 — <ticket>` as the `activeForm`, both in the one `TaskUpdate`. The numerator is
@@ -126,7 +128,8 @@ how many tickets the `Ticket:` lines name, so a resumed run opens at the count i
 Whoever reads this has your report and nothing else.
 
 - the change request's URL, and whether it ended draft or ready
-- how many tickets were implemented, and how many rounds completed
+- how many tickets were implemented, and how many rounds completed — with the reason each round that did not complete
+  ended on, so the count says why the rest did not
 - what the rounds cost — each round's tokens and its provider-labelled dollar estimate, unknown where a round has none
 - how many assumptions were adjudicated `accept`, `override` and `escalate`
 - every hand-off, one line each — the escalations and anything else still waiting on a human
