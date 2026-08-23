@@ -141,8 +141,10 @@ Something a round raised about the code, posted as a comment. Implementing one i
 grounds. _Avoid_: bug, issue, nit, suggestion
 
 **Round**:
-One delegated code review of a change request. Two completed rounds is the bar a change request is flipped ready
-against, and a round that produced no review is not one of the two. _Avoid_: review, pass, iteration
+One delegated code review of a change request. What it hands back is its **review findings**: posted as comments on the
+change request where the reviewer can post them, and carried by its prose where it cannot. Two completed rounds is the
+bar a change request is flipped ready against, and a round that produced no review is not one of the two. _Avoid_:
+review, pass, iteration
 
 **Fix wave**:
 One pass over every unresolved comment on a change request, ending with each one resolved or on the hand-off list.
