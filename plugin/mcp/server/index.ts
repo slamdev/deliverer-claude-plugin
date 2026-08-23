@@ -281,13 +281,12 @@ server.registerTool(
       stats: z.object({
         startedAt: z.string(),
         endedAt: z.string().nullable(),
-        durationMs: z.number(),
         events: z
           .number()
           .describe(
             "how many events have landed. It RISES while the review works — the inner agent's tool " +
-              "calls are observed as they happen — so two polls with the same number and a moving " +
-              "`durationMs` mean nothing has happened since the last one.",
+              "calls are observed as they happen — so two polls with the same number and the same " +
+              "`lastEventAt` mean nothing has happened since the last one.",
           ),
         lastEventAt: z
           .string()
@@ -315,8 +314,8 @@ server.registerTool(
           .number()
           .nullable()
           .describe(
-            "how long the INNER review agent ran, in milliseconds. Not `durationMs`, which is this " +
-              "record's own wall-clock and counts every second the poller waited around it.",
+            "how long the INNER review agent ran, in milliseconds: what the round itself took, " +
+              "and no part of what this record has been open for.",
           ),
         model: z.string().nullable(),
         provider: z

@@ -33,19 +33,17 @@ making a second one, so a resumed run picks up polling where it left off.
 3. **Start the review.** Call `code_review_start` with `change_request_url` (that URL), `cwd` (the repository root from
    step 1) and `review_id` — `<epic>-review-<n>` starting at `n=1`, using only letters, digits, `.` `_` `:` or `-`.
    Three outcomes:
-    - **A handle** — this round is yours. Keep its `review_id` and its `poll_after_ms`.
+    - **A handle** — this round is yours. Keep its `review_id`.
     - **Refused, the id already names a finished review** — a round already ran under that id, and its prose belongs to
       that round rather than this one. Raise `n` and call again: one round, one id.
     - **Refused, a review is already in flight** — one review runs at a time, and it reaches a terminal status by
-      itself.
-      `sleep 15` and call again.
-4. **Poll to a terminal status.** `sleep 15` — the `poll_after_ms` the handle returned — then call
-   `code_review_status` with your `review_id`, and repeat. You are done when `status` reads `completed`, `failed` or
-   `cancelled`. Let the review end by itself: the server's own deadline ends a run that hangs, and a cancelled review
-   carries no result at all. Whichever of the three it ends on, that is **your round**: one ending `failed` or
-   `cancelled` is reported as the round it was, and starting another under a fresh `review_id` is not yours to do —
-   whether the epic spends another round is settled outside this dispatch, and another round arrives as another
-   dispatch. Step 3's raise is not this: that one happens before any round of yours has run.
+      itself. Call again.
+4. **Poll to a terminal status.** Call `code_review_status` with your `review_id`, and repeat. You are done when
+   `status` reads `completed`, `failed` or `cancelled`. Let the review end by itself: the server's own deadline ends a
+   run that hangs, and a cancelled review carries no result at all. Whichever of the three it ends on, that is **your
+   round**: one ending `failed` or `cancelled` is reported as the round it was, and starting another under a fresh
+   `review_id` is not yours to do — whether the epic spends another round is settled outside this dispatch, and another
+   round arrives as another dispatch. Step 3's raise is not this: that one happens before any round of yours has run.
 5. **Report**, as below.
 
 ## What to report

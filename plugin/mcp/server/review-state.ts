@@ -61,7 +61,7 @@ export interface ReviewSpend {
   outputTokens?: number;
   cacheReadTokens?: number;
   cacheCreationTokens?: number;
-  /** the INNER agent's own wall-clock — `stats.durationMs` is the record's, and they differ */
+  /** the INNER agent's own wall-clock: how long the round ran, not how long the record lived */
   agentDurationMs?: number;
   /** the model that served the round, and the provider that served that model */
   model?: string;
@@ -292,20 +292,24 @@ export interface ReviewStatusResult {
   /**
    * The spend fields here are `ReviewSpend`'s, published flat and whatever the status — what a
    * round cost is a fact about the run rather than a claim about the code, so unlike everything
-   * verdict-shaped it survives a `failed` status. `durationMs` below is the RECORD's wall-clock;
-   * the inner agent's own is `agentDurationMs`, and overloading one name for both would make the
-   * poller's own waiting look like review time.
+   * verdict-shaped it survives a `failed` status.
+   *
+   * The RECORD's own elapsed wall-clock is deliberately no key here (review-reliability ticket 10,
+   * D19): it rose whether the review was working or wedged and answered neither, and the shipped
+   * `code-reviewer` read it every poll and reasoned aloud about a deadline off the back of it. What
+   * this leaves is stated rather than implied: `startedAt` still dates the review's start and
+   * `deadlineSec` still names the bound, so a caller can still build a clock of its own — what is
+   * gone is anything telling the shipped agent those numbers are its to act on.
    */
   stats: RecordedSpend & {
     startedAt: string;
     endedAt: string | null;
-    durationMs: number;
     events: number;
     /**
      * When the last event landed, or null before any has. This and `events` are the only fields that
      * move while a review is alive — the SDK's iterable says nothing until the inner agent finishes
-     * (`agent-backend.ts`'s header) — so together they are what tells a poller "working" from
-     * "wedged". `durationMs` rises either way and answers neither.
+     * (`agent-backend.ts`'s header) — so together they are the whole of what tells a poller
+     * "working" from "wedged", and two polls agreeing on both need no clock to read.
      */
     lastEventAt: string | null;
     /**
@@ -331,7 +335,7 @@ export interface ReviewStatusResult {
 
 export function project(
   record: ReviewRecord,
-  context: { now: number; deadlineSec: number },
+  context: { deadlineSec: number },
 ): ReviewStatusResult {
   const done = record.status === "completed";
   return {
@@ -343,7 +347,6 @@ export function project(
     stats: {
       startedAt: new Date(record.createdAt).toISOString(),
       endedAt: record.endedAt === null ? null : new Date(record.endedAt).toISOString(),
-      durationMs: (record.endedAt ?? context.now) - record.createdAt,
       events: record.events,
       // `updatedAt` only moves when the reducer accepts an event, so it IS the last event's time —
       // but it starts equal to `createdAt`, so it is published only once something has landed.

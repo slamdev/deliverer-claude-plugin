@@ -30,8 +30,8 @@
  * The record has to be failed and not merely abandoned (PR #11 review round 2): releasing the slot
  * alone leaves a `pending` record no eviction and no bound can ever move, and
  * `agents/code-reviewer.md` tells that agent to retry under the SAME id — so the retry branch would
- * hand that dead handle back for ever, and the agent would poll it every 15 s until the run's
- * budget was gone. The wedge would have moved from the slot to the id, not gone.
+ * hand that dead handle back for ever, and the agent would poll it until the run's budget was gone.
+ * The wedge would have moved from the slot to the id, not gone.
  *
  * A THIRD check of that class sits on the idle bound's rearm, in the emit callback `start()` hands
  * the backend: it rearms only while the slot is still this review's. Not a redundant test —
@@ -66,15 +66,15 @@ export class ToolError extends Error {
 
 /**
  * How long a caller should wait before polling again. A hint, not a rule: nothing enforces it, and
- * the scripted double outruns it by design. It exists because the `code-reviewer` agent is told
- * that nothing arrives unsolicited, and an agent with no interval invents one.
+ * the scripted double outruns it by design. It is advice for whoever is polling, published for any
+ * caller and not just the shipped one (review-reliability D20).
  *
- * It must equal the interval the SHIPPED agent sleeps for (`agents/code-reviewer.md`'s `sleep 15`).
- * Nothing pins the two against each other, so they are kept in step by hand: shipping two numbers
- * guarantees one is wrong, and the one the server published was the dead one — the role never read
- * the hint (grill A6). 15 s is the right number on the measurements: a healthy round runs ~122 s,
- * so ~8 polls, where 2 s would have been ~60 and ~1800 at the deadline (`./config.ts`'s
- * `DEADLINE_SEC`).
+ * No interval anywhere is kept in step with it. `agents/code-reviewer.md` calls the status tool and
+ * repeats, and is told nothing about when that next call happens, because nothing it can do decides
+ * that: an unenforceable interval was reasoned about as a clock (review-reliability D19), and even
+ * before that the role never read the hint it was handed (grill A6). 15 s is still the right number
+ * on the measurements: a healthy round runs ~122 s, so ~8 polls, where 2 s would have been ~60 —
+ * and ~7200 at the absolute deadline (`./config.ts`'s `DEADLINE_SEC`, four hours).
  */
 export const POLL_AFTER_MS = 15_000;
 
@@ -413,9 +413,9 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
           // terminal, so `store.evict` never drops it; `arm()` was never reached, so no deadline can
           // fail it; and `agents/code-reviewer.md` tells that agent to retry under the SAME id,
           // which would hit the retry branch above and hand back this dead handle for ever — an
-          // agent polling a frozen record every 15 s until the run's budget is gone. Failing it
-          // turns the documented retry into what it says it is: the id addresses that review, and
-          // that review says it never started (PR #11 review round 2).
+          // agent polling a frozen record until the run's budget is gone. Failing it turns the
+          // documented retry into what it says it is: the id addresses that review, and that review
+          // says it never started (PR #11 review round 2).
           apply(reviewId, {
             type: "failed",
             // The other code the narrowing cannot reach: a review that never started produced no
@@ -453,7 +453,7 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
             `started, or it finished long enough ago to have been evicted.`,
         );
       }
-      return project(record, { now: now(), deadlineSec: deps.deadlineSec });
+      return project(record, { deadlineSec: deps.deadlineSec });
     },
 
     cancel(reviewId) {
