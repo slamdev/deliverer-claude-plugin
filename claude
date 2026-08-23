@@ -39,6 +39,17 @@ if [ -z "$HOST_TZ" ] && [ -r /etc/timezone ]; then HOST_TZ="$(cat /etc/timezone)
 [ -n "$HOST_TZ" ] || HOST_TZ="UTC"
 
 # run claude with with current dir mounted to a container to isolate the local environment from destructive operations
+#
+# hacks/claude-managed-settings.json rides in at the policy path Claude Code reads settings from on
+# Linux, so a fresh machine needs nothing typed into the TUI. It carries the settings the checked-in
+# project .claude/settings.json cannot: `pluginConfigs` (the deliverer plugin's required review
+# environment file) and `skipDangerousModePermissionPrompt` are read from user, flag and policy
+# settings only — a project file supplies neither. Policy is the one of those three that can be
+# mounted in, which is what makes this a mount and not a first-run chore.
+#
+# Policy settings OUTRANK the user's own, so keep this file to settings that must not vary. Anything
+# a session should be free to change belongs in ~/.claude/settings.json (i.e. .claude-sandbox/),
+# where the TUI writes it — a key set here cannot be overridden from inside the session.
 
 docker run -it --rm \
     -e TZ="$HOST_TZ" \
@@ -56,6 +67,7 @@ docker run -it --rm \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "$HOME/.ssh:/root/.ssh/" \
     -v "$(pwd)/.claude-sandbox:/root/.claude/" \
+    -v "$(pwd)/hacks/claude-managed-settings.json:/etc/claude-code/managed-settings.json:ro" \
     -v "$(pwd)/.claude-tmp:/tmp/" \
     -v "$(pwd)/claude.log:/tmp/claude.log" \
     -v "$(pwd):/opt/project" \
