@@ -37,7 +37,13 @@ import {
   createAgentBackend,
   type AgentQuery,
 } from "./agent-backend.ts";
-import { configFromEnv, BACKEND_ENV, DEADLINE_SEC, SCRIPT_ENV } from "./config.ts";
+import {
+  configFromEnv,
+  BACKEND_ENV,
+  DEADLINE_SEC,
+  IDLE_DEADLINE_SEC,
+  SCRIPT_ENV,
+} from "./config.ts";
 import type { ReviewBackend } from "./backend.ts";
 import {
   createLifecycle,
@@ -131,6 +137,7 @@ const lifecycle = createLifecycle({
   model: config.model,
   claudeEnv: config.claudeEnv,
   deadlineSec: DEADLINE_SEC,
+  idleDeadlineSec: IDLE_DEADLINE_SEC,
 });
 
 /* ────────────────────────── tool plumbing ────────────────────────── */
@@ -327,8 +334,13 @@ server.registerTool(
         deadlineSec: z
           .number()
           .describe(
-            "the ceiling this review is aborted at, in seconds. A constant of the server, not " +
-              "configuration — so it is always present and the same for every review.",
+            "the ABSOLUTE deadline this review is bounded by, in seconds — the outer of the two " +
+              "bounds it can end on, and not the one that ordinarily ends a wedged round: a " +
+              `review is also aborted after ${IDLE_DEADLINE_SEC}s with no event of any kind, ` +
+              "counted from the last one. That idle bound has no key of its own here; a round " +
+              "aborted on either reports deadline_exceeded, and its reason says which. Both are " +
+              "constants of the server, not configuration — so this is always present and the " +
+              "same for every review.",
           ),
       }),
       reason: z

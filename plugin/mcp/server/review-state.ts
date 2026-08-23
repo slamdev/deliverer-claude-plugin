@@ -308,16 +308,21 @@ export interface ReviewStatusResult {
      * "wedged". `durationMs` rises either way and answers neither.
      */
     lastEventAt: string | null;
-    /** the ceiling every review on this server is bounded by — a constant, so never absent */
+    /**
+     * the ABSOLUTE deadline every review on this server is bounded by — a constant, so never absent.
+     * NOT the bound a wedged round ordinarily ends on: that is the idle one, which is deliberately
+     * no key of its own here (review-reliability ticket 04). A caller learns it exists from this
+     * field's own description on the status tool, and from the reason a round aborted on it gives.
+     */
     deadlineSec: number;
   };
   /**
    * Why a non-completed run ended, verbatim; empty when the run is alive or completed. A FAILED
    * run's reason opens with a `FailureCode`; a cancelled one's does not. It replaced
    * `transcript` in this payload rather than joining it (grill A6): a deadline-length run costs
-   * ~120 polls, and returning the whole accumulated stream on each one grows the polling agent's
-   * context with the reviewer's verbosity until it hits a ceiling the server's deadline never
-   * reaches. The full stream stays available, pull-only, at `code-review://transcript/<id>`.
+   * hundreds of polls, and returning the whole accumulated stream on each one grows the polling
+   * agent's context with the reviewer's verbosity until it hits a ceiling the server's deadline
+   * never reaches. The full stream stays available, pull-only, at `code-review://transcript/<id>`.
    */
   reason: string;
   partial: boolean;

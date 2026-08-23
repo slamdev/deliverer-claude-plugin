@@ -2,35 +2,43 @@
  * The review lifecycle: start, poll, cancel (delegated-review ticket 04).
  *
  * Everything the three tools do that is not protocol lives here — validation, the one-in-flight
- * rule, the caller-supplied handle, the deadline, and the wiring of a backend's events into the
+ * rule, the caller-supplied handle, the two bounds, and the wiring of a backend's events into the
  * reducer. The tool layer above it (`./index.ts`) only translates.
  *
  * Two contract rules shape the surface:
  *
  *  - **An error result means the tool could not do its job** — a malformed URL, an unknown id, a
  *    second review while one is in flight. A review that found problems is a *successful* call, and
- *    so is a review that failed on its deadline: the failure is a fact ABOUT the review, reported
- *    through `code_review_status`, not a failure of the call that asked.
+ *    so is a review that failed on one of its bounds: the failure is a fact ABOUT the review,
+ *    reported through `code_review_status`, not a failure of the call that asked.
  *  - **The handle exists before the work does.** `code_review_start` records the review and returns
  *    in well under a second; the backend's first event arrives afterwards. A caller may supply the
  *    id, so it holds the handle before anything can go wrong and a retry addresses the same review
  *    rather than starting a second one.
  *
  * **Two guards in `start()` are deliberate and load-bearing, and neither has a test. Do not remove
- * them as dead defensive code** (PR #11 grill, agenda A46/A47). `arm()` closes over the run it is
- * arming for and clears any handle still held; `inFlightId` is released — and the record it was
- * claimed for FAILED — when `backend.start()` throws, both guarded so a synchronous terminal event
- * that already released it is not disturbed.
+ * them as dead defensive code** (PR #11 grill, agenda A46/A47). `arm()` and `armIdle()` hand the run
+ * they are arming for to `boundFailed` rather than reading the slot at fire time, and clear any timer
+ * still held; `inFlightId` is released — and the record it was claimed for FAILED — when
+ * `backend.start()` throws, both guarded so a synchronous terminal event that already released it
+ * is not disturbed.
  * Together they prevent a **session-fatal wedge**: an in-flight slot claimed for an id nothing can
  * ever move to terminal, after which every later `code_review_start` on this server is refused for
- * the life of the process — and a deadline armed against a review that already finished, firing
+ * the life of the process — and a bound armed against a review that already finished, firing
  * into whichever run holds the slot next.
  *
  * The record has to be failed and not merely abandoned (PR #11 review round 2): releasing the slot
- * alone leaves a `pending` record no eviction and no deadline can ever move, and
+ * alone leaves a `pending` record no eviction and no bound can ever move, and
  * `agents/code-reviewer.md` tells that agent to retry under the SAME id — so the retry branch would
  * hand that dead handle back for ever, and the agent would poll it every 15 s until the run's
  * budget was gone. The wedge would have moved from the slot to the id, not gone.
+ *
+ * A THIRD check of that class sits on the idle bound's rearm, in the emit callback `start()` hands
+ * the backend: it rearms only while the slot is still this review's. Not a redundant test —
+ * `inFlightRun` belongs to whichever review holds the slot, so rearming without it would hand this
+ * review's id to another review's run, and the bound would then abort that run while recording the
+ * failure here. The `!== null` half is what a synchronous event inside `start()` meets, before there
+ * is a run to arm against at all.
  *
  * They are untested because both defects are unreachable at the PUBLISHED TOOL SURFACE, which is
  * the only seam the spec's Testing Decisions permit — the reducer is deliberately not one. The
@@ -125,17 +133,35 @@ export interface LifecycleDeps {
   /** the required environment file's variables, layered over the server's own environment */
   claudeEnv: Record<string, string>;
   /**
-   * the deadline every review is bounded by, in seconds. Not nullable and not optional: it is the
-   * server's own constant (`./config.ts`'s `DEADLINE_SEC`) rather than anything a host configures,
-   * so "no deadline" is not a state this lifecycle can be in — an unbounded review would hold the
-   * single in-flight slot for the life of the process with nothing able to release it.
+   * the ABSOLUTE deadline every review is bounded by, in seconds — the outer of the two bounds, and
+   * the figure `code_review_status` publishes as `deadlineSec`.
+   *
+   * Neither bound is nullable or optional: both are the server's own constants (`./config.ts`'s
+   * `DEADLINE_SEC` and `IDLE_DEADLINE_SEC`) rather than anything a host configures, so "no bound" is
+   * not a state this lifecycle can be in — an unbounded review would hold the single in-flight slot
+   * for the life of the process with nothing able to release it. They are handed in so a check can
+   * drive them with small numbers, which is not the same as configurable: the host boundary offers
+   * no knob for either.
    */
   deadlineSec: number;
+  /**
+   * how long a review may go with NO event before it is aborted, in seconds — the bound that
+   * ordinarily ends a wedged round, since a review nothing is coming back from reports nothing. Reset
+   * by every event the backend reports, so a review still working is never aborted for being slow.
+   */
+  idleDeadlineSec: number;
   now?: () => number;
 }
 
 /** The largest delay `setTimeout` accepts before Node coerces it to 1 ms — about 24.8 days. */
 const MAX_TIMEOUT_MS = 2 ** 31 - 1;
+
+/**
+ * One bound as a `setTimeout` delay, clamped to that range. Above it the delay is coerced to 1 ms,
+ * so a deliberately generous bound — four hours today, and nothing here caps what a later one could
+ * be — would fire on the next tick and fail every round under a message saying the opposite.
+ */
+const boundDelayMs = (sec: number): number => Math.min(MAX_TIMEOUT_MS, Math.max(0, sec * 1000));
 
 /** Ids must survive a URI and a log line unescaped, and must be short enough to read. */
 const REVIEW_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
@@ -198,12 +224,15 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
   let inFlightId: string | null = null;
   let inFlightRun: ReviewRun | null = null;
   let deadlineTimer: ReturnType<typeof setTimeout> | null = null;
+  let idleTimer: ReturnType<typeof setTimeout> | null = null;
 
   const clearInFlight = (): void => {
     inFlightId = null;
     inFlightRun = null;
     if (deadlineTimer !== null) clearTimeout(deadlineTimer);
     deadlineTimer = null;
+    if (idleTimer !== null) clearTimeout(idleTimer);
+    idleTimer = null;
   };
 
   /**
@@ -220,40 +249,65 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
   };
 
   /**
-   * Arm the deadline the server owns. Always: it is a constant of this server rather than an option
-   * (see `./config.ts`), so there is no configuration under which a review runs unbounded.
+   * Abort the run and record the failure one of the bounds produced.
    *
-   * It takes the run it is arming for rather than reading `inFlightRun` when it fires, and clears
-   * any handle still held. Both are about ONE review's deadline never reaching another's run:
-   * `./backend.ts` permits a backend to emit terminal events in any order, including synchronously
-   * inside `start()`, and a timer that resolved the current run at fire time would abort whichever
-   * review happened to be in flight by then while recording the failure against the one it was
-   * armed for — leaving the new review aborted with no terminal event and the slot held for good.
+   * It takes the run it was armed for rather than reading `inFlightRun` when it fires. That is about
+   * ONE review's bound never reaching another's run: `./backend.ts` permits a backend to emit
+   * terminal events in any order, including synchronously inside `start()`, and a timer that
+   * resolved the current run at fire time would abort whichever review happened to be in flight by
+   * then while recording the failure against the one it was armed for — leaving the new review
+   * aborted with no terminal event and the slot held for good.
    *
    * The failure it records is the one code the message-to-event narrowing can never emit, which is
    * why it is spelled out here: a round that ran out of time reported nothing for that narrowing to
-   * read. The reason NAMES WHICH bound ran out rather than saying only "its deadline", because
+   * read. The detail NAMES WHICH bound ran out rather than saying only "its deadline", because
    * running out of time is one cause with more than one way of arriving at it, and every bound a
    * review has reports `deadline_exceeded` (`./review-state.ts`).
    */
+  const boundFailed = (reviewId: string, run: ReviewRun, detail: string): void => {
+    run.abort("deadline");
+    apply(reviewId, { type: "failed", message: failureReason("deadline_exceeded", detail) });
+  };
+
+  /**
+   * Arm the IDLE bound: silence for `idleDeadlineSec` and the review is aborted.
+   *
+   * Rearmed from every event the backend reports, so what it measures is the gap between two events
+   * and not the length of the review. That is the whole point of it — a round still emitting events
+   * is not the failure a bound exists to catch, and the fixed hour this replaced killed two rounds
+   * of one observed epic while they were emitting 273 of them. Any timer still held is cleared
+   * first, so a review has one idle bound rather than one per event.
+   */
+  const armIdle = (reviewId: string, run: ReviewRun): void => {
+    if (idleTimer !== null) clearTimeout(idleTimer);
+    const detail =
+      `the review exceeded its idle bound of ${deps.idleDeadlineSec}s with no event ` +
+      `and was aborted`;
+    idleTimer = setTimeout(
+      () => boundFailed(reviewId, run, detail),
+      boundDelayMs(deps.idleDeadlineSec),
+    );
+  };
+
+  /**
+   * Arm both bounds the server owns. Always: they are constants of this server rather than options
+   * (see `./config.ts`), so there is no configuration under which a review runs unbounded.
+   *
+   * The absolute one is armed here and never rearmed — that is what makes it absolute, and what
+   * keeps "never" out of reach of a review that goes on talking for a week. Any timer still held is
+   * cleared first, so a bound armed for a review that has already gone cannot fire into this one:
+   * the same concern `boundFailed` handles from its own side, by carrying the run it was armed for
+   * rather than reading the slot.
+   */
   const arm = (reviewId: string, run: ReviewRun): void => {
     if (deadlineTimer !== null) clearTimeout(deadlineTimer);
+    const detail =
+      `the review exceeded its absolute deadline of ${deps.deadlineSec}s and was aborted`;
     deadlineTimer = setTimeout(
-      () => {
-        run.abort("deadline");
-        apply(reviewId, {
-          type: "failed",
-          message: failureReason(
-            "deadline_exceeded",
-            `the review exceeded its absolute deadline of ${deps.deadlineSec}s and was aborted`,
-          ),
-        });
-      },
-      // Clamped to Node's 32-bit timer range. Above it the delay is coerced to 1 ms, so a
-      // deliberately generous ceiling (the manifest declares a `min` and no `max`) would fire on
-      // the next tick and fail every round under a message saying the opposite.
-      Math.min(MAX_TIMEOUT_MS, Math.max(0, deps.deadlineSec * 1000)),
+      () => boundFailed(reviewId, run, detail),
+      boundDelayMs(deps.deadlineSec),
     );
+    armIdle(reviewId, run);
   };
 
   const handleFor = (reviewId: string, status: string): StartResult => ({
@@ -302,7 +356,7 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
         // What this says is deliberately NOT "poll it or cancel it" (PR #11 grill, agenda A12). The
         // only shipped caller may take neither: `agents/code-reviewer.md` forbids cancelling
         // outright, and a round-2 agent does not hold round 1's id to poll. The slot is released by
-        // a terminal event or by the deadline the server owns and nothing else — so the honest,
+        // a terminal event or by a bound the server owns and nothing else — so the honest,
         // actionable facts are which review holds it, how long it has held it, and that it ends by
         // itself.
         const ageSec =
@@ -339,7 +393,18 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
             model: deps.model,
             claudeEnv: deps.claudeEnv,
           },
-          (event) => apply(reviewId, event),
+          (event) => {
+            // Every event the backend reports resets the idle bound, whatever it says: the liveness
+            // observer's `running` arrives through this callback exactly as a result message does,
+            // and an inner agent that is calling a tool is working. Rearmed BEFORE the fold, so a
+            // terminal event arms nothing that `clearInFlight` does not then clear.
+            //
+            // `inFlightRun` is still null for an event emitted SYNCHRONOUSLY inside `start()`, and
+            // nothing is armed at that point either — `arm()` below sets both bounds once the run
+            // exists, and only while the slot is still this review's.
+            if (inFlightId === reviewId && inFlightRun !== null) armIdle(reviewId, inFlightRun);
+            apply(reviewId, event);
+          },
         );
       } catch (error) {
         // only if it is still ours: a synchronous terminal event before the throw already released it
@@ -369,7 +434,7 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
       }
       // A backend that emitted a terminal event synchronously has already released the slot inside
       // that call (`./backend.ts` permits it). Re-populating it would leave a finished review's run
-      // behind a null id and arm a deadline nothing can ever clear, so the slot is only furnished
+      // behind a null id and arm bounds nothing can ever clear, so the slot is only furnished
       // while it is still this review's.
       if (inFlightId === reviewId) {
         inFlightRun = run;

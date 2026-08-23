@@ -30,8 +30,8 @@ Three kinds of **spend** sit outside it, and each is outside for its own reason:
 
 **So the spend ceiling cannot see review spend at all.** On the delivery below that is $0.32 against a $25 ceiling —
 but the harness deliberately configures the cheapest review there is (`REVIEW_OPTIONS` in `harness/install.ts`: `low`
-effort on `sonnet`, against a shipped default of `opus`), and the plugin's own measurement above is $8.61 for one epic's
-reviews. The number is small here because of how the harness is configured, not because the gap is small.
+effort on `sonnet`, against a shipped default of `opus[1m]`), and the plugin's own measurement above is $8.61 for one
+epic's reviews. The number is small here because of how the harness is configured, not because the gap is small.
 
 ### The four things that make the arithmetic wrong if you skip them
 

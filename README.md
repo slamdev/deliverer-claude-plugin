@@ -80,8 +80,12 @@ code review runs under. Read once when a session starts, so an edit takes effect
 **Code review effort** — _default `high`._ How deep each review goes: `low`, `medium`, `high`, `xhigh` or `max`. Deeper
 costs more time and money, and raises more findings for the fix waves to work through.
 
-**Code review model** — _default `opus`._ Which model reviews. An alias — `opus`, `sonnet`, `haiku` — travels between
-providers; leave it empty to take whatever your credentials already default to.
+**Code review model** — _default `opus[1m]`._ Which model reviews. The `[1m]` suffix is the one-million-token context
+window, and it is what lets a review read a large diff at all: the whole diff goes into the review's prompt before the
+model runs, so a bare alias meets an epic-sized change request with a "prompt is too long" failure and no review.
+Whatever you set is used verbatim, so a bare alias gives that window up — and `[1m]` works on `opus` and `sonnet` but
+is refused on `haiku`. An alias travels between providers; leave it empty to take whatever your credentials already
+default to.
 
 ### The environment file
 

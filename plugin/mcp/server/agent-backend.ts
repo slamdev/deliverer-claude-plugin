@@ -51,9 +51,10 @@
  * Effort, model and the inner agent's environment come from the server's startup configuration
  * (`./config.ts`), never from a caller: no `code-reviewer` agent can quietly review at a different
  * depth, on a different model, or as a different identity than the owner configured. The model is
- * passed VERBATIM and unchecked — an alias (`opus`, the shipped default) resolves against whatever
- * provider the environment file selects, which is why one is portable where a pinned id is not —
- * and an EMPTY model means take that environment's own default instead.
+ * passed VERBATIM and unchecked — an alias (the shipped default is `opus[1m]`, that alias with the
+ * one-million-context suffix on it) resolves against whatever provider the environment file selects,
+ * which is why one is portable where a pinned id is not — and an EMPTY model means take that
+ * environment's own default instead.
  *
  * **How the review is authenticated.** Nothing here reads, forwards or names a credential. The
  * plugin's `code_review_claude_env_file` option — required — names a `.env` file, `./config.ts`
