@@ -45,7 +45,7 @@ import * as fs from "node:fs";
 
 import type { ReviewBackend, ReviewRun } from "./backend.ts";
 import type { ReviewEvent, ReviewStatusResult } from "./review-state.ts";
-import { isTerminal, newRecord, project, reduce } from "./review-state.ts";
+import { failureReason, isTerminal, newRecord, project, reduce } from "./review-state.ts";
 import type { ReviewStore } from "./store.ts";
 
 /** A failure of the CALL. The tool layer turns exactly this into an MCP error result. */
@@ -229,6 +229,12 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
    * inside `start()`, and a timer that resolved the current run at fire time would abort whichever
    * review happened to be in flight by then while recording the failure against the one it was
    * armed for — leaving the new review aborted with no terminal event and the slot held for good.
+   *
+   * The failure it records is the one code the message-to-event narrowing can never emit, which is
+   * why it is spelled out here: a round that ran out of time reported nothing for that narrowing to
+   * read. The reason NAMES WHICH bound ran out rather than saying only "its deadline", because
+   * running out of time is one cause with more than one way of arriving at it, and every bound a
+   * review has reports `deadline_exceeded` (`./review-state.ts`).
    */
   const arm = (reviewId: string, run: ReviewRun): void => {
     if (deadlineTimer !== null) clearTimeout(deadlineTimer);
@@ -237,7 +243,10 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
         run.abort("deadline");
         apply(reviewId, {
           type: "failed",
-          message: `the review exceeded its deadline of ${deps.deadlineSec}s and was aborted`,
+          message: failureReason(
+            "deadline_exceeded",
+            `the review exceeded its absolute deadline of ${deps.deadlineSec}s and was aborted`,
+          ),
         });
       },
       // Clamped to Node's 32-bit timer range. Above it the delay is coerced to 1 ms, so a
@@ -344,9 +353,15 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
           // that review says it never started (PR #11 review round 2).
           apply(reviewId, {
             type: "failed",
-            message: `the review backend failed to start the review: ${
-              error instanceof Error ? error.message : String(error)
-            }`,
+            // The other code the narrowing cannot reach: a review that never started produced no
+            // message to narrow. `backend_error` is what the server knows — the throw says the
+            // backend could not begin, and nothing about why the review would have failed.
+            message: failureReason(
+              "backend_error",
+              `the review backend failed to start the review: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
+            ),
           });
           inFlightId = null;
         }
@@ -386,6 +401,10 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
       // Terminal states absorb, and that includes a cancellation: reporting "cancelled" over a
       // review that had already completed would be the same class of lie as an approving verdict on
       // an unfinished run. The status reported is the one the review actually holds.
+      //
+      // The reason it records carries NO failure code, deliberately: a cancellation is not one of
+      // the six causes, and a seventh word invented for it would open a vocabulary whose whole value
+      // is being closed. The status tool documents that the code rides on a failed round instead.
       if (!isTerminal(record.status)) {
         if (inFlightId === id && inFlightRun !== null) inFlightRun.abort("cancelled");
         apply(id, { type: "cancelled", reason: "cancelled by the caller" });

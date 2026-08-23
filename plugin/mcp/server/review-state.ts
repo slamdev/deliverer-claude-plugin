@@ -76,6 +76,50 @@ export type RecordedSpend = {
 };
 
 /**
+ * WHY a terminal failure happened, in one machine-readable word. The vocabulary is CLOSED: every
+ * terminal failure the server ITSELF produces prefixes its reason with one of these six, so a caller
+ * reads the cause off the front of the line instead of matching prose it was never promised
+ * (review-reliability ticket 03). An observed epic drove four rounds that all died and reported
+ * nothing a caller could act on, so the orchestrator was left inferring the cause from the
+ * reviewer's text.
+ *
+ * The scripted double is the one thing outside that, and it is not a gap: it replays a script's own
+ * `message` verbatim, exactly as it replays everything else it is handed, so a script that wants the
+ * real shape writes the code into the text it scripts.
+ *
+ * It rides on the `reason` a failed round already publishes rather than on a key of its own: the
+ * status payload is documented as exactly the keys the tool contract names, and a prefix on an
+ * existing one-line string keeps that true.
+ *
+ * Two things the closedness costs, both deliberate:
+ *
+ *  - **A cancellation carries no code.** `reason` is published for a cancelled round as well as a
+ *    failed one, and none of these six is a cancellation — so rather than invent a seventh word for
+ *    it, the status tool documents that the code rides on a FAILED round and a caller is not sent
+ *    looking for one that is not there.
+ *  - **Every bound a review has reports `deadline_exceeded`**, with the prose after the code saying
+ *    which bound ended the round. A second bound is a second way to run out of time, not a second
+ *    cause.
+ */
+export const FAILURE_CODES = [
+  "prompt_too_long",
+  "deadline_exceeded",
+  "connection_lost",
+  "not_logged_in",
+  "no_result",
+  "backend_error",
+] as const;
+
+export type FailureCode = (typeof FAILURE_CODES)[number];
+
+/**
+ * A failed event's message with its code on the front. Every site that emits a terminal failure
+ * goes through here, which is what makes the vocabulary above closed in fact and not just in
+ * documentation: the separator is decided once, and a seventh word does not compile.
+ */
+export const failureReason = (code: FailureCode, detail: string): string => `${code}: ${detail}`;
+
+/**
  * What a review backend may say. Backend-neutral on purpose: the scripted double and the real
  * Agent-SDK run (ticket 05) both narrow to this, so the lifecycle has exactly one vocabulary.
  *
@@ -108,6 +152,9 @@ export interface ReviewRecord extends RecordedSpend {
    * empty while the run is alive or when it completed. Held as its own field, not dug back out of
    * the transcript, because it is the one thing a caller needs on the failure path and the
    * transcript no longer reaches `code_review_status` at all (grill A6/A20).
+   *
+   * A failure's message arrives with its `FailureCode` already on the front — the reducer prefixes
+   * nothing, so the emitting site is the one that names the cause it knows.
    */
   reason: string;
   createdAt: number;
@@ -265,7 +312,8 @@ export interface ReviewStatusResult {
     deadlineSec: number;
   };
   /**
-   * Why a non-completed run ended, verbatim; empty when the run is alive or completed. It replaced
+   * Why a non-completed run ended, verbatim; empty when the run is alive or completed. A FAILED
+   * run's reason opens with a `FailureCode`; a cancelled one's does not. It replaced
    * `transcript` in this payload rather than joining it (grill A6): a deadline-length run costs
    * ~120 polls, and returning the whole accumulated stream on each one grows the polling agent's
    * context with the reviewer's verbosity until it hits a ceiling the server's deadline never

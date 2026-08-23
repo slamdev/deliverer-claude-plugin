@@ -45,7 +45,7 @@ import {
   ToolError,
   TRANSCRIPT_SCHEME,
 } from "./lifecycle.ts";
-import { STATUSES_TUPLE } from "./review-state.ts";
+import { FAILURE_CODES, STATUSES_TUPLE } from "./review-state.ts";
 import { createScriptedBackend, parseScript, SCRIPTED_BACKEND_ID } from "./scripted-backend.ts";
 import { createMemoryStore } from "./store.ts";
 
@@ -335,8 +335,13 @@ server.registerTool(
         .string()
         .describe(
           "why a failed or cancelled run ended, in one line; empty while the run is alive and " +
-            "empty when it completed. The full stream is pull-only, at " +
-            "code-review://transcript/<id>",
+            "empty when it completed. A FAILED run's reason begins with one machine-readable code " +
+            'naming the cause, then ": " and the prose — one of: ' +
+            `${FAILURE_CODES.join(", ")}. The list is closed, and every bound a review has ` +
+            "reports deadline_exceeded with the prose saying which bound ended the round. A " +
+            "CANCELLED run's reason carries NO code, so do not look for one there; neither does a " +
+            "scripted backend's, which replays whatever its script says. The full stream is " +
+            "pull-only, at code-review://transcript/<id>",
         ),
       partial: z.boolean().describe('true whenever the status is not "completed"'),
       summary: z

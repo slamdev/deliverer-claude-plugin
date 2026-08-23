@@ -63,7 +63,12 @@
  * plugin quietly single-provider and gave an owner authenticated any other way no way in.
  */
 import type { ReviewBackend, ReviewRequest, ReviewRun } from "./backend.ts";
-import type { ReviewEvent, ReviewSpend } from "./review-state.ts";
+import {
+  failureReason,
+  type FailureCode,
+  type ReviewEvent,
+  type ReviewSpend,
+} from "./review-state.ts";
 
 export const AGENT_BACKEND_ID = "agent";
 
@@ -164,6 +169,32 @@ function assistantText(message: AgentQueryMessage): string | null {
  * seen as both `·` and `-`, so only the first clause is matched.
  */
 const NOT_LOGGED_IN = /^\s*not logged in\b/i;
+
+/**
+ * The other answers the SDK reports as a SUCCESS while the whole result is its own failure text,
+ * each with the code it ends the round on (ADR-0010). One observed epic lost two of its
+ * four rounds this way: each published as a completed review carrying this text where the findings
+ * belonged, and each counted toward the two completed rounds a change request is flipped ready
+ * against, so the only way to learn they were dead was to query the forge for comments that never
+ * came.
+ *
+ * **Anchored at the START, and that is the whole trade.** A review of a networking change writes
+ * about dropped connections and a review of a prompt-building change writes about prompt length, so
+ * an unanchored match would fail a round for the findings it went and found. Anchored, the
+ * classification only ever DEMOTES text it can identify as the SDK talking about itself: prose that
+ * merely mentions an API error somewhere in the middle stays `completed`, because a review the
+ * server does not recognise is a review, not a suspect.
+ *
+ * The two anchors are the two strings that were OBSERVED, in the shape they were observed in — one
+ * leads with `API Error:` and the other does not, so neither is anchored behind a tidied form of the
+ * other's prefix. Like `NOT_LOGGED_IN` above these are fixed strings: nothing is extracted from the
+ * prose and no structure of the reviewer's is consumed, so this is not the findings parser this
+ * module's header forbids.
+ */
+const SDK_FAILURES: readonly { readonly pattern: RegExp; readonly code: FailureCode }[] = [
+  { pattern: /^\s*API Error:\s*Connection closed mid-response\b/i, code: "connection_lost" },
+  { pattern: /^\s*Prompt is too long\b/i, code: "prompt_too_long" },
+];
 
 const asNumber = (value: unknown): number | undefined =>
   typeof value === "number" && Number.isFinite(value) ? value : undefined;
@@ -284,10 +315,14 @@ function spendFromResult(message: AgentQueryMessage): ReviewSpend {
  * there is no findings parser (above), so `code_review_status` reports the count and the verdict as
  * `unknown` and the prose as the whole answer.
  *
- * The spend is the exception, and it rides on EVERY event this branch can return — the two failures
- * as much as the success. `SDKResultError` carries the identical counters, and a review that burned
+ * The spend is the exception, and it rides on EVERY event this branch can return — the failures as
+ * much as the success. `SDKResultError` carries the identical counters, and a review that burned
  * twelve minutes and died spent that money whether or not it produced prose. One extraction called
- * three times, which is why it is not a second feature.
+ * once per result, which is why it is not a second feature.
+ *
+ * Every `failed` event it returns carries a `FailureCode` on the front of its message, and so does
+ * every other terminal failure this server can produce — see `./review-state.ts` for the closed
+ * vocabulary and what a caller may read off it.
  *
  * `assistantTurns` is how many assistant messages the caller has seen on this run, and it is what
  * the turn count falls back to. Passed in rather than counted here so this stays a pure function of
@@ -336,13 +371,33 @@ export function eventFromMessage(
           // reviewed nothing, which is exactly the round an owner needs to see the price of.
           ...spend,
           type: "failed",
-          message:
+          message: failureReason(
+            "not_logged_in",
             `the delegated review ran but was NOT LOGGED IN, so nothing was reviewed — the ` +
-            `reviewer answered: ${summary.trim()}. The review runs in this server's own ` +
-            `environment, plus whatever the plugin's code_review_claude_env_file option names; ` +
-            `authentication the host holds some other way does not reach it. Point that option at ` +
-            `a .env file carrying the credentials the review should run under, then run the round ` +
-            `again.`,
+              `reviewer answered: ${summary.trim()}. The review runs in this server's own ` +
+              `environment, plus whatever the plugin's code_review_claude_env_file option names; ` +
+              `authentication the host holds some other way does not reach it. Point that option ` +
+              `at a .env file carrying the credentials the review should run under, then run the ` +
+              `round again.`,
+          ),
+        };
+      }
+      // The same manufacture, for the two failures a real epic met — see `SDK_FAILURES` for why
+      // each one is anchored where it is, and why prose this list does not recognise stays a review.
+      const selfReported = SDK_FAILURES.find(({ pattern }) => pattern.test(summary));
+      if (selfReported !== undefined) {
+        return {
+          // Spent, for the reason the branch above gives: this failure is manufactured from a
+          // `success` message, so the counters riding on it are real. One of the observed rounds
+          // burned $7.97 and 88,000 output tokens before its connection went.
+          ...spend,
+          type: "failed",
+          message: failureReason(
+            selfReported.code,
+            `the delegated review was reported as successful, but its result opens with the SDK's ` +
+              `own failure text rather than with a review, so nothing was reviewed — it answered: ` +
+              `${summary.trim()}`,
+          ),
         };
       }
       return { ...spend, type: "completed", summary };
@@ -352,7 +407,13 @@ export function eventFromMessage(
     return {
       ...spend,
       type: "failed",
-      message: `the delegated review ended as ${String(message.subtype)}${detail}`,
+      // `backend_error` and not a guess at which one: the SDK reported the failure itself, and the
+      // vocabulary only ever says what the server KNOWS. Demoting this to a narrower code would mean
+      // reading the subtype for a cause it does not carry.
+      message: failureReason(
+        "backend_error",
+        `the delegated review ended as ${String(message.subtype)}${detail}`,
+      ),
     };
   }
   return null;
@@ -455,7 +516,8 @@ export function createAgentBackend(deps: AgentBackendDeps): ReviewBackend {
           emit({
             type: "failed",
             message:
-              "the delegated review ended without reporting a result" + stderrSuffix(stderr),
+              failureReason("no_result", "the delegated review ended without reporting a result") +
+              stderrSuffix(stderr),
           });
         }
       };
@@ -464,8 +526,15 @@ export function createAgentBackend(deps: AgentBackendDeps): ReviewBackend {
         if (aborted) return; // the lifecycle owns the cancellation and deadline events
         emit({
           type: "failed",
+          // The query itself threw, so what the server knows is that the backend broke and nothing
+          // about why. A throw whose message happens to mention a lost connection is not matched
+          // against `SDK_FAILURES`: those anchors are for a REVIEW's prose, and reusing them on
+          // an exception message would be classifying text nobody measured.
           message:
-            `the delegated review failed: ${(error as Error).message}` + stderrSuffix(stderr),
+            failureReason(
+              "backend_error",
+              `the delegated review failed: ${(error as Error).message}`,
+            ) + stderrSuffix(stderr),
         });
       });
 
