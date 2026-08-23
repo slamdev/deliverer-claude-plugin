@@ -31,9 +31,14 @@ carrying none.
 3. **Collect the assumptions** from every channel the change request has — **Comment channels** below. Every comment
    prefixed `ASSUMPTION` that carries no verdict reply is yours, whichever channel it sits on. Read the replies, not the
    resolution state — `override` and `escalate` leave their comments unresolved on purpose.
-4. **Adjudicate them one at a time**, giving the last one the same scrutiny as the first: read the whole set first — you
-   are the only agent that sees every fork against the finished branch — then do the legwork below and reply with
-   exactly one verdict. You are done when every assumption from step 3 carries a verdict reply.
+4. **Adjudicate them one at a time**, giving the last one the same scrutiny as the first. Read the whole set first:
+   every assumption on the change request, the ones already carrying verdicts included — not only the ones step 3 marked
+   yours. You are the only agent that sees every fork against the finished branch, and a conflict between two of them is
+   **grounds** you can only reach by having read both. Then take them in turn: do the legwork below, reply with exactly
+   one verdict, and begin the next one's legwork only once that reply is posted. The reply is the durable, idempotent
+   mark **Resume** filters on, so a verdict you have posted outlives a dispatch that dies part-way and one you are still
+   holding does not. You are done when every assumption step 3 marked yours carries a verdict reply — however many that
+   is, and in this one dispatch.
 5. **Report**, as below.
 
 ## Comment channels
@@ -50,7 +55,7 @@ A change request carries its comments on whatever channels the forge gives it, a
   closed to nobody, and the next run either adjudicates it twice or counts an unadjudicated one done. The line begins
   `re:`, never `ASSUMPTION` — step 3 collects that prefix, so a verdict wearing it comes back as a fork nobody made.
 
-The two forges below are worked examples of one mechanism. Every other forge has the same three operations under its own
+The two forges below are worked examples of one mechanism. Every other forge has the same four operations under its own
 names: find them in the help of whichever forge tool the repository has authenticated, rather than assuming this shape.
 `<number>` and `<iid>` are the ones in the change request's URL; `{owner}`, `{repo}` and `:fullpath` expand from the
 repository you are already in.
@@ -79,11 +84,15 @@ gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<number>
     pullRequest(number:$number){ reviews(first:100, after:$endCursor){ pageInfo{ hasNextPage endCursor }
       nodes{ id body state author{login} } } } } }'
 # collect — the channel with no resolution state at all, one object per line
-gh api --paginate 'repos/{owner}/{repo}/issues/<number>/comments' --jq '.[] | {id, login: .user.login, body}'
+gh api --paginate 'repos/{owner}/{repo}/issues/<number>/comments' \
+  --jq '.[] | {id, created_at, login: .user.login, body}'
 # reply on a thread, then resolve it
 gh api --method POST 'repos/{owner}/{repo}/pulls/<number>/comments/<databaseId>/replies' -F body=@<the verdict file>
 gh api graphql -F t=<thread id> \
   -f query='mutation($t:ID!){resolveReviewThread(input:{threadId:$t}){thread{isResolved}}}'
+# unresolve — a correcting verdict that leaves work owed needs its comment unresolved again
+gh api graphql -F t=<thread id> \
+  -f query='mutation($t:ID!){unresolveReviewThread(input:{threadId:$t}){thread{isResolved}}}'
 # reply where there is no thread to resolve — that reply is the mark, and its body names the assumption
 gh pr comment <change request URL> --body-file <the verdict file>
 ```
@@ -93,7 +102,9 @@ above: without them the first hundred come back as the whole answer, with no err
 nested inside a thread cannot be paginated in the same query, because one query carries one cursor — `last:100` is what
 makes that bound safe, since an assumption's verdict reply is a thread's newest comment and never its oldest. The `--jq`
 on the issue comments is not tidying: unfiltered, that channel returns every comment as one line of tens of fields, and
-one line is what cannot be read a piece at a time.
+one line is what cannot be read a piece at a time. `created_at` rides in that projection for the correction rule under
+**Verdicts**: the channel carries no threading, so the timestamps are the only thing that says which of two verdict
+replies on one assumption is the newer.
 
 **GitLab**, with `glab`. One list holds them all — the change request's discussions — and each note's `resolvable` says
 whether it can be marked resolved; one carrying a `position` is anchored to a diff line.
@@ -105,6 +116,8 @@ glab api --paginate 'projects/:fullpath/merge_requests/<iid>/discussions'
 glab api --method POST 'projects/:fullpath/merge_requests/<iid>/discussions/<discussion id>/notes' \
   -F body=@<the verdict file>
 glab api --method PUT 'projects/:fullpath/merge_requests/<iid>/discussions/<discussion id>' -F resolved=true
+# unresolve — a correcting verdict that leaves work owed needs its comment unresolved again
+glab api --method PUT 'projects/:fullpath/merge_requests/<iid>/discussions/<discussion id>' -F resolved=false
 ```
 
 ## Legwork
@@ -132,6 +145,15 @@ The reply is the whole **hand-off**: whoever acts on it next has your comment an
 - **`escalate`** — the fork is genuinely not yours to close: a product question, or a policy or security tradeoff with
   no defensible default. Reply with the fork, the options and why the call is not yours, and leave the comment
   unresolved for a human.
+
+**Later legwork can overturn a verdict you already posted** — the code you read for one assumption can be grounds
+against a verdict you replied earlier in the set. Correct it with a further reply carrying the verdict that now stands
+and the grounds that moved it, and put the comment in the resolution state that verdict calls for: an `accept` resolved
+its comment, so an `override` correcting it unresolves the comment again — **Comment channels** has that operation for
+each forge. The newest verdict reply on an assumption is the one that stands, and your report counts it once, as that
+verdict. Correct only the verdicts you posted yourself: one already carrying a reply when you began is done, per
+**Resume**, so where your reading of the set conflicts with it, that conflict is **grounds** in the verdict you are
+reaching now.
 
 Judge each assumption on its own grounds: accepting every one is a fine outcome and so is overriding every one, and
 there is no target rate.
