@@ -46,8 +46,13 @@ skipped wave flips a change request ready with an **override** unimplemented and
 name**, so none of them has to find it again. Neither exists at the first stage-1 dispatch: that implementer creates the
 branch and names it in its report, and stage 2 reports the URL. Each later `implementer` also carries what the reports
 before it named about the **gates** that bit and what satisfied them, accumulating as the stage runs. That warms a cold
-start on work not yet done, so it goes to implementers and nowhere else: every other agent meets the repo first-hand,
-which is what its own judgement must rest on.
+start on work not yet done, so it goes to implementers and nowhere else, and every other agent meets the repo first-hand
+because that is what its own judgement must rest on — with one deliberate exception. Each `comments-addresser` dispatch
+carries the preceding **round**'s prose, verbatim: the whole summary that round's report handed you, pasted in rather
+than pointed at. Where the reviewer posted no comment on a finding, that prose is the only form it exists in, and the
+fix wave is the only agent that can act on it — and the prose reached you in a report rather than on disk, so there is
+no path you could send instead. Carry it as it came, forming no view on what it raises. A round that produced no review
+left no prose, and its wave runs on the comments alone.
 
 **Sequencing.** A stage you dispatched in this run is unfinished until its **report** is in hand, and an acknowledgement
 is not a report: a dispatch may answer you at once and finish its work in the background, and until the report lands
@@ -64,13 +69,16 @@ long and the epic waits on your guess.
    mirrors every assumption the branch's commits recorded into an `ASSUMPTION` comment. Keep the URL it reports.
 3. **Adjudicate and review together** — dispatch `assumption-reviewer` and `code-reviewer` in one message so they run
    concurrently. `assumption-reviewer` replies a verdict — `accept`, `override` or `escalate` — to every `ASSUMPTION`
-   comment. `code-reviewer` drives one **round**, whose findings the tools server posts as comments itself.
-4. **First fix wave** — dispatch `comments-addresser`. It works every unresolved comment: implementing the overrides and
-   the findings, resolving what it implements or declines, and leaving the escalations for a human. Keep the
-   **hand-off** list its report carries.
+   comment. `code-reviewer` drives one **round** and reports its prose. Keep that prose: the review's prompt instructs
+   the reviewer to post its findings as comments on the change request, and where it did not, the prose is the only form
+   they exist in — so stage 4 is dispatched with it.
+4. **First fix wave** — dispatch `comments-addresser`, carrying the first round's prose (**Dispatch**). It works every
+   unresolved comment and every point that prose raises: implementing the overrides and the findings, resolving what it
+   implements or declines, and leaving the escalations for a human. Keep the **hand-off** list its report carries.
 5. **Second round** — dispatch `code-reviewer` again. It reviews the fix wave's commits, so what the first round missed
    still gets caught.
-6. **Second fix wave** — dispatch `comments-addresser` again, for what the second round raised.
+6. **Second fix wave** — dispatch `comments-addresser` again, carrying the second round's prose, for what that round
+   raised.
 7. **Flip it ready** — once two rounds have completed and you have read the change request's **checks** green on the
    forge, take the change request out of draft and report. The fix wave reports them too, and the two accounts agreeing
    is the ordinary case; where they disagree, put the stage back rather than choosing between them — a report and the
@@ -82,8 +90,11 @@ long and the epic waits on your guess.
 
 A round is one `code-reviewer` dispatch, and **two rounds that reached `completed`** is the bar stage 7 waits on.
 
-- **`completed`** — one of the two. Its report carries the round's `review_id` and its prose; the findings are already
-  comments on the change request.
+- **`completed`** — one of the two. Its report carries the round's `review_id` and its prose, and that prose is the
+  round's whole deliverable: the findings it names are comments on the change request where the reviewer posted them and
+  exist nowhere else where it did not, and the fix wave after it is dispatched with all of it either way. Nothing of the
+  round itself lands on the change request — not the prose, and no record that a round ran — so your **report** is where
+  a human meets the review.
 - **`failed` or `cancelled`** — that round produced no review, so it is not one of the two. Dispatch `code-reviewer`
   again: it opens a fresh round under a fresh id.
 - **Rounds leave nothing to count.** A resumed run cannot read off how many already ran. When the count is in doubt,

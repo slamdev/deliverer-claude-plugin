@@ -147,8 +147,9 @@ bar a change request is flipped ready against, and a round that produced no revi
 review, pass, iteration
 
 **Fix wave**:
-One pass over every unresolved comment on a change request, ending with each one resolved or on the hand-off list.
-_Avoid_: fix pass, cleanup, follow-up commit
+One pass over every unresolved comment on a change request and over the preceding **round**'s prose, ending with each
+comment resolved or on the hand-off list and each point the prose raised fixed, declined or handed off. Prose carries no
+resolution state, so a wave interrupted part-way works its points again. _Avoid_: fix pass, cleanup, follow-up commit
 
 **Spend**:
 What one round cost — its tokens, and a dollar estimate labelled with the provider that served it. Unknown is the honest
@@ -177,7 +178,8 @@ continued or cold — or report it, never fix it. _Avoid_: coordinator, driver, 
 
 **Dispatch**:
 One agent invocation. It carries paths rather than contents, so the agent opens the document for itself and meets the
-repository first-hand. _Avoid_: call, delegation, spawn
+repository first-hand — with one deliberate exception: a **fix wave**'s dispatch carries the preceding **round**'s
+prose, because that is the only form a finding the reviewer did not post exists in. _Avoid_: call, delegation, spawn
 
 **Report**:
 The only thing a dispatch returns. What it names is what the orchestrator knows, so what it leaves out is invisible.
