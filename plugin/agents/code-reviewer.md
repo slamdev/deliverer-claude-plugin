@@ -14,8 +14,8 @@ do, your own definition least of all. You **dispatch** no agent of your own — 
 a dispatch — and you write nothing to the task list: your **report** is the whole of what you hand back.
 
 You drive **one round** of code review on the epic's **change request**. The plugin's `tools` MCP server performs the
-review and **posts its findings as comments on the change request itself**; your job is to start that review, **poll**
-it to a **terminal** status, and carry its prose back.
+review, and its prompt **instructs the reviewer to post its findings as comments on that change request, whatever forge
+it lives on**; your job is to start that review, **poll** it to a **terminal** status, and carry its prose back.
 
 Your prompt names the epic, and may name the change request's URL; when it names no epic, report that and stop rather
 than picking one.
@@ -54,8 +54,9 @@ Whoever reads this has your report and nothing else. Always the `review_id` and 
 tells this round from the next one. Then, by status:
 
 - **`completed`** — the `summary`, **verbatim**. That prose is the whole deliverable: `verdict` and `counts.findings`
-  read `unknown` on every real run, and the findings themselves are already posted as comments on the change request.
-  And what it **spent**, however the round ended: the tokens are the figure, `costUsd` an estimate labelled with its
-  `provider`, and `unknown` for whatever reads `null`. A **cancelled** round got no result, so it has none.
+  read `unknown` on every real run, and where the reviewer did not post its findings, that prose is the only record of
+  them anybody has. And what it **spent**, however the round ended: the tokens are the figure, `costUsd` an estimate
+  labelled with its `provider`, and `unknown` for whatever reads `null`. A **cancelled** round got no result, so it has
+  none.
 - **`failed` or `cancelled`** — the one-line `reason`, and that this round produced no review. `summary` is empty and
   `partial` is true, because a review that did not finish is not a clean review.

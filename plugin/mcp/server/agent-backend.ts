@@ -11,15 +11,19 @@
  * Three things about it are decisions rather than details, and each one is load-bearing:
  *
  *  - **The prompt form is what decides what gets reviewed.** `/code-review <effort> --comment <url>`
- *    reviews the change request AND posts the findings as inline comments itself. A bare ref reviews
- *    the local working diff and finds nothing, because the change request's commits are not in
- *    that tree.
+ *    reviews the change request rather than the local tree: a bare ref reviews the working diff and
+ *    finds nothing, because the change request's commits are not in that tree. The flag asks for the
+ *    findings as inline comments, and on the forge the command was written for it delivers them; on
+ *    a forge it was not written for, it was measured to post nothing and say so. So the prompt
+ *    carries a posting instruction after the URL as well as the flag — see `POSTING_INSTRUCTION`
+ *    below.
  *  - **No structured output format.** Measured across three identical prototype runs, setting one
  *    cost roughly 1.7× the money and 1.9× the time to return ZERO findings while still reporting
  *    success — a silent failure with nothing to detect it by. There is also nothing to parse for:
- *    nothing downstream consumes structured findings, the prose is the deliverable, and the comments
- *    are posted by the reviewer itself. So there is no findings parser here, no two-turn extraction
- *    and no findings-tool shim, and there must not be one added.
+ *    nothing downstream consumes structured findings and the prose is the deliverable — a finding
+ *    the reviewer posted is on the change request already, and one it did not post exists only in
+ *    that prose. So there is no findings parser here, no two-turn extraction and no findings-tool
+ *    shim, and there must not be one added.
  *
  *    The result message's own **usage metadata** — the token counters, the durations, the model
  *    that served the round — is read, and is not that. It says what the run COST and never what it
@@ -91,18 +95,49 @@ export type AgentQueryMessage = Record<string, unknown>;
 export type AgentQuery = (params: AgentQueryParams) => AsyncIterable<AgentQueryMessage>;
 
 /**
+ * The instruction that makes the review post its own findings, appended after the change request's
+ * URL on every prompt this file builds.
+ *
+ * **This wording is MEASURED, and an edit to it invalidates the evidence for it.** On a forge whose
+ * review command does not recognise the posting flag, the flag alone was measured to post nothing at
+ * all: 3 findings, 0 comments, the reviewer's own closing line reporting that `--comment` was
+ * ignored because the target was not the one kind of change request it knows, and the findings
+ * printed to a terminal nobody reads while the round reported success. With this text after the URL
+ * the same target took 3 resolvable comments. Where the flag DOES work the control took 3 anchored
+ * inline comments, and this text left that mechanism undisplaced — 2 anchored, none unanchored —
+ * which is why the flag stays rather than being replaced.
+ *
+ * Nothing in it names a forge: it asks for a capability, so ADR-0012 needs no illustration
+ * carve-out here. Every clause is load-bearing, and the finding counts across the instructed runs
+ * were 2, 3 and 2 against controls of 3 and 3 — an argument against GROWING it. Change a character
+ * and the behaviour above is no longer evidence for anything, so a change carries a fresh
+ * measurement or is not made.
+ */
+const POSTING_INSTRUCTION =
+  `— the target is a change request on whatever forge this repository uses. Post every ` +
+  `finding as a comment on that change request, through the forge CLI already authenticated in ` +
+  `this repository, using a comment mechanism the forge can mark resolved, and anchored to the ` +
+  `file and line the finding is about wherever that mechanism allows it.`;
+
+/**
  * Build the review prompt. The effort tier is passed VERBATIM, and it has already been checked
  * against the accepted set (`./config.ts`'s `effortError`, refused at every `code_review_start`).
  * That check is the trade PR #11's grill accepted knowingly: a tier the platform adds later is
  * refused by a server shipped before it, and the owner's fix is a plugin update — chosen over
  * failing open, where an unrecognised tier either errors the round or silently reviews at the
  * command's own default. An absent or empty tier is omitted entirely, leaving that default.
+ *
+ * The posting instruction rides on every prompt, tier or no tier, and always after the URL — that
+ * is the shape it was measured in. A depth nobody configured is no reason for a round's findings to
+ * reach nobody.
  */
 export function reviewPrompt(changeRequestUrl: string, effort: string | null): string {
   const tier = effort === null ? "" : effort.trim();
-  return tier === ""
-    ? `${REVIEW_COMMAND} --comment ${changeRequestUrl}`
-    : `${REVIEW_COMMAND} ${tier} --comment ${changeRequestUrl}`;
+  const target =
+    tier === ""
+      ? `${REVIEW_COMMAND} --comment ${changeRequestUrl}`
+      : `${REVIEW_COMMAND} ${tier} --comment ${changeRequestUrl}`;
+  return `${target} ${POSTING_INSTRUCTION}`;
 }
 
 /** The text of every text block in an assistant message, or null when there is none. */
