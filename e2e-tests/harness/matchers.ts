@@ -588,6 +588,12 @@ export function assertEveryTicketCommitted(outcome: BuildOutcome): void {
  * 2 not mirroring it — a fork the human never sees. A comment with no verdict is stage 3 not
  * adjudicating it — a fork nobody closed, on a change request that was flipped ready anyway.
  *
+ * **Only a ticket's commits are held to the first half**, because only they are mirrored. A **fix
+ * wave**'s commit carries no `Ticket:` line and records the forks that wave closed for a human to
+ * meet on the commit itself; stage 2's mirror passes it over deliberately, and a comment for one of
+ * its entries would be a fork nothing can adjudicate. Holding those commits here would fail a
+ * correct delivery for doing what it was told (review-reliability ticket 11).
+ *
  * **The verdict is counted structurally and not read.** What the adjudication promises is a reply
  * on the thread, or a comment opening `re: ASSUMPTION (<hash>)` where the channel carries no
  * threading; what it does NOT promise is the word `accept` in the prose, because a verdict is
@@ -603,6 +609,7 @@ export function assertAssumptionsAdjudicated(outcome: BuildOutcome): void {
   const uncommented: string[] = [];
   for (const commit of request.commits) {
     if (commit.assumptions === 0) continue;
+    if (commit.ticket === null) continue;
     const comments = request.assumptionComments.filter((comment) =>
       commit.hash.startsWith(comment.commit),
     );
