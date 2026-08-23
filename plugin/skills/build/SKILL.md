@@ -12,19 +12,26 @@ for a human.
 Your argument names the epic; when it names none, report that and stop rather than picking one.
 
 Every stage below is one agent dispatch — **one dispatch, one task** (**Progress**) — and the dispatched agent's
-**report** is all you get back: what it names is what you know. Where a report leaves you unsure, re-dispatch the stage
+**report** is all you get back: what it names is what you know. Where a report leaves you unsure, put the stage back
 rather than going to look, and the bearings you take from the branch and the change request say which stage is owed, not
-what a finding says. A **mechanical question about the tree or the forge** is yours to settle — does it build, does this
-symbol exist, what does the branch carry, are the change request's **checks** green — because that asks whether a
-report's fact is true, not whether its judgement is right. A finding, a design, whether the work is good — those are
-never yours to form a view on. Two edges on it: **read only**, and the only things to do with what you find are
-**re-dispatch or report**, never fix. Yours is the work no agent does: read the epic for its tickets, dispatch in order,
-read each report, keep the task list current, and flip the change request ready at the end.
+what a finding says. **Continue an agent that stopped without a report while it is still addressable** — it still holds
+the epic, the ticket and the codebase it read, so continuing costs one message where a cold dispatch pays for all of
+that reading again; dispatch a cold one once it is not addressable, or once continuing it fails. That message tells it
+what the branch carries, whether it builds and whether the checks are green — the facts you settle for yourself — and,
+where a stage leaves you no evidence to read, only that no report arrived and the work is owed. `code-reviewer` is
+continued like any other agent, and a continue opens no **round**: it carries on polling the `review_id` it already
+holds, and only a cold dispatch opens a fresh round (**Rounds**). A **mechanical question about the tree or the forge**
+is yours to settle — does it build, does this symbol exist, what does the branch carry, are the change request's
+**checks** green — because that asks whether a report's fact is true, not whether its judgement is right. A finding, a
+design, whether the work is good — those are never yours to form a view on. Two edges on it: **read only**, and the only
+things to do with what you find are **put a stage back to an agent — continued or cold — or report it**, never fix.
+Yours is the work no agent does: read the epic for its tickets, dispatch in order, read each report, keep the task list
+current, and flip the change request ready at the end.
 
 **Resume.** This epic may be part-delivered — by an earlier run of your own that was interrupted, or by hand. The epic
 branch and the change request are what say how far it got: the commits carrying a `Ticket:` line name the tickets
 implemented, and one without it is not a ticket; whether a change request is open for the branch says whether stage 2
-ran. Start from the earliest stage whose evidence you cannot find — re-dispatching any agent but `code-reviewer` is
+ran. Start from the earliest stage whose evidence you cannot find — dispatching any agent but `code-reviewer` cold is
 safe, because each one resumes on its own and adds only what is missing. `code-reviewer` is the exception: see
 **Rounds**.
 
@@ -117,7 +124,9 @@ dispatches get a task each, `adjudicate assumptions` and `first round`. A resume
 dispatches the branch and the change request already account for created `completed`. Mark a task `in_progress` as you
 dispatch it and `completed` once you have read its report. `completed` says the dispatch is over rather than that it
 succeeded, so a round that died carries its outcome in its subject — `<slug>: second round (failed — no review)`. A
-round you spend after one that died is another dispatch, so it gets a task of its own.
+round you spend after one that died is another dispatch, so it gets a task of its own. Continuing an agent is the same
+dispatch rather than a new one, so it gets no task of its own: the task it already has flips back to `in_progress`, and
+`completed` once the report you were owed lands.
 
 Stage 1 is one task for all its tickets, relabelled as each lands: `<slug>: implement every ticket (4/21)` as the
 subject and `Implementing ticket 4/21 — <ticket>` as the `activeForm`, both in the one `TaskUpdate`. The numerator is
