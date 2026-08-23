@@ -23,7 +23,8 @@ You are needed for the conversation at the start and the merge at the end. Every
 **From `/deliverer:build`:**
 
 - a change request with every ticket implemented, on one branch
-- two rounds of code review, with the findings raised as comments and then fixed
+- two rounds of code review, with the findings raised as comments where your forge lets the reviewer raise them, and
+  fixed either way
 - every judgement call the tickets' implementation had to make silently, raised as a comment on the change request and
   adjudicated — accepted with reasons, corrected, or escalated to you; the fixes made after the review record theirs on
   their own commits instead, where you meet them unratified rather than adjudicated
