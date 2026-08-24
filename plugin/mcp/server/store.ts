@@ -8,8 +8,9 @@
  * **Only terminal records expire.** A review that is still `pending`, `preparing` or `running` is
  * never evicted, however long it has been quiet: a deep round can go minutes without an event, and
  * evicting one out from under its own poll loop would turn a slow review into an unknown-id error —
- * the one error the `code-reviewer` agent is told means "this handle was never real". The clock
- * therefore starts at the terminal timestamp, not at the last update.
+ * which `agents/code-reviewer.md` reports as a round whose record is gone rather than as a round to
+ * start again — and which, for a review still running, would simply be false. The clock therefore
+ * starts at the terminal timestamp, not at the last update.
  */
 import type { ReviewRecord } from "./review-state.ts";
 import { isTerminal } from "./review-state.ts";

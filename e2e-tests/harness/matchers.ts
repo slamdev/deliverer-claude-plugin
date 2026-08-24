@@ -11,7 +11,7 @@
 import assert from "node:assert/strict";
 import type { BuildOutcome } from "./build-run.ts";
 import { minutes } from "./ceilings.ts";
-import type { ChangeRequest } from "./change-request.ts";
+import type { ChangeRequest, DeliveredCommit } from "./change-request.ts";
 import { DEFAULT_BRANCH } from "./forge.ts";
 import type { PluginOptions } from "./install.ts";
 import type { RefineOutcome } from "./refine-run.ts";
@@ -543,6 +543,42 @@ export function assertNoScriptedBackend(outcome: BuildOutcome): void {
 }
 
 /**
+ * The commits carrying no `Ticket:` line, split into the ones a **fix wave** accounts for and the
+ * ones it does not.
+ *
+ * `ticket === null` alone is NOT "a fix wave's commit" — it is "carries no `Ticket:` line, for any
+ * reason", and an implementer now commits several times per ticket, so a piece landing with that
+ * line dropped or misspelled is likelier than it was. What separates the two is ORDER: the waves
+ * run after stage 1 has finished every ticket, so every one of their commits is newer than every
+ * ticket commit. An anonymous commit with a ticket commit still to come after it is a ticket's
+ * piece that lost its line — `stray` — and stays held to all a ticket commit is held to. One after
+ * the last ticket commit is `wave`'s, exempt from the mirror and required NOT to be mirrored.
+ *
+ * A branch where nothing names a ticket has no wave to attribute anything to — stage 1 produced
+ * nothing for a wave to follow — so every anonymous commit there is stray, which is also the case
+ * where a differently-worded `Ticket:` line is the likeliest explanation of all.
+ *
+ * `commits` arrives newest last (`./change-request.ts`), which is what makes this readable off the
+ * data already parsed (PR #4 review).
+ */
+function anonymousCommits(commits: readonly DeliveredCommit[]): {
+  readonly stray: readonly DeliveredCommit[];
+  readonly wave: readonly DeliveredCommit[];
+} {
+  let lastTicketed = -1;
+  commits.forEach((commit, index) => {
+    if (commit.ticket !== null) lastTicketed = index;
+  });
+  const anonymous = commits
+    .map((commit, index) => ({ commit, index }))
+    .filter(({ commit }) => commit.ticket === null);
+  return {
+    stray: anonymous.filter(({ index }) => index < lastTicketed).map(({ commit }) => commit),
+    wave: anonymous.filter(({ index }) => index > lastTicketed).map(({ commit }) => commit),
+  };
+}
+
+/**
  * Every ticket the epic lists has a commit naming it.
  *
  * The `Ticket:` line is the contract — delivery takes its own bearings from it — so a ticket with
@@ -568,9 +604,11 @@ export function assertEveryTicketCommitted(outcome: BuildOutcome): void {
     // The commits that named no ticket are quoted, because the likeliest way to reach here is a
     // `Ticket:` line worded differently rather than a ticket nobody implemented — and delivery
     // takes its own bearings from that line, so the two are both findings and want telling apart.
-    const anonymous = request.commits
-      .filter((commit) => commit.ticket === null)
-      .map((commit) => `${commit.hash.slice(0, 12)} ${commit.subject}`);
+    // A fix wave's commits carry no line either and are supposed to, so quoting them here would
+    // list correct commits as suspicious: only the ones a wave cannot account for are listed.
+    const anonymous = anonymousCommits(request.commits).stray.map(
+      (commit) => `${commit.hash.slice(0, 12)} ${commit.subject}`,
+    );
     assert.fail(
       `${missing.length} of the epic's ${expected.length} tickets have no commit naming them on ` +
         `${request.url}: ${missing.join(", ")}. The branch carries ${request.commits.length} ` +
@@ -592,7 +630,16 @@ export function assertEveryTicketCommitted(outcome: BuildOutcome): void {
  * wave**'s commit carries no `Ticket:` line and records the forks that wave closed for a human to
  * meet on the commit itself; stage 2's mirror passes it over deliberately, and a comment for one of
  * its entries would be a fork nothing can adjudicate. Holding those commits here would fail a
- * correct delivery for doing what it was told (review-reliability ticket 11).
+ * correct delivery for doing what it was told (review-reliability ticket 11). Which commits those
+ * are is decided by `anonymousCommits` above and not by `ticket === null` alone, so a ticket's
+ * piece that lost its line is still held.
+ *
+ * **And the exemption is not a hole, because the inverse is asserted.** Skipping those commits
+ * would on its own make a wave's entries being mirrored and NOT being mirrored both pass — the
+ * exact regression ticket 11 was written against, reachable because the delivery skill calls a cold
+ * re-dispatch of stage 2 safe. So no assumption comment may name one of those commits either: such
+ * a comment is a fork nothing can adjudicate, put in front of the human after the adjudication
+ * stage has already run (PR #4 review).
  *
  * **The verdict is counted structurally and not read.** What the adjudication promises is a reply
  * on the thread, or a comment opening `re: ASSUMPTION (<hash>)` where the channel carries no
@@ -606,10 +653,14 @@ export function assertEveryTicketCommitted(outcome: BuildOutcome): void {
 export function assertAssumptionsAdjudicated(outcome: BuildOutcome): void {
   const request = delivered(outcome, "its assumptions");
 
+  const { stray, wave } = anonymousCommits(request.commits);
+  const strayHashes = new Set(stray.map((commit) => commit.hash));
+  const waveHashes = new Set(wave.map((commit) => commit.hash));
+
   const uncommented: string[] = [];
   for (const commit of request.commits) {
     if (commit.assumptions === 0) continue;
-    if (commit.ticket === null) continue;
+    if (commit.ticket === null && !strayHashes.has(commit.hash)) continue;
     const comments = request.assumptionComments.filter((comment) =>
       commit.hash.startsWith(comment.commit),
     );
@@ -625,6 +676,18 @@ export function assertAssumptionsAdjudicated(outcome: BuildOutcome): void {
       `${uncommented.length} commits recorded more assumptions than the change request carries ` +
         `comments for, so a fork the code closed silently is in front of nobody:\n` +
         `  ${uncommented.join("\n  ")}`,
+    );
+  }
+
+  const waveMirrored = request.assumptionComments.filter((comment) =>
+    [...waveHashes].some((hash) => hash.startsWith(comment.commit)),
+  );
+  if (waveMirrored.length > 0) {
+    assert.fail(
+      `${waveMirrored.length} assumption comments on ${request.url} name a commit carrying no ` +
+        `\`Ticket:\` line, so a fix wave's own fork was mirrored into a comment nothing can ` +
+        `adjudicate — the adjudication stage had already run when that commit landed:\n` +
+        `  ${waveMirrored.map((comment) => comment.opening).join("\n  ")}`,
     );
   }
 

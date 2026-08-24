@@ -69,12 +69,18 @@ export class ToolError extends Error {
  * the scripted double outruns it by design. It is advice for whoever is polling, published for any
  * caller and not just the shipped one (review-reliability D20).
  *
- * No interval anywhere is kept in step with it. `agents/code-reviewer.md` calls the status tool and
- * repeats, and is told nothing about when that next call happens, because nothing it can do decides
- * that: an unenforceable interval was reasoned about as a clock (review-reliability D19), and even
- * before that the role never read the hint it was handed (grill A6). 15 s is still the right number
- * on the measurements: a healthy round runs ~122 s, so ~8 polls, where 2 s would have been ~60 —
- * and ~7200 at the absolute deadline (`./config.ts`'s `DEADLINE_SEC`, four hours).
+ * **No interval is hand-maintained against it, and that is the point.** `agents/code-reviewer.md`
+ * is told to leave the `poll_after_ms` ITS OWN HANDLE gave it between one call and the next — this
+ * figure, read off the payload rather than copied into prose — so there is one number and nothing
+ * to keep in step. What that agent is still told nothing about is elapsed time or a deadline: the
+ * hint paces a loop, and reasoning about a clock is what D19 removed after a shipped `sleep 15` was
+ * observed as a two-minute one, twice.
+ *
+ * A bare "call and repeat" was the state this replaced, and it is unsafe at the bounds the server
+ * now runs: the absolute cap is four hours (`./config.ts`), and a poller calling flat out for four
+ * hours fills its own context with status payloads and dies holding the round's prose. 15 s is
+ * still the right number on the measurements: a healthy round runs ~122 s, so ~8 polls, where 2 s
+ * would have been ~60 — and ~960 at the absolute deadline, against ~7200 at 2 s.
  */
 export const POLL_AFTER_MS = 15_000;
 
@@ -270,6 +276,19 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
   };
 
   /**
+   * What each bound says when it fires. Constants of this lifecycle, so they are built ONCE here
+   * rather than per arming: `armIdle` runs from the emit callback for every event the backend
+   * reports — 273 of them on one observed epic — and each run rebuilt a string that depends on
+   * nothing but `deps`. Side by side is also where the wording that has to stay distinguishable is
+   * easiest to keep so: every bound reports the same `deadline_exceeded` code, so the prose is the
+   * only thing that says which one ran out.
+   */
+  const idleDetail =
+    `the review exceeded its idle bound of ${deps.idleDeadlineSec}s with no event and was aborted`;
+  const absoluteDetail =
+    `the review exceeded its absolute deadline of ${deps.deadlineSec}s and was aborted`;
+
+  /**
    * Arm the IDLE bound: silence for `idleDeadlineSec` and the review is aborted.
    *
    * Rearmed from every event the backend reports, so what it measures is the gap between two events
@@ -280,11 +299,8 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
    */
   const armIdle = (reviewId: string, run: ReviewRun): void => {
     if (idleTimer !== null) clearTimeout(idleTimer);
-    const detail =
-      `the review exceeded its idle bound of ${deps.idleDeadlineSec}s with no event ` +
-      `and was aborted`;
     idleTimer = setTimeout(
-      () => boundFailed(reviewId, run, detail),
+      () => boundFailed(reviewId, run, idleDetail),
       boundDelayMs(deps.idleDeadlineSec),
     );
   };
@@ -301,10 +317,8 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
    */
   const arm = (reviewId: string, run: ReviewRun): void => {
     if (deadlineTimer !== null) clearTimeout(deadlineTimer);
-    const detail =
-      `the review exceeded its absolute deadline of ${deps.deadlineSec}s and was aborted`;
     deadlineTimer = setTimeout(
-      () => boundFailed(reviewId, run, detail),
+      () => boundFailed(reviewId, run, absoluteDetail),
       boundDelayMs(deps.deadlineSec),
     );
     armIdle(reviewId, run);
@@ -362,9 +376,15 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
         const ageSec =
           running === undefined ? null : Math.max(0, Math.round((now() - running.createdAt) / 1000));
         const age = ageSec === null ? "" : `, running for ${ageSec}s`;
+        // BOTH bounds, because the outer one alone is misleading here: the idle bound is what
+        // ordinarily ends a wedged round, and the caller reading this is the one waiting on the
+        // slot. Giving it only the four-hour figure tells it to expect nothing sooner than four
+        // hours from a round that will in fact end after half an hour of silence — the same defect
+        // the status tool's own `deadlineSec` description was rewritten to avoid (ticket 04).
         const bound =
-          `It reaches a terminal status by its own deadline of ${deps.deadlineSec}s at the ` +
-          `latest, without anyone acting.`;
+          `It reaches a terminal status without anyone acting: after ${deps.idleDeadlineSec}s ` +
+          `with no event of any kind, which is what ordinarily ends a wedged review, and by its ` +
+          `absolute deadline of ${deps.deadlineSec}s at the latest.`;
         throw new ToolError(
           `a review is already in flight on this server (${inFlightId}, status ` +
             `${running?.status ?? "unknown"}${age}). One review runs at a time. ${bound}`,

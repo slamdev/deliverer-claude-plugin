@@ -51,10 +51,16 @@
  * Effort, model and the inner agent's environment come from the server's startup configuration
  * (`./config.ts`), never from a caller: no `code-reviewer` agent can quietly review at a different
  * depth, on a different model, or as a different identity than the owner configured. The model is
- * passed VERBATIM and unchecked — an alias (the shipped default is `opus[1m]`, that alias with the
- * one-million-context suffix on it) resolves against whatever provider the environment file selects,
- * which is why one is portable where a pinned id is not — and an EMPTY model means take that
- * environment's own default instead.
+ * passed VERBATIM and unchecked — an alias resolves against whatever provider the environment file
+ * selects, which is why one is portable where a pinned id is not — and an EMPTY model means take
+ * that environment's own default instead.
+ *
+ * The shipped default is `opus[1m]`: that alias with the one-million-context suffix on it, which is
+ * what lets a round load an epic-sized diff at all. The SUFFIX carries no portability claim of its
+ * own — it was measured on one provider, accepted on the opus and sonnet aliases and refused
+ * outright on haiku — so an owner whose provider or account does not offer that window sets the
+ * option to a bare alias. Nothing here checks it or strips it: the failure surfaces as a failed
+ * round naming the option, which is why the `prompt_too_long` branch below carries that pointer.
  *
  * **How the review is authenticated.** Nothing here reads, forwards or names a credential. The
  * plugin's `code_review_claude_env_file` option — required — names a `.env` file, `./config.ts`
@@ -192,9 +198,31 @@ const NOT_LOGGED_IN = /^\s*not logged in\b/i;
  * prose and no structure of the reviewer's is consumed, so this is not the findings parser this
  * module's header forbids.
  */
-const SDK_FAILURES: readonly { readonly pattern: RegExp; readonly code: FailureCode }[] = [
+const SDK_FAILURES: readonly {
+  readonly pattern: RegExp;
+  readonly code: FailureCode;
+  /**
+   * What the OWNER can change, said in the failure. Present only where there is one: nothing an
+   * owner sets makes a connection hold, so `connection_lost` carries none and gets no invented
+   * advice. `prompt_too_long` is the one failure the model default exists to remove, so its reason
+   * names the option and what to set it to — the same shape the `not_logged_in` branch below uses,
+   * and what makes a round that meets an account without the one-million-context entitlement
+   * actionable rather than merely reported.
+   */
+  readonly remedy?: string;
+}[] = [
   { pattern: /^\s*API Error:\s*Connection closed mid-response\b/i, code: "connection_lost" },
-  { pattern: /^\s*Prompt is too long\b/i, code: "prompt_too_long" },
+  {
+    pattern: /^\s*Prompt is too long\b/i,
+    code: "prompt_too_long",
+    remedy:
+      `The whole diff goes into the review's prompt before the model runs, so a round this large ` +
+      `needs a model with the room to hold it: set the plugin's code_review_model option to an ` +
+      `alias carrying the one-million-context suffix — opus[1m] or sonnet[1m]. That is the ` +
+      `shipped default, and it applies only where the option is unset. Where the account or the ` +
+      `provider behind code_review_claude_env_file does not offer that window, no model setting ` +
+      `makes this change request reviewable whole.`,
+  },
 ];
 
 const asNumber = (value: unknown): number | undefined =>
@@ -353,6 +381,32 @@ export function eventFromMessage(
     };
     if (message.subtype === "success") {
       const summary = typeof message.result === "string" ? message.result : "";
+      // A result with NO PROSE IN IT is not a review, and after ADR-0005's amendment that is not
+      // cosmetic: the prose is the only carrier of a finding the reviewer did not post, and
+      // `skills/build/SKILL.md` counts a `completed` round toward the two a change request is
+      // flipped ready against. Left alone, an empty or whitespace-only result — or a non-string
+      // one, which narrows to the same empty string — published a completed round whose whole
+      // deliverable was "", `code-reviewer` reported that verbatim, the fix wave was dispatched
+      // with nothing, and the branch flipped ready having had one real review: the exact shape
+      // ADR-0010's amendment says must not survive, arriving through the most trivial input rather
+      // than through text this file can recognise. Checked BEFORE the two narrowings below, which
+      // both need text to match. `no_result` and not a seventh word: the closed vocabulary already
+      // has the word for a review that reported nothing, and a result carrying no prose reported
+      // nothing (review-reliability PR review).
+      if (summary.trim() === "") {
+        return {
+          // Spent, for the reason both branches below give: this is manufactured from a `success`
+          // message, so the counters riding on it are real.
+          ...spend,
+          type: "failed",
+          message: failureReason(
+            "no_result",
+            `the delegated review was reported as successful, but its result carries no text at ` +
+              `all, so there is no review to report and nothing for a fix wave to act on. The ` +
+              `round's prose is the whole deliverable, so an empty one is a failed round.`,
+          ),
+        };
+      }
       // The ONE invisible failure this design can mechanically detect (PR #11 grill, agenda A11).
       // An unauthenticated run is classified by the SDK as `success` with an empty `errors` array
       // and this exact prose — an agent did start, emit text and exit cleanly, so nothing upstream
@@ -387,18 +441,20 @@ export function eventFromMessage(
       // each one is anchored where it is, and why prose this list does not recognise stays a review.
       const selfReported = SDK_FAILURES.find(({ pattern }) => pattern.test(summary));
       if (selfReported !== undefined) {
+        const remedy = selfReported.remedy === undefined ? "" : ` ${selfReported.remedy}`;
         return {
           // Spent, for the reason the branch above gives: this failure is manufactured from a
           // `success` message, so the counters riding on it are real. One of the observed rounds
           // burned $7.97 and 88,000 output tokens before its connection went.
           ...spend,
           type: "failed",
-          message: failureReason(
-            selfReported.code,
-            `the delegated review was reported as successful, but its result opens with the SDK's ` +
-              `own failure text rather than with a review, so nothing was reviewed — it answered: ` +
-              `${summary.trim()}`,
-          ),
+          message:
+            failureReason(
+              selfReported.code,
+              `the delegated review was reported as successful, but its result opens with the ` +
+                `SDK's own failure text rather than with a review, so nothing was reviewed — it ` +
+                `answered: ${summary.trim()}`,
+            ) + remedy,
         };
       }
       return { ...spend, type: "completed", summary };

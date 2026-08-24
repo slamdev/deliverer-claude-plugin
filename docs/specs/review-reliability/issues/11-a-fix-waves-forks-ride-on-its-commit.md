@@ -15,8 +15,10 @@ branch. Settled as D21 and D24 in `../spec.md`.
       to copy the implementer's format off the branch rather than being given one.
 - [ ] The format carries **no** `Ticket:` line, and says so and why — the commit is not a ticket's work. The delivery
       skill counts tickets by that line in two places, **Resume** ("one without it is not a ticket") and **Progress**
-      ("how many tickets the `Ticket:` lines name"); both stay correct as they stand, and the absence is also what
-      `change-request-creator` discriminates on below.
+      ("how many tickets the `Ticket:` lines name"); neither needs anything from *this* ticket, and the absence is also
+      what `change-request-creator` discriminates on below. Both sentences do change, for ticket 09's reason rather
+      than this one's: interleaved commits make a present `Ticket:` line mean a ticket *begun* (PR #4 review, recorded
+      on 09).
 - [ ] It records the forks the wave closed as **assumption** entries in the same shape the implementer's commits use —
       numbered, with `file:`, `line:`, `assumed:` and `reason:` — and omits the `Assumptions:` section when there were
       none.
@@ -48,6 +50,18 @@ branch. Settled as D21 and D24 in `../spec.md`.
 - [ ] `CONTEXT.md`'s **Gate** entry is widened: "a gate red for work outside the ticket" is ticket-framed, and the rule
       now has two holders with different boundaries. This is a separate edit from D23's **Round** amendment already in
       the working tree, which is neither reverted nor re-added.
+- [ ] The delivery skill's two ticket-framed gate sentences go with it — the `Gates:` paragraph ("a gate its ticket
+      left red for work outside it") and the report bullet ("every gate left red for work outside its ticket"). A fix
+      wave's commit has no ticket, so both read false of exactly the commits this ticket creates (PR #4 review).
+- [ ] What a wave may leave red is told apart from what it inherits by **when the gate went red**, not by what the gate
+      waits on: a gate an earlier commit handed down and a gate the wave's own work left red are both "red for work no
+      comment asked for", so one illustration cannot carry both and the wave is left choosing (PR #4 review).
+- [ ] ADR-0014 is amended, which makes four rather than D22's three. It states unconditionally that a fork the
+      implementing code closed silently is mirrored into a comment and adjudicated by a verdict, which this ticket
+      makes false for every fork a wave closes — and the repository's rule is that the ADR is the one place a decision
+      changes, so a carve-out living only in two agent contracts, a README bullet and a matcher comment is one the next
+      reader of 0014 will not find. The amendment says what changed and why, in the shape D22's other three take
+      (PR #4 review).
 - [ ] What the wave reports is otherwise unchanged — its commits, declined findings with **grounds**, every
       **hand-off**, and whether the **checks** ended green.
 - [ ] Register and the file's prevailing column width are matched. `comments-addresser.md` wraps at 120 with three

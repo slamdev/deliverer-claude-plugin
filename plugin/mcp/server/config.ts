@@ -41,12 +41,34 @@ export const STORE_TTL_ENV = "DELIVERER_REVIEW_STORE_TTL_SEC";
 /**
  * The two bounds every review runs under. Both fixed, and whichever arrives first ends the round.
  *
- * IDLE — FIFTEEN MINUTES with no event of any kind. This is the bound that catches the failure the
+ * IDLE — THIRTY MINUTES with no event of any kind. This is the bound that catches the failure the
  * pair exists for, a review nothing is coming back from, and it is measured from the last event
  * rather than from the start: the server already treats the event counter and the last-event time as
  * the whole of what tells a working review from a wedged one, so silence is the signal and elapsed
- * time is not. Fifteen minutes is four times the largest average gap ever observed between two
- * events (26 of them across 94.2 minutes).
+ * time is not.
+ *
+ * **Thirty minutes is a judgement and not a measurement, and the measurement that would settle it
+ * does not exist.** The figure this shipped with was fifteen, argued as four times the largest
+ * AVERAGE gap between two events (26 of them across 94.2 minutes, so a 3.6-minute mean). An average
+ * says nothing about the tail, and the tail is the only thing this bound meets: 26 events across 94
+ * minutes is equally consistent with one twenty-minute stretch and twenty-five short ones. No
+ * MAXIMUM inter-event gap was ever recorded, and the observation record it would have come from
+ * does not survive — so what governs the number is the shape of the evidence, not a figure in it:
+ *
+ *  - **An event means the inner agent called a tool, and nothing else produces one** (see
+ *    `./agent-backend.ts`'s header — the message iterable stays silent until the result). A review
+ *    that does its work through sub-agents can spend one call on a long stretch of another agent's
+ *    work, and a deep pass over an epic-sized diff has long non-tool phases by construction.
+ *  - So the bound has to sit well above ordinary sparsity — thirty minutes is over eight times the
+ *    sparsest mean anyone has observed — and well below the absolute cap, or a wedged round becomes
+ *    a four-hour wait. An eighth of the cap keeps both.
+ *
+ * What that trade buys and what it costs are stated rather than implied: a plainly-working review
+ * whose silence crosses this bound is still aborted, which is the defect the fixed hour had, and it
+ * is reported as `deadline_exceeded` with the idle bound NAMED in the reason so it can be told from
+ * the cap. The maximum inter-event gap of a round that COMPLETED is the one figure that would
+ * replace this judgement with a measurement, and it is worth recording on the next epic-sized round
+ * anyone drives.
  *
  * ABSOLUTE — FOUR HOURS from the start, whatever the review is doing. It catches nothing on its own
  * account; it exists so that "never" is unreachable, because an inner agent emitting one event a
@@ -60,7 +82,7 @@ export const STORE_TTL_ENV = "DELIVERER_REVIEW_STORE_TTL_SEC";
  * is to report a wedged review was killing reviews that were plainly working (review-reliability
  * ticket 04).
  */
-export const IDLE_DEADLINE_SEC = 15 * 60;
+export const IDLE_DEADLINE_SEC = 30 * 60;
 export const DEADLINE_SEC = 4 * 60 * 60;
 
 /**

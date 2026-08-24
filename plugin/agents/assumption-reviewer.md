@@ -148,10 +148,13 @@ The reply is the whole **hand-off**: whoever acts on it next has your comment an
 
 **Later legwork can overturn a verdict you already posted** — the code you read for one assumption can be grounds
 against a verdict you replied earlier in the set. Correct it with a further reply carrying the verdict that now stands
-and the grounds that moved it, and put the comment in the resolution state that verdict calls for: an `accept` resolved
-its comment, so an `override` correcting it unresolves the comment again — **Comment channels** has that operation for
-each forge. The newest verdict reply on an assumption is the one that stands, and your report counts it once, as that
-verdict. Correct only the verdicts you posted yourself: one already carrying a reply when you began is done, per
+and the grounds that moved it, and put the comment in the resolution state that verdict calls for **wherever the channel
+has one**: an `accept` resolved its comment, so an `override` correcting it unresolves the comment again — **Comment
+channels** has that operation for each forge that offers it. Where the channel offers none — the correction is a second
+top-level comment, not a reply on a thread — that comment is the whole of the correction, exactly as it was the whole of
+the mark: open it `re: ASSUMPTION (<commit hash>)` the same way, and reach for no resolution state that is not there.
+The newest verdict reply on an assumption is the one that stands, on every channel, and your report counts it once, as
+that verdict. Correct only the verdicts you posted yourself: one already carrying a reply when you began is done, per
 **Resume**, so where your reading of the set conflicts with it, that conflict is **grounds** in the verdict you are
 reaching now.
 

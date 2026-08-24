@@ -85,7 +85,7 @@ this branch is recorded — on the commit.
 6. As a human running a delivery, I want a review that is still working left alone, so that an honest hour-long round
    on a large epic can finish.
 7. As a human running a delivery, I want a review that has stopped saying anything aborted, so that a wedge costs
-   fifteen minutes rather than four hours.
+   half an hour rather than four.
 8. As a human running a delivery, I want no round re-dispatched against a failure that cannot change, so that a dead
    round costs one attempt rather than four and 5h51m.
 9. As a human running a delivery, I want "no round could complete" to be a named outcome, so that the run leaves my
@@ -188,14 +188,23 @@ this branch is recorded — on the commit.
   and consumes no structure of the reviewer's, so it is not the findings parser that
   [ADR-0005](../../adrs/0005-the-reviews-deliverable-is-prose.md) forbids.
 
-- **D7. The review's bound becomes an idle timeout plus a hard cap: fifteen minutes without an event, four hours
+- **D7. The review's bound becomes an idle timeout plus a hard cap: thirty minutes without an event, four hours
   absolute.** The clock resets on every event the backend reports, including the liveness observer's, so a review still
   calling tools is never aborted for being slow. This is what
   [ADR-0007](../../adrs/0007-the-server-owns-a-reviews-bounds.md) already says the bound is *for* — bounding a failure
   — and the server already treats the event counter and the last-event time as the whole of what distinguishes a
-  working review from a wedged one. Fifteen minutes is four times the largest average gap observed (26 events across
-  94.2 minutes); four hours is above any round anyone has seen finish and still finite, so no configuration exists in
-  which a review runs unbounded.
+  working review from a wedged one. Four hours is above any round anyone has seen finish and still finite, so no
+  configuration exists in which a review runs unbounded.
+
+  **The idle figure is a judgement and is recorded as one.** It shipped as fifteen minutes, argued as four times the
+  largest *average* gap observed (26 events across 94.2 minutes, a 3.6-minute mean) — and an average says nothing about
+  the tail this bound actually meets. An event means the inner agent called a tool, so a review whose work happens in
+  sub-agents can spend one call on a long stretch, and a deep pass over an epic-sized diff has long non-tool phases by
+  construction: one such stretch over the bound aborts a plainly working review, which is the failure this ticket
+  exists to remove. The maximum inter-event gap was never recorded and the observation record it would have come from
+  does not survive, so the figure is fixed between what *is* known — well above the sparsest observed density, and an
+  eighth of the cap — rather than derived from what is not. Thirty minutes. Recorded as a claim: the maximum
+  inter-event gap of a round that completed is the one measurement that would settle it (PR #4 review).
 
 - **D8. The published deadline figure keeps its name and reports the hard cap.** The idle bound appears in a failed
   round's reason rather than as a second key, for D5's reason.
@@ -263,15 +272,19 @@ this branch is recorded — on the commit.
   does not currently have at all — it recorded assumptions in the observed run only by copying the format off the
   branch — including what its `Ticket:` line carries.
 
-- **D22. Three ADRs are amended and no new one is written.**
+- **D22. Four ADRs are amended and no new one is written.**
   [ADR-0005](../../adrs/0005-the-reviews-deliverable-is-prose.md) says the review posts its own findings as comments;
   that is measured false on a forge it was never run against, so it becomes: the prompt instructs the posting, and
   where the reviewer does not post, the prose is what carries the findings — into the fix wave's dispatch, unparsed.
   [ADR-0007](../../adrs/0007-the-server-owns-a-reviews-bounds.md) takes D7 and D9.
   [ADR-0010](../../adrs/0010-nothing-verdict-shaped-survives-an-unfinished-review.md) gains D6's clause: a result the
-  harness marked successful while saying it failed is not a completed review, however the SDK classified it. Each
-  amendment says what changed and why, because a decision changes in the one place it lives. ADR-0008 and ADR-0012 are
-  untouched, by D10 and D2 respectively.
+  harness marked successful while saying it failed is not a completed review, however the SDK classified it.
+  [ADR-0014](../../adrs/0014-assumptions-are-adjudicated-in-the-change-requests-comment-threads.md) takes D21: it
+  states unconditionally that a fork the implementing code closed silently is mirrored into a comment and adjudicated,
+  which D21 makes false for every fork a **fix wave** closes, and the repository's own rule is that the ADR is the one
+  place that decision changes — so the carve-out cannot live only in two agent contracts and a README bullet (PR #4
+  review). Each amendment says what changed and why, because a decision changes in the one place it lives. ADR-0008 and
+  ADR-0012 are untouched, by D10 and D2 respectively.
 
 - **D23. The glossary work is already done.** `CONTEXT.md`'s **Round** entry was amended during the grilling and is in
   the working tree: a round hands back its review findings, posted as comments where the reviewer can post them and
@@ -319,8 +332,8 @@ from its inputs. Nothing reaches for a private function, and nothing asserts on 
   code; a successful result whose text merely *mentions* an API error stays completed; the not-logged-in case keeps its
   own code and its existing message.
 - A failed result from the backend keeps carrying its **spend**, as it does today, and gains its code.
-- An event arriving after fifteen fake minutes of silence does not abort; one arriving after sixteen finds the review
-  already failed, with the idle bound named in its reason.
+- An event arriving just inside the idle bound's fake minutes of silence does not abort; one arriving just outside it
+  finds the review already failed, with the idle bound named in its reason.
 - A review that keeps emitting events past the hard cap is aborted at the cap, and the failure says which bound ended
   it.
 

@@ -78,8 +78,9 @@ A fork the implementing code closed silently and nobody has ratified — the def
 thing missing is a human's agreement. Not a bug, and not a question anyone asked. _Avoid_: guess, decision, TODO, caveat
 
 **Verdict**:
-The adjudication one assumption receives — `accept`, `override` or `escalate` — recorded as a reply on its comment.
-_Avoid_: ruling, judgement, review
+The adjudication one assumption receives — `accept`, `override` or `escalate` — recorded as a reply on its comment. The
+newest reply on an assumption is the verdict that stands, since later legwork can overturn an earlier one. An assumption
+a **fix wave** recorded has no comment, so it receives none and ships unratified. _Avoid_: ruling, judgement, review
 
 **Grounds**:
 The evidence a verdict, a declined finding or a reopened ADR stands on: a spec line, an ADR, a caller that breaks, a
@@ -129,8 +130,9 @@ resolved, are the forge's own. _Avoid_: stream, surface, location
 
 **Comment**:
 One conversation on a change request, carried on one of its channels. Unresolved is the whole filter a fix wave works
-from: the channel's own resolution state where it has one, and carrying no reply recording the work where it has none.
-_Avoid_: thread, note, discussion
+from **over the comments**: the channel's own resolution state where it has one, and carrying no reply recording the
+work where it has none. What a wave works besides them is the **fix wave** entry's to say. _Avoid_: thread, note,
+discussion
 
 **Assumption comment**:
 A comment carrying one assumption verbatim from the commit that recorded it, marked out from every other comment by an

@@ -31,6 +31,14 @@ shell bugs in it — but only because the orchestrator thought to flag it. Settl
       an agent followed when it left the 12.7 KB draft behind.
 - [ ] The commit format is unchanged — the `Ticket:` line on every commit, and the `Assumptions:` and `Gates:` sections
       as they are.
+- [ ] The delivery skill stops reading a present `Ticket:` line as a ticket *finished*, because more than one commit
+      per ticket is what this ticket introduces: an implementer that dies after its first coherent piece leaves
+      `Ticket: 7` on the branch, and **Resume** ("the commits carrying a `Ticket:` line name the tickets implemented")
+      and **Progress**'s numerator ("how many tickets the `Ticket:` lines name, so a resumed run opens at the count it
+      left off") would then count ticket 7 delivered, dispatch ticket 8, and flip a change request ready with a ticket
+      half done. The line names a ticket **begun**; a resumed run re-dispatches the last ticket named as well as the
+      ones with no commit at all, which needs no judgement — `implementer`'s own step 2 reports the commit that covered
+      it where the branch already covered it in full (PR #4 review).
 - [ ] Register is matched, and the file's column width is held: `implementer.md` wraps at 120 characters throughout
       with no line over, and every line this ticket writes or rewraps stays that way. Count characters, not bytes —
       the file's em-dashes are three bytes each, so a byte-based check reports overruns that are not there.

@@ -10,7 +10,9 @@ and a third was rejected before the model ran, because the diff is placed in the
 bound gives the review time to walk the input and one setting gives it room to hold it; neither alone was enough.
 Settled as D7, D8, D9, D10 and D22 in `../spec.md`.
 
-- [ ] A review is aborted after fifteen minutes with no event, and at four hours absolute, whichever arrives first.
+- [ ] A review is aborted after thirty minutes with no event, and at four hours absolute, whichever arrives first.
+      The idle figure is a judgement rather than a measurement and the constant's own comment says so: the average gap
+      it was first argued from says nothing about the tail it meets, and the maximum was never recorded.
 - [ ] The idle clock resets on every event the backend reports, the liveness observer's included.
 - [ ] A failed round's reason names which of the two bounds ended it, and keeps the `deadline_exceeded` code ticket 03
       gives both bounds wherever that has already landed. The two tickets rewrite the same sentence: whichever lands

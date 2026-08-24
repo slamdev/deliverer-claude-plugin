@@ -26,6 +26,14 @@ Nothing arrives unsolicited. `code_review_status` is the only way to see progres
 or by hand. The `review_id` is what says so: starting again under a **live** id hands back that same review rather than
 making a second one, so a resumed run picks up polling where it left off.
 
+**A continue opens no round.** Where you are carried on rather than dispatched cold — you already hold a `review_id` —
+that id and that round are still yours: go back to polling it at step 4 and start nothing. Step 3 and its raise are for
+a cold dispatch, before any round of yours has run; taking them on a continue opens a second round inside one dispatch,
+and whoever counts rounds afterwards believes one ran where two did. Two answers say the round is over rather than
+inviting a fresh one: a terminal `status` is your report, and an **unknown id** — the record lived its time and was
+evicted — is reported as the round that ran and whose result is gone, never as a reason to start again under that id or
+under a raised one.
+
 ## Steps
 
 1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote.
@@ -37,13 +45,20 @@ making a second one, so a resumed run picks up polling where it left off.
     - **Refused, the id already names a finished review** — a round already ran under that id, and its prose belongs to
       that round rather than this one. Raise `n` and call again: one round, one id.
     - **Refused, a review is already in flight** — one review runs at a time, and it reaches a terminal status by
-      itself. Call again.
+      itself. Call again, paced as step 4 paces its polls.
 4. **Poll to a terminal status.** Call `code_review_status` with your `review_id`, and repeat. You are done when
    `status` reads `completed`, `failed` or `cancelled`. Let the review end by itself: the server's own deadline ends a
    run that hangs, and a cancelled review carries no result at all. Whichever of the three it ends on, that is **your
    round**: one ending `failed` or `cancelled` is reported as the round it was, and starting another under a fresh
    `review_id` is not yours to do — whether the epic spends another round is settled outside this dispatch, and another
    round arrives as another dispatch. Step 3's raise is not this: that one happens before any round of yours has run.
+
+   **Leave the `poll_after_ms` the handle gave you between one call and the next.** It is the server's own figure, read
+   off the handle rather than one you picked or are keeping in your head, which is why nothing here asks you to measure
+   anything at all. A round may run for hours: calling flat out for that long fills this dispatch with status payloads
+   until there is no room left to carry back the prose the round produced — a review that finished, lost on the polling
+   side. The figure is advice and not a deadline, so a call landing later than it costs a late notice and nothing
+   more.
 5. **Report**, as below.
 
 ## What to report
@@ -58,3 +73,7 @@ tells this round from the next one. Then, by status:
   none.
 - **`failed` or `cancelled`** — the one-line `reason`, and that this round produced no review. `summary` is empty and
   `partial` is true, because a review that did not finish is not a clean review.
+- **an unknown `review_id`** — the id, and that a round ran under it whose record is gone: the server keeps a finished
+  review addressable for a while and no longer, so this is a round whose prose and **spend** are unrecoverable. Report
+  it as that rather than as a round that never happened, and start nothing in its place: it is no round anyone can
+  count, and whether the epic spends another is settled outside this dispatch.

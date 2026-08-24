@@ -85,9 +85,11 @@ costs more time and money, and raises more findings for the fix waves to work th
 **Code review model** — _default `opus[1m]`._ Which model reviews. The `[1m]` suffix is the one-million-token context
 window, and it is what lets a review read a large diff at all: the whole diff goes into the review's prompt before the
 model runs, so a bare alias meets an epic-sized change request with a "prompt is too long" failure and no review.
-Whatever you set is used verbatim, so a bare alias gives that window up — and `[1m]` works on `opus` and `sonnet` but
-is refused on `haiku`. An alias travels between providers; leave it empty to take whatever your credentials already
-default to.
+Whatever you set is used verbatim, so a bare alias gives that window up. An alias travels between providers; the `[1m]`
+suffix does not — it selects a long-context beta, measured only against the first-party provider, where it works on
+`opus` and `sonnet` and is refused on `haiku`. On another provider, or on an account without that window, it may be
+refused as well; a round that meets that fails with a reason naming this option, and a bare alias is what you set
+instead. Leave it empty to take whatever your credentials already default to.
 
 ### The environment file
 
