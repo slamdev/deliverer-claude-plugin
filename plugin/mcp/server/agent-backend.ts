@@ -11,15 +11,19 @@
  * Three things about it are decisions rather than details, and each one is load-bearing:
  *
  *  - **The prompt form is what decides what gets reviewed.** `/code-review <effort> --comment <url>`
- *    reviews the change request AND posts the findings as inline comments itself. A bare ref reviews
- *    the local working diff and finds nothing, because the change request's commits are not in
- *    that tree.
+ *    reviews the change request rather than the local tree: a bare ref reviews the working diff and
+ *    finds nothing, because the change request's commits are not in that tree. The flag asks for the
+ *    findings as inline comments, and on the forge the command was written for it delivers them; on
+ *    a forge it was not written for, it was measured to post nothing and say so. So the prompt
+ *    carries a posting instruction after the URL as well as the flag — see `POSTING_INSTRUCTION`
+ *    below.
  *  - **No structured output format.** Measured across three identical prototype runs, setting one
  *    cost roughly 1.7× the money and 1.9× the time to return ZERO findings while still reporting
  *    success — a silent failure with nothing to detect it by. There is also nothing to parse for:
- *    nothing downstream consumes structured findings, the prose is the deliverable, and the comments
- *    are posted by the reviewer itself. So there is no findings parser here, no two-turn extraction
- *    and no findings-tool shim, and there must not be one added.
+ *    nothing downstream consumes structured findings and the prose is the deliverable — a finding
+ *    the reviewer posted is on the change request already, and one it did not post exists only in
+ *    that prose. So there is no findings parser here, no two-turn extraction and no findings-tool
+ *    shim, and there must not be one added.
  *
  *    The result message's own **usage metadata** — the token counters, the durations, the model
  *    that served the round — is read, and is not that. It says what the run COST and never what it
@@ -47,9 +51,16 @@
  * Effort, model and the inner agent's environment come from the server's startup configuration
  * (`./config.ts`), never from a caller: no `code-reviewer` agent can quietly review at a different
  * depth, on a different model, or as a different identity than the owner configured. The model is
- * passed VERBATIM and unchecked — an alias (`opus`, the shipped default) resolves against whatever
- * provider the environment file selects, which is why one is portable where a pinned id is not —
- * and an EMPTY model means take that environment's own default instead.
+ * passed VERBATIM and unchecked — an alias resolves against whatever provider the environment file
+ * selects, which is why one is portable where a pinned id is not — and an EMPTY model means take
+ * that environment's own default instead.
+ *
+ * The shipped default is `opus[1m]`: that alias with the one-million-context suffix on it, which is
+ * what lets a round load an epic-sized diff at all. The SUFFIX carries no portability claim of its
+ * own — it was measured on one provider, accepted on the opus and sonnet aliases and refused
+ * outright on haiku — so an owner whose provider or account does not offer that window sets the
+ * option to a bare alias. Nothing here checks it or strips it: the failure surfaces as a failed
+ * round naming the option, which is why the `prompt_too_long` branch below carries that pointer.
  *
  * **How the review is authenticated.** Nothing here reads, forwards or names a credential. The
  * plugin's `code_review_claude_env_file` option — required — names a `.env` file, `./config.ts`
@@ -59,7 +70,12 @@
  * plugin quietly single-provider and gave an owner authenticated any other way no way in.
  */
 import type { ReviewBackend, ReviewRequest, ReviewRun } from "./backend.ts";
-import type { ReviewEvent, ReviewSpend } from "./review-state.ts";
+import {
+  failureReason,
+  type FailureCode,
+  type ReviewEvent,
+  type ReviewSpend,
+} from "./review-state.ts";
 
 export const AGENT_BACKEND_ID = "agent";
 
@@ -91,18 +107,49 @@ export type AgentQueryMessage = Record<string, unknown>;
 export type AgentQuery = (params: AgentQueryParams) => AsyncIterable<AgentQueryMessage>;
 
 /**
+ * The instruction that makes the review post its own findings, appended after the change request's
+ * URL on every prompt this file builds.
+ *
+ * **This wording is MEASURED, and an edit to it invalidates the evidence for it.** On a forge whose
+ * review command does not recognise the posting flag, the flag alone was measured to post nothing at
+ * all: 3 findings, 0 comments, the reviewer's own closing line reporting that `--comment` was
+ * ignored because the target was not the one kind of change request it knows, and the findings
+ * printed to a terminal nobody reads while the round reported success. With this text after the URL
+ * the same target took 3 resolvable comments. Where the flag DOES work the control took 3 anchored
+ * inline comments, and this text left that mechanism undisplaced — 2 anchored, none unanchored —
+ * which is why the flag stays rather than being replaced.
+ *
+ * Nothing in it names a forge: it asks for a capability, so ADR-0012 needs no illustration
+ * carve-out here. Every clause is load-bearing, and the finding counts across the instructed runs
+ * were 2, 3 and 2 against controls of 3 and 3 — an argument against GROWING it. Change a character
+ * and the behaviour above is no longer evidence for anything, so a change carries a fresh
+ * measurement or is not made.
+ */
+const POSTING_INSTRUCTION =
+  `— the target is a change request on whatever forge this repository uses. Post every ` +
+  `finding as a comment on that change request, through the forge CLI already authenticated in ` +
+  `this repository, using a comment mechanism the forge can mark resolved, and anchored to the ` +
+  `file and line the finding is about wherever that mechanism allows it.`;
+
+/**
  * Build the review prompt. The effort tier is passed VERBATIM, and it has already been checked
  * against the accepted set (`./config.ts`'s `effortError`, refused at every `code_review_start`).
  * That check is the trade PR #11's grill accepted knowingly: a tier the platform adds later is
  * refused by a server shipped before it, and the owner's fix is a plugin update — chosen over
  * failing open, where an unrecognised tier either errors the round or silently reviews at the
  * command's own default. An absent or empty tier is omitted entirely, leaving that default.
+ *
+ * The posting instruction rides on every prompt, tier or no tier, and always after the URL — that
+ * is the shape it was measured in. A depth nobody configured is no reason for a round's findings to
+ * reach nobody.
  */
 export function reviewPrompt(changeRequestUrl: string, effort: string | null): string {
   const tier = effort === null ? "" : effort.trim();
-  return tier === ""
-    ? `${REVIEW_COMMAND} --comment ${changeRequestUrl}`
-    : `${REVIEW_COMMAND} ${tier} --comment ${changeRequestUrl}`;
+  const target =
+    tier === ""
+      ? `${REVIEW_COMMAND} --comment ${changeRequestUrl}`
+      : `${REVIEW_COMMAND} ${tier} --comment ${changeRequestUrl}`;
+  return `${target} ${POSTING_INSTRUCTION}`;
 }
 
 /** The text of every text block in an assistant message, or null when there is none. */
@@ -129,6 +176,54 @@ function assistantText(message: AgentQueryMessage): string | null {
  * seen as both `·` and `-`, so only the first clause is matched.
  */
 const NOT_LOGGED_IN = /^\s*not logged in\b/i;
+
+/**
+ * The other answers the SDK reports as a SUCCESS while the whole result is its own failure text,
+ * each with the code it ends the round on (ADR-0010). One observed epic lost two of its
+ * four rounds this way: each published as a completed review carrying this text where the findings
+ * belonged, and each counted toward the two completed rounds a change request is flipped ready
+ * against, so the only way to learn they were dead was to query the forge for comments that never
+ * came.
+ *
+ * **Anchored at the START, and that is the whole trade.** A review of a networking change writes
+ * about dropped connections and a review of a prompt-building change writes about prompt length, so
+ * an unanchored match would fail a round for the findings it went and found. Anchored, the
+ * classification only ever DEMOTES text it can identify as the SDK talking about itself: prose that
+ * merely mentions an API error somewhere in the middle stays `completed`, because a review the
+ * server does not recognise is a review, not a suspect.
+ *
+ * The two anchors are the two strings that were OBSERVED, in the shape they were observed in — one
+ * leads with `API Error:` and the other does not, so neither is anchored behind a tidied form of the
+ * other's prefix. Like `NOT_LOGGED_IN` above these are fixed strings: nothing is extracted from the
+ * prose and no structure of the reviewer's is consumed, so this is not the findings parser this
+ * module's header forbids.
+ */
+const SDK_FAILURES: readonly {
+  readonly pattern: RegExp;
+  readonly code: FailureCode;
+  /**
+   * What the OWNER can change, said in the failure. Present only where there is one: nothing an
+   * owner sets makes a connection hold, so `connection_lost` carries none and gets no invented
+   * advice. `prompt_too_long` is the one failure the model default exists to remove, so its reason
+   * names the option and what to set it to — the same shape the `not_logged_in` branch below uses,
+   * and what makes a round that meets an account without the one-million-context entitlement
+   * actionable rather than merely reported.
+   */
+  readonly remedy?: string;
+}[] = [
+  { pattern: /^\s*API Error:\s*Connection closed mid-response\b/i, code: "connection_lost" },
+  {
+    pattern: /^\s*Prompt is too long\b/i,
+    code: "prompt_too_long",
+    remedy:
+      `The whole diff goes into the review's prompt before the model runs, so a round this large ` +
+      `needs a model with the room to hold it: set the plugin's code_review_model option to an ` +
+      `alias carrying the one-million-context suffix — opus[1m] or sonnet[1m]. That is the ` +
+      `shipped default, and it applies only where the option is unset. Where the account or the ` +
+      `provider behind code_review_claude_env_file does not offer that window, no model setting ` +
+      `makes this change request reviewable whole.`,
+  },
+];
 
 const asNumber = (value: unknown): number | undefined =>
   typeof value === "number" && Number.isFinite(value) ? value : undefined;
@@ -249,10 +344,14 @@ function spendFromResult(message: AgentQueryMessage): ReviewSpend {
  * there is no findings parser (above), so `code_review_status` reports the count and the verdict as
  * `unknown` and the prose as the whole answer.
  *
- * The spend is the exception, and it rides on EVERY event this branch can return — the two failures
- * as much as the success. `SDKResultError` carries the identical counters, and a review that burned
+ * The spend is the exception, and it rides on EVERY event this branch can return — the failures as
+ * much as the success. `SDKResultError` carries the identical counters, and a review that burned
  * twelve minutes and died spent that money whether or not it produced prose. One extraction called
- * three times, which is why it is not a second feature.
+ * once per result, which is why it is not a second feature.
+ *
+ * Every `failed` event it returns carries a `FailureCode` on the front of its message, and so does
+ * every other terminal failure this server can produce — see `./review-state.ts` for the closed
+ * vocabulary and what a caller may read off it.
  *
  * `assistantTurns` is how many assistant messages the caller has seen on this run, and it is what
  * the turn count falls back to. Passed in rather than counted here so this stays a pure function of
@@ -282,6 +381,32 @@ export function eventFromMessage(
     };
     if (message.subtype === "success") {
       const summary = typeof message.result === "string" ? message.result : "";
+      // A result with NO PROSE IN IT is not a review, and after ADR-0005's amendment that is not
+      // cosmetic: the prose is the only carrier of a finding the reviewer did not post, and
+      // `skills/build/SKILL.md` counts a `completed` round toward the two a change request is
+      // flipped ready against. Left alone, an empty or whitespace-only result — or a non-string
+      // one, which narrows to the same empty string — published a completed round whose whole
+      // deliverable was "", `code-reviewer` reported that verbatim, the fix wave was dispatched
+      // with nothing, and the branch flipped ready having had one real review: the exact shape
+      // ADR-0010's amendment says must not survive, arriving through the most trivial input rather
+      // than through text this file can recognise. Checked BEFORE the two narrowings below, which
+      // both need text to match. `no_result` and not a seventh word: the closed vocabulary already
+      // has the word for a review that reported nothing, and a result carrying no prose reported
+      // nothing (review-reliability PR review).
+      if (summary.trim() === "") {
+        return {
+          // Spent, for the reason both branches below give: this is manufactured from a `success`
+          // message, so the counters riding on it are real.
+          ...spend,
+          type: "failed",
+          message: failureReason(
+            "no_result",
+            `the delegated review was reported as successful, but its result carries no text at ` +
+              `all, so there is no review to report and nothing for a fix wave to act on. The ` +
+              `round's prose is the whole deliverable, so an empty one is a failed round.`,
+          ),
+        };
+      }
       // The ONE invisible failure this design can mechanically detect (PR #11 grill, agenda A11).
       // An unauthenticated run is classified by the SDK as `success` with an empty `errors` array
       // and this exact prose — an agent did start, emit text and exit cleanly, so nothing upstream
@@ -301,13 +426,35 @@ export function eventFromMessage(
           // reviewed nothing, which is exactly the round an owner needs to see the price of.
           ...spend,
           type: "failed",
-          message:
+          message: failureReason(
+            "not_logged_in",
             `the delegated review ran but was NOT LOGGED IN, so nothing was reviewed — the ` +
-            `reviewer answered: ${summary.trim()}. The review runs in this server's own ` +
-            `environment, plus whatever the plugin's code_review_claude_env_file option names; ` +
-            `authentication the host holds some other way does not reach it. Point that option at ` +
-            `a .env file carrying the credentials the review should run under, then run the round ` +
-            `again.`,
+              `reviewer answered: ${summary.trim()}. The review runs in this server's own ` +
+              `environment, plus whatever the plugin's code_review_claude_env_file option names; ` +
+              `authentication the host holds some other way does not reach it. Point that option ` +
+              `at a .env file carrying the credentials the review should run under, then run the ` +
+              `round again.`,
+          ),
+        };
+      }
+      // The same manufacture, for the two failures a real epic met — see `SDK_FAILURES` for why
+      // each one is anchored where it is, and why prose this list does not recognise stays a review.
+      const selfReported = SDK_FAILURES.find(({ pattern }) => pattern.test(summary));
+      if (selfReported !== undefined) {
+        const remedy = selfReported.remedy === undefined ? "" : ` ${selfReported.remedy}`;
+        return {
+          // Spent, for the reason the branch above gives: this failure is manufactured from a
+          // `success` message, so the counters riding on it are real. One of the observed rounds
+          // burned $7.97 and 88,000 output tokens before its connection went.
+          ...spend,
+          type: "failed",
+          message:
+            failureReason(
+              selfReported.code,
+              `the delegated review was reported as successful, but its result opens with the ` +
+                `SDK's own failure text rather than with a review, so nothing was reviewed — it ` +
+                `answered: ${summary.trim()}`,
+            ) + remedy,
         };
       }
       return { ...spend, type: "completed", summary };
@@ -317,7 +464,13 @@ export function eventFromMessage(
     return {
       ...spend,
       type: "failed",
-      message: `the delegated review ended as ${String(message.subtype)}${detail}`,
+      // `backend_error` and not a guess at which one: the SDK reported the failure itself, and the
+      // vocabulary only ever says what the server KNOWS. Demoting this to a narrower code would mean
+      // reading the subtype for a cause it does not carry.
+      message: failureReason(
+        "backend_error",
+        `the delegated review ended as ${String(message.subtype)}${detail}`,
+      ),
     };
   }
   return null;
@@ -420,7 +573,8 @@ export function createAgentBackend(deps: AgentBackendDeps): ReviewBackend {
           emit({
             type: "failed",
             message:
-              "the delegated review ended without reporting a result" + stderrSuffix(stderr),
+              failureReason("no_result", "the delegated review ended without reporting a result") +
+              stderrSuffix(stderr),
           });
         }
       };
@@ -429,8 +583,15 @@ export function createAgentBackend(deps: AgentBackendDeps): ReviewBackend {
         if (aborted) return; // the lifecycle owns the cancellation and deadline events
         emit({
           type: "failed",
+          // The query itself threw, so what the server knows is that the backend broke and nothing
+          // about why. A throw whose message happens to mention a lost connection is not matched
+          // against `SDK_FAILURES`: those anchors are for a REVIEW's prose, and reusing them on
+          // an exception message would be classifying text nobody measured.
           message:
-            `the delegated review failed: ${(error as Error).message}` + stderrSuffix(stderr),
+            failureReason(
+              "backend_error",
+              `the delegated review failed: ${(error as Error).message}`,
+            ) + stderrSuffix(stderr),
         });
       });
 

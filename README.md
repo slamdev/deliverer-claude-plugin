@@ -23,9 +23,11 @@ You are needed for the conversation at the start and the merge at the end. Every
 **From `/deliverer:build`:**
 
 - a change request with every ticket implemented, on one branch
-- two rounds of code review, with the findings raised as comments and then fixed
-- every judgement call the implementation had to make silently, raised as a comment on the change request and
-  adjudicated — accepted with reasons, corrected, or escalated to you
+- two rounds of code review, with the findings raised as comments where your forge lets the reviewer raise them, and
+  fixed either way
+- every judgement call the tickets' implementation had to make silently, raised as a comment on the change request and
+  adjudicated — accepted with reasons, corrected, or escalated to you; the fixes made after the review record theirs on
+  their own commits instead, where you meet them unratified rather than adjudicated
 - green checks, and the change request flipped out of draft (if the checks are red it stays a draft, and the report says
   so)
 - a closing report: how many tickets landed, what the reviews cost, what was escalated, and what was declined and why
@@ -80,8 +82,14 @@ code review runs under. Read once when a session starts, so an edit takes effect
 **Code review effort** — _default `high`._ How deep each review goes: `low`, `medium`, `high`, `xhigh` or `max`. Deeper
 costs more time and money, and raises more findings for the fix waves to work through.
 
-**Code review model** — _default `opus`._ Which model reviews. An alias — `opus`, `sonnet`, `haiku` — travels between
-providers; leave it empty to take whatever your credentials already default to.
+**Code review model** — _default `opus[1m]`._ Which model reviews. The `[1m]` suffix is the one-million-token context
+window, and it is what lets a review read a large diff at all: the whole diff goes into the review's prompt before the
+model runs, so a bare alias meets an epic-sized change request with a "prompt is too long" failure and no review.
+Whatever you set is used verbatim, so a bare alias gives that window up. An alias travels between providers; the `[1m]`
+suffix does not — it selects a long-context beta, measured only against the first-party provider, where it works on
+`opus` and `sonnet` and is refused on `haiku`. On another provider, or on an account without that window, it may be
+refused as well; a round that meets that fails with a reason naming this option, and a bare alias is what you set
+instead. Leave it empty to take whatever your credentials already default to.
 
 ### The environment file
 

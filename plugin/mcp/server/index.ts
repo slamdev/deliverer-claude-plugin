@@ -37,7 +37,13 @@ import {
   createAgentBackend,
   type AgentQuery,
 } from "./agent-backend.ts";
-import { configFromEnv, BACKEND_ENV, DEADLINE_SEC, SCRIPT_ENV } from "./config.ts";
+import {
+  configFromEnv,
+  BACKEND_ENV,
+  DEADLINE_SEC,
+  IDLE_DEADLINE_SEC,
+  SCRIPT_ENV,
+} from "./config.ts";
 import type { ReviewBackend } from "./backend.ts";
 import {
   createLifecycle,
@@ -45,7 +51,7 @@ import {
   ToolError,
   TRANSCRIPT_SCHEME,
 } from "./lifecycle.ts";
-import { STATUSES_TUPLE } from "./review-state.ts";
+import { FAILURE_CODES, STATUSES_TUPLE } from "./review-state.ts";
 import { createScriptedBackend, parseScript, SCRIPTED_BACKEND_ID } from "./scripted-backend.ts";
 import { createMemoryStore } from "./store.ts";
 
@@ -131,6 +137,7 @@ const lifecycle = createLifecycle({
   model: config.model,
   claudeEnv: config.claudeEnv,
   deadlineSec: DEADLINE_SEC,
+  idleDeadlineSec: IDLE_DEADLINE_SEC,
 });
 
 /* ────────────────────────── tool plumbing ────────────────────────── */
@@ -274,13 +281,12 @@ server.registerTool(
       stats: z.object({
         startedAt: z.string(),
         endedAt: z.string().nullable(),
-        durationMs: z.number(),
         events: z
           .number()
           .describe(
             "how many events have landed. It RISES while the review works — the inner agent's tool " +
-              "calls are observed as they happen — so two polls with the same number and a moving " +
-              "`durationMs` mean nothing has happened since the last one.",
+              "calls are observed as they happen — so two polls with the same number and the same " +
+              "`lastEventAt` mean nothing has happened since the last one.",
           ),
         lastEventAt: z
           .string()
@@ -308,8 +314,8 @@ server.registerTool(
           .number()
           .nullable()
           .describe(
-            "how long the INNER review agent ran, in milliseconds. Not `durationMs`, which is this " +
-              "record's own wall-clock and counts every second the poller waited around it.",
+            "how long the INNER review agent ran, in milliseconds: what the round itself took, " +
+              "and no part of what this record has been open for.",
           ),
         model: z.string().nullable(),
         provider: z
@@ -327,16 +333,26 @@ server.registerTool(
         deadlineSec: z
           .number()
           .describe(
-            "the ceiling this review is aborted at, in seconds. A constant of the server, not " +
-              "configuration — so it is always present and the same for every review.",
+            "the ABSOLUTE deadline this review is bounded by, in seconds — the outer of the two " +
+              "bounds it can end on, and not the one that ordinarily ends a wedged round: a " +
+              `review is also aborted after ${IDLE_DEADLINE_SEC}s with no event of any kind, ` +
+              "counted from the last one. That idle bound has no key of its own here; a round " +
+              "aborted on either reports deadline_exceeded, and its reason says which. Both are " +
+              "constants of the server, not configuration — so this is always present and the " +
+              "same for every review.",
           ),
       }),
       reason: z
         .string()
         .describe(
           "why a failed or cancelled run ended, in one line; empty while the run is alive and " +
-            "empty when it completed. The full stream is pull-only, at " +
-            "code-review://transcript/<id>",
+            "empty when it completed. A FAILED run's reason begins with one machine-readable code " +
+            'naming the cause, then ": " and the prose — one of: ' +
+            `${FAILURE_CODES.join(", ")}. The list is closed, and every bound a review has ` +
+            "reports deadline_exceeded with the prose saying which bound ended the round. A " +
+            "CANCELLED run's reason carries NO code, so do not look for one there; neither does a " +
+            "scripted backend's, which replays whatever its script says. The full stream is " +
+            "pull-only, at code-review://transcript/<id>",
         ),
       partial: z.boolean().describe('true whenever the status is not "completed"'),
       summary: z

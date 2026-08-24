@@ -61,7 +61,7 @@ export interface ReviewSpend {
   outputTokens?: number;
   cacheReadTokens?: number;
   cacheCreationTokens?: number;
-  /** the INNER agent's own wall-clock — `stats.durationMs` is the record's, and they differ */
+  /** the INNER agent's own wall-clock: how long the round ran, not how long the record lived */
   agentDurationMs?: number;
   /** the model that served the round, and the provider that served that model */
   model?: string;
@@ -74,6 +74,50 @@ export interface ReviewSpend {
 export type RecordedSpend = {
   [Field in keyof ReviewSpend]-?: NonNullable<ReviewSpend[Field]> | null;
 };
+
+/**
+ * WHY a terminal failure happened, in one machine-readable word. The vocabulary is CLOSED: every
+ * terminal failure the server ITSELF produces prefixes its reason with one of these six, so a caller
+ * reads the cause off the front of the line instead of matching prose it was never promised
+ * (review-reliability ticket 03). An observed epic drove four rounds that all died and reported
+ * nothing a caller could act on, so the orchestrator was left inferring the cause from the
+ * reviewer's text.
+ *
+ * The scripted double is the one thing outside that, and it is not a gap: it replays a script's own
+ * `message` verbatim, exactly as it replays everything else it is handed, so a script that wants the
+ * real shape writes the code into the text it scripts.
+ *
+ * It rides on the `reason` a failed round already publishes rather than on a key of its own: the
+ * status payload is documented as exactly the keys the tool contract names, and a prefix on an
+ * existing one-line string keeps that true.
+ *
+ * Two things the closedness costs, both deliberate:
+ *
+ *  - **A cancellation carries no code.** `reason` is published for a cancelled round as well as a
+ *    failed one, and none of these six is a cancellation — so rather than invent a seventh word for
+ *    it, the status tool documents that the code rides on a FAILED round and a caller is not sent
+ *    looking for one that is not there.
+ *  - **Every bound a review has reports `deadline_exceeded`**, with the prose after the code saying
+ *    which bound ended the round. A second bound is a second way to run out of time, not a second
+ *    cause.
+ */
+export const FAILURE_CODES = [
+  "prompt_too_long",
+  "deadline_exceeded",
+  "connection_lost",
+  "not_logged_in",
+  "no_result",
+  "backend_error",
+] as const;
+
+export type FailureCode = (typeof FAILURE_CODES)[number];
+
+/**
+ * A failed event's message with its code on the front. Every site that emits a terminal failure
+ * goes through here, which is what makes the vocabulary above closed in fact and not just in
+ * documentation: the separator is decided once, and a seventh word does not compile.
+ */
+export const failureReason = (code: FailureCode, detail: string): string => `${code}: ${detail}`;
 
 /**
  * What a review backend may say. Backend-neutral on purpose: the scripted double and the real
@@ -108,6 +152,9 @@ export interface ReviewRecord extends RecordedSpend {
    * empty while the run is alive or when it completed. Held as its own field, not dug back out of
    * the transcript, because it is the one thing a caller needs on the failure path and the
    * transcript no longer reaches `code_review_status` at all (grill A6/A20).
+   *
+   * A failure's message arrives with its `FailureCode` already on the front — the reducer prefixes
+   * nothing, so the emitting site is the one that names the cause it knows.
    */
   reason: string;
   createdAt: number;
@@ -245,31 +292,41 @@ export interface ReviewStatusResult {
   /**
    * The spend fields here are `ReviewSpend`'s, published flat and whatever the status — what a
    * round cost is a fact about the run rather than a claim about the code, so unlike everything
-   * verdict-shaped it survives a `failed` status. `durationMs` below is the RECORD's wall-clock;
-   * the inner agent's own is `agentDurationMs`, and overloading one name for both would make the
-   * poller's own waiting look like review time.
+   * verdict-shaped it survives a `failed` status.
+   *
+   * The RECORD's own elapsed wall-clock is deliberately no key here (review-reliability ticket 10,
+   * D19): it rose whether the review was working or wedged and answered neither, and the shipped
+   * `code-reviewer` read it every poll and reasoned aloud about a deadline off the back of it. What
+   * this leaves is stated rather than implied: `startedAt` still dates the review's start and
+   * `deadlineSec` still names the bound, so a caller can still build a clock of its own — what is
+   * gone is anything telling the shipped agent those numbers are its to act on.
    */
   stats: RecordedSpend & {
     startedAt: string;
     endedAt: string | null;
-    durationMs: number;
     events: number;
     /**
      * When the last event landed, or null before any has. This and `events` are the only fields that
      * move while a review is alive — the SDK's iterable says nothing until the inner agent finishes
-     * (`agent-backend.ts`'s header) — so together they are what tells a poller "working" from
-     * "wedged". `durationMs` rises either way and answers neither.
+     * (`agent-backend.ts`'s header) — so together they are the whole of what tells a poller
+     * "working" from "wedged", and two polls agreeing on both need no clock to read.
      */
     lastEventAt: string | null;
-    /** the ceiling every review on this server is bounded by — a constant, so never absent */
+    /**
+     * the ABSOLUTE deadline every review on this server is bounded by — a constant, so never absent.
+     * NOT the bound a wedged round ordinarily ends on: that is the idle one, which is deliberately
+     * no key of its own here (review-reliability ticket 04). A caller learns it exists from this
+     * field's own description on the status tool, and from the reason a round aborted on it gives.
+     */
     deadlineSec: number;
   };
   /**
-   * Why a non-completed run ended, verbatim; empty when the run is alive or completed. It replaced
+   * Why a non-completed run ended, verbatim; empty when the run is alive or completed. A FAILED
+   * run's reason opens with a `FailureCode`; a cancelled one's does not. It replaced
    * `transcript` in this payload rather than joining it (grill A6): a deadline-length run costs
-   * ~120 polls, and returning the whole accumulated stream on each one grows the polling agent's
-   * context with the reviewer's verbosity until it hits a ceiling the server's deadline never
-   * reaches. The full stream stays available, pull-only, at `code-review://transcript/<id>`.
+   * hundreds of polls, and returning the whole accumulated stream on each one grows the polling
+   * agent's context with the reviewer's verbosity until it hits a ceiling the server's deadline
+   * never reaches. The full stream stays available, pull-only, at `code-review://transcript/<id>`.
    */
   reason: string;
   partial: boolean;
@@ -278,7 +335,7 @@ export interface ReviewStatusResult {
 
 export function project(
   record: ReviewRecord,
-  context: { now: number; deadlineSec: number },
+  context: { deadlineSec: number },
 ): ReviewStatusResult {
   const done = record.status === "completed";
   return {
@@ -290,7 +347,6 @@ export function project(
     stats: {
       startedAt: new Date(record.createdAt).toISOString(),
       endedAt: record.endedAt === null ? null : new Date(record.endedAt).toISOString(),
-      durationMs: (record.endedAt ?? context.now) - record.createdAt,
       events: record.events,
       // `updatedAt` only moves when the reducer accepts an event, so it IS the last event's time —
       // but it starts equal to `createdAt`, so it is published only once something has landed.

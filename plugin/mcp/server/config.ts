@@ -15,10 +15,12 @@
  * three carry the `DELIVERER_CODE_REVIEW_` prefix that mirrors their option names: a knob nobody can
  * set from the configuration dialog is not an option, and naming it as one would say it was.
  *
- * The review DEADLINE used to be a fourth declared option and is now the constant below. It is the
- * one setting whose whole job is to bound a failure — an owner who can raise it can turn a hung
- * review into a hung session, and an owner who can lower it can make every honest review fail — so it
- * is the server's to state, not the owner's to tune.
+ * The review DEADLINE used to be a fourth declared option and is now the two constants below — an
+ * idle bound and an absolute one. Bounding a failure is their whole job, which is exactly what makes
+ * them the server's to state rather than the owner's to tune: an owner who can raise them can turn a
+ * hung review into a hung session, and an owner who can lower them can make every honest review
+ * fail. They are handed to the review lifecycle, which is not the same as configurable — the host
+ * boundary offers no knob for either.
  */
 import * as fs from "node:fs";
 
@@ -37,14 +39,51 @@ export const SCRIPT_ENV = "DELIVERER_REVIEW_SCRIPT";
 export const STORE_TTL_ENV = "DELIVERER_REVIEW_STORE_TTL_SEC";
 
 /**
- * How long one review may run before the server aborts it and reports failure: SIXTY MINUTES, fixed.
+ * The two bounds every review runs under. Both fixed, and whichever arrives first ends the round.
  *
- * A round measured 122 s at the default effort on a twenty-line diff, so this is not a budget — it is
- * the ceiling that turns a wedged review into a reported failure instead of an in-flight slot held
- * for the life of the session. An hour is far above anything measured and far below "never", which is
- * what the whole range of sensible values collapses to once nobody has to pick one.
+ * IDLE — THIRTY MINUTES with no event of any kind. This is the bound that catches the failure the
+ * pair exists for, a review nothing is coming back from, and it is measured from the last event
+ * rather than from the start: the server already treats the event counter and the last-event time as
+ * the whole of what tells a working review from a wedged one, so silence is the signal and elapsed
+ * time is not.
+ *
+ * **Thirty minutes is a judgement and not a measurement, and the measurement that would settle it
+ * does not exist.** The figure this shipped with was fifteen, argued as four times the largest
+ * AVERAGE gap between two events (26 of them across 94.2 minutes, so a 3.6-minute mean). An average
+ * says nothing about the tail, and the tail is the only thing this bound meets: 26 events across 94
+ * minutes is equally consistent with one twenty-minute stretch and twenty-five short ones. No
+ * MAXIMUM inter-event gap was ever recorded, and the observation record it would have come from
+ * does not survive — so what governs the number is the shape of the evidence, not a figure in it:
+ *
+ *  - **An event means the inner agent called a tool, and nothing else produces one** (see
+ *    `./agent-backend.ts`'s header — the message iterable stays silent until the result). A review
+ *    that does its work through sub-agents can spend one call on a long stretch of another agent's
+ *    work, and a deep pass over an epic-sized diff has long non-tool phases by construction.
+ *  - So the bound has to sit well above ordinary sparsity — thirty minutes is over eight times the
+ *    sparsest mean anyone has observed — and well below the absolute cap, or a wedged round becomes
+ *    a four-hour wait. An eighth of the cap keeps both.
+ *
+ * What that trade buys and what it costs are stated rather than implied: a plainly-working review
+ * whose silence crosses this bound is still aborted, which is the defect the fixed hour had, and it
+ * is reported as `deadline_exceeded` with the idle bound NAMED in the reason so it can be told from
+ * the cap. The maximum inter-event gap of a round that COMPLETED is the one figure that would
+ * replace this judgement with a measurement, and it is worth recording on the next epic-sized round
+ * anyone drives.
+ *
+ * ABSOLUTE — FOUR HOURS from the start, whatever the review is doing. It catches nothing on its own
+ * account; it exists so that "never" is unreachable, because an inner agent emitting one event a
+ * minute for a week resets the idle clock every time. Four hours is above any round anyone has seen
+ * finish and still finite, and it is the figure `code_review_status` publishes as `deadlineSec`.
+ *
+ * A FIXED HOUR used to be the whole of this, and it was picked against the wrong measurement: a round
+ * at the shipped depth on a twenty-line diff runs ~122 s, which made an hour look far above anything
+ * observed. An epic is a different order of input — two rounds against one observed 66-file change
+ * request were aborted at the hour while still emitting events, 273 of them — so the bound whose job
+ * is to report a wedged review was killing reviews that were plainly working (review-reliability
+ * ticket 04).
  */
-export const DEADLINE_SEC = 60 * 60;
+export const IDLE_DEADLINE_SEC = 30 * 60;
+export const DEADLINE_SEC = 4 * 60 * 60;
 
 /**
  * The backend a server runs with when nothing selects one: the real delegated review. Naming it the

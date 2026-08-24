@@ -11,8 +11,8 @@
     "code_review_model": {
       "type": "string",
       "title": "Code review model",
-      "description": "Model the delegated review runs on. An alias — opus, sonnet, haiku — is the portable way to name one, because it resolves against whatever provider the review's environment file points at; a pinned model id only means the same thing on the provider it came from. Leave empty to take that environment's own default instead.",
-      "default": "opus"
+      "description": "Model the delegated review runs on. The default is opus[1m]: the opus alias with the one-million-token context window, which is what lets a review load an epic-sized diff at all — the whole diff goes into the review's prompt before the model runs, so a bare alias meets a large change request with a prompt-too-long failure and no review. Whatever is set here is passed through verbatim, so naming a bare alias gives that window up. An alias — opus, sonnet, haiku — is the portable way to name a model, because it resolves against whatever provider the review's environment file points at; a pinned model id only means the same thing on the provider it came from. The [1m] suffix carries no such portability: it selects a long-context beta, and it was measured only on the first-party provider, where it is accepted on opus and sonnet and refused outright on haiku. On another provider — Bedrock, Vertex, a gateway — or on an account without that entitlement, it may be refused too, and a round that meets that is a failed round whose reason names this option; set it to a bare alias there. Leave empty to take that environment's own default instead.",
+      "default": "opus[1m]"
     },
     "code_review_claude_env_file": {
       "type": "file",

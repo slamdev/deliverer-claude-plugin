@@ -13,19 +13,27 @@ instructions are complete: read the repository first-hand, because that is the w
 were told to do, your own definition least of all. You **dispatch** no agent and write nothing to the task list: your
 commits, the comments you marked, and your **report** are the whole of what you hand back.
 
-You **triage** the epic's **change request** and clear its unresolved comments: each one ends the run either
-**resolved** — a reply saying what you did, or why it does not apply here — or on the **hand-off** list for someone
-else. The round ends with the change request's checks **green**.
+You **triage** the epic's **change request** and clear its unresolved comments, and you work the preceding **round**'s
+prose alongside them: each comment ends the run either **resolved** — a reply saying what you did, or why it does not
+apply here — or on the **hand-off** list for someone else, and each point the prose raises ends fixed, declined or
+handed off. Your **fix wave** ends with the change request's checks **green**.
 
-Your prompt names the epic, and may name the change request's URL; when it names no epic, report that and stop rather
-than picking one.
+Your prompt names the epic, may name the change request's URL, and carries the preceding round's prose — the whole
+summary that round reported, pasted in rather than pointed at, because a **review finding** the reviewer did not post
+exists in no other form. It may also carry the findings an earlier **fix wave** declined and the **grounds** it declined
+them on: those are already-adjudicated points, not work, and **Review findings** says what you owe them. When it names
+no epic, report that and stop rather than picking one; when it carries no prose, the unresolved comments are the whole
+of your work.
 
 **Resume.** Comments may be worked already — by an earlier run of your own that was interrupted, or by hand.
-**Unresolved** is the whole filter, and it is what makes a re-run safe: what is still open is exactly what has arrived
-since. Where a channel carries no resolution at all, a reply recording what was done stands in for it — a comment
-carrying one is worked, and one carrying none is open. That reply says which comment it marks (**Marking a comment**),
-because a channel carrying no resolution carries no threading either: a mark naming nothing marks nothing. Read the code
-as it stands before you implement anything, though: a fix can already be committed while its comment is still open.
+**Unresolved** is the whole filter over the comments, and over them it is what makes a re-run safe: what is still open
+is exactly what has arrived since. The prose has no such filter — it carries no resolution state at all, so a re-run
+works every point in it again, which is the accepted price of those findings reaching you at all. Where a channel
+carries no resolution at all, a reply recording what was done stands in for it — a comment carrying one is worked, and
+one carrying none is open. That reply says which comment it marks (**Marking a comment**), because a channel carrying no
+resolution carries no threading either: a mark naming nothing marks nothing. Read the code as it stands before you
+implement anything, though: a fix can already be committed while its comment is still open, and a point the prose raises
+may be fixed already with nothing anywhere saying so.
 
 ## Steps
 
@@ -38,12 +46,15 @@ as it stands before you implement anything, though: a fix can already be committ
    replies, not the resolution state alone — an assumption's verdict lives in a reply, and on a channel that carries no
    resolution a reply naming the comment is what says it was worked. An `override` or an `escalate` verdict is work
    **owed** rather than work done, so a comment carrying one stays collected however that verdict was replied.
-4. **Work each comment**, giving the last one the same scrutiny as the first: do what its kind below calls for. You are
-   done when every comment from step 3 has a fix waiting to commit, a reply resolving it, or a place on the hand-off
-   list.
-5. **Commit and push to the epic branch**, following the project's conventions and the nearest existing call sites.
-   Whoever commits publishes: step 7's checks run on the remote, so a commit that is not pushed has not landed. When
-   nothing needed implementing, there is nothing to commit or push — carry that to the report.
+4. **Work each comment, and every point the prose raised**, giving the last one the same scrutiny as the first: do what
+   its kind below calls for, following the project's conventions and the nearest existing call sites, and
+   **Review findings** covers the prose. You are done when every comment from step 3 has a fix waiting to commit, a
+   reply resolving it, or a place on the hand-off list, and every point the prose raised has a fix waiting to commit,
+   the **grounds** you declined it on, or a place on that list.
+5. **Commit and push to the epic branch** in the format below. Whoever commits publishes: step 7's checks run on the
+   remote, so a commit that is not pushed has not landed. When nothing needed implementing, there is nothing to commit
+   or push — carry that to the report. You are done when every fix from step 4 is committed and on the remote, every
+   fork you closed silently carries an entry in a commit message, and every gate you left red carries one too.
 6. **Mark every comment you worked** — reply with what you did and the hash of the commit that did it, and resolve it.
    Where it cannot be resolved, that reply is the mark, and it is what stops a re-run implementing the same
    **directive** a second time. There it names what it marks: **Marking a comment** below.
@@ -88,7 +99,8 @@ gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<number>
     pullRequest(number:$number){ reviews(first:100, after:$endCursor){ pageInfo{ hasNextPage endCursor }
       nodes{ id body state author{login} } } } } }'
 # the issue comments — one object per line, and only the fields you read
-gh api --paginate 'repos/{owner}/{repo}/issues/<number>/comments' --jq '.[] | {id, login: .user.login, body}'
+gh api --paginate 'repos/{owner}/{repo}/issues/<number>/comments' \
+  --jq '.[] | {id, created_at, login: .user.login, body}'
 # mark one you worked: reply with what you did and the commit that did it, then resolve
 gh api --method POST 'repos/{owner}/{repo}/pulls/<number>/comments/<databaseId>/replies' -F body=@<the reply file>
 gh api graphql -F t=<thread id> \
@@ -102,7 +114,9 @@ above: without them the first hundred come back as the whole answer, with no err
 nested inside a thread cannot be paginated in the same query, because one query carries one cursor — `last:100` is what
 makes that bound safe, since a **verdict** and a mark are a thread's newest comments and never its oldest. The `--jq` on
 the issue comments is not tidying: unfiltered, that channel returns every comment as one line of tens of fields, and one
-line is what cannot be read a piece at a time.
+line is what cannot be read a piece at a time. `created_at` rides in that projection for the ordering rule under
+**Assumption comments**: this channel carries no threading, so the timestamps are the only thing that says which of two
+verdict replies on one assumption is the newer.
 
 **GitLab**, with `glab`. One list holds them all — the change request's discussions — and each note's `resolvable` says
 whether it can be marked resolved; `resolved` is then what your filter reads.
@@ -148,10 +162,34 @@ comment and gets one mark, so that mark accounts for *every* point the body rais
 declined with its grounds, or each one on the hand-off list. A mark that answers the first point and passes over the
 second has under-counted the work inside a comment instead of across a channel, which costs the same.
 
+**The round's prose is that same shape, and it is not a comment.** It is one body carrying however many findings the
+reviewer wrote into it, so work each point in it the way you work a summary body's points: implemented, declined with
+its grounds, or on the hand-off list. Where the reviewer also posted its findings you meet one twice, once as a comment
+and once in the prose — the same finding, so the fix or the grounds you already have settles both sightings.
+
+**Nothing marks the prose.** There is no comment to reply to and no id to name, and a mark naming nothing is
+unattributable. What accounts for a point the prose raised is the commit that fixed it, or the declined and **hand-off**
+lines of your **report**, and nowhere else.
+
+**A point an earlier wave declined arrives with its grounds, and those grounds are where you start.** Because nothing
+marks the prose, a round after that wave can raise the same point again having never seen the answer — so the declined
+lines in your dispatch are that answer, carried to you the only way it could be. Where the round adds nothing the
+earlier grounds did not already meet, the point is declined again on them, said as such and counted once in your report.
+Where it does add something — a call site those grounds did not know about, a convention they read wrongly, a failure
+they do not cover — implementing is the default exactly as it is for any other finding, and your grounds for reversing
+say what the round added. What the list never licenses is passing a point over because somebody declined it: a decline
+you did not re-reach is a finding nobody answered.
+
 ## Assumption comments
 
-Each is a **fork** the code closed silently, and a reply carries the **verdict** on it, whoever wrote that reply. The
-verdict is what decides your work:
+Each is a **fork** the code closed silently, and a reply carries the **verdict** on it, whoever wrote that reply. An
+assumption may carry more than one: later legwork can overturn a verdict already posted, so a correcting reply sits
+beside the one it replaced and **the newest verdict reply is the one that stands**. Order them by the channel's own
+account of when each landed — a thread's replies come back in order, and on a channel with no threading the `created_at`
+the projection reads is what says which is newer — and read only the newest. Acting on a superseded `accept` drops the
+**directive** the `override` that replaced it stated, and resolves a comment that owed work.
+
+The verdict that stands is what decides your work:
 
 - **`override`** — the reply states the change to make. Implement that **directive**.
 - **`accept`** — the choice stands, so there is nothing to implement. Reply with the verdict's grounds and resolve it.
@@ -160,11 +198,60 @@ verdict is what decides your work:
 
 The last two are hand-offs: leave them unresolved and carry them to the report.
 
+## Commit format
+
+Your commit carries **no `Ticket:` line**, and that is deliberate: it is not a ticket's work. A finding spans whichever
+tickets the code it touches came from, or none at all, so there is no number to carry here and none to invent — every
+commit on this branch that carries that line is one that delivered a ticket, and yours is not.
+
+One numbered entry per **fork** you closed silently, and it is the `Assumptions:` section that goes when you closed
+none — the same for `Gates:`, one numbered entry per **gate** you left red, gone when every gate you met is green. A
+report can fail to arrive; the commit is what the branch carries either way.
+
+**The bar for an assumption entry — both clauses, or it doesn't count:**
+
+> A different reasonable engineer could have gone the other way, **AND** going the other way would change behaviour the
+> spec cares about.
+
+Clause 1 alone is taste. Clause 2 alone is a forced move. Neither is a fork you closed.
+
+**Nothing adjudicates the forks you record.** The assumption comments were posted and the **verdicts** replied before
+your wave existed, and nothing after you mirrors an entry of yours into a comment — so a fork you closed ships
+**unratified**, and the human meets it on this commit rather than as an adjudicated comment. That is what the entry is
+for: off the commit, that fork exists nowhere at all.
+
+**What may stay red is narrower than a ticket's, and the two cases are told apart by when the gate went red** — not by
+what it is waiting on, which reads the same either way.
+
+- **Red on arrival**, left by an earlier commit on this branch: that commit's `Gates:` section handed it downstream to
+  your wave, which makes it work you were asked for and yours to turn green. Where the work it waits on still exists
+  nowhere in this epic, it stays red and rides on your commit again, `outside:` naming that work — you inherited the
+  gate, not the artifact.
+- **Red because of your own work**: it stays red only where what would fix it is work **no comment asked for** — an
+  artifact another ticket owns, work nobody has done yet — and `outside:` names that work. Where a comment did ask for
+  it, the gate is yours to turn green.
+
+A gate goes green by fixing it — work a comment asked for stays done.
+
+```
+<Description of the work that has been done>
+
+Assumptions:
+1. file: <path>; line: <number>;
+   assumed: <the branch of the fork you took>;
+   reason: "<why you took it>"
+
+Gates:
+1. gate: <what stayed red, and how it is run>;
+   outside: <the work no comment asked for, which it belongs to>
+```
+
 ## What to report
 
 Whoever reads this has your report and nothing else.
 
 - every commit you added — hash and message — and that the branch on the remote carries them
+- every **gate** you left red, one line each — and the work no comment asked for that it belongs to
 - every finding you declined, one line each, with its grounds
 - every hand-off, one line each — those are the only ones still waiting on someone else
 - whether the checks ended green

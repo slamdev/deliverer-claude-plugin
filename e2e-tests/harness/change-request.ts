@@ -8,11 +8,12 @@
  * carries, and the **checks**. Nothing is asked of the run — no message stream, no tools-server
  * traffic, nothing about which agent did what.
  *
- * **The commits are the second source, and they are the one that survives.** Every commit carries a
- * `Ticket:` line naming the ticket it implements and an `Assumptions:` section for the forks it
- * left open. That is what lets a matcher check the change request against the branch rather than
- * against itself: an **assumption** with no comment is a fork nobody adjudicated, and no report is
- * needed to see it.
+ * **The commits are the second source, and they are the one that survives.** A ticket's commit
+ * carries a `Ticket:` line naming the ticket it implements and an `Assumptions:` section for the
+ * forks it left open. That is what lets a matcher check the change request against the branch rather
+ * than against itself: an **assumption** with no comment is a fork nobody adjudicated, and no report
+ * is needed to see it. A **fix wave**'s commit carries no `Ticket:` line and is not mirrored, so the
+ * line is read rather than assumed and `ticket` is null for those.
  *
  * Both comment channels are read for the same reason the plugin's own agents read both — a comment
  * where there is no resolution to read is still a comment, and an `ASSUMPTION` posted to the

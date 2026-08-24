@@ -78,8 +78,9 @@ A fork the implementing code closed silently and nobody has ratified — the def
 thing missing is a human's agreement. Not a bug, and not a question anyone asked. _Avoid_: guess, decision, TODO, caveat
 
 **Verdict**:
-The adjudication one assumption receives — `accept`, `override` or `escalate` — recorded as a reply on its comment.
-_Avoid_: ruling, judgement, review
+The adjudication one assumption receives — `accept`, `override` or `escalate` — recorded as a reply on its comment. The
+newest reply on an assumption is the verdict that stands, since later legwork can overturn an earlier one. An assumption
+a **fix wave** recorded has no comment, so it receives none and ships unratified. _Avoid_: ruling, judgement, review
 
 **Grounds**:
 The evidence a verdict, a declined finding or a reopened ADR stands on: a spec line, an ADR, a caller that breaks, a
@@ -129,8 +130,9 @@ resolved, are the forge's own. _Avoid_: stream, surface, location
 
 **Comment**:
 One conversation on a change request, carried on one of its channels. Unresolved is the whole filter a fix wave works
-from: the channel's own resolution state where it has one, and carrying no reply recording the work where it has none.
-_Avoid_: thread, note, discussion
+from **over the comments**: the channel's own resolution state where it has one, and carrying no reply recording the
+work where it has none. What a wave works besides them is the **fix wave** entry's to say. _Avoid_: thread, note,
+discussion
 
 **Assumption comment**:
 A comment carrying one assumption verbatim from the commit that recorded it, marked out from every other comment by an
@@ -141,20 +143,24 @@ Something a round raised about the code, posted as a comment. Implementing one i
 grounds. _Avoid_: bug, issue, nit, suggestion
 
 **Round**:
-One delegated code review of a change request. Two completed rounds is the bar a change request is flipped ready
-against, and a round that produced no review is not one of the two. _Avoid_: review, pass, iteration
+One delegated code review of a change request. What it hands back is its **review findings**: posted as comments on the
+change request where the reviewer can post them, and carried by its prose where it cannot. Two completed rounds is the
+bar a change request is flipped ready against, and a round that produced no review is not one of the two. _Avoid_:
+review, pass, iteration
 
 **Fix wave**:
-One pass over every unresolved comment on a change request, ending with each one resolved or on the hand-off list.
-_Avoid_: fix pass, cleanup, follow-up commit
+One pass over every unresolved comment on a change request and over the preceding **round**'s prose, ending with each
+comment resolved or on the hand-off list and each point the prose raised fixed, declined or handed off. Prose carries no
+resolution state, so a wave interrupted part-way works its points again. _Avoid_: fix pass, cleanup, follow-up commit
 
 **Spend**:
 What one round cost — its tokens, and a dollar estimate labelled with the provider that served it. Unknown is the honest
 answer for a figure nobody measured, and never zero. _Avoid_: cost, usage, price
 
 **Gate**:
-Whatever the repository enforces before a commit lands. Work a ticket asked for is never undone to turn one green; a
-gate red for work outside the ticket stays red, and is recorded on the commit as well as in the report. _Avoid_: guard,
+Whatever the repository enforces before a commit lands. Work that was asked for is never undone to turn one green; a
+gate red for work nobody asked for stays red, and is recorded on the commit as well as in the report. What was asked for
+is the ticket where a ticket is being committed, and the comments being cleared where one is not. _Avoid_: guard,
 pre-commit, local checks
 
 **Check**:
@@ -175,7 +181,8 @@ continued or cold — or report it, never fix it. _Avoid_: coordinator, driver, 
 
 **Dispatch**:
 One agent invocation. It carries paths rather than contents, so the agent opens the document for itself and meets the
-repository first-hand. _Avoid_: call, delegation, spawn
+repository first-hand — with one deliberate exception: a **fix wave**'s dispatch carries the preceding **round**'s
+prose, because that is the only form a finding the reviewer did not post exists in. _Avoid_: call, delegation, spawn
 
 **Report**:
 The only thing a dispatch returns. What it names is what the orchestrator knows, so what it leaves out is invisible.

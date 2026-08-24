@@ -15,6 +15,21 @@
  * that overrides one hands the SAME ceilings to `testTimeout` and to the run: the runner's timeout
  * sits above the ceiling, and a raised ceiling under an unraised timeout would be killed by the
  * runner before it could report anything.
+ *
+ * **How the wall clock sits against the tools server's own bounds**, since a **round** is the one
+ * thing inside a run that has a bound of its own (`plugin/mcp/server/config.ts`). The server bounds
+ * a review twice: half an hour with no event, which is what ordinarily ends a wedged round, and
+ * four hours absolute, which only a review still emitting events reaches. The idle bound is the one
+ * that matters here and it sits well under the ceiling, so a wedged round still fails ITSELF inside
+ * the run and the test reports the round's own reason — the property that held when the server's
+ * only bound was a fixed hour.
+ *
+ * What the absolute cap now outlives is the ceiling, and that is left alone deliberately. Reaching
+ * it takes a review emitting events for four hours: for the happy path, whose reviews the harness
+ * configures at the cheapest depth there is, "this run passed ninety minutes" is then the honest
+ * finding rather than a misattributed one. Raising the ceiling above four hours to catch it would
+ * make every wedged run cost an afternoon, which is the thing this file exists to prevent — a test
+ * that genuinely wants to sit through such a round overrides the ceiling for itself (PR #4 review).
  */
 
 export interface Ceilings {
