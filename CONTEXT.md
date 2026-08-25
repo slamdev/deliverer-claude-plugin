@@ -206,6 +206,37 @@ A fact-finding dispatch a grilling makes to settle a question of fact, carrying 
 question on the frontier that turns on that subject waits for the sweep; every other question is asked now. _Avoid_:
 sub-agent, exploration, lookup, research
 
+### Observation
+
+**Observer**:
+The process that watches one **run** as it happens and writes its **debrief** — started by the plugin's own hook, and
+running outside the run entirely. It changes nothing it watches: read-only over what the run leaves behind, never in
+touch with the orchestrator, and never reaching the repository or the forge. Nothing that happens to it reaches the run.
+_Avoid_: monitor, watcher, supervisor, critic
+
+**Trace**:
+What an **observer** reads in place of a run's own records: the whole run's shape in order — a line for each
+**dispatch**, question round, poll and task update, with its timings and its tokens — and a capped excerpt of whatever
+each one carried. Nothing is left out by kind, and volume is all the cap bounds: a delivery's records outrun any context
+window, so the trace is what makes a run readable at all. _Avoid_: log, transcript, session record, timeline
+
+**Debrief**:
+What observing one **run** produced, written for the human who ran it to forward to whoever maintains the plugin.
+Bounded to the plugin's own machinery — the skills, the agents, the dispatches, the timings and the **spend** — and
+never the repository being delivered into, which is what makes it sendable unread. _Avoid_: report, summary, analysis,
+feedback
+
+**Defect**:
+One thing a **run** cost the human that it did not have to, named in a **debrief** with the **grounds** from the
+**trace** that show it: a question nobody needed to answer, a stage that ran twice, a **dispatch** that lost context it
+was holding, **spend** nothing came back for. Never about the work a run delivered — that is a **review finding**.
+_Avoid_: bug, issue, finding, regression, waste
+
+**Hunch**:
+Something an **observer** noticed that the **trace** cannot ground, carried in the **debrief** and marked apart from
+every **defect**. It is the observer's nose rather than its evidence, and it is written down on those terms. _Avoid_:
+guess, suspicion, note, gut feeling
+
 ### Verification
 
 **Harness**:
