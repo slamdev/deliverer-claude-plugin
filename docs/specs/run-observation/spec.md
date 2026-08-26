@@ -68,7 +68,7 @@ is observed exactly as one that finished — which matters, because the runs wor
 10. As a team member, I want a debrief even when my run fell over, so that the runs most worth reporting are the ones
     that actually get reported.
 11. As a team member whose epic took several runs, I want the observer to know about the runs before it, so that a
-    defect spanning the seam between two of them is still found.
+    defect spanning two of them is still found.
 12. As a team member, I want to turn observation off, so that I can decline to spend money on a diagnostic.
 13. As a team member, I want observation to touch no file in my repository, so that nothing of its own can be swept into
     a commit or a **change request**.
@@ -107,7 +107,7 @@ is observed exactly as one that finished — which matters, because the runs wor
 31. As a maintainer, I want to ask a team member for the trace behind a debrief, so that a defect I doubt can be
     checked against what actually happened.
 32. As a maintainer, I want to replay a finished run's records, so that I can check the observer finds what I found by
-    hand on the runs that produced the existing specs.
+    hand.
 33. As a maintainer, I want debriefs to keep arriving from people outside my team, so that the plugin improves from runs
     I will never see.
 34. As a maintainer, I want a debrief written to be pasted into an issue, so that a team member forwarding one needs no
@@ -173,23 +173,30 @@ is observed exactly as one that finished — which matters, because the runs wor
 
 ### How it judges
 
-- **D8. Each stage is judged as it lands, and one synthesis reads everything at the end.** A stage note is written when
-  a dispatch finishes, while that stage's slice is still small and while what only shows live — a stage that hung, a
-  human who waited — is still visible. The synthesis then reads the whole trace **and** every note. The notes are what
-  the live half buys; the whole trace is what makes a cross-stage defect findable, and cross-stage is where the existing
-  specs' best findings live.
+- **D8. Each dispatch is judged as it lands, and one synthesis reads everything at the end.** A **dispatch note** is
+  written when a dispatch finishes, from that dispatch's slice of the trace. It is not the live half that buys this — a
+  session record decays no faster than the disk it is on, and a stage that hung, a human who waited and a dispatch that
+  came back with nothing are all mechanical in a finished record, which is why they are the trace's and D13's rather
+  than a note's. What a note buys is a dispatch's interior: the per-dispatch records are the bulk of a run — 5.9 MB
+  of one delivery's 6.7 MB — so under D6's cap the whole-run reading sees a stage's shape and never its inside. The
+  synthesis then reads the whole trace **and** every note: the notes are the only reading of what happened inside a
+  stage, and the whole trace is what makes a cross-stage defect findable, which is where the existing specs' best
+  findings live. Ticket 06's triage settled the unit as the dispatch and not the numbered stage, and settled the word.
 
-- **D9. Depth is the plugin's choice, not the owner's.** Stage notes run on a cheap tier; the one synthesis per run runs
-  on a long-context model, for the same reason the review's default carries a long-context alias — it has a whole run to
-  hold. No option exposes either, so every debrief is judged at the same depth and debriefs stay comparable across a
-  team.
+- **D9. Depth is the plugin's choice, not the owner's.** Dispatch notes run on a cheap tier; the one synthesis per run
+  runs on a long-context model, for the same reason the review's default carries a long-context alias — it has a whole
+  run to hold. No option exposes either, so every debrief is judged at the same depth and debriefs stay comparable
+  across a team.
 
 - **D10. What counts as a defect is open.** No fixed class list. The observer reports what it noticed, which is what the
   method being automated actually did.
 
-- **D11. Every defect carries grounds; anything ungrounded is a hunch.** **Grounds** come from the trace — a timestamp,
-  a dispatch, a poll count, a question round — and the glossary's rule holds: never taste. An observation the trace
-  cannot ground is still written down, in a section of its own, marked as a hunch and never mixed in with defects.
+- **D11. Every defect carries grounds; anything ungrounded is a hunch.** What makes something **grounds** is that a
+  maintainer holding the file can find it — a timestamp, a dispatch, a poll count, a question round — and the glossary's
+  rule holds: never taste. Three files satisfy that test today: the trace, this run's dispatch notes, and the earlier
+  debriefs of the same epic, the last two locatable because a note names its dispatch and a debrief names its run. An
+  observation none of them can ground is still written down, in a section of its own, marked as a hunch and never mixed
+  in with defects. The test is what is settled here, so a later source that meets it needs no amendment to this.
 
 - **D12. A proposal is allowed where it is obvious and is always marked as one.** Never in place of stating the defect.
   A marked proposal costs the reader nothing to ignore; an unmarked one pre-empts the grilling that is supposed to
@@ -255,8 +262,8 @@ is observed exactly as one that finished — which matters, because the runs wor
 
 - **D24. Replay is a capability in its own right.** The same code path can be pointed at the records of a run that is
   already over. It costs almost nothing given where the trace comes from, and it is what lets a team member re-run a
-  debrief that looks wrong, lets the maintainer replay the runs behind the existing specs, and gives a debrief to a run
-  whose observer never started.
+  debrief that looks wrong, lets the maintainer replay the runs whose records are still on disk, and gives a debrief
+  to a run whose observer never started.
 
 - **D25. Two lines carry the debrief to the human.** One when the run stops, naming the headline and the path, and
   printing nothing at all when there is no debrief to name — so a refinement's per-question stop firings cost nothing.
@@ -267,9 +274,10 @@ is observed exactly as one that finished — which matters, because the runs wor
 ### Configuration, cost and failure
 
 - **D26. Observation is on by default**, for every user of the plugin, and a `userConfig` option turns it off — the
-  product's established idiom, visible in `/plugin` beside the three options that exist. **This rests on a claim
-  (C1)**: that a hook can read `${user_config.*}` the way `.mcp.json` does. That claim is settled by hand before the
-  opt-out is built, and if it is false the fallback is decided then rather than guessed now.
+  product's established idiom, visible in `/plugin` beside the three options that exist. **C1 is settled** (below), and
+  it decides the surface: the switch is read from `CLAUDE_PLUGIN_OPTION_<KEY>` in the hook's own environment and never
+  through `${user_config.*}`: an option at its manifest default reaches a hook with no value by either route, and only
+  the variable's absence is survivable — a `${user_config.*}` reference refuses the hook outright.
 
 - **D27. The observer authenticates with the session's own environment.** A hook-launched process inherits what the
   human authenticated the session with, so there is nothing to configure — which is what on-by-default requires, since
@@ -277,8 +285,8 @@ is observed exactly as one that finished — which matters, because the runs wor
 
 - **D28. Contention with the run is accepted and documented.** Drawing on the same account means the observer and the
   delivery it watches can compete for one rate limit on a subscription. No back-off, no deferral, no detection of what
-  kind of credential is in hand: stage notes run cheap and a delivery spends most of its wall-clock inside dispatches,
-  so contention is expected to be rare. The README states that observation draws on the same account.
+  kind of credential is in hand: dispatch notes run cheap and a delivery spends most of its wall-clock inside
+  dispatches, so contention is expected to be rare. The README states that observation draws on the same account.
 
 - **D29. Failure never reaches the run, and is never silent.** No error in the session, no exit code that matters,
   nothing the human must act on — and the degradation is recorded where a human meets it: the debrief says what the
@@ -313,9 +321,13 @@ already on disk and read what comes out.
   exercises distillation, D6's per-entry cap, D13's header, the fallback wording, the debrief writer, D15's footer and
   D20's refusal. This is the role the **scripted backend** plays for the review — the cheap by-hand route that needs no
   model, no forge and no money — and it is added to CONTRIBUTING § What CI does not check beside it.
-- **With judging on, the same seam runs the whole feature** against real runs, including the three deliverer runs
-  whose records are already on disk. What that answers is the only question that matters about the judging half:
-  whether the observer finds what the human found by hand.
+- **With judging on, the same seam runs the whole feature** against the deliverer runs whose records are on disk.
+  What that answers is the only question that matters about the judging half: whether the observer finds what a human
+  found by hand. The runs behind `build-run-defects`, `orchestrator-contracts` and `review-reliability` are **not**
+  among them and cannot be — every record on the machine this epic was written on postdates all three — so those specs
+  are the rubric for what a **defect** looks like and never the material. Every run on disk ran a plugin that already
+  carries review-reliability's fixes, which makes finding those particular defects again a false positive rather than a
+  hit.
 
 **What a good check looks like at that seam:**
 
@@ -361,7 +373,10 @@ a replayed debrief against a run they remember.
 - **Changing either `SKILL.md`'s stages.** No stage, task or dispatch is added to a refinement or a delivery, and
   neither skill learns that observation exists.
 - **Mechanical redaction, and any check on the finished debrief.** Both were weighed and declined; ADR-0018 records the
-  decision and the failure mode, so adding one later is an improvement rather than a reversal.
+  decision and the failure mode, so adding one later is an improvement rather than a reversal. The cost argument behind
+  the second has since moved, and is recorded here rather than lost: a checker was weighed as one more agent on every
+  run, and a delivery now makes up to thirteen cheap calls of its own for its **dispatch note**s, so a fourteenth is a
+  smaller objection than the one that was answered. Still declined — declined against the real figure.
 - **Observing anything but deliverer runs.** Other sessions, other plugins and hand-driven work are not observed.
 - **Rate-limit back-off, deferral or credential detection** (D28).
 - **Pruning, expiry or any cleanup** of debriefs or traces (D19).
@@ -386,19 +401,51 @@ Taken from this machine, on Claude Code 2.1.241, against runs of this plugin tha
 - One delivery's records: 812 KB in the main file plus 5.9 MB across 26 per-dispatch files. One refinement's: 890 KB
   plus 1.2 MB across 8. Roughly 1.7M tokens for the smaller delivery, against a 29h36m delivery on record — which is
   what D6's cap exists for.
+- **Those file counts are not dispatch counts.** A dispatch leaves two files, a record and a `.meta.json` sidecar, so
+  the 26 above are **13** dispatches and the 8 are 4. The runs measured here made 3, 3, 4, 13 and 13 — the figure
+  anything costing per dispatch is priced against. The number of runs on the machine is not a standing fact and no
+  decision here rests on one: it went three, four, five across three days of triage, and a ticket that needs a count
+  carries it with the date it was taken.
+- **A dispatch's interior is where a run's volume is**: 5.9 MB of that delivery's 6.7 MB sits in per-dispatch
+  records, one of them alone 1.5 MB (≈390k tokens, past a cheap tier's window twice over). D8 rests on this.
+- Every dispatch's tool result carries `status`, `agentType`, `resolvedModel`, `totalDurationMs`, `totalTokens` and
+  `totalToolUseCount` — so a stage's duration, spend and tool count need no model. `status` is not a claim about what
+  came back: one dispatch on disk reads `status: completed` while its whole text is an API-error termination.
+- A dispatch launched in the background returns `async_launched` in milliseconds and reports its finish later as a
+  `<task-notification>` entry carrying the same tool-use id. Five dispatches, spread across three of the runs measured
+  here, were launched that way.
 
-### The five claims this spec does not close
+### The claims this spec rests on
 
-Each is a **claim** in the glossary's sense: a statement this design rests on that nobody has checked. The first is
-load-bearing enough to settle before the work that depends on it starts.
+Each is a **claim** in the glossary's sense: a statement this design rests on that nobody had checked. Two are now
+settled, and their answers are recorded here rather than in the ticket that needed them, because more than one ticket
+reads them.
 
-1. **C1 — a hook can read `${user_config.*}`.** Proven for the tools server through `.mcp.json`; unproven for a hook.
-   D26's opt-out hangs on it, and it is the cheapest of the five to settle.
+1. **C1 — a hook can read `${user_config.*}`. SETTLED: in exec form, and never for an option at its default.** A
+   plugin hook's command and arguments are substituted the way `.mcp.json`'s are, but only in **exec form** —
+   `{"command": "<executable>", "args": ["${user_config.KEY}"]}`. A shell-form command carrying the reference is
+   refused before it runs, and the plugin's one hook today is shell form. The larger fact is the map being substituted
+   from: a hook reads the **saved** option values alone, where the MCP path merges the manifest's defaults first, which
+   is why the server sees `high` although nobody set it. An option nobody has set is therefore absent to a hook, and
+   `${user_config.KEY}` throws `Plugin option "…" isn't set` — the common case for a switch that defaults to on. The
+   host also exports `CLAUDE_PLUGIN_OPTION_<KEY>` into every plugin hook's environment — the key upper-cased, with
+   every character outside `A-Za-z0-9_` replaced by `_` — from those same saved values. **D26's opt-out reads that
+   variable**: absent means nobody set it, which for a default of on is the answer rather than a gap. Read off Claude
+   Code 2.1.241's own implementation and confirmed against a machine carrying this plugin's three options, where the
+   one that is `required` is saved and the two that carry defaults are absent. `plugin/hooks/install-mcp-server.sh`
+   already recorded the second half of this.
 2. **C2 — a hook-launched detached process inherits enough environment to authenticate an Agent SDK query.** D27 rests
-   on it, and so does on-by-default working without configuration.
-3. **C3 — a stop-time hook's output actually reaches the human.** D25's first line rests on it. If it does not, the
-   next-prompt line is the whole channel.
-4. **C4 — the installed plugin's checkout exposes a readable commit.** D16 rests on it.
+   on it, and so does on-by-default working without configuration. **Narrowed, not closed**: the host injects
+   credentials into a plugin hook's environment for plugins on an allowlist of its own, which a third-party plugin is
+   not on — so nothing is handed to this hook, and what is left is whatever the human's own environment and credential
+   store already give the SDK. Only a live run shows whether that is enough.
+3. **C3 — a stop-time hook's output actually reaches the human. SETTLED: through `systemMessage` and nothing else.**
+   A hook's JSON output carries `systemMessage`, which the host displays to the human on every event, and the host's
+   own hook documentation gives a `Stop` hook printing one as its worked example. `hookSpecificOutput.additionalContext`
+   is not that channel: on `Stop` it is feedback for the model and the conversation continues on it, which would prod a
+   run this feature must never touch. Read the same way as C1, on the same version.
+4. **C4 — the installed plugin's checkout exposes a readable commit.** D16 rests on it. Triaging ticket 03 found it
+   settled three ways over, and better than D16 assumed; that ticket's criteria carry the answer.
 5. **C5 — the record format is stable enough to rest on.** Verified as present today, never as a contract. ADR-0017
    accepts this and requires that losing it degrade the debrief rather than the run.
 
