@@ -37,19 +37,39 @@
  * than imported.** `hooks/install-mcp-server.sh` publishes `server/` and `observer/` as two
  * independent trees, so an import across them would make observation depend on a tree published by
  * a different process — `./records.ts` re-implements `e2e-tests`' token rule for the same shape of
- * reason. What is reused is the classification itself: the four failures below are the ones the
- * review measured, anchored where it anchors them, and a fifth is not invented here.
+ * reason. What is reused is the classification itself: the four failures are the ones the review
+ * measured, anchored where it anchors them, and a fifth is not invented. They sit in
+ * `./model-call.ts`, which is where they moved when ticket 06 gave them a second caller.
+ *
+ * **Every **dispatch note** this run has is read here too** (run-observation ticket 06). The trace
+ * carries a dispatch's shape and the notes carry its inside, and the bound below has to hold over
+ * both: ADR-0018 says so, and says that the cheapest calls the observation makes are the ones that
+ * saw the most of somebody's repository.
  */
 import { readdir } from "node:fs/promises";
 import { installedDirectory } from "./plugin-commit.ts";
-import { NO_TOKENS } from "./records.ts";
 import { renderTrace } from "./trace-file.ts";
 import { formatDuration, type Trace } from "./trace.ts";
 import type { RunFacts } from "./run-facts.ts";
 import {
+  addCosts,
+  bound,
+  costFromResult,
+  errorText,
+  failureInText,
+  loadQuery,
+  NOTHING_MEASURED,
+  NOTHING_SPENT,
+  servedBy,
+  type Query,
+  type QueryMessage,
+} from "./model-call.ts";
+import { runNotes } from "./notes.ts";
+import {
   NOTHING_JUDGES_YET,
   type Judging,
   type JudgedTree,
+  type NotesSummary,
   type ObservationCost,
 } from "./debrief-file.ts";
 
@@ -100,30 +120,6 @@ const SYNTHESIS_DEADLINE_MS = bound("DELIVERER_OBSERVER_JUDGE_MS", 30 * 60_000);
  * reading files rather than hanging is stopped by this one, and the wall clock never sees it.
  */
 const MOST_TURNS = 60;
-
-/** Overridable for the reason `./observer.ts`'s own bounds are, and told apart from a real `0`. */
-function bound(name: string, fallback: number): number {
-  const raw = process.env[name];
-  if (raw === undefined || raw.trim() === "") return fallback;
-  const parsed = Number(raw);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
-}
-
-/** The package the Agent SDK ships as, installed beside this source by the `SessionStart` hook. */
-const AGENT_SDK_PACKAGE = "@anthropic-ai/claude-agent-sdk";
-
-/**
- * The `query` this file needs, stated structurally rather than imported as a type.
- *
- * The SDK is loaded through a dynamic import, so nothing here carries a static dependency on it:
- * an observation on a host whose install has not finished must still produce a debrief saying what
- * was missing, and a static import would take the whole observer down instead.
- */
-type QueryMessage = Record<string, unknown>;
-type Query = (params: {
-  prompt: string;
-  options: Record<string, unknown>;
-}) => AsyncIterable<QueryMessage>;
 
 /* ───────────────────────────────── the shape of the answer ───────────────────────────────── */
 
@@ -233,6 +229,7 @@ function synthesisPrompt(input: {
   readonly facts: RunFacts;
   readonly tree: JudgedTree;
   readonly traceText: string;
+  readonly notesText: string | undefined;
 }): string {
   const { trace, facts, tree } = input;
   const skill = trace.skills.join(", ") || facts.extent.command || "a deliverer run";
@@ -285,12 +282,22 @@ question was asked in two rounds, that a stage was dispatched cold when it could
 or that a fix wave undid what an earlier one did. You are holding the whole run in one reading, which
 is the only place those are visible.
 
+**Inside a dispatch is the other place, and the notes are the only reading of it.** The trace below
+carries every dispatch's shape and a capped excerpt of what each of its entries held; what happened
+in there — where an agent went round in circles, what it had to go and find because its brief did not
+carry it, what it reported against what it actually did — is in the dispatch notes. Read them as
+evidence about the run, not as conclusions: a note is a cheap reading of one stage, and it is your
+job to decide what it amounts to.
+
 # Grounds
 
-**Grounds are what a maintainer holding this run's trace can find in it.** They have that file; they
-do not have the repository, the forge, or you. So cite the trace the way the trace is written: a
-timestamp (\`[19:15:56.069]\`), a dispatch by its number and agent (\`#7 deliverer:comments-addresser\`),
-a question round by its number, a poll, a turn. Quote the short line you are pointing at.
+**Grounds are what a maintainer holding this run's trace and its notes can find in them.** They have
+those files; they do not have the repository, the forge, or you. So cite the trace the way the trace
+is written: a timestamp (\`[19:15:56.069]\`), a dispatch by its number and agent
+(\`#7 deliverer:comments-addresser\`), a question round by its number, a poll, a turn. Quote the short
+line you are pointing at. **A note grounds the same way**: name the dispatch it is about, the way the
+note's own heading names it, and say what the note reports — a maintainer finds that note in the file
+beside the trace.
 
 The strongest defect quotes **both sides of the mismatch**: what the run did, from the trace, and the
 line of the plugin it was supposed to follow, from the tree below. That gap is the defect, and it is
@@ -313,9 +320,15 @@ the run ended.
 
 **The repository this run delivered into travels as shape and never as content.** Its code, its
 diffs, its file names and paths, its spec and ticket prose, its commit messages and hashes, its
-branch names, its comment text, anything from the forge — all of it stays in the trace. What you may
-say about it is countable: how many tickets, how large a diff, how long a stage took over it, how
-many comments a wave worked.
+branch names, its comment text, anything from the forge — all of it stays in the trace and in the
+notes. What you may say about it is countable: how many tickets, how large a diff, how long a stage
+took over it, how many comments a wave worked.
+
+**The notes are bounded by nothing, exactly as the trace is.** Each was written by a cheap reading of
+one dispatch's own record — a dispatch's interior, which is where that repository's contents are
+densest — and each was told this same bound. None of them was checked, and a note that broke it hands
+you the repository's content in the plugin's voice. Treat every word of a note as you treat the
+trace: a source you may read and may not copy out.
 
 **Point at anything the run put into that repository by its place in the run**, which is the form
 that is always both precise and in bounds: "the branch's first commit", "the sixth of eight
@@ -416,6 +429,19 @@ ${HUNCHES_MARKER}
 - There is no quota. A run with three real defects gets three. Every defect you write survives the
   grounds test above, or it moves to the hunches.
 
+# The dispatch notes
+
+${input.notesText === undefined
+      ? `There are none. Nothing read the inside of any dispatch of this run, so the trace's own ` +
+        `lines are all you have of what happened in the stages. Say so where a defect would have ` +
+        `needed one.`
+      : `One per dispatch, written as that dispatch finished, each by a cheap reading of that
+dispatch's own record and nothing else. This is byte for byte the file the human has beside the
+debrief. A dispatch whose note failed says so in place of its note, and a note is a reading and not a
+finding.
+
+${input.notesText}`}
+
 # The trace
 
 This is the whole run in order, and it is byte for byte the file the human still has beside the
@@ -427,143 +453,13 @@ ${input.traceText}
 
 /* ─────────────────────────── a success that is really a failure ─────────────────────────── */
 
-/**
- * The SDK's own not-logged-in answer, anchored to the START of the result.
- *
- * **The first of these four is exactly what an environment with no usable credential produces**, and
- * without this branch every debrief on such a machine would carry a login error where its defects
- * belong. The anchor is what keeps a synthesis whose own prose discusses a login defect from failing
- * its own call.
- */
-const NOT_LOGGED_IN = /^\s*not logged in\b/i;
-
-/** The other answers the SDK reports as a SUCCESS while the whole result is its own failure text. */
-const SDK_FAILURES: readonly { readonly pattern: RegExp; readonly code: string }[] = [
-  { pattern: /^\s*API Error:\s*Connection closed mid-response\b/i, code: "connection_lost" },
-  { pattern: /^\s*Prompt is too long\b/i, code: "prompt_too_long" },
-];
-
 /** What the review says about a model that had no room for what it was handed. */
 const NO_ROOM =
-  `The whole trace goes into this call's prompt, so the synthesis needs a model with the room to ` +
-  `hold it: \`${SYNTHESIS_MODEL}\` is the long-context alias asked for. Where the provider or the ` +
-  `account behind this machine's credentials does not offer that window, no debrief on it carries ` +
-  `defects — the observation is deliberately not configurable, so there is nothing to set.`;
-
-/** The failure a success-shaped result is really carrying, or `undefined` for a real answer. */
-function failureInText(text: string): { code: string; detail: string } | undefined {
-  if (text.trim() === "") {
-    return {
-      code: "no_result",
-      detail:
-        "the synthesis was reported as successful, but its result carries no text at all, so " +
-        "there is nothing to read as defects",
-    };
-  }
-  if (NOT_LOGGED_IN.test(text)) {
-    return {
-      code: "not_logged_in",
-      detail:
-        `the synthesis ran but was NOT LOGGED IN, so nothing was judged — it answered: ` +
-        `${text.trim().slice(0, 300)}. The observer authenticates with whatever the session it was ` +
-        `started beside authenticates with, and it reads no credential file of its own: the ` +
-        `plugin's code_review_claude_env_file names the identity the REVIEW runs as and stays the ` +
-        `review's`,
-    };
-  }
-  const self = SDK_FAILURES.find(({ pattern }) => pattern.test(text));
-  if (self !== undefined) {
-    return {
-      code: self.code,
-      detail:
-        `the synthesis was reported as successful, but its result opens with the SDK's own ` +
-        `failure text rather than with an answer, so nothing was judged — it answered: ` +
-        `${text.trim().slice(0, 300)}` + (self.code === "prompt_too_long" ? `. ${NO_ROOM}` : ""),
-    };
-  }
-  return undefined;
-}
-
-/* ───────────────────────────── what the observation itself cost ───────────────────────────── */
-
-const asNumber = (value: unknown): number | undefined =>
-  typeof value === "number" && Number.isFinite(value) ? value : undefined;
-
-const asRecord = (value: unknown): Record<string, unknown> | undefined =>
-  typeof value === "object" && value !== null && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : undefined;
-
-/**
- * A counter nobody measured and a counter measured at zero are the same answer: unknown.
- * `CONTEXT.md` defines **spend** so that unknown is the honest answer for a figure nobody measured
- * and never zero.
- */
-const measured = (count: number | undefined): number | undefined =>
-  count === undefined || count === 0 ? undefined : count;
-
-/** One token counter summed across every `modelUsage` entry, which is where a delegating call's
- *  tokens are — the same rule a **round**'s spend is read by, and the reason it sums rather than
- *  picking one entry: every model in that map is real spend. */
-function summed(perModel: Record<string, unknown>, field: string): number | undefined {
-  let total: number | undefined;
-  for (const value of Object.values(perModel)) {
-    const count = asNumber(asRecord(value)?.[field]);
-    if (count === undefined) continue;
-    total = (total ?? 0) + count;
-  }
-  return total;
-}
-
-/**
- * What the result message says this call spent.
- *
- * Read the way a **round**'s spend already is: the per-model usage whenever the message carries
- * any, and the aggregate counters otherwise, with the source chosen ONCE per message rather than
- * once per counter — mixing the two scopes into one row is a measured failure the review already
- * met. The dollar figure is the SDK's own, and it is the one real money figure a debrief holds:
- * ticket 03 found none for the run itself, because the host records no money anywhere.
- */
-function costFromResult(message: QueryMessage, assistantTurns: number): ObservationCost {
-  const perModel = asRecord(message.modelUsage) ?? {};
-  const aggregate = asRecord(message.usage);
-  const fromPerModel = Object.keys(perModel).length > 0;
-  const counter = (perModelField: string, aggregateField: string): number =>
-    (fromPerModel
-      ? summed(perModel, perModelField)
-      : asNumber(aggregate?.[aggregateField])) ?? 0;
-  // A result carrying NEITHER shape measured nothing, and `TokenTotals` says that by counting no
-  // requests — which is what makes the debrief's line read "no tokens reported" rather than four
-  // confident zeros. Inside a shape that IS there, an absent field rides as 0, exactly as
-  // `./records.ts` treats an absent counter on a request that happened.
-  const nothingMeasured = !fromPerModel && aggregate === undefined;
-  return {
-    modelCalls: 1,
-    tokens: nothingMeasured
-      ? NO_TOKENS
-      : {
-          // The SDK reports turns, not API requests, and one turn is one request here: there is no
-          // second reader and no sub-agent in this call. `num_turns` reading zero is the review's
-          // measured case, so the turns actually seen stand in — never a confident zero.
-          requests: measured(asNumber(message.num_turns)) ?? assistantTurns,
-          inputTokens: counter("inputTokens", "input_tokens"),
-          outputTokens: counter("outputTokens", "output_tokens"),
-          cacheWriteTokens: counter("cacheCreationInputTokens", "cache_creation_input_tokens"),
-          cacheReadTokens: counter("cacheReadInputTokens", "cache_read_input_tokens"),
-        },
-    costUsd: measured(asNumber(message.total_cost_usd)),
-  };
-}
-
-/** Which model actually served the call, off the per-model usage the result carries. */
-function servedBy(message: QueryMessage): string | undefined {
-  const perModel = asRecord(message.modelUsage) ?? {};
-  const keys = Object.keys(perModel);
-  return keys.length === 0 ? undefined : keys.join(", ");
-}
-
-/** What a call that never got as far as a result cost: nothing measurable, and never zero. */
-const NOTHING_MEASURED: ObservationCost = { modelCalls: 1, tokens: NO_TOKENS, costUsd: undefined };
+  `The whole trace goes into this call's prompt, along with every dispatch note the run produced, ` +
+  `so the synthesis needs a model with the room to hold them: \`${SYNTHESIS_MODEL}\` is the ` +
+  `long-context alias asked for. Where the provider or the account behind this machine's ` +
+  `credentials does not offer that window, no debrief on it carries defects — the observation is ` +
+  `deliberately not configurable, so there is nothing to set.`;
 
 /* ──────────────────────────────── which tree is read ──────────────────────────────── */
 
@@ -626,6 +522,23 @@ export interface SynthesisInput {
   readonly trace: Trace;
   readonly facts: RunFacts;
   readonly dataDirectory: string;
+  /**
+   * This run's **dispatch note**s, already read off disk (run-observation ticket 06), or
+   * `undefined` where none were written at all.
+   *
+   * Passed in rather than read here, because who wrote them decides which file they are in: the
+   * live **observer** appends to the one it has been writing all run, and a replay writes a set of
+   * its own beside whatever is already there (D19). `undefined` is a real answer — a machine that
+   * cannot reach the cheap tier still gets a synthesis over the trace alone.
+   *
+   * **Only THIS run's.** An earlier run of the same **epic** contributes its **debrief** and
+   * nothing else (ticket 07): a debrief is a bounded document, where an earlier run's notes are
+   * neither bounded nor small.
+   */
+  readonly notes: string | undefined;
+  /** what the notes half spent and what it could not write, carried onto the `Judging` */
+  readonly notesCost?: ObservationCost;
+  readonly notesSummary?: NotesSummary;
 }
 
 /**
@@ -637,6 +550,13 @@ export interface SynthesisInput {
  * the reason named in it (D29), and a partial judgement is never presented as a complete one.
  */
 export async function synthesise(input: SynthesisInput): Promise<Judging> {
+  // Every cost below is the notes' plus this call's, so the header's one figure covers the whole
+  // observation at both tiers — up to thirteen cheap calls and one long-context reading (D8).
+  const before = input.notesCost ?? NOTHING_SPENT;
+  const notes = input.notesSummary;
+  const failed = (reason: string, cost: ObservationCost): Judging =>
+    notJudged(reason, addCosts(before, cost), notes);
+
   const tree = await treeToJudge(input.facts, input.dataDirectory);
   if (tree === undefined) {
     return failed(
@@ -644,21 +564,15 @@ export async function synthesise(input: SynthesisInput): Promise<Judging> {
         `the run's own records name nor the one the host's install bookkeeping points at is on ` +
         `this machine. Every defect names a file in the plugin, so a reading with no plugin to ` +
         `read is not one`,
-      { modelCalls: 0, tokens: NO_TOKENS, costUsd: 0 },
+      NOTHING_SPENT,
     );
   }
 
-  let query: Query;
-  try {
-    ({ query } = (await import(AGENT_SDK_PACKAGE)) as { query: Query });
-  } catch (error) {
-    return failed(
-      `the Agent SDK (${AGENT_SDK_PACKAGE}) could not be loaded, so nothing judged this run: ` +
-        `${errorText(error)}. The plugin's SessionStart install hook installs it beside the ` +
-        `observer's own source; a later run is judged as usual once that has succeeded`,
-      { modelCalls: 0, tokens: NO_TOKENS, costUsd: 0 },
-    );
+  const loaded = await loadQuery();
+  if (loaded.kind === "missing") {
+    return failed(`${loaded.why}, so nothing judged this run`, NOTHING_SPENT);
   }
+  const query: Query = loaded.query;
 
   const controller = new AbortController();
   const deadline = setTimeout(() => controller.abort("deadline"), SYNTHESIS_DEADLINE_MS);
@@ -674,6 +588,9 @@ export async function synthesise(input: SynthesisInput): Promise<Judging> {
         // find in the copy the human still has. Rendering it a second way here would make grounds
         // point at something nobody holds.
         traceText: renderTrace(input.trace),
+        // The notes as their FILE too, and for the same reason: a defect grounded in a note has to
+        // be findable in the copy the human still has beside the trace.
+        notesText: input.notes,
       }),
       options: {
         model: SYNTHESIS_MODEL,
@@ -737,7 +654,7 @@ export async function synthesise(input: SynthesisInput): Promise<Judging> {
   // reads it: a call reported successful whose whole deliverable is absent is a failed call.
   const text = typeof result.result === "string" ? result.result : "";
 
-  const carried = failureInText(text);
+  const carried = failureInText(text, "the synthesis", NO_ROOM);
   if (carried !== undefined) return failed(`${carried.code}: ${carried.detail}`, cost);
 
   const answer = readAnswer(text);
@@ -759,7 +676,8 @@ export async function synthesise(input: SynthesisInput): Promise<Judging> {
     model: SYNTHESIS_MODEL,
     servedBy: servedBy(result),
     judgedAgainst: tree,
-    cost,
+    cost: addCosts(before, cost),
+    notes,
   };
 }
 
@@ -770,47 +688,125 @@ export async function synthesise(input: SynthesisInput): Promise<Judging> {
  * stopped the judging. A diagnostic nobody can tell has stopped working is worse than one that is
  * plainly absent (D29).
  */
-function failed(reason: string, cost: ObservationCost): Judging {
+function notJudged(
+  reason: string,
+  cost: ObservationCost,
+  notes: NotesSummary | undefined,
+): Judging {
   return {
     kind: "none",
     reason:
       `The one synthesis this run's debrief rests on did not produce an answer, so what follows ` +
       `is the run's own facts and nothing that read them: ${reason}.`,
     cost,
+    notes,
   };
-}
-
-function errorText(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }
 
 /* ────────────────────────────── the judge the observer holds ────────────────────────────── */
 
 /**
- * The synthesis as a judge: asked on every rewrite, and answering with a model exactly once.
+ * The whole judging half as one judge: **a note per dispatch as it lands, and one synthesis at the
+ * end** (run-observation tickets 05 and 06).
  *
  * **One synthesis per run, held literally.** The live **observer** rewrites a debrief as each stage
  * lands (D23) and asks its judge every time, so without this the same run would be read — and paid
- * for — several times over. Before the one reading, the answer is `NOTHING_JUDGES_YET`: "nothing
- * has judged this yet" and "nothing was found" are different claims about the same file, and only
- * the second is a finding.
+ * for — several times over. Before the one reading, the answer says nothing was judged yet:
+ * "nothing has judged this yet" and "nothing was found" are different claims about the same file,
+ * and only the second is a finding.
+ *
+ * **The notes are the other half of that same split.** Every rewrite catches the notes up with the
+ * dispatches that have finished since the last one, so a note is written when its dispatch lands
+ * rather than when the run ends — and each is written exactly once, however many rewrites follow
+ * it. Those calls have already been paid for by the time a mid-run debrief is written, so the
+ * answer before the synthesis carries their cost rather than a zero.
  *
  * **A failed synthesis is remembered too.** A refused model, a malformed answer or a stopped call
  * is a named failure and nothing else — no second call, which is what makes the failure the
  * debrief's whole answer rather than a retry loop spending on a machine that cannot judge at all.
  *
  * A run that was finalised on the idle bound, resumed, and finalised again keeps the answer it
- * already has. D23 makes that bound a guess whose cost is a label rather than content, and paying
- * for a second whole-run reading is not a cost a guess may impose.
+ * already has, and writes no further notes. D23 makes that bound a guess whose cost is a label
+ * rather than content, and paying for a second whole-run reading is not a cost a guess may impose —
+ * and a note written after the synthesis has read them all is a note nothing would ever read.
+ *
+ * `beside` is the notes file's placement and the caller's to choose, exactly as the debrief
+ * writer's two forms are: a **replay** writes a set beside whatever is there (D19), and the live
+ * observer comes back to its own.
  */
 export function synthesisJudge(
   dataDirectory: string,
+  how: { readonly beside: boolean },
 ): (input: { trace: Trace; facts: RunFacts; finalising: boolean }) => Promise<Judging> {
+  const notes = runNotes(dataDirectory, how);
   let made: Judging | undefined;
   return async (input) => {
     if (made !== undefined) return made;
-    if (!input.finalising) return NOTHING_JUDGES_YET;
-    made = await synthesise({ trace: input.trace, facts: input.facts, dataDirectory });
+    // The run's OWN dispatches and never the session's, which is the set `./run-facts.ts` already
+    // bounds: a dispatch some later work in the same session made is not this run's to read.
+    //
+    // **Caught here because what spends must be what reports.** `./notes.ts` turns every failure it
+    // can foresee into a missing note; a throw past all of those would reach
+    // `./observer.ts`'s `judgeQuietly`, which knows nothing of the notes and would answer with a
+    // cost of no calls and no dollars — so up to thirteen cheap calls already paid for would read
+    // as `$0.00` in the one line that exists to say what the observation cost, which is the one
+    // reading `CONTEXT.md`'s definition of **spend** forbids. Named as a loss of this half instead,
+    // and the run is still judged on whatever notes did land.
+    try {
+      await notes.catchUp({
+        trace: input.trace,
+        dispatches: input.facts.dispatches,
+        finalising: input.finalising,
+      });
+    } catch (error) {
+      notes.lost(
+        `the notes half of this observation failed where nothing expected it to, so some of this ` +
+          `run's dispatches have no note: ${errorText(error)}`,
+      );
+    }
+    if (!input.finalising) return stillWatching(notes.cost(), notes.summary());
+    try {
+      made = await synthesise({
+        trace: input.trace,
+        facts: input.facts,
+        dataDirectory,
+        notes: await notes.text(),
+        notesCost: notes.cost(),
+        notesSummary: notes.summary(),
+      });
+    } catch (error) {
+      // `synthesise` answers rather than throws for every failure it can foresee, so this is the
+      // one it cannot: a throw from somewhere none was expected. Held as this run's answer like any
+      // other, both because the notes' own spend has to survive it and because a second whole-run
+      // reading is not something a surprise may buy.
+      made = notJudged(
+        `it failed where nothing expected it to and nothing of its own spend was measured: ` +
+          `${errorText(error)}`,
+        notes.cost(),
+        notes.summary(),
+      );
+    }
     return made;
+  };
+}
+
+/**
+ * What a debrief says while its run is still going.
+ *
+ * `NOTHING_JUDGES_YET` verbatim until a note has been written, so a debrief of a run that has
+ * dispatched nothing yet reads exactly as ticket 04 left it. Once notes exist the same claim
+ * carries what they cost: a header reading nothing where thirteen cheap calls have already been
+ * made would be the one thing the observation's own cost line exists to prevent.
+ */
+function stillWatching(cost: ObservationCost, notes: NotesSummary): Judging {
+  if (cost.modelCalls === 0 && notes.attempted === 0) return NOTHING_JUDGES_YET;
+  return {
+    kind: "none",
+    reason:
+      `${NOTHING_JUDGES_YET.reason} ${notes.written} of this run's ${notes.attempted} finished ` +
+      `dispatches carry a dispatch note already, each written as that dispatch landed, and the ` +
+      `synthesis reads those as well as the trace.`,
+    cost,
+    notes,
   };
 }

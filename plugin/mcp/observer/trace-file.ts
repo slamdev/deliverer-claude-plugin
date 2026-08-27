@@ -181,7 +181,7 @@ export function renderTrace(trace: Trace): string {
   let day = "";
   for (const line of trace.lines) {
     day = emitDay(out, line, day);
-    out.push(render(line, ""));
+    out.push(renderLine(line, ""));
     if (line.dispatch === undefined) continue;
     const dispatch = trace.dispatches[line.dispatch - 1];
     if (dispatch === undefined) continue;
@@ -192,21 +192,29 @@ export function renderTrace(trace: Trace): string {
     );
     for (const inner of dispatch.lines) {
       day = emitDay(out, inner, day);
-      out.push(render(inner, prefix));
+      out.push(renderLine(inner, prefix));
     }
   }
 
   return `${out.join("\n")}\n`;
 }
 
-function emitDay(out: string[], line: TraceLine, day: string): string {
+/**
+ * The date marker a line sits under, emitted when the day changes.
+ *
+ * Exported for `./notes.ts` alongside `renderLine` below, and for the same reason: a **dispatch
+ * note** reads one dispatch's slice, and a line it points at has to be the line a maintainer finds
+ * in the trace. One renderer is what makes that true rather than merely likely.
+ */
+export function emitDay(out: string[], line: TraceLine, day: string): string {
   const date = line.at?.slice(0, 10);
   if (date === undefined || date === day) return day;
   out.push(`--- ${date} ---`);
   return date;
 }
 
-function render(line: TraceLine, prefix: string): string {
+/** One traced line as its text. Exported for the reason `emitDay` above is. */
+export function renderLine(line: TraceLine, prefix: string): string {
   const at = line.at === undefined ? "            " : timeOf(line.at);
   const head = `${prefix}[${at}] ${line.kind.padEnd(KIND_WIDTH)}`;
   const middle = [line.label, line.detail].filter((it) => it !== "").join(" ");

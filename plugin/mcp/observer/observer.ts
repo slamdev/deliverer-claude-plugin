@@ -128,10 +128,10 @@ export interface JudgeInput extends JudgingInput {
 /**
  * What the judging half contributes to a debrief, asked once per rewrite.
  *
- * **The seam tickets 05 and 06 land on.** Ticket 05 filled it with `./judge.ts`'s one synthesis per
- * run, which is what the default below now is: it answers `NOTHING_JUDGES_YET` while `finalising`
- * is false and reads the whole run once when it is true. Ticket 06's **dispatch note**s are written
- * on the cheap side of exactly that split.
+ * **The seam tickets 05 and 06 land on.** `./judge.ts` holds both halves of it: on every rewrite it
+ * catches this run's **dispatch note**s up with the dispatches that have finished, on a cheap tier,
+ * and answers that nothing has judged the run yet; on the one rewrite where `finalising` is true it
+ * reads the whole **trace** and every note together, once.
  */
 export type Judge = (input: JudgeInput) => Promise<Judging>;
 
@@ -172,7 +172,10 @@ interface Footprint {
  * of those three, because the caller is a detached process whose exceptions nobody would ever see.
  */
 export async function observeRun(options: ObserveOptions): Promise<ObserveOutcome> {
-  const judge = options.judge ?? synthesisJudge(options.dataDirectory);
+  // `beside: false` is the live observer's placement for its **dispatch note**s: it comes back to
+  // the one file it has been appending to all run, where a REPLAY of the same run afterwards writes
+  // a set of its own beside it (D19). The same split the debrief writer already makes.
+  const judge = options.judge ?? synthesisJudge(options.dataDirectory, { beside: false });
   const startedAt = Date.now();
 
   let footprint: Footprint = { key: "", dispatchRecords: -1 };

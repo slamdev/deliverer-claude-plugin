@@ -13,19 +13,23 @@
  * D20's third refusal and the debrief writer, for free. CONTRIBUTING § What CI does not check
  * carries the procedure beside the scripted backend's.
  *
- * **`--judge` runs the other half** (run-observation ticket 05), and it is the one thing here that
- * spends money: one long-context reading of the whole **trace**, on whatever account the terminal
- * authenticates, producing the **defect**s a maintainer actually wants. That answers the only
- * question the judging half has — whether the observer finds what a human found by hand — and it is
- * a deliberate paid run rather than something a contributor reaches by accident. The two paths are
- * the same code and the same document; what differs is whether anything read it.
+ * **`--judge` runs the other half** (run-observation tickets 05 and 06), and it is the one thing
+ * here that spends money: a **dispatch note** per dispatch on a cheap tier — up to thirteen of them
+ * — and then one long-context reading of the whole **trace** and every note together, on whatever
+ * account the terminal authenticates, producing the **defect**s a maintainer actually wants. That
+ * answers the only question the judging half has — whether the observer finds what a human found by
+ * hand — and it is a deliberate paid run rather than something a contributor reaches by accident.
+ * The two paths are the same code and the same document; what differs is whether anything read it.
+ * There is no flag for the notes alone: D9 keeps depth out of the owner's hands, so the split is
+ * between judging and not judging and nothing finer.
  *
  * **It writes beside what is already there and removes nothing** (D19). A second replay of one run
  * lands as `debrief-2.md`, byte for byte identical to the first: the content is deterministic and
- * only the name moves. That determinism holds on THIS path, where nothing judges. Ticket 06 writes
- * a **dispatch note** per dispatch, so a replay there calls a cheap model up to thirteen times and
- * no debrief carrying notes can reproduce byte for byte — and no option turns notes off by
- * themselves. The criterion is this path's, and the ticket after this one does not break it.
+ * only the name moves. **That determinism holds on the path where nothing judges**, which is the
+ * one tickets 02 and 03 are verified at. A judging replay calls a cheap model per dispatch and a
+ * long-context one once, so no debrief it writes can reproduce byte for byte — and its notes land
+ * beside any earlier set rather than on top of them, under an ordinal of their own that the debrief
+ * names by path.
  *
  * Two callers, exactly as `./distil.ts` has two: a contributor at a terminal, and the **observer**
  * once it exists, which imports `debriefRun` so that what a user gets and what a contributor can
@@ -37,7 +41,7 @@ import { readDispatchRecords, readRecordFile } from "./records.ts";
 import { formatDuration, type Trace } from "./trace.ts";
 import { DATA_DIRECTORY_ENV, distil } from "./distil.ts";
 import { resolvePluginCommit } from "./plugin-commit.ts";
-import { synthesise } from "./judge.ts";
+import { synthesisJudge } from "./judge.ts";
 import { runFactsOf, type RunFacts } from "./run-facts.ts";
 import {
   NOTHING_JUDGED,
@@ -156,13 +160,22 @@ export async function debriefRun(options: DebriefOptions): Promise<DebriefOutcom
 /** What the judging half did, for the line the command prints. */
 function judgingLine(outcome: Extract<DebriefOutcome, { kind: "written" }>): string {
   const { judging } = outcome;
-  if (judging.kind === "none") return `judging: none — ${judging.reason}`;
   const dollars =
     judging.cost.costUsd === undefined ? "spend unknown" : `$${judging.cost.costUsd.toFixed(2)}`;
+  // Printed on BOTH paths, because the notes are written before the synthesis runs: a run whose
+  // synthesis was refused still had thirteen cheap calls made for it, and a contributor watching
+  // this command needs to see them (run-observation ticket 06).
+  const notes =
+    judging.notes === undefined || judging.notes.attempted === 0
+      ? ""
+      : `\n  notes: ${judging.notes.written}/${judging.notes.attempted} dispatches read from the ` +
+        `inside on ${judging.notes.model}` +
+        (judging.notes.path === undefined ? "" : ` → ${judging.notes.path}`);
+  if (judging.kind === "none") return `judging: none — ${judging.reason}${notes}`;
   return (
     `judging: ${judging.defectCount} defect(s) on ${judging.model} ` +
     `(${judging.servedBy ?? "an unnamed model"}), ${dollars}, ` +
-    `read against ${judging.judgedAgainst.source}`
+    `read against ${judging.judgedAgainst.source}${notes}`
   );
 }
 
@@ -227,9 +240,18 @@ async function main(argv: readonly string[]): Promise<number> {
     recordPath: resolve(recordPath),
     dataDirectory,
     // A replay looks at a run that has stopped, so its one reading IS the synthesis's moment —
-    // there is no `finalising` to wait for and no second reading to hold an answer for.
+    // there is no `finalising` to wait for and no second reading to hold an answer for. Every
+    // dispatch is therefore noted here, including any the run left in flight, and then the whole
+    // run is read once. `beside: true` puts those notes in a file of their own next to whatever an
+    // earlier observation left, which is D19's rule holding for the notes as it holds for the
+    // debrief; the debrief names the file it rests on.
     judging: judging
-      ? (input) => synthesise({ trace: input.trace, facts: input.facts, dataDirectory })
+      ? (input) =>
+          synthesisJudge(dataDirectory, { beside: true })({
+            trace: input.trace,
+            facts: input.facts,
+            finalising: true,
+          })
       : undefined,
   });
   if (outcome.kind === "refused") {

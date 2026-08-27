@@ -76,6 +76,26 @@ export interface JudgedTree {
 }
 
 /**
+ * What the notes half of the observation contributed (run-observation ticket 06).
+ *
+ * **Carried here beside what the observation cost, because the two are one fact.** A debrief
+ * resting on eleven **dispatch note**s of thirteen is a different document from one resting on all
+ * thirteen, and a reader deciding what to make of a **defect** grounded in a note has to be able to
+ * tell which they are holding. `missing` is D29 at the granularity a note has: a diagnostic that
+ * degraded must not read as a run with nothing wrong with it.
+ */
+export interface NotesSummary {
+  readonly written: number;
+  readonly attempted: number;
+  /** the cheap alias the notes were asked for, never a pinned id */
+  readonly model: string;
+  /** where they are, for a maintainer who has the machine — never a document to forward */
+  readonly path: string | undefined;
+  /** the dispatches nothing could be noted for, in a reader's words */
+  readonly missing: readonly string[];
+}
+
+/**
  * What the judging half of the observer contributed to this debrief.
  *
  * **Two members, and the pair is the whole of what a reader has to be able to tell apart.** D17 is
@@ -96,6 +116,8 @@ export type Judging =
       /** the one line naming what stopped the judging */
       readonly reason: string;
       readonly cost: ObservationCost;
+      /** what the notes half did before it, where anything did (run-observation ticket 06) */
+      readonly notes?: NotesSummary;
     }
   | {
       readonly kind: "judged";
@@ -115,7 +137,9 @@ export type Judging =
       readonly model: string;
       readonly servedBy: string | undefined;
       readonly judgedAgainst: JudgedTree;
+      /** the notes and the synthesis together, at both tiers (run-observation ticket 06) */
       readonly cost: ObservationCost;
+      readonly notes?: NotesSummary;
     };
 
 /**
@@ -126,7 +150,9 @@ export type Judging =
  * whole run at once, so it runs when the run is over — and D23 keeps a readable debrief at every
  * moment before that, which is this one.
  */
-export const NOTHING_JUDGES_YET: Judging = {
+// Typed to the `none` member rather than to `Judging`, so `./judge.ts` can build the mid-run answer
+// out of this one's own wording rather than repeating it (run-observation ticket 06).
+export const NOTHING_JUDGES_YET: Extract<Judging, { kind: "none" }> = {
   kind: "none",
   reason:
     "This run is still being watched, and the one synthesis per run reads the whole run at once — " +
@@ -402,6 +428,11 @@ export function renderDebrief(input: DebriefInput): string {
   bullet(out, "how the run ended", facts.ending.line);
   bullet(out, "the run's spend", spendLine(facts));
   bullet(out, "what this observation cost", costLine(judging));
+  // Only where a note was actually attempted, so a facts-only replay is byte for byte ticket 03's
+  // and a run that died before dispatching anything says nothing about notes it never owed.
+  if (judging.notes !== undefined && judging.notes.attempted > 0) {
+    bullet(out, "dispatch notes", notesLine(judging.notes));
+  }
   bullet(out, "plugin commit", input.commit.line);
   blank(out);
 
@@ -455,6 +486,17 @@ export function renderDebrief(input: DebriefInput): string {
       `touched — the repository's contents and the human's own words among them. Ask for a ` +
       `specific line of it where a figure here looks wrong; never attach the file.`,
   );
+  // The same refusal for the notes, in the same breath and for the same reason (D20, extended by
+  // ticket 06). A note reads a dispatch's INTERIOR, so of the files beside this one it is the one
+  // carrying the most of somebody's repository.
+  if (judging.notes?.path !== undefined) {
+    paragraph(out,
+      `The **dispatch note**s are beside it, at \`${judging.notes.path}\`. **Do not forward those ` +
+        `either.** Each is a cheap reading of one dispatch's own record, which is where the ` +
+        `repository this run delivered into is densest, and they carry no bound of their own. ` +
+        `They are there so a defect above can be checked, one note at a time.`,
+    );
+  }
 
   line(out, "## Where to send this");
   paragraph(out, `Open an issue on the plugin's own repository: **${DEBRIEF_DESTINATION}**`);
@@ -506,7 +548,12 @@ function defectsSection(out: Document, judging: Judging): void {
       `that whoever holds this run's trace can find in it. ` +
       `${found(judging.defectCount)} ` +
       `Read by \`${judging.model}\`${judging.servedBy === undefined ? "" : ` (served by \`${judging.servedBy}\`)`}, ` +
-      `over the whole run in one reading, against ${judging.judgedAgainst.line}`,
+      `over the whole run in one reading` +
+      (judging.notes === undefined || judging.notes.written === 0
+        ? ""
+        : `, together with the ${plural(judging.notes.written, "dispatch note", "dispatch notes")} ` +
+          `above — the only reading this debrief has of what happened inside a stage`) +
+      `, against ${judging.judgedAgainst.line}`,
   );
   out.lines.push("", judging.defects, "");
 
@@ -709,10 +756,51 @@ function costLine(judging: Judging): string {
     );
   }
   return (
-    `${plural(cost.modelCalls, "model call", "model calls")} on ` +
-    `\`${judging.kind === "judged" ? judging.model : "an unnamed model"}\`, ` +
+    `${plural(cost.modelCalls, "model call", "model calls")} — ${tiers(judging)}. ` +
     `${tokenDetail(cost.tokens) || "no tokens reported"}, ${dollars}. Counted per API request off ` +
-    `the per-model usage the call itself reported, the way a round's spend above is; a counter ` +
-    `nobody measured reads unknown and never zero. It is drawn on the same account the run was.`
+    `the per-model usage each call itself reported, the way a round's spend above is, and summed ` +
+    `across every one of them; a counter nobody measured reads unknown and never zero. It is ` +
+    `drawn on the same account the run was.`
+  );
+}
+
+/**
+ * The two tiers the observation spends at, named separately (run-observation ticket 06; D9).
+ *
+ * One figure covering both is what the header wants, and a reader who cannot see the split cannot
+ * tell a run that cost thirteen cheap calls and one long-context reading from one that made
+ * fourteen expensive ones.
+ */
+function tiers(judging: Judging): string {
+  const notes =
+    judging.notes === undefined || judging.notes.attempted === 0
+      ? undefined
+      : `${plural(judging.notes.attempted, "dispatch note", "dispatch notes")} on ` +
+        `\`${judging.notes.model}\``;
+  const synthesis =
+    judging.kind === "judged"
+      ? `one synthesis over the whole run on \`${judging.model}\``
+      : "no synthesis: nothing read the whole run";
+  return notes === undefined ? synthesis : `${notes}, and ${synthesis}`;
+}
+
+/**
+ * What the notes half did, and which dispatches this debrief has no note for.
+ *
+ * **A note that could not be written costs this debrief that dispatch's interior and nothing
+ * else** — the synthesis still ran, on the trace and on whatever notes did come back. Saying which
+ * ones are missing is what stops that reading as a run those stages were fine in.
+ */
+function notesLine(notes: NotesSummary): string {
+  const head =
+    `${notes.written} of ${plural(notes.attempted, "dispatch", "dispatches")} read from the ` +
+    `inside, on \`${notes.model}\` — a cheap reading of each dispatch's own record as it finished, ` +
+    `which is the only reading of what happened INSIDE a stage this debrief has. They are kept ` +
+    `beside the trace and, like it, are not to be forwarded.`;
+  if (notes.missing.length === 0) return head;
+  return (
+    `${head} **No note for ${plural(notes.missing.length, "dispatch", "dispatches")}**, so this ` +
+    `debrief has nothing about what happened inside ${notes.missing.length === 1 ? "it" : "them"}: ` +
+    `${notes.missing.join("; ")}.`
   );
 }

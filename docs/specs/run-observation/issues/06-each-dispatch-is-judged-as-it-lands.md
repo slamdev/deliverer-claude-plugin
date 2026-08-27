@@ -10,23 +10,23 @@ one measured delivery's thirteen per-dispatch **session record**s are 5.9 MB of 
 even a long-context window — so by the time the whole run is judged, what happened inside a stage is out of reach. A
 note is what recovers it. Settled as D8 and D9 in `../spec.md`.
 
-- [ ] A dispatch note is written for each dispatch when that dispatch finishes, from that dispatch's slice of the
+- [x] A dispatch note is written for each dispatch when that dispatch finishes, from that dispatch's slice of the
       trace, on a cheap tier.
-- [ ] The unit is the dispatch and never the numbered stage. One delivery on disk ran six `implementer` dispatches
+- [x] The unit is the dispatch and never the numbered stage. One delivery on disk ran six `implementer` dispatches
       inside stage 1 alone, so a note per stage would wait for the last of them and then read six records at once.
-- [ ] A foreground dispatch is finished when its tool result lands. A background one is not: its tool result
+- [x] A foreground dispatch is finished when its tool result lands. A background one is not: its tool result
       returns `async_launched` in milliseconds and the finish arrives later as a separate `<task-notification>` entry
       carrying the same tool-use id, its status and its result. Five dispatches across three of the five runs on disk
       were launched that way, one pair nine seconds apart — so keying the note to the tool result writes notes on
       stages that have not run, and writes two of them at once.
-- [ ] Every dispatch the run made gets a note, including one of an agent the plugin does not ship. Half of one
+- [x] Every dispatch the run made gets a note, including one of an agent the plugin does not ship. Half of one
       refinement's four dispatches were `general-purpose` and `context7:docs-researcher` **sweep**s the grilling made
       to settle a question of fact: the run chose to make them, so their conduct is the plugin's machinery even though
       the agent is not.
-- [ ] A dispatch the human refused at the permission prompt gets a note saying it never ran — two of one delivery's
+- [x] A dispatch the human refused at the permission prompt gets a note saying it never ran — two of one delivery's
       thirteen. The refusal is worth reporting on its own: the **orchestrator** asked for something the human would
       not allow.
-- [ ] A dispatch still in flight when the run is finalised gets a note from what its record holds so far, marked as a
+- [x] A dispatch still in flight when the run is finalised gets a note from what its record holds so far, marked as a
       dispatch that had not finished. The stage a run died inside is the one most worth reporting, which is the
       argument ticket 03 already makes for how a run ended — and it is reachable: the delivery running on this machine
       as this was triaged had a dispatch in flight whose own record was still growing while the main record had been
@@ -43,47 +43,47 @@ note is what recovers it. Settled as D8 and D9 in `../spec.md`.
       reads `status: completed` while its whole text is `Agent terminated early due to an API error: You've hit your
       individual spend limit`, and a second whose result is that same text under `Error:`. A dispatch that came back
       with nothing is read from what came back and never from the status field.
-- [ ] Each note names the dispatch it is about the way the trace does — the agent type, the stage description the
+- [x] Each note names the dispatch it is about the way the trace does — the agent type, the stage description the
       host's sidecar carries, the tool-use id and the timestamps — so a **defect** the synthesis grounds in a note is
       locatable by a maintainer holding the file. That is ticket 05's rule for **grounds**, extended to the second
       place grounds can now come from.
-- [ ] The slice a note reads is bounded. One per-dispatch record on disk reaches 1.5 MB — roughly 390k tokens, past a
+- [x] The slice a note reads is bounded. One per-dispatch record on disk reaches 1.5 MB — roughly 390k tokens, past a
       cheap tier's window twice over — so what a note is given is capped the way D6 caps the trace's own entries, and
       a note never fails for a prompt too long.
-- [ ] One notes file per run, beside the trace, under the same **slug** and timestamp, appended as each dispatch
+- [x] One notes file per run, beside the trace, under the same **slug** and timestamp, appended as each dispatch
       lands — so a run killed mid-flight keeps every note already written, and the synthesis has one file to read.
-- [ ] That file refuses forwarding in the two places the trace does: its filename and its first line. It carries no
+- [x] That file refuses forwarding in the two places the trace does: its filename and its first line. It carries no
       bound of its own and is not the document to send. The debrief's mention of it says the same, which is where
       ticket 03's third refusal already stands for the trace.
-- [ ] The bound is the synthesis's and never the note's, on the terms
+- [x] The bound is the synthesis's and never the note's, on the terms
       [ADR-0018](../../../adrs/0018-a-debrief-is-bounded-to-the-plugins-own-machinery.md) now sets out for a dispatch
       note: ticket 05's instruction is what holds, and it names notes as an unbounded source alongside the trace.
-- [ ] A replay writes notes beside what is already there rather than rewriting them, which is D19's rule for the
+- [x] A replay writes notes beside what is already there rather than rewriting them, which is D19's rule for the
       trace and ticket 03's for the debrief.
-- [ ] The synthesis reads every note as well as the whole trace, so a cross-stage defect stays findable and one
+- [x] The synthesis reads every note as well as the whole trace, so a cross-stage defect stays findable and one
       inside a dispatch becomes findable.
-- [ ] Only this run's notes. An earlier run of the epic contributes its **debrief** and nothing else — ticket 07 has
+- [x] Only this run's notes. An earlier run of the epic contributes its **debrief** and nothing else — ticket 07 has
       the observer read those, and a debrief is a bounded document where an earlier run's notes are neither bounded
       nor small.
-- [ ] A note that could not be written costs the debrief that dispatch's interior and nothing else. The synthesis
+- [x] A note that could not be written costs the debrief that dispatch's interior and nothing else. The synthesis
       still runs, and the debrief names which dispatches it has no note for.
-- [ ] A note call that reports success while its whole answer is the SDK's own failure text is a failed note, and a
+- [x] A note call that reports success while its whole answer is the SDK's own failure text is a failed note, and a
       note that does not come back in the instructed shape is a failed note. Ticket 05's classification is reused
       rather than a second one invented, for the same reason it exists there: the one outcome that must not exist is
       an SDK error reading as a dispatch nothing was wrong with.
-- [ ] The cheap tier is named as an alias and never as a pinned id, for the reason ticket 05 and the review's own
+- [x] The cheap tier is named as an alias and never as a pinned id, for the reason ticket 05 and the review's own
       option already record. A model that is refused is a named failure and nothing else — no fallback, no second
       call, no option — and where every note fails that way the debrief says so and the synthesis still runs on the
       trace alone.
-- [ ] Each note call is bounded, so a note that wedges ends as a named missing note rather than as spend nobody
+- [x] Each note call is bounded, so a note that wedges ends as a named missing note rather than as spend nobody
       asked for beside a delivery that may run for a day. Nothing about the bound reaches the run.
-- [ ] The note calls load no project or local settings and no `CLAUDE.md`, exactly as ticket 05 requires of the
+- [x] The note calls load no project or local settings and no `CLAUDE.md`, exactly as ticket 05 requires of the
       synthesis. There are up to thirteen of them per run, so the cheap half is the likelier door for a delivery
       repository's conventions and hooks to walk into the observation through.
-- [ ] Cost scales with the number of dispatches rather than with wall-clock: 3, 3, 4, 13 and 13 across the five runs
+- [x] Cost scales with the number of dispatches rather than with wall-clock: 3, 3, 4, 13 and 13 across the five runs
       on disk. Never 26 — that is the file count, a record and a `.meta.json` sidecar per dispatch, and it is the
       miscount `../spec.md`'s Further Notes and this ticket both carried.
-- [ ] What the observation itself cost, in ticket 03's header, covers every note call and the synthesis at both
+- [x] What the observation itself cost, in ticket 03's header, covers every note call and the synthesis at both
       tiers — read the way a **round**'s **spend** is, per-model usage summed, per API request, `unknown` for a
       figure nobody measured and never zero.
 - [ ] Verification splits, and the procedure says which half costs money. Judging unavailable, replay stays D17's
@@ -99,7 +99,7 @@ note is what recovers it. Settled as D8 and D9 in `../spec.md`.
 - [ ] Every note and every debrief produced during that verification is read by a human for repository content and
       for quoted questions or answers. Nothing mechanical checks it, ADR-0018 records that as accepted, and notes are
       where the exposure actually is.
-- [ ] What lands stays inside the typecheck and lint coverage ticket 02 got for the observer's code. No test runner
+- [x] What lands stays inside the typecheck and lint coverage ticket 02 got for the observer's code. No test runner
       is added, no fixture is committed, and CI stays those two commands over the two packages.
 
 ## Comments

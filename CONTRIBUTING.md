@@ -151,6 +151,11 @@ what moved.
 │   │   ├── observer/{observer,announce}.ts  the loop that watches a live run and finalises its
 │   │   │                                  debrief · the two lines to the human, and the files the
 │   │   │                                  hooks read them out of
+│   │   ├── observer/{judge,notes,notes-file,model-call}.ts  the judging half: one long-context
+│   │   │                                  reading of a whole run · a dispatch note per dispatch, on
+│   │   │                                  a cheap tier as each lands · where those notes live and
+│   │   │                                  how they refuse forwarding · what one model call the
+│   │   │                                  observation makes looks like, shared by both tiers
 │   │   └── package.json · tsconfig.json · eslint.config.js
 │   ├── hooks/install-mcp-server.sh        SessionStart: install deps, republish both source trees
 │   ├── hooks/observe-run.sh               UserPromptSubmit / Stop / SessionEnd: start an observer,

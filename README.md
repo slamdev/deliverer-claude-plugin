@@ -184,8 +184,10 @@ maintains the plugin. It is on by default and you do not have to do anything to 
 your run. It reads the session records Claude Code already writes for every session and every agent a session
 dispatches, and turns them into a debrief: what the plugin's own machinery did, how long each stage took, how many
 questions it put to you, how long it waited on you, what the reviews ended on, and what the whole run spent in tokens.
-When your run stops, a line names the debrief and where it is. If you closed the terminal before it finished, the line
-comes on your next prompt instead.
+It then reads all of that — and each dispatch from the inside — and names the **defects**: the things the run cost you
+that it did not have to, each with the grounds from the run's own conduct that show it. When your run stops, a line
+names the debrief and where it is. If you closed the terminal before it finished, the line comes on your next prompt
+instead.
 
 **It cannot affect your run.** The observer runs outside the run entirely, in its own process, with its own session and
 its input and output closed. It never speaks into your session while a run is going, never asks the run for anything,
@@ -212,14 +214,44 @@ directory per run, under the epic's name:
 ~/.claude/plugins/data/deliverer-<marketplace>/observations/<epic>/<when the run started>/
 ```
 
-**Nothing is ever removed.** No pruning, no expiry, no cleanup. A run's records are a few hundred kilobytes of debrief
-and trace, and they stay until you delete them yourself.
+**Nothing is ever removed.** No pruning, no expiry, no cleanup. A run's records are a few hundred kilobytes of debrief,
+trace and notes, and they stay until you delete them yourself.
 
-**What it costs.** Today the debrief is worked out by code alone: no model is called and the debrief says so, and the
-line "what this observation cost" reads zero because it was measured rather than assumed. What it does spend is a
-little CPU on the machine the run is on — it re-reads the run's records every few seconds while the run is going — and
-disk for what it keeps. When the plugin does start judging runs, it will draw on the **same account your run
-authenticates with**, since it inherits the environment your session started in.
+**What it costs.** Observation calls models of its own, and they are drawn on the **same account your run
+authenticates with** — it inherits the environment your session started in, so on a subscription your run and its
+observer can compete for the same rate limit. There is no back-off and nothing to configure. It makes two kinds of
+call:
+
+- **One per dispatch, on a cheap tier**, the moment that dispatch finishes. A dispatch is one agent your run sent off
+  to do one stage's work; a refinement makes three or four of them, and a delivery a dozen or more. Each of those calls
+  reads that one agent's own record — the part of a run nothing else can see, since a delivery's per-dispatch records
+  outrun any context window — and writes a short note.
+- **One at the end, over the whole run**, on a long-context model, which reads the run's shape and all of those notes
+  together and writes the defects.
+
+**What that came to when it was measured.** The reading at the end was measured over the runs on the machine this was
+written on: **$2.05 to $6.43 for a run, averaging $3.68**. It is the larger of the two by a distance, and it is one call
+however long the run was. What the per-dispatch notes add on top of it has not been measured yet — what is known is
+their number, one cheap-tier call for each dispatch your run made. So the figure follows **how many dispatches your run
+made, not how long it took**: a ten-hour delivery costs no more to observe than a two-hour one, and observing a whole
+delivery is a dozen-odd cheap calls and one expensive one against the hundreds of model calls the delivery itself makes.
+
+Your own figures will differ — with the size of your epic, with how many stages a run needed, and with what your
+account is charged. Treat them as an order of magnitude and read your own debrief for what your run actually cost.
+
+The debrief's own line, "what this observation cost", is the figure for your run: model calls at both tiers, tokens
+counted per API request, and the dollar figure the calls themselves reported. It is measured rather than assumed, and a
+figure nothing measured reads *unknown* rather than zero. Beside the models it spends a little CPU on the machine the
+run is on — it re-reads the run's records every few seconds while the run is going — and disk for what it keeps.
+
+Kept beside the debrief and the trace is `DO-NOT-FORWARD-notes.txt`, one file holding those per-dispatch notes. Like
+the trace it is bounded by nothing — a note reads what one agent read and wrote, which is where your repository is —
+so it is named and opened the same way. Do not attach it.
+
+**If your account has no long-context window**, that final reading is refused and your debrief carries the facts and
+never the defects. It says so on its face: which model was asked for (`opus[1m]`), and that the provider or account
+behind your credentials refused it. There is nothing to set — which models are used is the plugin's choice, not an
+option, so that every debrief a team produces was judged at the same depth.
 
 **Turning it off.** `/plugin` → **deliverer** → **Observe runs**. With it off nothing starts at all: no process, no
 trace and no debrief.
@@ -230,7 +262,9 @@ trace and no debrief.
 Every run reports what its reviews spent. If that is more than you want, turn the **code review effort** down; if a
 change is high-stakes, turn it up.
 
-Observation costs nothing in models today — see [Observation](#observation) — and turning it off is one setting.
+Observation spends models too, on the same account — see [Observation](#observation). Most of it is the one reading at
+the end of a run, measured at $2.05 to $6.43 a run and averaging $3.68, with one cheap-tier call per dispatch beside it.
+Turning it off is one setting.
 
 ## Troubleshooting
 

@@ -148,6 +148,26 @@ export interface TraceDispatch {
   /** what the host said became of it — a claim, and one measured record reads `completed` for a
    *  dispatch whose whole text is an API-error termination */
   readonly status: string | undefined;
+  /**
+   * Whether this dispatch has FINISHED (run-observation ticket 06).
+   *
+   * **The one thing "as it lands" needs and no other field carries.** A foreground dispatch is
+   * finished when its tool result lands; a background one is not — its result returns
+   * `async_launched` in milliseconds and the finish arrives later as a `<task-notification>` with
+   * the same tool-use id. Neither `status` nor `endedAt` answers it: `status` is absent on a
+   * dispatch the human refused *and* on one still going, and `endedAt` falls back to the
+   * dispatch's own last entry, which a record still being written always has.
+   */
+  readonly finished: boolean;
+  /**
+   * The host's own word for a dispatch the human refused, off `toolDenialKind` on the result entry
+   * — `user-rejected` on all three measured (run-observation ticket 06).
+   *
+   * A claim like every other field here, and the only signal there is: the refusal's tool result
+   * carries `toolUseResult` as a STRING rather than the object every other dispatch's carries, so
+   * `status`, `resolvedModel` and every mechanical figure are absent on exactly these.
+   */
+  readonly refusedBy: string | undefined;
   readonly model: string | undefined;
   readonly background: boolean;
   readonly toolCalls: number | undefined;
@@ -784,6 +804,10 @@ function buildDispatch(input: DispatchInput): TraceDispatch {
       ? (statusOfNotification(input.notification) ??
         "launched in the background, with no completion recorded in this record")
       : status,
+    // A background dispatch's own tool result says nothing about the work, so its finish is the
+    // notification and never the result (run-observation ticket 06).
+    finished: background ? input.notification !== undefined : input.result !== undefined,
+    refusedBy: stringField(input.result?.entry, "toolDenialKind"),
     model: stringField(outcome, "resolvedModel"),
     background,
     toolCalls: numberField(outcome, "totalToolUseCount"),
@@ -842,7 +866,14 @@ function dispatchEndLine(dispatch: TraceDispatch): TraceLine | undefined {
     kind: "dispatched",
     label: `#${dispatch.ordinal} ${dispatch.agentType}`,
     detail: [
-      dispatch.status ?? "no status",
+      // A refused dispatch and one still going both carry no status, and they are different facts
+      // about the run: the first is the orchestrator asking for something the human would not
+      // allow, the second is the stage a run died inside (run-observation ticket 06).
+      dispatch.refusedBy !== undefined
+        ? `refused by the human (${dispatch.refusedBy})`
+        : dispatch.finished
+          ? (dispatch.status ?? "no status")
+          : `${dispatch.status ?? "no status"} — not finished when this was read`,
       `after ${formatDuration(dispatch.durationMs)}`,
       dispatch.model ?? "",
       dispatch.toolCalls === undefined ? "" : `${dispatch.toolCalls} tool calls`,
