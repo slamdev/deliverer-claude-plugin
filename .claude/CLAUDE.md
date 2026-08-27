@@ -42,14 +42,16 @@ no money — before calling the change done. CONTRIBUTING.md § What CI does not
 
 ## The plugin's Node code (`plugin/mcp/`)
 
-One package holds everything the plugin runs on Node. What it holds today is the tools server, under `server/`.
+One package holds everything the plugin runs on Node. What it holds today is the tools server, under `server/`, and the
+**observer**'s distiller, under `observer/` — the mechanical half that turns a **run**'s **session record**s into a
+**trace**, run by hand with `CLAUDE_PLUGIN_DATA` set and no host in play.
 
 All of it **ships unbuilt**: Node's type stripping runs the TypeScript as-is, so `tsc --noEmit` is the only thing
 holding up the three options that make that possible. `plugin/mcp/tsconfig.json` names them and what each one prevents;
 a violation gets past you and surfaces in a user's session.
 
-Comments in `server/` carry the reasoning, citing the grill item or review round a decision came from. Keep them,
-including the blocks `lifecycle.ts` marks as defensive.
+Comments in `server/` and `observer/` carry the reasoning, citing the grill item, review round or ticket a decision came
+from. Keep them, including the blocks `lifecycle.ts` marks as defensive.
 
 ## Writing
 

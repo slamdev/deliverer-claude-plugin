@@ -126,7 +126,8 @@ what moved.
 │   │   ├── code-reviewer.md               drives one review round via the MCP server
 │   │   └── comments-addresser.md          unresolved comments → fixes, declines, hand-offs
 │   ├── mcp/                               the plugin's Node code, one package — ships UNBUILT (Node strips
-│   │                                      the types). What it holds today: the tools server
+│   │                                      the types). What it holds today: the tools server, and the
+│   │                                      observer's distiller
 │   │   ├── launch.mjs                     what .mcp.json runs; resolves the staged copy, starts the
 │   │   │                                  install hook when nothing else has
 │   │   ├── server/index.ts                the three tools + the transcript resource
@@ -134,6 +135,10 @@ what moved.
 │   │   ├── server/review-state.ts         the record, the reducer, the published projection
 │   │   ├── server/{agent,scripted}-backend.ts  the real review, and the shipped test double
 │   │   ├── server/{backend,store,config,env-file}.ts
+│   │   ├── observer/distil.ts             a run's records → its trace; run by hand, CLAUDE_PLUGIN_DATA
+│   │   │                                  required, no host and no model in play
+│   │   ├── observer/{records,trace,trace-file}.ts  the host's format as a claim · the trace · where it
+│   │   │                                  lives and how it refuses forwarding
 │   │   └── package.json · tsconfig.json · eslint.config.js
 │   ├── hooks/install-mcp-server.sh        SessionStart: install deps, republish source every session
 │   └── .mcp.json                          wires userConfig → the server's environment
@@ -210,7 +215,8 @@ Implements the work, using `/tdd` at the seams the spec named. Work one ticket a
 ## CI
 
 `.github/workflows/ci.yml` runs on pushes to `main` and on every change request. One job, `check`, over both packages
-this repository has: the plugin's Node code in `plugin/mcp` — today, the tools server — and the end-to-end **harness**
+this repository has: the plugin's Node code in `plugin/mcp` — today, the tools server and the observer's distiller — and
+the end-to-end **harness**
 in `e2e-tests`. One `setup-node`, then the other three steps once for each package:
 
 | Step                | What and why                                                                                |

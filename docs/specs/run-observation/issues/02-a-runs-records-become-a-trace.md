@@ -11,66 +11,66 @@ because that is what lets every ticket after this one be verified by replaying a
 Settled as D5, D6, D7, D18, D19 and D20 in `../spec.md`, and as
 [ADR-0017](../../../adrs/0017-observation-happens-out-of-band-from-the-records-the-host-keeps.md).
 
-- [ ] Given the path to a session record, the deliverer run in it is identified from the plugin and skill stamped on
+- [x] Given the path to a session record, the deliverer run in it is identified from the plugin and skill stamped on
       its entries — no marker of the plugin's own, and no argument naming the run.
-- [ ] A record carrying no deliverer attribution produces no trace, and says so rather than producing an empty one.
-- [ ] A mention of the plugin is not attribution. A session that names `deliverer:*` only where the host lists the
+- [x] A record carrying no deliverer attribution produces no trace, and says so rather than producing an empty one.
+- [x] A mention of the plugin is not attribution. A session that names `deliverer:*` only where the host lists the
       agent types an install added, or a human's own session about the plugin, is not a run — three of the first and
       one of the second sit in the same directory as the runs on disk, and that second one called the plugin's own
       tools.
-- [ ] Every per-dispatch record the run left is read alongside the main one. Without them everything below the
+- [x] Every per-dispatch record the run left is read alongside the main one. Without them everything below the
       **orchestrator** is invisible, which is most of a delivery — a round's polls among it.
-- [ ] Each dispatch names itself: beside its record is a sidecar carrying the agent type, the stage's description and
+- [x] Each dispatch names itself: beside its record is a sidecar carrying the agent type, the stage's description and
       the id of the dispatch that started it, so the agent a dispatch ran is read rather than inferred from a prompt.
       That shape is a **claim** and not a contract — a field the records do not carry costs an entry a detail and
       never the trace.
-- [ ] A round's review is deliberately not read. The session the server spawns for it is a top-level record of its
+- [x] A round's review is deliberately not read. The session the server spawns for it is a top-level record of its
       own carrying no deliverer attribution — four of them on disk, 2.2 to 4.5 MB each — and what a round did is
       already in the `code-reviewer`'s own record, whose polls the criteria above keep. Leaving it out is a decision
       rather than an oversight.
-- [ ] The trace carries, in order: each dispatch with the agent it ran and how long it took, each question round put
+- [x] The trace carries, in order: each dispatch with the agent it ran and how long it took, each question round put
       to the human, each review poll, each task update and each tool call — with timestamps and per-turn token
       figures.
-- [ ] Token figures are per API request and not per entry. One request writes several assistant entries, each
+- [x] Token figures are per API request and not per entry. One request writes several assistant entries, each
       repeating the same usage: one delivery's main record holds 169 of them against 79 distinct request ids, so
       counting entries inflates every figure by more than double. `e2e-tests/README.md` already carries the rule this
       repository settled on, and every figure in a **debrief** downstream rests on this one.
-- [ ] A session that also held other work traces whole: every entry in the file, in order, whatever produced it. One
+- [x] A session that also held other work traces whole: every entry in the file, in order, whatever produced it. One
       refinement on disk carried another plugin's skills beside `deliverer:refine`, and a trace that cut them would
       lose the human's turns between them. Nothing about the debrief's bound moves with this — that stays the
       plugin's own machinery, as
       [ADR-0018](../../../adrs/0018-a-debrief-is-bounded-to-the-plugins-own-machinery.md) has it.
-- [ ] What an entry carried rides along as a capped excerpt. Nothing is dropped by kind: the cap bounds volume and
+- [x] What an entry carried rides along as a capped excerpt. Nothing is dropped by kind: the cap bounds volume and
       nothing else.
-- [ ] The cap tightens as a run grows, so a long delivery's trace stays inside a context window. One measured
+- [x] The cap tightens as a run grows, so a long delivery's trace stays inside a context window. One measured
       delivery's records were 6.7 MB.
-- [ ] The cap is chosen against the records on disk rather than guessed: the largest run there is distilled and the
+- [x] The cap is chosen against the records on disk rather than guessed: the largest run there is distilled and the
       trace's own size and token count are measured and reported. Those records are the delivery the spec measured —
       one main record and thirteen per-dispatch ones.
-- [ ] Replaying the same records twice produces the same trace, byte for byte. Nothing samples, nothing randomises
+- [x] Replaying the same records twice produces the same trace, byte for byte. Nothing samples, nothing randomises
       and no model is called.
-- [ ] The timestamp in the key is the run's own, read off its first entry, and nothing in the trace's body records
+- [x] The timestamp in the key is the run's own, read off its first entry, and nothing in the trace's body records
       when it was distilled. A key or a line carrying the moment of distillation makes the criterion above
       unmeetable.
-- [ ] The trace is written under the plugin's data directory, keyed by the epic's **slug** and a timestamp, and
+- [x] The trace is written under the plugin's data directory, keyed by the epic's **slug** and a timestamp, and
       nothing already there is removed.
-- [ ] The slug is read off the run's own task updates, whose subjects both skills prefix with it — `<slug>: implement
+- [x] The slug is read off the run's own task updates, whose subjects both skills prefix with it — `<slug>: implement
       every ticket (4/21)`. A run that fell over before it created a task carries a named stand-in in its place, and
       the trace says the slug could not be read: never a guess, and never a refusal to write a trace at all.
-- [ ] The trace refuses forwarding in two places of its own: its filename, and its first line. It carries no bound
+- [x] The trace refuses forwarding in two places of its own: its filename, and its first line. It carries no bound
       and is not the document to send.
-- [ ] Nothing is written inside any repository, and nothing outside the plugin's data directory.
-- [ ] It runs by hand with no host in play: an entry point taking the record's path, and `CLAUDE_PLUGIN_DATA`
+- [x] Nothing is written inside any repository, and nothing outside the plugin's data directory.
+- [x] It runs by hand with no host in play: an entry point taking the record's path, and `CLAUDE_PLUGIN_DATA`
       required the way `launch.mjs` requires it — absent, it refuses and names the variable rather than inventing a
       second notion of where the plugin's data directory is.
-- [ ] A record that is truncated, malformed or still being written produces a trace saying what was lost, never a
+- [x] A record that is truncated, malformed or still being written produces a trace saying what was lost, never a
       crash and never a silently empty file.
-- [ ] What lands is covered by the two commands CI already runs: inside `plugin/mcp/tsconfig.json`'s `include` and
+- [x] What lands is covered by the two commands CI already runs: inside `plugin/mcp/tsconfig.json`'s `include` and
       inside `eslint.config.js`'s TypeScript layer, both of which name `server/**/*.ts` and nothing else today.
       Uncovered, the new code is typechecked by nothing and linted by nothing while CI stays green — and
       `erasableSyntaxOnly`, which is the whole of what holds up the unbuilt shipping model
       ([ADR-0001](../../../adrs/0001-the-tools-server-ships-as-source-and-runs-unbuilt.md)), never reaches it.
-- [ ] Exercised by hand against the records of runs already on disk. No test runner is added, no fixture is
+- [x] Exercised by hand against the records of runs already on disk. No test runner is added, no fixture is
       committed, and CI stays `typecheck` and `lint` over the two packages.
 
 ## Comments
