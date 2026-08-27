@@ -29,6 +29,7 @@ import {
   type ChangeRequest,
   type ChangeRequestSummary,
 } from "./change-request.ts";
+import { describeDebriefs, readDebriefs, type Debriefs } from "./debrief.ts";
 import { readEpic, type PublishedEpic } from "./epic.ts";
 import { DEFAULT_BRANCH } from "./forge.ts";
 import { loadFixture, type Fixture } from "./fixture.ts";
@@ -75,6 +76,8 @@ export interface BuildOutcome {
   readonly fixture: Fixture;
   readonly repo: ThrowawayRepo;
   readonly run: RunOutcome;
+  /** the skill this test drove: the same string the command it sent carries */
+  readonly skill: string;
   /** the human's seat, empty: what a delivery asked that nobody was there to answer */
   readonly seat: ResponderRecord;
   /** the epic the delivery was handed, read off the clone */
@@ -87,6 +90,8 @@ export interface BuildOutcome {
   readonly roundsCompleted: number | null;
   readonly scriptedBackend: ScriptedBackend;
   readonly records: SessionRecords;
+  /** what the observer had left beside the run the moment it returned (`./debrief.ts`) */
+  readonly debriefs: Debriefs;
   readonly spend: Spend;
   /** what the epic branch changed, as the forge has it — the verifier's evidence */
   readonly deliveredDiffPath: string | null;
@@ -165,6 +170,12 @@ export function buildRun(fixtureName: string): BuildRunBuilder {
           /\bround/i.test(report) && (await flippedReady(runDirectory, repo)),
       });
 
+      // Read here and not later, because "the moment the run returned" is the state this reports:
+      // no wait, no poll, and the debrief said to be still going is the answer rather than a
+      // reason to look again (`./debrief.ts`).
+      const debriefs = await readDebriefs(runDirectory);
+      t.diagnostic(describeDebriefs(debriefs));
+
       const scriptedBackend: ScriptedBackend = {
         fromContributor,
         reachedSession: scriptedBackendIn(run.environment),
@@ -199,6 +210,7 @@ export function buildRun(fixtureName: string): BuildRunBuilder {
         fixture,
         repo,
         run,
+        skill: TEST_NAME,
         seat: seat.record(),
         epic,
         changeRequests,
@@ -206,6 +218,7 @@ export function buildRun(fixtureName: string): BuildRunBuilder {
         roundsCompleted: roundsCompleted(run.report),
         scriptedBackend,
         records: await readSessionRecords(runDirectory),
+        debriefs,
         spend,
         deliveredDiffPath: changeRequest === null
           ? null

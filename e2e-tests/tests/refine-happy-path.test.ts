@@ -14,6 +14,7 @@
 import { test } from "node:test";
 import { DEFAULT_CEILINGS, minutes, testTimeout, totalSpend } from "../harness/ceilings.ts";
 import {
+  assertDebriefWritten,
   assertEpicPublished,
   assertGrillingAnswered,
   assertNothingPushed,
@@ -50,6 +51,9 @@ test("a refinement turns an idea into a published spec and its tickets", {
   assertTicketsPublished(outcome);
   assertNothingPushed(outcome);
   assertSessionRecordsKept(outcome, DISPATCHED_WRITERS, WHAT_IT_DISPATCHES);
+  // The run was observed because the plugin observes runs by default and nothing here switched
+  // that off. Shallow on purpose: a debrief exists for this epic and its header names this run.
+  assertDebriefWritten(outcome);
 
   const verdict = await verify(outcome);
   t.diagnostic(`the verifier: ${verdict.summary}`);

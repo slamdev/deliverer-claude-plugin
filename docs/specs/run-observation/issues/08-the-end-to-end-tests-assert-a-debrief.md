@@ -8,39 +8,39 @@ Status: ready-for-agent
 whether or not anybody looks. This makes the **harness** look — shallowly and deliberately, because depth lives at the
 replay seam and this one costs real money every time it runs. Settled under Testing Decisions in `../spec.md`.
 
-- [ ] The refine and build happy-path tests assert that the run they drove left a **debrief**.
-- [ ] The assertion reads the header: the right skill, the right epic **slug**, and a dispatch count consistent with the
+- [x] The refine and build happy-path tests assert that the run they drove left a **debrief**.
+- [x] The assertion reads the header: the right skill, the right epic **slug**, and a dispatch count consistent with the
       run the test just drove.
-- [ ] The skill is the one the test drove — `refine` or `build`, the same string the builder already puts in the command
+- [x] The skill is the one the test drove — `refine` or `build`, the same string the builder already puts in the command
       it sends — and the slug is the run's own, read off the outcome's published **epic** rather than written down as a
       constant beside the assertion. A refinement's slug is whatever that run chose.
-- [ ] The dispatch count is checked against what the **run directory** itself holds: the session records under the
+- [x] The dispatch count is checked against what the **run directory** itself holds: the session records under the
       orchestrator's own `<session-id>/subagents/`, counted by this assertion. Not `SessionRecords.dispatched`, which
       counts every such record anywhere under the run's configuration directory — the **observer** runs in that same
       directory, so its own **dispatch note**s would land in that figure. This makes the criterion a cross-check of the
       debrief against the host's own files rather than against a constant the skills can outgrow.
-- [ ] The debrief is found at a path the harness derives: `plugins/data/<plugin>-<marketplace>` under the run's own
+- [x] The debrief is found at a path the harness derives: `plugins/data/<plugin>-<marketplace>` under the run's own
       configuration directory, which is inside the run directory because the harness pins `CLAUDE_CONFIG_DIR` per run.
       Both names are already read off the marketplace entry, and the host's mangling of them into one directory name is
       a **claim** in the glossary's sense exactly as the record format is — so the failure names the path it looked at
       and what it derived it from, and a host that renames its data directories fails there rather than reading as a run
       that produced no debrief.
-- [ ] The debrief is read the moment the run returns, with no wait and no poll. D23 keeps a readable one current as each
+- [x] The debrief is read the moment the run returns, with no wait and no poll. D23 keeps a readable one current as each
       stage lands, so there is nothing to wait for; the assertion says which state it read. It rests on ticket 04
       rewriting the debrief atomically, which that ticket now requires.
-- [ ] A missing debrief fails the test with the **run directory**'s path quoted, so the failure is read there rather
+- [x] A missing debrief fails the test with the **run directory**'s path quoted, so the failure is read there rather
       than reproduced.
-- [ ] The assertion adds no measurable money and no measurable time, and the **ceiling**s are unchanged.
-- [ ] The harness does not switch observation off, and does not configure it — it meets the default a user meets.
+- [x] The assertion adds no measurable money and no measurable time, and the **ceiling**s are unchanged.
+- [x] The harness does not switch observation off, and does not configure it — it meets the default a user meets.
       Nothing switches it on either: the run's first prompt is already `/deliverer:refine …` or `/deliverer:build …`,
       which is ticket 04's own trigger, so the observer starts with no change to the harness at all.
-- [ ] Nothing the observer wrote appears inside the fixture repository, the clone or the change request the test
+- [x] Nothing the observer wrote appears inside the fixture repository, the clone or the change request the test
       produced.
-- [ ] `e2e-tests/README.md` says that the observer runs during both paid tests, that it draws on the same account as the
+- [x] `e2e-tests/README.md` says that the observer runs during both paid tests, that it draws on the same account as the
       run, and that its **spend** is in none of the figures the harness reports — so every amount recorded there
       under-counts a run by whatever the observation cost. It is the same shape of gap that file already records for a
       **round**'s review spend.
-- [ ] The harness is typechecked and linted as CI already does, and no end-to-end test is added to CI.
+- [x] The harness is typechecked and linted as CI already does, and no end-to-end test is added to CI.
 
 ## Comments
 

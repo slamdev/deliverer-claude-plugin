@@ -18,6 +18,7 @@ import {
   type Spend,
 } from "./ceilings.ts";
 import { briefsBeforeRun, collectBriefs, type Briefs } from "./brief.ts";
+import { describeDebriefs, readDebriefs, type Debriefs } from "./debrief.ts";
 import { listEpics, readEpic, type PublishedEpic } from "./epic.ts";
 import { loadFixture, type Fixture } from "./fixture.ts";
 import { remoteHead } from "./forge.ts";
@@ -37,6 +38,8 @@ export interface RefineOutcome {
   readonly fixture: Fixture;
   readonly standingRepo: StandingRepo;
   readonly run: RunOutcome;
+  /** the skill this test drove: the same string the command it sent carries */
+  readonly skill: string;
   readonly responder: ResponderRecord;
   /** the epics in the working tree before the run, and after it */
   readonly epicsBefore: readonly string[];
@@ -46,6 +49,8 @@ export interface RefineOutcome {
   /** what the forge has the standing repo's branch at, once the run is over */
   readonly remoteHeadAfterRun: string;
   readonly records: SessionRecords;
+  /** what the observer had left beside the run the moment it returned (`./debrief.ts`) */
+  readonly debriefs: Debriefs;
   /** what the run found in the operating system's temporary directory, and what it took away */
   readonly briefs: Briefs;
   readonly spend: Spend;
@@ -125,6 +130,13 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
         }
       }
       const briefs: Briefs = { beforeRun: briefsBefore, collected };
+
+      // Read here and not later, because "the moment the run returned" is the state this reports:
+      // no wait, no poll, and the debrief said to be still going is the answer rather than a
+      // reason to look again (`./debrief.ts`).
+      const debriefs = await readDebriefs(runDirectory);
+      t.diagnostic(describeDebriefs(debriefs));
+
       const answered = responder.record();
       const spend: Spend = {
         ceilingUsd: ceilings.spendUsd,
@@ -152,12 +164,14 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
         fixture,
         standingRepo,
         run,
+        skill: TEST_NAME,
         responder: answered,
         epicsBefore,
         epicsAfter,
         epicsPublished,
         remoteHeadAfterRun: await remoteHead(runDirectory, standingRepo.url),
         records: await readSessionRecords(runDirectory),
+        debriefs,
         briefs,
         spend,
         // Read whichever epic the run published, or an empty one when it published none — the

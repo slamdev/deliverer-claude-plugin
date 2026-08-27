@@ -17,7 +17,7 @@ records by hand. It took a session to do the first time. It should take minutes 
 what it is: the orchestrator plus its dispatches reconstructs to within 0.25% of the reported figure for both runs
 below.
 
-Three kinds of **spend** sit outside it, and each is outside for its own reason:
+Four kinds of **spend** sit outside it, and each is outside for its own reason:
 
 - **The review rounds.** A **round** runs as its own `claude` process, spawned by the tools server through the Agent
   SDK, so it writes its own top-level session record and its cost never reaches the orchestrator's total. This is
@@ -27,6 +27,17 @@ Three kinds of **spend** sit outside it, and each is outside for its own reason:
   separately and holds the pair to one ceiling (`harness/ceilings.ts`) — this one is by design, not a gap.
 - **The verifier.** It judges what the run delivered once the run is over, carries its own ceiling and reports its own
   cost. Out of scope for anything called "what the run cost".
+- **The observation.** Both paid tests are observed, because the plugin observes **run**s by default and the harness
+  deliberately leaves that default alone — the run's own `/deliverer:refine …` or `/deliverer:build …` is the
+  **observer**'s trigger, so nothing switches it on and nothing switches it off. The observer runs as its own process
+  outside the session, started by the plugin's hook and inheriting the session's environment, so it draws on **the same
+  account and the same credentials the run does** and its cost reaches the orchestrator's total no more than a round's
+  does. Measured by hand against runs of both skills, judging on: a refinement's observation costs **$3.18–$3.48**, of
+  which roughly **$0.40** is the per-**dispatch** notes on the cheap tier; a delivery's **$5.24–$6.70**.
+
+**So every figure in this file under-counts its run by whatever the observation cost** — the same shape of gap as the
+review spend above, and on a refinement a larger one. The two runs of 2026-08-15 below predate the observer entirely,
+so their totals are the run alone and stay comparable to each other; a run driven today spends the observation on top.
 
 **So the spend ceiling cannot see review spend at all.** On the delivery below that is $0.32 against a $25 ceiling —
 but the harness deliberately configures the cheapest review there is (`REVIEW_OPTIONS` in `harness/install.ts`: `low`
