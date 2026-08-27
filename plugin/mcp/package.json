@@ -2,7 +2,7 @@
   "name": "deliverer-tools-server",
   "version": "0.1.0",
   "private": true,
-  "description": "The deliverer plugin's Node code, in one package. What it holds today: the tools server, which drives the platform's own code review over a change-request URL, and the observer's mechanical half, which turns a run's session records into a trace and that trace into a debrief. Runs UNBUILT — Node strips the types, so there is no build step and no committed artifact.",
+  "description": "The deliverer plugin's Node code, in one package. What it holds today: the tools server, which drives the platform's own code review over a change-request URL, and the observer, which turns a run's session records into a trace and that trace into a debrief — by hand for a run that is over, and out of band beside a run that is still going. Runs UNBUILT — Node strips the types, so there is no build step and no committed artifact.",
   "type": "module",
   "engines": {
     "node": "^22.18.0 || >=23.6.0"

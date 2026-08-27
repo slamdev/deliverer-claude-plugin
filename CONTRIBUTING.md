@@ -115,7 +115,7 @@ what moved.
 ```
 .
 ├── plugin/                              ← THE PRODUCT. Everything published; nothing outside ships.
-│   ├── .claude-plugin/plugin.json         manifest: name, mattpocock-skills dependency, 3 userConfig options
+│   ├── .claude-plugin/plugin.json         manifest: name, mattpocock-skills dependency, 4 userConfig options
 │   ├── skills/{refine,build}/SKILL.md     the two commands
 │   ├── agents/                            the seven dispatched agents
 │   │   ├── spec-writer.md                 brief   → published spec
@@ -127,9 +127,13 @@ what moved.
 │   │   └── comments-addresser.md          unresolved comments → fixes, declines, hand-offs
 │   ├── mcp/                               the plugin's Node code, one package — ships UNBUILT (Node strips
 │   │                                      the types). What it holds today: the tools server, and the
-│   │                                      observer's distiller and debrief
+│   │                                      observer — its distiller, its debrief and the process that
+│   │                                      watches a live run
 │   │   ├── launch.mjs                     what .mcp.json runs; resolves the staged copy, starts the
 │   │   │                                  install hook when nothing else has
+│   │   ├── observe.mjs                    the observer's entry point, beside the server's: what the
+│   │   │                                  prompt hook spawns; detaches, stands in the data directory,
+│   │   │                                  waits for the install and imports the staged copy
 │   │   ├── server/index.ts                the three tools + the transcript resource
 │   │   ├── server/lifecycle.ts            start / poll / cancel, one-in-flight, the deadline
 │   │   ├── server/review-state.ts         the record, the reducer, the published projection
@@ -144,8 +148,14 @@ what moved.
 │   │   ├── observer/{run-facts,debrief-file,plugin-commit}.ts  the run's extent and every figure
 │   │   │                                  bounded by it · the debrief and the identity file beside
 │   │   │                                  it · which plugin the run used
+│   │   ├── observer/{observer,announce}.ts  the loop that watches a live run and finalises its
+│   │   │                                  debrief · the two lines to the human, and the files the
+│   │   │                                  hooks read them out of
 │   │   └── package.json · tsconfig.json · eslint.config.js
-│   ├── hooks/install-mcp-server.sh        SessionStart: install deps, republish source every session
+│   ├── hooks/install-mcp-server.sh        SessionStart: install deps, republish both source trees
+│   ├── hooks/observe-run.sh               UserPromptSubmit / Stop / SessionEnd: start an observer,
+│   │                                      name a debrief, signal the finalise; reads the switch from
+│   │                                      CLAUDE_PLUGIN_OPTION_OBSERVE_RUNS and never ${user_config.*}
 │   └── .mcp.json                          wires userConfig → the server's environment
 ├── .claude-plugin/marketplace.json      the marketplace entry (git-subdir → plugin/)
 ├── CONTEXT.md                           the glossary / ubiquitous language
@@ -220,8 +230,8 @@ Implements the work, using `/tdd` at the seams the spec named. Work one ticket a
 ## CI
 
 `.github/workflows/ci.yml` runs on pushes to `main` and on every change request. One job, `check`, over both packages
-this repository has: the plugin's Node code in `plugin/mcp` — today, the tools server, the observer's distiller and the
-**debrief** it writes — and the end-to-end **harness**
+this repository has: the plugin's Node code in `plugin/mcp` — today, the tools server and the **observer**, which
+distils a **run**'s records, writes its **debrief** and watches a live run to its end — and the end-to-end **harness**
 in `e2e-tests`. One `setup-node`, then the other three steps once for each package:
 
 | Step                | What and why                                                                                |
@@ -260,7 +270,8 @@ Know this before you rely on a green tick:
   `typecheck`.
 - **No markdown is checked.** The skills, the agents, `README.md` and `CONTEXT.md` are the bulk of the product and
   nothing lints, wraps or spell-checks them.
-- **Nothing in CI runs the server, the launcher, or the SessionStart hook.** No manifest is validated against its
+- **Nothing in CI runs the server, either launcher, or any of the four hook events.** `SessionStart` installs and
+  publishes; `UserPromptSubmit`, `Stop` and `SessionEnd` are the **observer**'s. No manifest is validated against its
   `$schema` either.
 
 So behaviour is verified deliberately: by hand with the three procedures below, or in one command by the end-to-end

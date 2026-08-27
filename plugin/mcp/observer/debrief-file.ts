@@ -28,7 +28,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { NO_TOKENS, type TokenTotals } from "./records.ts";
 import { formatDuration, tokenDetail, type Trace, type TraceDispatch } from "./trace.ts";
-import { observationDirectory } from "./trace-file.ts";
+import { observationDirectory, writeFileAtomically } from "./trace-file.ts";
 import type { PluginCommit } from "./plugin-commit.ts";
 import type { RunFacts, RunRound } from "./run-facts.ts";
 
@@ -76,6 +76,22 @@ export type Judging = {
   readonly cost: ObservationCost;
 };
 
+/**
+ * The live **observer**'s facts-only answer, which is the only one it has today.
+ *
+ * Separate from `NOTHING_JUDGED` below because the two make different claims about the same empty
+ * section, and a human reading a debrief of a run they just watched should not be told it was
+ * replayed. Ticket 05 replaces this one and leaves the other alone.
+ */
+export const NOTHING_JUDGES_YET: Judging = {
+  kind: "none",
+  reason:
+    "Nothing judged this run. The observer that watched it is mechanical throughout in this " +
+    "build of the plugin: it reads the host's own session records, works the figures above out " +
+    "of them and calls no model at all.",
+  cost: { modelCalls: 0, tokens: NO_TOKENS, costUsd: 0 },
+};
+
 /** The facts-only path: replay with no model in play, and its own cost measured at nothing. */
 export const NOTHING_JUDGED: Judging = {
   kind: "none",
@@ -121,13 +137,51 @@ export interface WrittenDebrief {
   readonly ordinal: number;
 }
 
+/**
+ * Whether the run this debrief is about is over (run-observation ticket 04; D23).
+ *
+ * **Finalising is a flag and never a second document.** The live **observer** rewrites this
+ * debrief as each stage lands, so a readable one exists from the first stage onwards — and
+ * "nothing was found yet" has to be tellable from "the run is over". Replay never carries one: a
+ * record on disk is a run that has stopped, so `undefined` means finalised and renders exactly
+ * what ticket 03 rendered, byte for byte.
+ */
+export interface DebriefStatus {
+  readonly finalised: boolean;
+  /** why it is not final yet, in the reader's words; unused once `finalised` */
+  readonly note: string;
+}
+
 export interface DebriefInput {
   readonly trace: Trace;
   readonly facts: RunFacts;
   readonly commit: PluginCommit;
   readonly judging: Judging;
   readonly tracePath: string;
+  /** absent means the run is over, which is what a replay always looks at */
+  readonly status?: DebriefStatus;
+  /**
+   * What the OBSERVER itself lost, as against what the run's records lost (D29).
+   *
+   * The two are printed together and they are different claims: the records' losses say the run's
+   * own account was damaged, and these say the thing reading it was. A diagnostic that stopped
+   * working must not read as a run with nothing wrong with it, and this is where it says so.
+   */
+  readonly observationLosses?: readonly string[];
 }
+
+/**
+ * How a debrief and its identity file are put on disk.
+ *
+ * Two implementations and they mean different things, which is why the caller chooses rather than
+ * the writer guessing: `writeDebrief` below is **replay**'s — it writes BESIDE whatever is there
+ * and rewrites nothing (D19) — and `refreshDebrief` is the live observer's, which keeps exactly
+ * one debrief current for the run it is watching (D23).
+ */
+export type DebriefWriter = (
+  dataDirectory: string,
+  input: DebriefInput,
+) => Promise<WrittenDebrief>;
 
 /**
  * Writes the debrief and its identity file, and removes nothing.
@@ -170,6 +224,35 @@ function isAlreadyThere(error: unknown): boolean {
   );
 }
 
+/**
+ * The live **observer**'s writer: one debrief per run, kept current (run-observation ticket 04;
+ * D23).
+ *
+ * **It takes the first pair of names and rewrites them, which is the one thing `writeDebrief`
+ * above refuses to do — and the two are not in conflict.** A run has exactly one observer, holding
+ * a lock on this directory, and the debrief it is rewriting is its own account of a run still
+ * going. A REPLAY of that same run afterwards still writes beside it as `debrief-2.md`, so D19's
+ * "nothing already there is removed" holds for everything that is not this observer's own current
+ * answer.
+ *
+ * **Every rewrite is staged and renamed** (`writeFileAtomically`), because "a readable debrief
+ * exists at every moment" includes the moments something is reading it — ticket 08's end-to-end
+ * assertion reads the current one with no wait and no poll, and rests on exactly this.
+ */
+export async function refreshDebrief(
+  dataDirectory: string,
+  input: DebriefInput,
+): Promise<WrittenDebrief> {
+  const directory = observationDirectory(dataDirectory, input.trace);
+  await mkdir(directory, { recursive: true });
+  const names = debriefNames(1);
+  const debriefPath = join(directory, names.debrief);
+  const identityPath = join(directory, names.identity);
+  await writeFileAtomically(debriefPath, renderDebrief(input));
+  await writeFileAtomically(identityPath, renderIdentity(input, 1));
+  return { debriefPath, identityPath, ordinal: 1 };
+}
+
 /* ──────────────────────────────────── the identity file ──────────────────────────────────── */
 
 /**
@@ -202,6 +285,12 @@ export function renderIdentity(input: DebriefInput, ordinal: number): string {
     `session: ${trace.sessionId ?? "unknown"}`,
     `record: ${trace.recordPath}`,
     `debrief: ${debriefNames(ordinal).debrief}`,
+    // D23's flag, read by the observer of a later run of the same epic (ticket 07): a debrief the
+    // observer is still rewriting is read for continuity but marked as unfinished where it is
+    // used, and a half-written account presented as a finished one is the thing that must not
+    // happen. Replay carries no status and is always `yes` — a record on disk is a run that
+    // stopped.
+    `finalised: ${input.status === undefined || input.status.finalised ? "yes" : "no"}`,
   ];
   return `${lines.join("\n")}\n`;
 }
@@ -240,6 +329,19 @@ export function renderDebrief(input: DebriefInput): string {
       "delivered into and no word of what the run and its human said to each other. **It is safe " +
       "to forward without reading it first.** Where to send it is at the bottom.",
   );
+
+  // D23's flag, where a human meets it. The observer rewrites this file as each stage lands, so a
+  // reader can open it mid-run — and a set of figures that stops halfway is worth having only if
+  // it says it is not the whole run yet. Nothing is printed once the run is over, so a finalised
+  // live debrief and a replay of the same records are the same bytes.
+  if (input.status !== undefined && !input.status.finalised) {
+    paragraph(out,
+      `**This run is still going, so this debrief is not final.** ${input.status.note} Every ` +
+        `figure below is the run as far as it has got, and this file is rewritten as each stage ` +
+        `lands. Forwarding it is safe — the bound below holds either way — but a later reading of ` +
+        `the same file will say more.`,
+    );
+  }
 
   line(out, "## The run");
   blank(out);
@@ -286,7 +388,7 @@ export function renderDebrief(input: DebriefInput): string {
 
   line(out, "## What this observation lost");
   blank(out);
-  const losses = [...trace.losses, ...facts.losses];
+  const losses = [...trace.losses, ...facts.losses, ...(input.observationLosses ?? [])];
   if (losses.length === 0) {
     paragraph(out,
       "Nothing: every record this run left was read whole, and every figure above is off those " +
@@ -295,8 +397,8 @@ export function renderDebrief(input: DebriefInput): string {
   } else {
     paragraph(out,
       "The figures above rest on the host's own session records, and this much of them could not " +
-        "be read. A run whose records were damaged does not read here as a run with nothing wrong " +
-        "with it.",
+        "be read — or was lost by the thing reading them. A run whose records were damaged, and " +
+        "an observation that degraded, do not read here as a run with nothing wrong with it.",
     );
     for (const loss of losses) out.lines.push(...wrap("- ", loss, "  "));
     blank(out);

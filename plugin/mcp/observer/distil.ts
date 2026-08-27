@@ -34,6 +34,8 @@ export const DATA_DIRECTORY_ENV = "CLAUDE_PLUGIN_DATA";
 export type Distillation =
   /** a run was found and its trace is on disk */
   | { readonly kind: "traced"; readonly trace: Trace; readonly path: string }
+  /** a run was found and `writeWhen` said not yet, so nothing was put on disk */
+  | { readonly kind: "held"; readonly trace: Trace; readonly reason: string }
   /** the record was read and holds no deliverer run — an answer, not a failure */
   | { readonly kind: "no-run"; readonly reason: string }
   /** nothing could be distilled: the record, or where to put the trace, is not there */
@@ -42,6 +44,18 @@ export type Distillation =
 export interface DistilOptions {
   readonly recordPath: string;
   readonly dataDirectory: string;
+  /**
+   * Asked with the finished trace, just before it would be written (run-observation ticket 04).
+   * `false` keeps it — and everything downstream of it — off disk entirely.
+   *
+   * **It exists because where an observation lives is decided by the trace itself**: the directory
+   * is keyed by the epic's **slug**, and a run that has not yet created a task carries the
+   * stand-in. The live **observer** reads a run WHILE it happens, so its first readings land in
+   * that window — and without this gate each of them would leave a whole observation under
+   * `unknown-slug/` that nothing ever comes back to. Replay never passes one: a record on disk has
+   * whatever slug it is ever going to have.
+   */
+  readonly writeWhen?: (trace: Trace) => boolean;
 }
 
 export async function distil(options: DistilOptions): Promise<Distillation> {
@@ -87,6 +101,13 @@ export async function distil(options: DistilOptions): Promise<Distillation> {
     dispatchRecords: dispatched.records,
     losses: dispatched.losses,
   });
+  if (options.writeWhen !== undefined && !options.writeWhen(trace)) {
+    return {
+      kind: "held",
+      trace,
+      reason: `the caller held this trace back rather than writing it under "${trace.slug}"`,
+    };
+  }
   return { kind: "traced", trace, path: await writeTrace(options.dataDirectory, trace) };
 }
 
@@ -144,6 +165,14 @@ async function main(argv: readonly string[]): Promise<number> {
       `no deliverer run in this record, so no trace was written.\n  ${result.reason}\n`,
     );
     return 2;
+  }
+  if (result.kind === "held") {
+    // Unreachable from here and kept anyway: `writeWhen` belongs to the live observer and this
+    // command passes none, so the only way to arrive is a future caller that forgot. Falling
+    // through to read a file that was deliberately not written would report that as a missing
+    // trace, which is the wrong diagnosis for the right symptom.
+    process.stderr.write(`deliverer observer: ${result.reason}\n`);
+    return 1;
   }
   const bytes = Buffer.byteLength(await readBack(result.path), "utf8");
   process.stdout.write(`${result.path}\n  ${summarise(result.trace, bytes)}\n`);

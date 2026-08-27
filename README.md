@@ -91,6 +91,9 @@ suffix does not — it selects a long-context beta, measured only against the fi
 refused as well; a round that meets that fails with a reason naming this option, and a bare alias is what you set
 instead. Leave it empty to take whatever your credentials already default to.
 
+**Observe runs** — _default on._ Whether each run is observed and comes back as a debrief. See
+[Observation](#observation) for what that means; turning it off stops the whole thing.
+
 ### The environment file
 
 Each review runs as its own Claude agent, and this file is how it logs in. One `KEY=value` per line; blank lines and `#`
@@ -172,11 +175,62 @@ questions again.
 - any assumption the run escalated instead of deciding
 - the final review and merge of the change request
 
+## Observation
+
+Every run is observed, and what it cost you comes back as a **debrief** — a short document you can forward to whoever
+maintains the plugin. It is on by default and you do not have to do anything to get one.
+
+**What it does.** When you type `/deliverer:refine` or `/deliverer:build`, the plugin starts a separate process beside
+your run. It reads the session records Claude Code already writes for every session and every agent a session
+dispatches, and turns them into a debrief: what the plugin's own machinery did, how long each stage took, how many
+questions it put to you, how long it waited on you, what the reviews ended on, and what the whole run spent in tokens.
+When your run stops, a line names the debrief and where it is. If you closed the terminal before it finished, the line
+comes on your next prompt instead.
+
+**It cannot affect your run.** The observer runs outside the run entirely, in its own process, with its own session and
+its input and output closed. It never speaks into your session while a run is going, never asks the run for anything,
+and never touches your repository or your forge. If it fails, it says so in that same line and your run carries on
+untouched. A run that fell over is observed exactly like one that finished — those are the ones most worth reporting.
+
+**What a debrief may and may not contain.** It is bounded to the plugin's own machinery: its skills, its agents, its
+dispatches, its timings and its spend. It carries **nothing from your repository** — no code, no spec, no ticket, no
+branch and no path — and **no word of what you and the run said to each other**: how many questions you were asked and
+how long you were waited on, never the questions or the answers. The one thing of yours it names is the epic's short
+name, which is what groups an epic's several runs together. That bound is what makes it safe to forward without
+reading it first, and the debrief says so at the top and again at the bottom, along with where to send it.
+
+Kept beside the debrief is the **trace** it was worked out from. That one is bounded by nothing — it holds whatever the
+run touched — so it is named `DO-NOT-FORWARD-trace.txt` and says the same thing on its first line. It is there so you
+can check a figure you doubt. Do not attach it. The same goes for the `DO-NOT-FORWARD-identity.txt` beside it, which
+records which repository the run was in so that a later run of the same epic can find its own earlier debriefs.
+
+**What it writes, and where.** Everything goes under the plugin's own data directory — the same place it installs
+itself — and never inside a repository, so nothing of its own can be swept into a commit or a change request. One
+directory per run, under the epic's name:
+
+```
+~/.claude/plugins/data/deliverer-<marketplace>/observations/<epic>/<when the run started>/
+```
+
+**Nothing is ever removed.** No pruning, no expiry, no cleanup. A run's records are a few hundred kilobytes of debrief
+and trace, and they stay until you delete them yourself.
+
+**What it costs.** Today the debrief is worked out by code alone: no model is called and the debrief says so, and the
+line "what this observation cost" reads zero because it was measured rather than assumed. What it does spend is a
+little CPU on the machine the run is on — it re-reads the run's records every few seconds while the run is going — and
+disk for what it keeps. When the plugin does start judging runs, it will draw on the **same account your run
+authenticates with**, since it inherits the environment your session started in.
+
+**Turning it off.** `/plugin` → **deliverer** → **Observe runs**. With it off nothing starts at all: no process, no
+trace and no debrief.
+
 ## Costs
 
 `/deliverer:build` runs real models over a whole epic, and each review round is a full review of the change request.
 Every run reports what its reviews spent. If that is more than you want, turn the **code review effort** down; if a
 change is high-stakes, turn it up.
+
+Observation costs nothing in models today — see [Observation](#observation) — and turning it off is one setting.
 
 ## Troubleshooting
 

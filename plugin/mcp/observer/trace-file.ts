@@ -14,7 +14,7 @@
  * so re-distilling a run rewrites its own trace and removes nothing else: nothing is ever pruned
  * (D19).
  */
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { formatDuration, tokenDetail, UNKNOWN_STAMP, type Trace, type TraceLine } from "./trace.ts";
 
@@ -52,8 +52,38 @@ export function traceFilePath(dataDirectory: string, trace: Trace): string {
 export async function writeTrace(dataDirectory: string, trace: Trace): Promise<string> {
   const path = traceFilePath(dataDirectory, trace);
   await mkdir(observationDirectory(dataDirectory, trace), { recursive: true });
-  await writeFile(path, renderTrace(trace), "utf8");
+  await writeFileAtomically(path, renderTrace(trace));
   return path;
+}
+
+/**
+ * Write a file so that nothing ever reads it half-written (run-observation ticket 04).
+ *
+ * **Staged and renamed, never written over in situ.** The live **observer** rewrites this run's
+ * trace and its **debrief** as each stage lands, so "a readable one exists at every moment" (D23)
+ * includes the moments something is reading it — and a document caught half-written is one nobody
+ * can tell apart from one the observer got wrong. `rename(2)` within a directory is atomic, so a
+ * reader sees the previous whole file or the new whole file and never a prefix of either.
+ *
+ * The staging name carries the pid, for the reason `hooks/install-mcp-server.sh` publishes under a
+ * per-process name: two observers in one data directory are routine (two sessions, two runs), and
+ * a fixed staging name would have one truncate the file the other is mid-write into.
+ *
+ * It lives here rather than in a module of its own because this file is already where an
+ * observation's files are placed, and `./debrief-file.ts` — the only other writer — already reads
+ * its layout from here.
+ */
+export async function writeFileAtomically(path: string, text: string): Promise<void> {
+  const staged = `${path}.staged.${process.pid}`;
+  try {
+    await writeFile(staged, text, "utf8");
+    await rename(staged, path);
+  } catch (error) {
+    // The staging file is this process's own, so removing it is never somebody else's work being
+    // undone. Failing to remove it is not worth reporting over the failure that got us here.
+    await rm(staged, { force: true }).catch(() => undefined);
+    throw error;
+  }
 }
 
 /* ─────────────────────────────────────── the text ─────────────────────────────────────── */

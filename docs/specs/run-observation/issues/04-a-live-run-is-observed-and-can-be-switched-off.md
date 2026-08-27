@@ -10,78 +10,78 @@ on the next prompt. One option turns the whole thing off. This is the ticket tha
 and merging it is what ships it — so the switch and the disclosure land with it rather than after. Settled as D1, D3,
 D22, D23, D25, D26, D29 and D32 in `../spec.md`.
 
-- [ ] **C1 is settled, and its answer is recorded** in `../spec.md`'s claims section: a hook substitutes
+- [x] **C1 is settled, and its answer is recorded** in `../spec.md`'s claims section: a hook substitutes
       `${user_config.*}` only in exec form, and for an option sitting at its manifest default it substitutes nothing
       at all, because a hook reads the saved option values where the MCP path merges the manifest's defaults first.
       Nothing here re-opens it — the criteria below are written to that answer.
-- [ ] A prompt that is a `/deliverer:` command starts an observer. So does a prompt in a session whose records
+- [x] A prompt that is a `/deliverer:` command starts an observer. So does a prompt in a session whose records
       already carry deliverer attribution, which is how a run resumed by prose rather than re-typed is covered.
-- [ ] The attribution check is bounded, because it runs on every prompt of every session on the machine and not only
+- [x] The attribution check is bounded, because it runs on every prompt of every session on the machine and not only
       on deliverer's. Once an observer exists for a session it is not asked again, and where none exists only a
       bounded slice of the record is read. One measured delivery's main record is 812 KB beside 5.9 MB of
       per-dispatch records, so a whole-record read per prompt is the criterion below failing.
-- [ ] Any other prompt starts nothing, and the hook costs a session with no run in it nothing worth measuring.
-- [ ] The observer is detached by the hook itself — its own session, its own process group, and **stdio closed**,
+- [x] Any other prompt starts nothing, and the hook costs a session with no run in it nothing worth measuring.
+- [x] The observer is detached by the hook itself — its own session, its own process group, and **stdio closed**,
       because a child holding the hook's stdout open keeps the host waiting on the pipe long after the hook has
       exited, which is the run waiting on the observer. The hook returns at once and the process outlives it.
-- [ ] It is not detached through the host's own `async` hook option. That backgrounds the process, but the host goes
+- [x] It is not detached through the host's own `async` hook option. That backgrounds the process, but the host goes
       on tracking it and delivers its later output into the session as an attachment — which is the one thing an
       out-of-band observer may never do (D1, and `../spec.md`'s non-goal on interrupting the run).
-- [ ] Its working directory is the plugin's data directory and never a repository — it is alive while an
+- [x] Its working directory is the plugin's data directory and never a repository — it is alive while an
       `implementer` is committing to the **epic branch**. A hook is spawned in the project's own directory, so this
       is the observer's own first act rather than something the launch site hands it.
-- [ ] The debrief is rewritten as each stage lands, so a readable one exists at every moment rather than only at the
+- [x] The debrief is rewritten as each stage lands, so a readable one exists at every moment rather than only at the
       end. Each rewrite is atomic — staged and renamed into place, never written over in situ — because "at every
       moment" includes the moments something is reading it, and a debrief caught half-written is one nobody can tell
       apart from a debrief the observer got wrong. Ticket 08's assertion reads the current one with no wait and no
       poll, and rests on this.
-- [ ] Session end **signals** the finalising and never performs it. A `SessionEnd` hook is given 1500 ms before the
+- [x] Session end **signals** the finalising and never performs it. A `SessionEnd` hook is given 1500 ms before the
       host aborts it and force-exits about five seconds later, and the only way to raise that bound is to declare a
       `timeout` — which makes every exit of every session wait, observed or not. So the hook tells the running
       observer to finalise and returns in milliseconds.
-- [ ] A generous idle bound — no new record anywhere, main or per-dispatch — finalises the debrief a killed terminal
+- [x] A generous idle bound — no new record anywhere, main or per-dispatch — finalises the debrief a killed terminal
       left, and catches a session end whose signal did not land. Nothing waits forever.
-- [ ] A line when the run stops names the headline and the path. It prints nothing at all when there is no debrief
+- [x] A line when the run stops names the headline and the path. It prints nothing at all when there is no debrief
       to name, so a refinement's per-question stops stay silent.
-- [ ] A line on the next prompt mentions a debrief that has not been read.
-- [ ] Both lines reach the human as a hook's `systemMessage`, never as `additionalContext` and never as bare stdout.
+- [x] A line on the next prompt mentions a debrief that has not been read.
+- [x] Both lines reach the human as a hook's `systemMessage`, never as `additionalContext` and never as bare stdout.
       On a `Stop` hook `additionalContext` is feedback for the model and the conversation continues on it, which
       would prod a run this feature must not touch. C3 in `../spec.md` records the channel and how it was settled.
-- [ ] Both lines say what the debrief is, that it is bounded and safe to forward, where it is, and how to turn
+- [x] Both lines say what the debrief is, that it is bounded and safe to forward, where it is, and how to turn
       observation off.
-- [ ] A `userConfig` option turns observation off entirely: no process starts, no trace is written and no debrief
+- [x] A `userConfig` option turns observation off entirely: no process starts, no trace is written and no debrief
       appears. Its default is on.
-- [ ] The switch is read from `CLAUDE_PLUGIN_OPTION_<KEY>` in the hook's own environment. An absent variable means
+- [x] The switch is read from `CLAUDE_PLUGIN_OPTION_<KEY>` in the hook's own environment. An absent variable means
       nobody set the option, which for a default of on is the answer rather than a gap — where a hook referencing
       `${user_config.<key>}` would be refused outright for exactly the users who never touched it. No hook of this
       plugin's references `${user_config.*}` at all, in either form.
-- [ ] The `SessionStart` install hook publishes the observer's source into the plugin's data directory alongside the
+- [x] The `SessionStart` install hook publishes the observer's source into the plugin's data directory alongside the
       server's, and the observer resolves the Agent SDK from there — the same arrangement
       [ADR-0002](../../../adrs/0002-dependencies-and-source-are-installed-into-the-plugins-data-directory.md) and
       [ADR-0003](../../../adrs/0003-the-launcher-waits-for-the-install-rather-than-racing-it.md) already settled for
       the server. No second `npm ci`, and session-start time does not grow.
-- [ ] That publish keeps every property the server's already has: a path that never resolves to nothing, one atomic
+- [x] That publish keeps every property the server's already has: a path that never resolves to nothing, one atomic
       replacement, per-process staging names, and a leftover sweep that knows every name the new tree can leave
       behind. The block being extended is the product of two review rounds against precisely those failures — an
       absent-path window a launcher spawned into, and two concurrent hooks interleaving into a nested tree — and a
       second tree published beside it by a less careful mechanism reopens them for the server too.
-- [ ] An observer starting before the install has finished behaves the way `launch.mjs` does rather than dying on a
+- [x] An observer starting before the install has finished behaves the way `launch.mjs` does rather than dying on a
       missing SDK: the host spawns hooks on the first prompt of a cold host while the install is still arriving,
       which is the race [ADR-0003] exists for. Whatever it decides, giving up is reported through the line that was
       going to be printed anyway rather than being silent.
-- [ ] Nothing the observer does can slow, block, edit or fail a run. Any failure of its own leaves no error in the
+- [x] Nothing the observer does can slow, block, edit or fail a run. Any failure of its own leaves no error in the
       session, no exit code that matters and nothing the human must act on.
-- [ ] A failure that stops a debrief being produced still reaches the human, through the line that was going to be
+- [x] A failure that stops a debrief being produced still reaches the human, through the line that was going to be
       printed anyway.
-- [ ] The README gains a section: what observation does, that it is on by default, what it writes and where, that it
+- [x] The README gains a section: what observation does, that it is on by default, what it writes and where, that it
       draws on the same account as the run, that nothing is ever removed, what a debrief may and may not contain,
       and how to turn it off.
-- [ ] CONTRIBUTING's project tree carries what this ticket adds: the observer's entry point stands beside the
+- [x] CONTRIBUTING's project tree carries what this ticket adds: the observer's entry point stands beside the
       server's under `plugin/mcp/`, and the manifest's line agrees with the number of `userConfig` options there now
       are. Ticket 01 leaves both lines shaped so this is an addition rather than a rewrite.
-- [ ] The hook states are walked by hand and reported: a session with no run in it, a command typed, a run resumed
+- [x] The hook states are walked by hand and reported: a session with no run in it, a command typed, a run resumed
       by prose, a session ended mid-run, a killed terminal, and observation switched off.
-- [ ] In the resumed-by-prose state, the debrief's commit line is read as well as whether the observer started. That
+- [x] In the resumed-by-prose state, the debrief's commit line is read as well as whether the observer started. That
       record carries no skill preamble, so it is the only one that reaches ticket 03's fallback — the installed
       plugin's commit, labelled as not the one the run used — and no replay can get there, because every run on disk
       typed its command. Without this the fallback ships exercised by nothing.

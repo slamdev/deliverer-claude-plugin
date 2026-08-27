@@ -34,6 +34,8 @@ import { runFactsOf, type RunFacts } from "./run-facts.ts";
 import {
   NOTHING_JUDGED,
   writeDebrief,
+  type DebriefStatus,
+  type DebriefWriter,
   type Judging,
   type WrittenDebrief,
 } from "./debrief-file.ts";
@@ -50,14 +52,43 @@ export type DebriefOutcome =
   /** the record holds no deliverer run, so there is no trace and no debrief — an answer, not a
    *  failure */
   | { readonly kind: "no-run"; readonly reason: string }
+  /** the caller's `writeWhen` held this reading back, so nothing was put on disk */
+  | { readonly kind: "held"; readonly trace: Trace; readonly reason: string }
   /** nothing could be read, or there is nowhere to write */
   | { readonly kind: "refused"; readonly reason: string };
+
+/** What a judge is handed: the whole run, mechanically read, and nothing else. */
+export interface JudgingInput {
+  readonly trace: Trace;
+  readonly facts: RunFacts;
+}
+
+/**
+ * What the judging half contributed, either as an answer or as the thing that produces one.
+ *
+ * **The function form is the seam tickets 05 and 06 land on**, and it exists because a judge needs
+ * the trace and the facts — which are built here — before it can say anything. Passing an answer
+ * is what replay does, since replay's answer is D17's and needs no input at all.
+ */
+export type JudgingSource = Judging | ((input: JudgingInput) => Promise<Judging>);
 
 export interface DebriefOptions {
   readonly recordPath: string;
   readonly dataDirectory: string;
   /** what the judging half contributed; the default is the facts-only path D17 settles */
-  readonly judging?: Judging;
+  readonly judging?: JudgingSource;
+  /**
+   * How the pair of files is put on disk (run-observation ticket 04). The default is replay's —
+   * beside whatever is already there, rewriting nothing — and the live **observer** passes
+   * `refreshDebrief`, which keeps exactly one current for the run it is watching.
+   */
+  readonly write?: DebriefWriter;
+  /** absent means the run is over, which is what a replay always looks at (D23) */
+  readonly status?: DebriefStatus;
+  /** `./distil.ts`'s gate: `false` puts nothing on disk and answers `held` */
+  readonly writeWhen?: (trace: Trace) => boolean;
+  /** what the OBSERVER itself lost, as against what the records lost (D29) */
+  readonly observationLosses?: readonly string[];
 }
 
 /**
@@ -90,12 +121,17 @@ export async function debriefRun(options: DebriefOptions): Promise<DebriefOutcom
     inRecords: facts.commitInRecords,
     dataDirectory: options.dataDirectory,
   });
-  const written = await writeDebrief(options.dataDirectory, {
+  const source = options.judging ?? NOTHING_JUDGED;
+  const judging =
+    typeof source === "function" ? await source({ trace: distilled.trace, facts }) : source;
+  const written = await (options.write ?? writeDebrief)(options.dataDirectory, {
     trace: distilled.trace,
     facts,
     commit,
-    judging: options.judging ?? NOTHING_JUDGED,
+    judging,
     tracePath: distilled.path,
+    status: options.status,
+    observationLosses: options.observationLosses,
   });
   return { kind: "written", trace: distilled.trace, facts, tracePath: distilled.path, written };
 }
@@ -151,6 +187,12 @@ async function main(argv: readonly string[]): Promise<number> {
         `  ${outcome.reason}\n`,
     );
     return 2;
+  }
+  if (outcome.kind === "held") {
+    // Unreachable from here for the reason `./distil.ts`'s own branch gives — this command passes
+    // no `writeWhen` — and kept for the same one.
+    process.stderr.write(`deliverer observer: ${outcome.reason}\n`);
+    return 1;
   }
   process.stdout.write(
     `${outcome.written.debriefPath}\n  ${summariseDebrief(outcome)}\n` +
