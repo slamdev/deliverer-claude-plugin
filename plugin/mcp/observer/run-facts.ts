@@ -136,6 +136,22 @@ export interface RunFacts {
   readonly human: HumanTime;
   readonly taskUpdates: number;
   readonly toolCalls: number;
+  /**
+   * What this run's task list opened at, where its first task update carried a count
+   * (run-observation ticket 07).
+   *
+   * **The third continuity state, and the only place it can be read from.** Both skills prefix a
+   * task subject with the epic's slug and carry the progress in it — `<slug>: implement every ticket
+   * (16/18)` — and the first delivery on the machine this was measured on opened at exactly that,
+   * so sixteen tickets were delivered by something no record there holds. Without it a debrief
+   * reading "no earlier debriefs" is indistinguishable from a first run.
+   *
+   * **Only the two counts, never the subject that carried them.** A task's subject past the slug is
+   * the user's own domain, and ADR-0018 makes the slug the one thing of it a debrief carries.
+   * `undefined` where no task update of this run carried a count at all, which is what a refinement
+   * leaves.
+   */
+  readonly openedAt: { readonly completed: number; readonly total: number } | undefined;
   /** the commit the run's own records name, for `./plugin-commit.ts` to label */
   readonly commitInRecords: string | undefined;
   /**
@@ -176,10 +192,15 @@ export function runFactsOf(input: RunFactsInput): RunFacts {
 
   let taskUpdates = 0;
   let toolCalls = 0;
+  let openedAt: RunFacts["openedAt"];
   for (const entry of window) {
     for (const block of toolUses(entry)) {
       toolCalls += 1;
-      if (TASK_TOOLS.has(stringField(block, "name") ?? "")) taskUpdates += 1;
+      if (!TASK_TOOLS.has(stringField(block, "name") ?? "")) continue;
+      taskUpdates += 1;
+      // The FIRST count wins, exactly as the first slug does in `./trace.ts`: what the run opened
+      // at is what a later update cannot move (ticket 07).
+      openedAt ??= progressIn(block);
     }
   }
 
@@ -196,6 +217,7 @@ export function runFactsOf(input: RunFactsInput): RunFacts {
     human: humanTimeOf(window),
     taskUpdates,
     toolCalls,
+    openedAt,
     // Scanned over the run's own window rather than the whole session: a preamble from somebody
     // else's later skill in the same session is not this run's evidence of anything.
     commitInRecords: plugin?.commit,
@@ -203,6 +225,21 @@ export function runFactsOf(input: RunFactsInput): RunFacts {
     repository: window.map((entry) => stringField(entry, "cwd")).find((it) => it !== undefined),
     losses,
   };
+}
+
+/**
+ * The progress a task subject carries, as its two counts and nothing else (ticket 07).
+ *
+ * Both skills write `<slug>: implement every ticket (4/21)`, checked against every run on the
+ * machine this was measured on, refinements and deliveries alike. The subject itself never leaves
+ * this function: past the slug it is the repository's own domain (ADR-0018). A subject with no
+ * count — every one a refinement writes — is `undefined` and not a zero.
+ */
+function progressIn(block: JsonObject): RunFacts["openedAt"] {
+  const subject = stringField(objectField(block, "input"), "subject");
+  const match = subject === undefined ? null : /\((\d+)\/(\d+)\)/.exec(subject);
+  if (match?.[1] === undefined || match[2] === undefined) return undefined;
+  return { completed: Number(match[1]), total: Number(match[2]) };
 }
 
 /* ─────────────────────────────────────── the extent ─────────────────────────────────────── */

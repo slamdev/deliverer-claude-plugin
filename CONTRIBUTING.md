@@ -151,6 +151,9 @@ what moved.
 │   │   ├── observer/{observer,announce}.ts  the loop that watches a live run and finalises its
 │   │   │                                  debrief · the two lines to the human, and the files the
 │   │   │                                  hooks read them out of
+│   │   ├── observer/continuity.ts         the earlier debriefs of this epic, read for the one
+│   │   │                                  synthesis: only the same repository's, newest per run,
+│   │   │                                  never an earlier run's trace or notes
 │   │   ├── observer/{judge,notes,notes-file,model-call}.ts  the judging half: one long-context
 │   │   │                                  reading of a whole run · a dispatch note per dispatch, on
 │   │   │                                  a cheap tier as each lands · where those notes live and

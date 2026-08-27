@@ -47,6 +47,7 @@
  * saw the most of somebody's repository.
  */
 import { readdir } from "node:fs/promises";
+import { earlierDebriefs, type Continuity, type ContinuitySummary } from "./continuity.ts";
 import { installedDirectory } from "./plugin-commit.ts";
 import { renderTrace } from "./trace-file.ts";
 import { formatDuration, type Trace } from "./trace.ts";
@@ -238,6 +239,7 @@ function synthesisPrompt(input: {
   readonly tree: JudgedTree;
   readonly traceText: string;
   readonly notesText: string | undefined;
+  readonly earlier: Continuity;
 }): string {
   const { trace, facts, tree } = input;
   const skill = trace.skills.join(", ") || facts.extent.command || "a deliverer run";
@@ -290,6 +292,11 @@ question was asked in two rounds, that a stage was dispatched cold when it could
 or that a fix wave undid what an earlier one did. You are holding the whole run in one reading, which
 is the only place those are visible.
 
+**Cross-RUN is the other place, and the earlier debriefs below are the only reading of it.** An epic
+takes several runs and a defect may exist only across two of them — a stage this run dispatched again
+although an earlier run had finished it, a question asked in one run and asked again in this one, a
+cost the epic paid twice. Nothing but you holds both accounts at once.
+
 **Inside a dispatch is the other place, and the notes are the only reading of it.** The trace below
 carries every dispatch's shape and a capped excerpt of what each of its entries held; what happened
 in there — where an agent went round in circles, what it had to go and find because its brief did not
@@ -299,17 +306,30 @@ job to decide what it amounts to.
 
 # Grounds
 
-**Grounds are what a maintainer holding this run's trace and its notes can find in them.** They have
-those files; they do not have the repository, the forge, or you. So cite the trace the way the trace
-is written: a timestamp (\`[19:15:56.069]\`), a dispatch by its number and agent
-(\`#7 deliverer:comments-addresser\`), a question round by its number, a poll, a turn. Quote the short
-line you are pointing at. **A note grounds the same way**: name the dispatch it is about, the way the
-note's own heading names it, and say what the note reports — a maintainer finds that note in the file
-beside the trace.
+**Grounds are what a maintainer holding this run's files can find in them.** There are three such
+files and they are **equal grounds**: this run's trace, this run's dispatch notes, and the earlier
+debriefs of this epic — all three below. A defect resting on a note, or on an earlier debrief, is as
+well grounded as one resting on the trace. The only test is whether whoever holds that file finds
+what you cited, doing what you say it does. What they do not have is the repository, the forge, or
+you.
 
-The strongest defect quotes **both sides of the mismatch**: what the run did, from the trace, and the
-line of the plugin it was supposed to follow, from the tree below. That gap is the defect, and it is
-what makes the report actionable rather than a complaint.
+Cite each of the three the way it is written:
+
+- **the trace** — a timestamp (\`[19:15:56.069]\`), a dispatch by its number and agent
+  (\`#7 deliverer:comments-addresser\`), a question round by its number, a poll, a turn. Quote the
+  short line you are pointing at.
+- **a dispatch note** — name the dispatch it is about, the way the note's own heading names it, and
+  say what the note reports. A note is the only reading there is of what happened INSIDE a stage, so
+  a defect about a dispatch's interior rests on its note and needs nothing from the trace to stand.
+- **an earlier debrief of this epic** — name the file it is, and the defect inside it, and name the
+  run the way that debrief is keyed: the skill that ran and that run's own timestamp. It is on the
+  same disk as the trace, so it is as locatable.
+
+Where a run diverged from something the plugin told it to do, quote **both sides of the mismatch**:
+what the run did — from whichever of the three shows it — and the line of the plugin it was supposed
+to follow, from the tree below. That gap is the defect, and it is what makes the report actionable
+rather than a complaint. Plenty of defects have no plugin line to quote against; they still name the
+file the behaviour belongs to, and they are not lesser for it.
 
 **A count, a duration or a spend figure beats an adjective**, every time. "Seven of twelve dispatches
 signalled idle without delivering a report, costing 9m09s of recovery" is a defect. "The reporting is
@@ -442,6 +462,10 @@ ${HUNCHES_MARKER}
 - There is no quota. A run with three real defects gets three. Every defect you write survives the
   grounds test above, or it moves to the hunches.
 
+# The earlier debriefs of this epic
+
+${earlierSection(input.earlier)}
+
 # The dispatch notes
 
 ${input.notesText === undefined
@@ -462,6 +486,71 @@ debrief. Everything you cite is findable in it.
 
 ${input.traceText}
 `;
+}
+
+/**
+ * The prompt's account of the earlier **debrief**s of this **epic** (run-observation ticket 07; D21).
+ *
+ * **Its own section, and the whole of what the synthesis is told about continuity.** The three states
+ * `./continuity.ts` reports go in whether anything was read or not: a run with nothing before it is
+ * told that in a sentence, because an epic's first run and an epic whose earlier debriefs could not
+ * be read are different situations and only one of them is worth remarking on.
+ *
+ * The rules under it are the ones a whole-run reading cannot infer for itself: a repeat defect is
+ * named again rather than suppressed, a cross-run defect says which runs it spans and whether they
+ * ran a different plugin commit, and each debrief still stands alone for forwarding.
+ */
+function earlierSection(earlier: Continuity): string {
+  const { read, unreadable, elsewhere, hole } = earlier.summary;
+  const states = [
+    read.length === 0
+      ? `**None were read.** Nothing on this machine holds a debrief of an earlier run of this ` +
+        `epic in this repository — this may be the epic's first run, or an earlier run's observer ` +
+        `may never have started. Say nothing about earlier runs that this run's own files cannot ` +
+        `ground.`
+      : `**${read.length} of them, below, whole and oldest first.** Nothing was capped, sampled or ` +
+        `summarised on the way in.`,
+    unreadable.length === 0
+      ? undefined
+      : `**${unreadable.length} earlier run(s) of this epic have no debrief that could be read**, ` +
+        `and are not below: ${unreadable.join("; ")}. ` +
+        `That is a hole in the continuity and nothing more — the reading still stands on this ` +
+        `run's own trace and notes.`,
+    elsewhere === 0
+      ? undefined
+      : `${elsewhere} further debrief(s) under this epic's slug belong to a run in a DIFFERENT ` +
+        `repository and were deliberately not read: one data directory holds every epic on the ` +
+        `machine, and two epics of one name in two repositories are not one epic.`,
+    hole === undefined ? undefined : `**Work of this epic preceded this run:** ${hole}`,
+  ].filter((it) => it !== undefined);
+
+  const rules =
+    read.length === 0
+      ? ""
+      : `
+## What these are, and what to do with them
+
+- **They are the runs before this one, keyed by the skill that ran and that run's own timestamp.**
+  Whichever skill wrote one — a refinement's debrief is an earlier debrief of a delivery, and a
+  question asked in the refinement and asked again here is exactly what this exists to find.
+- **Their traces and their notes are not here and are not to be asked for.** A debrief is a bounded
+  document; an earlier run's trace and notes are neither bounded nor small. What an earlier debrief
+  does not say about its run, you do not know about its run.
+- **These are the one input to this reading that already carries the bound.** They were written to be
+  forwarded, so quoting one is safe in a way that quoting the trace or a note is not. The rest of the
+  bound above still holds over what you write.
+- **A defect an earlier debrief already named, that this run shows too, is named AGAIN** — saying
+  which earlier run reported it. Suppressing it would drop a live defect from the document actually
+  being forwarded, and a defect that survived a run is worth more than one seen once.
+- **A defect spanning two runs says which runs it spans**, the way their debriefs are keyed, and
+  states in full what happened. Each debrief stands alone: the citation is where a maintainer may
+  check it, never where the rest of it lives.
+- **Where a run you span ran a different plugin commit, say so.** A defect assembled across a plugin
+  update may be about a line that changed inside it.
+- **An earlier defect is not evidence about this run.** An earlier debrief is a reading like yours,
+  not a finding of fact — if this run does not show it, it is that run's defect and not this one's.
+`;
+  return `${states.join("\n\n")}\n${rules}${earlier.text === undefined ? "" : `\n${earlier.text}`}`;
 }
 
 /* ─────────────────────────── a success that is really a failure ─────────────────────────── */
@@ -552,6 +641,20 @@ export interface SynthesisInput {
   /** what the notes half spent and what it could not write, carried onto the `Judging` */
   readonly notesCost?: ObservationCost;
   readonly notesSummary?: NotesSummary;
+  /**
+   * The earlier **debrief**s of this **epic**, already read off disk (ticket 07; D21), and what
+   * continuity there was to be had.
+   *
+   * Passed in beside the notes for the same reason: what reached this reading is a fact about the
+   * reading, and it is carried onto the `Judging` so the debrief can state it whether the call
+   * succeeded, failed or was refused. `read` empty is a real answer and the ordinary one — an epic's
+   * first run has nothing before it.
+   *
+   * **Only the earlier runs' debriefs.** Their traces and their notes are never read (ticket 06's
+   * ground, extended), and this run's own debrief is excluded by its run key rather than by D23's
+   * finalising flag.
+   */
+  readonly earlier: Continuity;
 }
 
 /**
@@ -568,7 +671,7 @@ export async function synthesise(input: SynthesisInput): Promise<Judging> {
   const before = input.notesCost ?? NOTHING_SPENT;
   const notes = input.notesSummary;
   const failed = (reason: string, cost: ObservationCost): Judging =>
-    notJudged(reason, addCosts(before, cost), notes);
+    notJudged(reason, addCosts(before, cost), notes, input.earlier.summary);
 
   const tree = await treeToJudge(input.facts, input.dataDirectory);
   if (tree === undefined) {
@@ -604,6 +707,9 @@ export async function synthesise(input: SynthesisInput): Promise<Judging> {
         // The notes as their FILE too, and for the same reason: a defect grounded in a note has to
         // be findable in the copy the human still has beside the trace.
         notesText: input.notes,
+        // And the earlier debriefs as THEIR files, whole: each is already a bounded document, so
+        // there is nothing to distil out and nothing gained by summarising one (ticket 07).
+        earlier: input.earlier,
       }),
       options: {
         model: SYNTHESIS_MODEL,
@@ -691,6 +797,7 @@ export async function synthesise(input: SynthesisInput): Promise<Judging> {
     judgedAgainst: tree,
     cost: addCosts(before, cost),
     notes,
+    continuity: input.earlier.summary,
   };
 }
 
@@ -705,6 +812,10 @@ function notJudged(
   reason: string,
   cost: ObservationCost,
   notes: NotesSummary | undefined,
+  // What continuity had been read by the time it failed, where the failure got that far (ticket 07).
+  // A debrief that read two earlier runs and then could not be judged still read them, and saying so
+  // is the difference between a diagnostic that degraded and one that lost the epic.
+  continuity?: ContinuitySummary,
 ): Judging {
   return {
     kind: "none",
@@ -713,6 +824,7 @@ function notJudged(
       `is the run's own facts and nothing that read them: ${reason}.`,
     cost,
     notes,
+    continuity,
   };
 }
 
@@ -778,6 +890,15 @@ export function synthesisJudge(
       );
     }
     if (!input.finalising) return stillWatching(notes.cost(), notes.summary());
+    // Read here rather than inside `synthesise`, and read ONCE at the finalise: the earlier debriefs
+    // are a whole-run reading by construction (they reach the one synthesis and no dispatch note),
+    // and a listing done on every mid-run rewrite would be a listing nothing reads. It never throws
+    // — a listing that fails is a state of the continuity, not of the observation (ticket 07; D29).
+    const earlier = await earlierDebriefs({
+      trace: input.trace,
+      facts: input.facts,
+      dataDirectory,
+    });
     try {
       made = await synthesise({
         trace: input.trace,
@@ -786,6 +907,7 @@ export function synthesisJudge(
         notes: await notes.text(),
         notesCost: notes.cost(),
         notesSummary: notes.summary(),
+        earlier,
       });
     } catch (error) {
       // `synthesise` answers rather than throws for every failure it can foresee, so this is the
@@ -797,6 +919,7 @@ export function synthesisJudge(
           `${errorText(error)}`,
         notes.cost(),
         notes.summary(),
+        earlier.summary,
       );
     }
     return made;

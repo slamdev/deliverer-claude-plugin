@@ -180,11 +180,27 @@ function judgingLine(outcome: Extract<DebriefOutcome, { kind: "written" }>): str
           : `$${judging.notes.spend.costUsd.toFixed(2)}` +
             (judging.kind === "none" ? "" : " of that")) +
         (judging.notes.path === undefined ? "" : ` → ${judging.notes.path}`);
-  if (judging.kind === "none") return `judging: none — ${judging.reason}${notes}`;
+  // What continuity the reading had, for the contributor watching this command: replaying two runs
+  // of one epic in order is how ticket 07 is verified by hand, and the second replay has to be able
+  // to say it read what the first left without opening the debrief (run-observation ticket 07).
+  const continuity =
+    judging.continuity === undefined
+      ? ""
+      : `\n  continuity: ${judging.continuity.read.length} earlier debrief(s) of this epic read` +
+        (judging.continuity.unreadable.length === 0
+          ? ""
+          : `, ${judging.continuity.unreadable.length} unreadable`) +
+        (judging.continuity.elsewhere === 0
+          ? ""
+          : `, ${judging.continuity.elsewhere} another repository's`) +
+        (judging.continuity.hole === undefined
+          ? ""
+          : ", and this run resumed work none of them covers");
+  if (judging.kind === "none") return `judging: none — ${judging.reason}${notes}${continuity}`;
   return (
     `judging: ${judging.defectCount} defect(s) on ${judging.model} ` +
     `(${judging.servedBy ?? "an unnamed model"}), ${dollars}, ` +
-    `read against ${judging.judgedAgainst.source}${notes}`
+    `read against ${judging.judgedAgainst.source}${notes}${continuity}`
   );
 }
 

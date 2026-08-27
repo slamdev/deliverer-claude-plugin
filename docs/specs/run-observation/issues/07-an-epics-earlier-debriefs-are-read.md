@@ -12,92 +12,92 @@ finalising flag and D29's honest degradation all bear on it, and
 debrief is the one input to the synthesis that already carries it, where the **trace** and every **dispatch note** do
 not.
 
-- [ ] An observer whose epic already has debriefs under its slug in the plugin's data directory reads them: all of
+- [x] An observer whose epic already has debriefs under its slug in the plugin's data directory reads them: all of
       them, whole, oldest first. A debrief is prose written to be pasted into an issue and the most any epic on disk
       has taken is three runs, so nothing is capped, sampled or summarised on the way in.
-- [ ] Only the same repository's. There is one data directory per machine and per plugin — the measured one is
+- [x] Only the same repository's. There is one data directory per machine and per plugin — the measured one is
       `~/.claude/plugins/data/deliverer-slamdev-deliverer/` — and ticket 02 keys what lands in it by the **slug**
       alone. So every epic from every repository on the host shares one roof, and two epics of one name in two
       repositories would otherwise read each other: a defect assembled from an unrelated epic, arriving with grounds
       attached. The comparison is the observer's alone, and no repository name, path or branch is written into a
       debrief — ADR-0018 makes the slug the one thing of the user's own domain a debrief carries, and that holds
       unchanged.
-- [ ] A debrief cannot say which repository its run ran in, so an identity file beside it does. Ticket 03's writer
+- [x] A debrief cannot say which repository its run ran in, so an identity file beside it does. Ticket 03's writer
       gains one per debrief, carrying that run's key — the slug and its first timestamp — the skill that ran, the
       repository the run ran in and the plugin commit. It is what this ticket's reading matches on, and it is written
       on the facts-only path too, since a debrief nothing judged is still an earlier debrief for the run after it. Not
       called a sidecar: that word is already the host's own `.meta.json` beside a dispatch's record, in `../spec.md`
       and in tickets 02, 03 and 06.
-- [ ] The identity file refuses forwarding in its own filename and its own first line, the two places the trace and
+- [x] The identity file refuses forwarding in its own filename and its own first line, the two places the trace and
       the notes file already do — it carries a repository path, so it is not the document to send. The debrief does not
       mention it: the trace is named there because a doubting maintainer asks for the trace, and nothing about this
       file is ever wanted upstream. Nothing already written is rewritten, appended to or replaced.
-- [ ] A debrief with no readable identity file is not read for continuity, and is counted among the ones that could
+- [x] A debrief with no readable identity file is not read for continuity, and is counted among the ones that could
       not be read. It may be another repository's, and a false cross-run defect carrying grounds is worse than a
       debrief that says it lost the run before it.
-- [ ] Every earlier debrief for that slug, whichever skill wrote it. One epic on disk ran delivery → refinement →
+- [x] Every earlier debrief for that slug, whichever skill wrote it. One epic on disk ran delivery → refinement →
       delivery, so a delivery's earlier debriefs include a refinement's — and a question asked in the refinement and
       asked again in the delivery is exactly what this exists to find.
-- [ ] One debrief per earlier run, the newest of each. Ticket 03 has a replay write *beside* an existing debrief
+- [x] One debrief per earlier run, the newest of each. Ticket 03 has a replay write *beside* an existing debrief
       rather than over it, so a run replayed twice leaves two debriefs of itself; without this a re-replayed run is
       read twice and the criterion below names one run as two. The run is identified by the key its identity file
       carries — ticket 02's own, the slug and the run's first timestamp — and the debrief says the newest of each was
       taken.
-- [ ] Its own debrief is never among them, excluded by that key rather than by the finalising flag: D23 has it written
+- [x] Its own debrief is never among them, excluded by that key rather than by the finalising flag: D23 has it written
       and rewritten while the run is still going, so it is present in the listing from the first stage onwards.
-- [ ] An earlier debrief that is not yet finalised is read, and marked as unfinalised where it is used. D23 keeps a
+- [x] An earlier debrief that is not yet finalised is read, and marked as unfinalised where it is used. D23 keeps a
       readable debrief at every moment, and two runs of one epic in flight at once is itself worth reporting — but a
       half-written account presented as a finished one is not.
-- [ ] A defect spanning two runs of one epic is reportable, and names which runs it spans the way their debriefs are
+- [x] A defect spanning two runs of one epic is reportable, and names which runs it spans the way their debriefs are
       keyed — the skill that ran and the run's own timestamp — so a maintainer holding the directory can find both.
       A stage the resumed run dispatched again although an earlier one had finished it, a question asked in two
       different runs.
-- [ ] A cross-run defect's **grounds** may cite an earlier debrief, named by its file and the defect inside it. D11
+- [x] A cross-run defect's **grounds** may cite an earlier debrief, named by its file and the defect inside it. D11
       has grounds come from the trace, and this widens it by one document deliberately: the earlier debrief sits on
       the same disk as the trace a doubting maintainer would ask for, so it is locatable, which is ticket 05's test of
       whether something is grounds or taste with a figure attached.
-- [ ] An earlier run's trace and its dispatch notes are never read. Ticket 06 already refused an earlier run's notes —
+- [x] An earlier run's trace and its dispatch notes are never read. Ticket 06 already refused an earlier run's notes —
       neither bounded nor small — and an earlier trace is refused on the same ground, which is why the citation above
       is to the debrief and stops there.
-- [ ] The earlier debriefs reach the one synthesis and no dispatch note. A note reads its own dispatch's slice and
+- [x] The earlier debriefs reach the one synthesis and no dispatch note. A note reads its own dispatch's slice and
       nothing else (ticket 06), it runs on a cheap tier up to thirteen times in a delivery, and continuity is a
       whole-run reading by construction.
-- [ ] A defect an earlier debrief already named is named again, and says which earlier run reported it. Suppressing it
+- [x] A defect an earlier debrief already named is named again, and says which earlier run reported it. Suppressing it
       would drop a live defect from the document actually being forwarded, and a defect that survived a run is worth
       more than one seen once — so the recurrence is stated rather than left for a maintainer to notice across two
       debriefs they may not both hold.
 - [ ] Where an earlier debrief names a different plugin commit, a defect spanning that run says so. Every debrief
       carries the commit its run used (ticket 03), user story 20 exists to tell a defect fixed last week from one still
       live, and a defect assembled across an update may be about a line that changed inside it.
-- [ ] Each debrief still stands alone for forwarding: nothing in a later one requires an earlier one to be read
+- [x] Each debrief still stands alone for forwarding: nothing in a later one requires an earlier one to be read
       alongside it. A cross-run defect states in full what happened, and the citation is where a maintainer may check
       it rather than where the rest of it lives.
-- [ ] Earlier debriefs are never rewritten, appended to or replaced — D19's rule, holding for the debrief exactly as
+- [x] Earlier debriefs are never rewritten, appended to or replaced — D19's rule, holding for the debrief exactly as
       ticket 03 has it for a replay. The reading is read-only, and it touches neither the traces nor the notes files
       beside them.
-- [ ] What continuity the debrief had is stated, in three states kept apart: how many earlier debriefs it read, zero
+- [x] What continuity the debrief had is stated, in three states kept apart: how many earlier debriefs it read, zero
       being a number rather than silence; which ones it could not read; and — where the run's own trace shows it
       resumed work no debrief covers — that the continuity has a hole in it. The first delivery on disk opened its
       task list at `golden-image-bake: implement every ticket (16/18)`, so sixteen tickets were delivered by something
       no record here holds, and "no earlier debriefs" would otherwise be indistinguishable from a first run.
-- [ ] A debrief that cannot be read costs the later one its continuity and nothing else, and the later one says so.
+- [x] A debrief that cannot be read costs the later one its continuity and nothing else, and the later one says so.
       The synthesis still runs on this run's own trace and notes, and D29 puts the reason where a human meets it.
-- [ ] That continuity account sits below D13's fixed header, where ticket 03 put the human's own time, rather than
+- [x] That continuity account sits below D13's fixed header, where ticket 03 put the human's own time, rather than
       inside it. The header is what makes debriefs comparable across a team, and ticket 03 left it as the spec settled
       it.
-- [ ] Nothing is written outside the plugin's data directory and nothing inside any repository. The only reading this
+- [x] Nothing is written outside the plugin's data directory and nothing inside any repository. The only reading this
       ticket adds is one directory listing and the files it names.
-- [ ] What lands stays inside the typecheck and lint coverage ticket 02 got for the observer's code. No test runner is
+- [x] What lands stays inside the typecheck and lint coverage ticket 02 got for the observer's code. No test runner is
       added, no fixture is committed, and CI stays those two commands over the two packages.
-- [ ] Verified by replaying two runs of one epic in order, the second replay reading the debrief the first left. Two
+- [x] Verified by replaying two runs of one epic in order, the second replay reading the debrief the first left. Two
       epics on the machine this was triaged on have several runs each — `golden-image-bake` three (a delivery, then a
       refinement, then a delivery) and `molecule-image-tests` two (a refinement, then a delivery) — so the
       delivery→delivery pair and the refinement→delivery pair are both available. Take the runs fresh rather than
       trusting this count, and replay each epic in its own order.
-- [ ] Verified alongside it: an epic whose directory holds two debriefs of one run — replay one run twice — produces
+- [x] Verified alongside it: an epic whose directory holds two debriefs of one run — replay one run twice — produces
       a later debrief that names that run once; and an epic with no earlier debriefs at all produces the zero line
       rather than silence. Both cost a directory and no money.
-- [ ] The same-repository rule is exercised by putting a debrief for the same slug from another repository's run
+- [x] The same-repository rule is exercised by putting a debrief for the same slug from another repository's run
       beside the epic's own and reading whether it is ignored, and again with its identity file removed. No records on
       disk collide that way — both epics there live in one repository — so the second debrief is made by hand from one
       a replay produced; nothing is committed.

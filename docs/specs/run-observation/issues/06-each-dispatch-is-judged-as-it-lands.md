@@ -93,7 +93,7 @@ note is what recovers it. Settled as D8 and D9 in `../spec.md`.
       difference between the two paths CONTRIBUTING § What CI does not check already documents, not a third one.
       Ticket 03's determinism criterion was amended during this triage to say which path it holds on, so nothing here
       re-opens it.
-- [ ] Verified by replaying the deliverer runs on disk — five as this was triaged, three deliveries and two
+- [x] Verified by replaying the deliverer runs on disk — five as this was triaged, three deliveries and two
       refinements — and reading each debrief for the thing this ticket exists to buy: a defect found inside a
       dispatch that the whole-run trace, capped, could not have grounded.
 - [x] Every note and every debrief produced during that verification is read by a human for repository content and

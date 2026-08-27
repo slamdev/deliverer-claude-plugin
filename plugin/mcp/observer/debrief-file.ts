@@ -29,6 +29,9 @@ import { join } from "node:path";
 import { NO_TOKENS, type TokenTotals } from "./records.ts";
 import { formatDuration, tokenDetail, type Trace, type TraceDispatch } from "./trace.ts";
 import { observationDirectory, writeFileAtomically } from "./trace-file.ts";
+// Type-only, so nothing of `./continuity.ts` is loaded at runtime by this file: that module reads
+// this one's own naming and its identity parser, and a value import back would close the circle.
+import type { ContinuitySummary } from "./continuity.ts";
 import type { PluginCommit } from "./plugin-commit.ts";
 import type { RunFacts, RunRound } from "./run-facts.ts";
 
@@ -128,6 +131,8 @@ export type Judging =
       readonly cost: ObservationCost;
       /** what the notes half did before it, where anything did (run-observation ticket 06) */
       readonly notes?: NotesSummary;
+      /** what continuity the reading had, where it got as far as looking (ticket 07) */
+      readonly continuity?: ContinuitySummary;
     }
   | {
       readonly kind: "judged";
@@ -150,6 +155,17 @@ export type Judging =
       /** the notes and the synthesis together, at both tiers (run-observation ticket 06) */
       readonly cost: ObservationCost;
       readonly notes?: NotesSummary;
+      /**
+       * What continuity this reading had: the earlier **debrief**s of the same **epic** it read, the
+       * ones it could not read, and whether the run resumed work none of them covers (ticket 07).
+       *
+       * Carried on the judging rather than on the `DebriefInput` because the reading is the
+       * synthesis's own — the earlier debriefs reach the one whole-run reading and no **dispatch
+       * note** — and because a facts-only debrief has to stay byte for byte what ticket 03 wrote:
+       * nothing judged it, so it read nothing, and a section saying so would be a section about
+       * something that never happened.
+       */
+      readonly continuity?: ContinuitySummary;
     };
 
 /**
@@ -204,6 +220,37 @@ export function debriefNames(ordinal: number): { debrief: string; identity: stri
   return ordinal <= 1
     ? { debrief: DEBRIEF_FILE_NAME, identity: IDENTITY_FILE_NAME }
     : { debrief: `debrief-${ordinal}.md`, identity: `DO-NOT-FORWARD-identity-${ordinal}.txt` };
+}
+
+/**
+ * The replay ordinal a file name carries where it is one of `debriefNames`' identity files, and
+ * `undefined` where it is not one of them at all (run-observation ticket 07).
+ *
+ * Ticket 07 lists a whole epic's directory to find the earlier debriefs, and it enumerates the
+ * IDENTITY files rather than the debriefs: the identity file is what says which run and which
+ * repository a debrief is about, and the highest ordinal is that run's newest debrief. It lives here
+ * because the naming is here, and the check below is what keeps it a reverse of `debriefNames`
+ * rather than a second format that can drift from it.
+ */
+export function identityOrdinal(name: string): number | undefined {
+  const match = /^DO-NOT-FORWARD-identity(?:-(\d+))?\.txt$/.exec(name);
+  if (match === null) return undefined;
+  const ordinal = match[1] === undefined ? 1 : Number(match[1]);
+  return debriefNames(ordinal).identity === name ? ordinal : undefined;
+}
+
+/**
+ * Whether a name is one of `debriefNames`' debriefs, checked the same way (ticket 07).
+ *
+ * Ticket 07's listing needs it to tell two different states of an earlier run's directory apart: one
+ * holding a debrief nothing can be matched to, and one holding no debrief at all — a run whose
+ * observer left a trace and died before its first debrief. Only the first is a debrief that could
+ * not be read.
+ */
+export function isDebriefName(name: string): boolean {
+  const match = /^debrief(?:-(\d+))?\.md$/.exec(name);
+  if (match === null) return false;
+  return debriefNames(match[1] === undefined ? 1 : Number(match[1])).debrief === name;
 }
 
 /** How many replays of one run may pile up before this refuses to add another pair. */
@@ -461,6 +508,8 @@ export function renderDebrief(input: DebriefInput): string {
   bullet(out, "time the run spent waiting on the human", waitLine(facts));
   blank(out);
 
+  continuitySection(out, judging.continuity);
+
   defectsSection(out, judging);
 
   line(out, "## What this observation lost");
@@ -519,6 +568,67 @@ export function renderDebrief(input: DebriefInput): string {
   return documentText(out);
 }
 
+/* ────────────────────────────── continuity across the epic ────────────────────────────── */
+
+/**
+ * What continuity this debrief had (run-observation ticket 07; D21).
+ *
+ * **Below D13's fixed header rather than inside it.** The header is what makes debriefs comparable
+ * across a team, and ticket 03 left it as the spec settled it — so this sits beside the human's own
+ * time, where ticket 03 put that.
+ *
+ * **Three states, kept apart**, because they are three different claims and running them together is
+ * the failure: how many earlier debriefs were read, zero being a number rather than silence; which
+ * ones could not be read, which costs this debrief its continuity and nothing else (D29); and
+ * whether the run resumed work no debrief above covers.
+ *
+ * Nothing prints where nothing judged: a facts-only debrief read no earlier debrief because nothing
+ * read anything, and ticket 03's bytes stay ticket 03's.
+ */
+function continuitySection(out: Document, continuity: ContinuitySummary | undefined): void {
+  if (continuity === undefined) return;
+  line(out, "## Continuity across this epic's runs");
+  paragraph(out,
+    "An **epic** usually takes more than one run, and a **defect** may exist only across two of " +
+      "them — a stage the resumed run dispatched again although an earlier one had finished it, a " +
+      "question asked in two different runs. This is what the reading below had of the runs before " +
+      "this one: their **debrief**s, whole and oldest first, and never their traces and never " +
+      "their notes. Each debrief still stands alone — a cross-run defect states in full what " +
+      "happened, and names the other debrief as where it may be checked rather than as where the " +
+      "rest of it lives.",
+  );
+  bullet(out,
+    "earlier debriefs of this epic read",
+    `${continuity.read.length}` +
+      (continuity.read.length === 0 ? " — nothing here has read a run of this epic before" : "") +
+      (continuity.elsewhere === 0
+        ? ""
+        : `. A further ${plural(continuity.elsewhere, "debrief", "debriefs")} under this epic's ` +
+          `slug ${continuity.elsewhere === 1 ? "is" : "are"} another repository's run of the same ` +
+          `name, and ${continuity.elsewhere === 1 ? "was" : "were"} not read: one data directory ` +
+          `holds every epic on the machine, and a defect assembled from an unrelated epic would ` +
+          `arrive with grounds attached`),
+  );
+  for (const it of continuity.read) subBullet(out, it);
+  // "runs whose debrief" rather than "debriefs": one of the states this counts is a run that left a
+  // trace and no debrief at all, and naming that a debrief that could not be read would name a
+  // document that was never there.
+  bullet(out,
+    "earlier runs of this epic whose debrief could not be read",
+    continuity.unreadable.length === 0
+      ? "none"
+      : `${continuity.unreadable.length} — this debrief lost that much of its continuity and ` +
+        `nothing else; the reading below still ran on this run's own trace and notes`,
+  );
+  for (const it of continuity.unreadable) subBullet(out, it);
+  bullet(out,
+    "work of this epic before this run that no debrief above covers",
+    continuity.hole ??
+      "none this run's own records show: its task list did not open on work already done",
+  );
+  blank(out);
+}
+
 /* ─────────────────────────────── the defects and the hunches ─────────────────────────────── */
 
 /**
@@ -555,7 +665,11 @@ function defectsSection(out: Document, judging: Judging): void {
   paragraph(out,
     `A **defect** is one thing this run cost its human that it did not have to, and every one below ` +
       `carries the **grounds** that show it: a timestamp, a dispatch, a poll or a question round ` +
-      `that whoever holds this run's trace can find in it. ` +
+      // D11's test, in the reader's words, over the three files that satisfy it today — the third
+      // being ticket 07's, and named here so a defect resting on one does not read as a weaker
+      // defect than one resting on the trace.
+      `that whoever holds this run's own files can find in them — its trace, the **dispatch note**s ` +
+      `beside it, or an earlier debrief of this epic. ` +
       `${found(judging.defectCount)} ` +
       `Read by \`${judging.model}\`${judging.servedBy === undefined ? "" : ` (served by \`${judging.servedBy}\`)`}, ` +
       `over the whole run in one reading` +
@@ -563,6 +677,11 @@ function defectsSection(out: Document, judging: Judging): void {
         ? ""
         : `, together with the ${plural(judging.notes.written, "dispatch note", "dispatch notes")} ` +
           `above — the only reading this debrief has of what happened inside a stage`) +
+      (judging.continuity === undefined || judging.continuity.read.length === 0
+        ? ""
+        : `, and with the ` +
+          `${plural(judging.continuity.read.length, "earlier debrief", "earlier debriefs")} ` +
+          `named above`) +
       `, against ${judging.judgedAgainst.line}`,
   );
   out.lines.push("", judging.defects, "");
