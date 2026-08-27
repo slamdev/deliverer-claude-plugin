@@ -61,34 +61,77 @@ export interface ObservationCost {
 }
 
 /**
- * What the judging half of the observer contributed to this debrief.
+ * Which installed tree the synthesis read the plugin's own text out of (run-observation ticket 05).
  *
- * **One member today, and it is the seam the rest of the epic lands on.** D17 is the whole of what
- * this ticket builds: where no judging can run — nothing built yet, no credentials on that
- * machine, the SDK missing, the model refusing — the debrief ships with its header, no **defect**s
- * and one line naming what stopped it. Tickets 05 and 06 add the member carrying defects,
- * **hunch**es, proposals and what the judging spent; nothing above this line moves when they do.
+ * Two answers and they are different claims, which is why the debrief prints which one it got. A
+ * line quoted from the tree the run itself ran is evidence about that run; the same line quoted
+ * from the tree installed now is evidence about this machine, and where the file has changed since
+ * it is evidence about nothing.
  */
-export type Judging = {
-  readonly kind: "none";
-  /** the one line naming what stopped the judging */
-  readonly reason: string;
-  readonly cost: ObservationCost;
-};
+export interface JudgedTree {
+  readonly directory: string;
+  readonly source: "the run's own" | "the plugin installed now";
+  /** the clause the *Defects* section prints, already in the reader's words */
+  readonly line: string;
+}
 
 /**
- * The live **observer**'s facts-only answer, which is the only one it has today.
+ * What the judging half of the observer contributed to this debrief.
  *
- * Separate from `NOTHING_JUDGED` below because the two make different claims about the same empty
- * section, and a human reading a debrief of a run they just watched should not be told it was
- * replayed. Ticket 05 replaces this one and leaves the other alone.
+ * **Two members, and the pair is the whole of what a reader has to be able to tell apart.** D17 is
+ * the facts-only one: where no judging can run — no credentials on that machine, the SDK missing,
+ * the model refusing, the answer malformed — the debrief ships with its header, no **defect**s and
+ * one line naming what stopped it. `judged` is the other, and it carries the synthesis's own prose.
+ *
+ * **`none` never means "nothing was found".** A judged run that found nothing says so inside its
+ * own defects section, where the reader can see that somebody looked. `none` is the absence of the
+ * looking, and running the two together is the one outcome this epic must not produce.
+ *
+ * Only the *Defects* section and the header's `what this observation cost` line read this. Nothing
+ * else in the document moves between the two members.
+ */
+export type Judging =
+  | {
+      readonly kind: "none";
+      /** the one line naming what stopped the judging */
+      readonly reason: string;
+      readonly cost: ObservationCost;
+    }
+  | {
+      readonly kind: "judged";
+      /**
+       * The synthesis's own defects, verbatim, in the shape it was instructed to answer in. Each
+       * one states what happened, its **grounds**, the file in the installed plugin it is about,
+       * and — where one was obvious — a marked proposal. Proposals ride inside a defect rather than
+       * in a section of their own, because D13 puts them there: a proposal is never in place of
+       * stating the defect.
+       */
+      readonly defects: string;
+      /** the **hunch**es, verbatim: what it noticed and nothing it kept can ground */
+      readonly hunches: string;
+      /** how many defects it named, counted off the shape rather than claimed by the model */
+      readonly defectCount: number;
+      /** the alias the synthesis was asked for, and what the provider actually served */
+      readonly model: string;
+      readonly servedBy: string | undefined;
+      readonly judgedAgainst: JudgedTree;
+      readonly cost: ObservationCost;
+    };
+
+/**
+ * What a live **observer** answers before the one synthesis has run.
+ *
+ * Separate from `NOTHING_JUDGED` below because the two make different claims about the same file,
+ * and separate from a judged run that found nothing for the same reason. The synthesis reads the
+ * whole run at once, so it runs when the run is over — and D23 keeps a readable debrief at every
+ * moment before that, which is this one.
  */
 export const NOTHING_JUDGES_YET: Judging = {
   kind: "none",
   reason:
-    "Nothing judged this run. The observer that watched it is mechanical throughout in this " +
-    "build of the plugin: it reads the host's own session records, works the figures above out " +
-    "of them and calls no model at all.",
+    "This run is still being watched, and the one synthesis per run reads the whole run at once — " +
+    "so it has not run yet. This debrief carries its header and its figures, and it is rewritten " +
+    "with what the synthesis found once the run stops.",
   cost: { modelCalls: 0, tokens: NO_TOKENS, costUsd: 0 },
 };
 
@@ -358,7 +401,7 @@ export function renderDebrief(input: DebriefInput): string {
   for (const round of facts.rounds) subBullet(out, roundLine(round));
   bullet(out, "how the run ended", facts.ending.line);
   bullet(out, "the run's spend", spendLine(facts));
-  bullet(out, "what this observation cost", costLine(judging.cost));
+  bullet(out, "what this observation cost", costLine(judging));
   bullet(out, "plugin commit", input.commit.line);
   blank(out);
 
@@ -377,14 +420,7 @@ export function renderDebrief(input: DebriefInput): string {
   bullet(out, "time the run spent waiting on the human", waitLine(facts));
   blank(out);
 
-  line(out, "## Defects");
-  paragraph(out, `**None — nothing judged this run.** ${judging.reason}`);
-  paragraph(out,
-    "A **defect** is one thing a run cost its human that it did not have to, carrying the grounds " +
-      "from the run's own conduct that show it. This debrief looked for none, so the absence of " +
-      "defects here is not a finding that the run was clean — it is the absence of anybody having " +
-      "looked.",
-  );
+  defectsSection(out, judging);
 
   line(out, "## What this observation lost");
   blank(out);
@@ -429,6 +465,58 @@ export function renderDebrief(input: DebriefInput): string {
   );
 
   return documentText(out);
+}
+
+/* ─────────────────────────────── the defects and the hunches ─────────────────────────────── */
+
+/**
+ * D13's *Defects*, and the *Hunches* section under it (run-observation ticket 05).
+ *
+ * **The code owns the document and the synthesis owns only these two blocks.** Everything around
+ * them — the header, the losses, the trace's refusal, the footer — is written here whether anything
+ * judged or not, so a debrief nobody judged and a debrief full of defects are the same document
+ * with one section answered differently. The model never writes the file.
+ *
+ * The two blocks go in as they came back, each as ONE line of the document, which is what keeps
+ * `documentText`'s blank-line tidying off the inside of them. They are already wrapped: the
+ * instruction asks for 120 columns, and re-wrapping prose that carries fenced quotations from the
+ * plugin's own files would break the quotations.
+ */
+/** "nothing was found" is a finding; a count is the other one. Never the same sentence. */
+function found(count: number): string {
+  return count === 0 ? "**This run was read and nothing was found.**" : `**${count} named.**`;
+}
+
+function defectsSection(out: Document, judging: Judging): void {
+  line(out, "## Defects");
+  if (judging.kind === "none") {
+    paragraph(out, `**None — nothing judged this run.** ${judging.reason}`);
+    paragraph(out,
+      "A **defect** is one thing a run cost its human that it did not have to, carrying the " +
+        "grounds from the run's own conduct that show it. This debrief looked for none, so the " +
+        "absence of defects here is not a finding that the run was clean — it is the absence of " +
+        "anybody having looked.",
+    );
+    return;
+  }
+
+  paragraph(out,
+    `A **defect** is one thing this run cost its human that it did not have to, and every one below ` +
+      `carries the **grounds** that show it: a timestamp, a dispatch, a poll or a question round ` +
+      `that whoever holds this run's trace can find in it. ` +
+      `${found(judging.defectCount)} ` +
+      `Read by \`${judging.model}\`${judging.servedBy === undefined ? "" : ` (served by \`${judging.servedBy}\`)`}, ` +
+      `over the whole run in one reading, against ${judging.judgedAgainst.line}`,
+  );
+  out.lines.push("", judging.defects, "");
+
+  line(out, "## Hunches");
+  paragraph(out,
+    "A **hunch** is something the same reading noticed that nothing it kept can ground. It is the " +
+      "observer's nose rather than its evidence, and it is kept apart from the defects above on " +
+      "exactly those terms: act on one only after checking it yourself.",
+  );
+  out.lines.push("", judging.hunches, "");
 }
 
 /**
@@ -601,14 +689,30 @@ function spendLine(facts: RunFacts): string {
   );
 }
 
-function costLine(cost: ObservationCost): string {
+/**
+ * What the observation itself cost, which is the one dollar figure in this document that is real.
+ *
+ * The run's own spend above is tokens with `unknown` where the money should be, because the host
+ * records none. This half is measured: the judging's result message carries the same per-model
+ * usage a **round**'s spend is read off, summed per API request, and the SDK's own dollar figure
+ * beside it. So the two halves of the header's spend say different things on purpose, and neither
+ * is added to the other.
+ */
+function costLine(judging: Judging): string {
+  const { cost } = judging;
   const dollars = cost.costUsd === undefined ? "**unknown**" : `$${cost.costUsd.toFixed(2)}`;
   if (cost.modelCalls === 0) {
     return (
-      `**nothing, measured rather than assumed**: 0 model calls, 0 tokens, ${dollars}. This ` +
-      `debrief was written by code alone. A figure nobody could measure reads unknown; this one ` +
-      `was measured, and it is zero.`
+      `**nothing, measured rather than assumed**: 0 model calls, 0 tokens, ${dollars}. Nothing ` +
+      `judged this run, so this document was written by code alone. A figure nobody could measure ` +
+      `reads unknown; this one was measured, and it is zero.`
     );
   }
-  return `${cost.modelCalls} model call(s), ${tokenDetail(cost.tokens) || "no tokens"}, ${dollars}.`;
+  return (
+    `${plural(cost.modelCalls, "model call", "model calls")} on ` +
+    `\`${judging.kind === "judged" ? judging.model : "an unnamed model"}\`, ` +
+    `${tokenDetail(cost.tokens) || "no tokens reported"}, ${dollars}. Counted per API request off ` +
+    `the per-model usage the call itself reported, the way a round's spend above is; a counter ` +
+    `nobody measured reads unknown and never zero. It is drawn on the same account the run was.`
+  );
 }

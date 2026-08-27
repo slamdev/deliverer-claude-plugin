@@ -438,7 +438,20 @@ reads them.
    on it, and so does on-by-default working without configuration. **Narrowed, not closed**: the host injects
    credentials into a plugin hook's environment for plugins on an allowlist of its own, which a third-party plugin is
    not on — so nothing is handed to this hook, and what is left is whatever the human's own environment and credential
-   store already give the SDK. Only a live run shows whether that is enough.
+   store already give the SDK. It closes in two halves, and ticket 05's triage split them: a **replay** reaching a
+   model from the environment a terminal hands it, and a hook-launched observer reaching one.
+   **The replay half: SETTLED, both ways.** A replay run from a terminal carrying this machine's own credential — the
+   repository's `.env`, which `./claude` exports into every session it starts — authenticated an Agent SDK query with
+   no configuration of its own, on nine runs' records: the alias `opus[1m]` resolved and was served, and the debriefs
+   carry the **defect**s and the dollar figure to show it. Nothing was read out of that file by the observer and no
+   variable was named; it inherits an environment and that is the whole mechanism. The negative case was measured on
+   the same machine, from a terminal carrying no Anthropic credential at all: the SDK answers `subtype: success`
+   carrying `Not logged in · Please run /login`, with `total_cost_usd: 0` and an empty `modelUsage` — which is why the
+   review's `not_logged_in` classification is reused rather than a second one invented, and why that debrief names a
+   judging failure instead of putting a login error where its defects belong. So D27 holds where the environment
+   carries a credential and degrades exactly as D17 and D29 require where it does not.
+   **The hook half stays ticket 04's**, and nothing here closes it: what a `UserPromptSubmit` hook's detached child
+   inherits is not what a terminal hands a command.
 3. **C3 — a stop-time hook's output actually reaches the human. SETTLED: through `systemMessage` and nothing else.**
    A hook's JSON output carries `systemMessage`, which the host displays to the human on every event, and the host's
    own hook documentation gives a `Stop` hook printing one as its worked example. `hookSpecificOutput.additionalContext`

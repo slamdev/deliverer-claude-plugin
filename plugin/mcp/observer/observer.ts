@@ -51,6 +51,7 @@ import {
 } from "./announce.ts";
 import { NOTHING_JUDGES_YET, refreshDebrief, type Judging } from "./debrief-file.ts";
 import { debriefRun, type DebriefOutcome, type JudgingInput } from "./debrief.ts";
+import { synthesisJudge } from "./judge.ts";
 import { formatDuration } from "./trace.ts";
 
 /* ────────────────────────────────────── the clocks ────────────────────────────────────── */
@@ -127,20 +128,21 @@ export interface JudgeInput extends JudgingInput {
 /**
  * What the judging half contributes to a debrief, asked once per rewrite.
  *
- * **The seam tickets 05 and 06 land on.** Today's implementation calls no model and returns D17's
- * facts-only answer, which is why observation costs nothing and why replaying a run reproduces its
- * debrief. A judge that spends money is expected to answer cheaply while `finalising` is false —
- * ticket 06's **dispatch note**s are written there — and to do the one synthesis when it is true.
+ * **The seam tickets 05 and 06 land on.** Ticket 05 filled it with `./judge.ts`'s one synthesis per
+ * run, which is what the default below now is: it answers `NOTHING_JUDGES_YET` while `finalising`
+ * is false and reads the whole run once when it is true. Ticket 06's **dispatch note**s are written
+ * on the cheap side of exactly that split.
  */
 export type Judge = (input: JudgeInput) => Promise<Judging>;
-
-const NOTHING_JUDGES: Judge = async () => NOTHING_JUDGES_YET;
 
 export interface ObserveOptions {
   readonly recordPath: string;
   readonly dataDirectory: string;
   readonly sessionId: string;
-  /** ticket 05's; the default calls no model at all */
+  /**
+   * What judges this run. The default is `./judge.ts`'s synthesis, which is the whole point of
+   * observing at all; a caller passes one only to observe with no model in play.
+   */
   readonly judge?: Judge;
   /** what was already lost before the loop began — an install that never finished, say */
   readonly startupLosses?: readonly string[];
@@ -170,7 +172,7 @@ interface Footprint {
  * of those three, because the caller is a detached process whose exceptions nobody would ever see.
  */
 export async function observeRun(options: ObserveOptions): Promise<ObserveOutcome> {
-  const judge = options.judge ?? NOTHING_JUDGES;
+  const judge = options.judge ?? synthesisJudge(options.dataDirectory);
   const startedAt = Date.now();
 
   let footprint: Footprint = { key: "", dispatchRecords: -1 };
@@ -358,8 +360,9 @@ async function read(
  * The judge, with its failures turned into an answer rather than an exception.
  *
  * D29 in one function: judging that fell over degrades the debrief to D17's facts-only shape and
- * says so in the file, and it never costs the debrief itself. Ticket 05 fills the judge in; this
- * wrapper is what keeps its failure modes out of the loop above.
+ * says so in the file, and it never costs the debrief itself. `./judge.ts` turns its own failures
+ * into that answer already, so what is left for this wrapper is the one it cannot — a judge that
+ * throws where none was expected to, which the loop above must never see.
  */
 async function judgeQuietly(judge: Judge, input: JudgeInput): Promise<Judging> {
   try {

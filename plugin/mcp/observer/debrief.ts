@@ -8,10 +8,17 @@
  *
  * **This is the seam every ticket after it is verified at, and it is what the scripted backend is
  * to the review**: no model, no host, no forge and no money, the same answer every time. With
- * nothing judging — which is the whole of what is built here — one command exercises ticket 02's
- * distillation and its cap, this ticket's extent and header, D15's footer, D20's third refusal and
- * the debrief writer, for free. CONTRIBUTING § What CI does not check carries the procedure beside
- * the scripted backend's.
+ * nothing judging — which is what this command does unless it is asked otherwise — one command
+ * exercises ticket 02's distillation and its cap, this ticket's extent and header, D15's footer,
+ * D20's third refusal and the debrief writer, for free. CONTRIBUTING § What CI does not check
+ * carries the procedure beside the scripted backend's.
+ *
+ * **`--judge` runs the other half** (run-observation ticket 05), and it is the one thing here that
+ * spends money: one long-context reading of the whole **trace**, on whatever account the terminal
+ * authenticates, producing the **defect**s a maintainer actually wants. That answers the only
+ * question the judging half has — whether the observer finds what a human found by hand — and it is
+ * a deliberate paid run rather than something a contributor reaches by accident. The two paths are
+ * the same code and the same document; what differs is whether anything read it.
  *
  * **It writes beside what is already there and removes nothing** (D19). A second replay of one run
  * lands as `debrief-2.md`, byte for byte identical to the first: the content is deterministic and
@@ -30,6 +37,7 @@ import { readDispatchRecords, readRecordFile } from "./records.ts";
 import { formatDuration, type Trace } from "./trace.ts";
 import { DATA_DIRECTORY_ENV, distil } from "./distil.ts";
 import { resolvePluginCommit } from "./plugin-commit.ts";
+import { synthesise } from "./judge.ts";
 import { runFactsOf, type RunFacts } from "./run-facts.ts";
 import {
   NOTHING_JUDGED,
@@ -48,6 +56,8 @@ export type DebriefOutcome =
       readonly facts: RunFacts;
       readonly tracePath: string;
       readonly written: WrittenDebrief;
+      /** what the judging half contributed, so a caller can report it without re-reading the file */
+      readonly judging: Judging;
     }
   /** the record holds no deliverer run, so there is no trace and no debrief — an answer, not a
    *  failure */
@@ -133,7 +143,27 @@ export async function debriefRun(options: DebriefOptions): Promise<DebriefOutcom
     status: options.status,
     observationLosses: options.observationLosses,
   });
-  return { kind: "written", trace: distilled.trace, facts, tracePath: distilled.path, written };
+  return {
+    kind: "written",
+    trace: distilled.trace,
+    facts,
+    tracePath: distilled.path,
+    written,
+    judging,
+  };
+}
+
+/** What the judging half did, for the line the command prints. */
+function judgingLine(outcome: Extract<DebriefOutcome, { kind: "written" }>): string {
+  const { judging } = outcome;
+  if (judging.kind === "none") return `judging: none — ${judging.reason}`;
+  const dollars =
+    judging.cost.costUsd === undefined ? "spend unknown" : `$${judging.cost.costUsd.toFixed(2)}`;
+  return (
+    `judging: ${judging.defectCount} defect(s) on ${judging.model} ` +
+    `(${judging.servedBy ?? "an unnamed model"}), ${dollars}, ` +
+    `read against ${judging.judgedAgainst.source}`
+  );
 }
 
 /** One line summarising what was written, for whoever asked for it. */
@@ -155,11 +185,28 @@ export function summariseDebrief(outcome: Extract<DebriefOutcome, { kind: "writt
 
 const USAGE =
   `usage: ${DATA_DIRECTORY_ENV}=<the plugin's data directory> node observer/debrief.ts ` +
-  `<path to a session record.jsonl>`;
+  `[--judge] <path to a session record.jsonl>`;
+
+/**
+ * Whether this replay spends money (run-observation ticket 05).
+ *
+ * **Off by default, and that is the whole of why the free seam survives.** Without it the same
+ * records give the same debrief byte for byte, no model is called and nothing is spent — which is
+ * what tickets 02 and 03 are verified at and what CONTRIBUTING's replay procedure documents. With
+ * it, this command runs the whole feature: one long-context reading of the run, on the account the
+ * terminal authenticates, answering the only question the judging half has — whether the observer
+ * finds what a human found by hand.
+ *
+ * It switches judging on and nothing else. The model and the depth are the plugin's (D9) and no
+ * flag, option or variable reaches them.
+ */
+const JUDGE_FLAG = "--judge";
 
 async function main(argv: readonly string[]): Promise<number> {
-  const recordPath = argv[0];
-  if (recordPath === undefined || argv.length > 1) {
+  const judging = argv.includes(JUDGE_FLAG);
+  const rest = argv.filter((it) => it !== JUDGE_FLAG);
+  const recordPath = rest[0];
+  if (recordPath === undefined || rest.length > 1) {
     process.stderr.write(`deliverer observer: one record path, and only one.\n${USAGE}\n`);
     return 1;
   }
@@ -176,7 +223,15 @@ async function main(argv: readonly string[]): Promise<number> {
     return 1;
   }
 
-  const outcome = await debriefRun({ recordPath: resolve(recordPath), dataDirectory });
+  const outcome = await debriefRun({
+    recordPath: resolve(recordPath),
+    dataDirectory,
+    // A replay looks at a run that has stopped, so its one reading IS the synthesis's moment —
+    // there is no `finalising` to wait for and no second reading to hold an answer for.
+    judging: judging
+      ? (input) => synthesise({ trace: input.trace, facts: input.facts, dataDirectory })
+      : undefined,
+  });
   if (outcome.kind === "refused") {
     process.stderr.write(`deliverer observer: ${outcome.reason}\n`);
     return 1;
@@ -196,6 +251,7 @@ async function main(argv: readonly string[]): Promise<number> {
   }
   process.stdout.write(
     `${outcome.written.debriefPath}\n  ${summariseDebrief(outcome)}\n` +
+      `  ${judgingLine(outcome)}\n` +
       `  trace ${outcome.tracePath}\n` +
       `  identity ${outcome.written.identityPath} (never forwarded)\n` +
       (outcome.written.ordinal === 1

@@ -10,83 +10,83 @@ the half that reproduces what a human got from watching a run in a second sessio
 through replay, so no live run is spent on it. Settled as D2, D8, D9, D10, D11, D12, D13, D14, D17, D27, D28 and D29 in
 `../spec.md`, and as [ADR-0018](../../../adrs/0018-a-debrief-is-bounded-to-the-plugins-own-machinery.md).
 
-- [ ] The debrief carries defects, each stating what happened, its grounds from the trace, which file in the
+- [x] The debrief carries defects, each stating what happened, its grounds from the trace, which file in the
       installed plugin it is about, and — where one is obvious — a proposal, always marked as a proposal and never
       in place of stating the defect.
-- [ ] Grounds cite the trace by something a reader holding it can find: a timestamp, a dispatch, a poll, a question
+- [x] Grounds cite the trace by something a reader holding it can find: a timestamp, a dispatch, a poll, a question
       round. A maintainer who doubts a defect asks for the trace behind it, so a defect whose grounds cannot be
       located in that file is taste with a figure attached.
-- [ ] What counts as a defect is not constrained by a class list. The observer reports what it noticed.
-- [ ] An observation the trace cannot ground is a **hunch**: written down, in a section of its own, marked apart,
+- [x] What counts as a defect is not constrained by a class list. The observer reports what it noticed.
+- [x] An observation the trace cannot ground is a **hunch**: written down, in a section of its own, marked apart,
       and never mixed in among defects.
-- [ ] The observer is told which run it is watching and is given the installed plugin's own directory, so a defect can
+- [x] The observer is told which run it is watching and is given the installed plugin's own directory, so a defect can
       quote the line the run diverged from. Not that skill's text alone: a **dispatch**'s conduct is in `agents/`, a
       **round**'s is under `mcp/`, and D13 has every defect name a file — so the whole installed tree is what may be
       read and quoted, and the repository being delivered into never is.
-- [ ] The directory read is the one the run's own records name, so the text judged is the text the run ran. Every run
+- [x] The directory read is the one the run's own records name, so the text judged is the text the run ran. Every run
       on disk carries that path in its skill preamble, and the directory's name is the commit ticket 03 reports.
-- [ ] Where that directory is gone, the installed text now is read and the debrief says it was judged against a
+- [x] Where that directory is gone, the installed text now is read and the debrief says it was judged against a
       version other than the one the run ran. One commit's tree stands on this machine beside a marker naming it as in
       use, so nothing promises the tree before it survives an update — and a quotation from a line that has since
       changed is worse than no quotation. Ticket 03's commit line carries the same fallback for the same reason.
-- [ ] One synthesis reads the whole trace, on a long-context model. Depth is the plugin's choice and no option
+- [x] One synthesis reads the whole trace, on a long-context model. Depth is the plugin's choice and no option
       exposes it, so debriefs stay comparable between people.
-- [ ] The model is named as an alias and never as a pinned id, for the reason the review's own option already
+- [x] The model is named as an alias and never as a pinned id, for the reason the review's own option already
       records: an alias resolves against whatever provider the environment authenticates to, where a pinned id only
       means the same thing on the provider it came from. Reasoning depth is the SDK's own option rather than prompt
       text — which is where the review's effort tier had to go, and this one does not.
-- [ ] A model that is refused is a named judging failure and nothing else: no fallback, no second call on a bare
+- [x] A model that is refused is a named judging failure and nothing else: no fallback, no second call on a bare
       alias, and no option. The long-context suffix was measured on one provider, is refused outright on one alias,
       and may be refused on another provider or on an account without the entitlement — and where it is, every
       debrief on that machine is ticket 03's trace-facts-only one, with the model and the refusal named in it. D9's
       comparability is the whole reason: a debrief judged at a depth nobody can see is worse than one that says it was
       not judged.
-- [ ] The synthesis answers as prose in an instructed shape, and ticket 03's writer owns the document: the header, the
+- [x] The synthesis answers as prose in an instructed shape, and ticket 03's writer owns the document: the header, the
       footer and the three refusals stay the code's, and the defect and hunch sections are placed under them. No
       structured output format — measured at roughly 1.7× the money and 1.9× the time to return zero findings while
       reporting success, which `agent-backend.ts` records and forbids — and the model never writes the debrief file
       itself.
-- [ ] An answer that does not arrive in that shape is a named judging failure and never an empty defects section. The
+- [x] An answer that does not arrive in that shape is a named judging failure and never an empty defects section. The
       shape is held by instruction, exactly as ADR-0018's bound is, so the one outcome that must not exist is a
       malformed answer reading as a run with nothing wrong with it.
-- [ ] One synthesis per run, and a debrief read before it has run says the judging has not run yet rather than
+- [x] One synthesis per run, and a debrief read before it has run says the judging has not run yet rather than
       carrying an empty defects section. D23 keeps a readable debrief at every moment, and "nothing was found" and
       "nothing has judged this yet" are different claims about the same file.
-- [ ] The bound is instructed: the plugin's own machinery, never the repository being delivered into. A run's
+- [x] The bound is instructed: the plugin's own machinery, never the repository being delivered into. A run's
       conversation with its human is carried by shape — counts, subjects, timings, who waited on whom — and never by
       the words of a question or an answer.
-- [ ] The instruction separates the two things the trace puts side by side: the plugin's own files, which may be
+- [x] The instruction separates the two things the trace puts side by side: the plugin's own files, which may be
       named and quoted, and the repository's content, which may not. The trace carries excerpts of both — that is the
       accepted risk ADR-0018 records, and the failure mode it names is a contributor making a defect clearer by
       pasting in the very thing the bound excludes.
-- [ ] The judging call loads no project or local settings and no `CLAUDE.md`, so the delivery repository's own
+- [x] The judging call loads no project or local settings and no `CLAUDE.md`, so the delivery repository's own
       conventions and hooks never enter the observation. The SDK loads every settings source when told nothing, and it
       is the project source that carries a `CLAUDE.md`; the user's own settings stay, so an owner whose credentials
       come from there still authenticates.
-- [ ] The observer authenticates from the environment it inherits, with no configuration of its own. **C2 closes in
+- [x] The observer authenticates from the environment it inherits, with no configuration of its own. **C2 closes in
       two halves**: a replay reaching a model from the environment a terminal hands it is this ticket's, and a
       hook-launched observer reaching one is ticket 04's by-hand hook walk. Both answers are recorded in `../spec.md`'s
       claims section.
-- [ ] The review's environment file is never read, although the hook's environment does carry it — it is the one
+- [x] The review's environment file is never read, although the hook's environment does carry it — it is the one
       option users have saved, so it is the one that is present. It names the identity the *review* runs as, and
       `../spec.md`'s what-must-not-regress keeps it the review's.
-- [ ] Contention with the run is not managed: no back-off, no deferral, no detection of what kind of credential is
+- [x] Contention with the run is not managed: no back-off, no deferral, no detection of what kind of credential is
       in hand. The README says observation draws on the same account.
-- [ ] The judging call is bounded, so a synthesis that wedges ends as a named failure rather than as spend nobody
+- [x] The judging call is bounded, so a synthesis that wedges ends as a named failure rather than as spend nobody
       asked for, beside a delivery that may run for a day. Nothing about the bound reaches the run.
-- [ ] A judging call that fails leaves ticket 03's trace-facts-only debrief with the reason named. A partial
+- [x] A judging call that fails leaves ticket 03's trace-facts-only debrief with the reason named. A partial
       judgement is never presented as a complete one.
-- [ ] A call that reports success while its whole answer is the SDK's own failure text — not logged in, a prompt too
+- [x] A call that reports success while its whole answer is the SDK's own failure text — not logged in, a prompt too
       long, a connection closed, no text at all — is a failed judging call and never a defects section. The
       classification the review already carries is reused rather than a second one invented, and the first of those
       four is exactly what an environment C2 turns out false on produces.
-- [ ] What the observation itself cost is read off the result message the way a round's **spend** already is:
+- [x] What the observation itself cost is read off the result message the way a round's **spend** already is:
       per-model usage summed, per API request, unknown for a figure nobody measured and never zero. A dollar figure
       *is* available here, where ticket 03 found none for the run itself — so this half of the header's spend can say
       what the other half cannot.
-- [ ] What lands stays inside the typecheck and lint coverage ticket 02 got for the observer's code. No test runner is
+- [x] What lands stays inside the typecheck and lint coverage ticket 02 got for the observer's code. No test runner is
       added, no fixture is committed, and CI stays those two commands over the two packages.
-- [ ] Verified by replaying the deliverer runs whose records are on disk — five as this was triaged, three deliveries
+- [x] Verified by replaying the deliverer runs whose records are on disk — five as this was triaged, three deliveries
       and two refinements — and reading each debrief against the run it is about. The runs behind
       `build-run-defects`, `orchestrator-contracts` and `review-reliability` are not among them and cannot be: every
       record on this machine postdates all three. Those specs stay the rubric for what a defect looks like rather than

@@ -43,7 +43,7 @@ import {
   type RecordFile,
   type TokenTotals,
 } from "./records.ts";
-import { commitInText } from "./plugin-commit.ts";
+import { pluginDirectoryInText, type PluginDirectory } from "./plugin-commit.ts";
 import {
   contentBlocks,
   elapsed,
@@ -138,6 +138,15 @@ export interface RunFacts {
   readonly toolCalls: number;
   /** the commit the run's own records name, for `./plugin-commit.ts` to label */
   readonly commitInRecords: string | undefined;
+  /**
+   * The installed plugin directory those same records name — the tree whose text this run actually
+   * ran (run-observation ticket 05).
+   *
+   * Read off the same match as the commit above, so the two can never name different builds. It is
+   * what the synthesis quotes the plugin's own lines from; a run resumed by prose names none, and
+   * the judging says so and reads the tree installed now instead.
+   */
+  readonly pluginDirectoryInRecords: string | undefined;
   /** the repository the run ran in — for the **identity file** alone, never for the debrief */
   readonly repository: string | undefined;
   /** what could not be settled about the run itself, in a reader's words */
@@ -174,6 +183,9 @@ export function runFactsOf(input: RunFactsInput): RunFacts {
     }
   }
 
+  // Read once: the window is the whole run and a second scan of it buys nothing.
+  const plugin = pluginInWindow(window);
+
   return {
     extent,
     ending: endingOf(window),
@@ -186,7 +198,8 @@ export function runFactsOf(input: RunFactsInput): RunFacts {
     toolCalls,
     // Scanned over the run's own window rather than the whole session: a preamble from somebody
     // else's later skill in the same session is not this run's evidence of anything.
-    commitInRecords: commitInWindow(window),
+    commitInRecords: plugin?.commit,
+    pluginDirectoryInRecords: plugin?.directory,
     repository: window.map((entry) => stringField(entry, "cwd")).find((it) => it !== undefined),
     losses,
   };
@@ -686,12 +699,12 @@ function typedText(entry: JsonObject): string | undefined {
 }
 
 /** The plugin directory named in the run's own preamble, whose name is the commit it ran. */
-function commitInWindow(window: readonly JsonObject[]): string | undefined {
+function pluginInWindow(window: readonly JsonObject[]): PluginDirectory | undefined {
   for (const entry of window) {
     if (stringField(entry, "type") !== "user") continue;
     for (const block of contentBlocks(objectField(entry, "message"))) {
-      const commit = commitInText(stringField(block, "text") ?? "");
-      if (commit !== undefined) return commit;
+      const named = pluginDirectoryInText(stringField(block, "text") ?? "");
+      if (named !== undefined) return named;
     }
   }
   return undefined;

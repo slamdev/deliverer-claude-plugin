@@ -43,12 +43,38 @@ export interface PluginCommit {
  * Hex and 7–40 characters, because that is what a commit looks like and a directory that is not
  * one is not evidence of anything. A host that renames that directory costs this route its answer
  * and reaches the fallback below, which is the degradation ADR-0017 requires.
+ *
+ * **The path in front of the commit is captured too** (run-observation ticket 05), and it is
+ * optional. The whole directory is what the synthesis reads the run's own text out of, so it is
+ * read off the same match rather than from a second one — a debrief that named one commit and
+ * quoted a different tree would be worse than one that quoted nothing. Optional because the commit
+ * is ticket 03's answer and must not start depending on a path: a record naming
+ * `/deliverer/<commit>/` and nothing before it still dates the build, and the tree it does not name
+ * falls to `installedDirectory` below.
  */
-const COMMIT_DIRECTORY = new RegExp(`/${PLUGIN_NAME}/([0-9a-fA-F]{7,40})/`);
+const COMMIT_DIRECTORY = new RegExp(
+  `((?:/[^/\\s"']+)*/${PLUGIN_NAME}/([0-9a-fA-F]{7,40}))/`,
+);
+
+/**
+ * The installed plugin directory named in a piece of a record: where it is, and the commit its name
+ * is.
+ */
+export interface PluginDirectory {
+  /** the installed plugin's root — `…/<marketplace>/deliverer/<commit>` — with no trailing slash */
+  readonly directory: string;
+  readonly commit: string;
+}
+
+export function pluginDirectoryInText(text: string): PluginDirectory | undefined {
+  const found = COMMIT_DIRECTORY.exec(text);
+  if (found?.[1] === undefined || found[2] === undefined) return undefined;
+  return { directory: found[1], commit: found[2] };
+}
 
 /** The commit named by the plugin directory in a piece of a record, or `undefined`. */
 export function commitInText(text: string): string | undefined {
-  return COMMIT_DIRECTORY.exec(text)?.[1];
+  return pluginDirectoryInText(text)?.commit;
 }
 
 /**
@@ -59,16 +85,19 @@ export function commitInText(text: string): string | undefined {
  * second notion of where the host keeps its files is invented here: absent or unreadable, this
  * answers `undefined` and the caller says the commit is unknown.
  */
-export async function installedCommit(dataDirectory: string): Promise<string | undefined> {
+async function installedNow(
+  dataDirectory: string,
+): Promise<{ commit: string | undefined; directory: string | undefined }> {
+  const nothing = { commit: undefined, directory: undefined };
   const bookkeeping = join(dataDirectory, "..", "..", "installed_plugins.json");
   let parsed: unknown;
   try {
     parsed = JSON.parse(await readFile(bookkeeping, "utf8"));
   } catch {
-    return undefined;
+    return nothing;
   }
   const plugins = objectField(asObject(parsed), "plugins");
-  if (plugins === undefined) return undefined;
+  if (plugins === undefined) return nothing;
   // The key is `<plugin>@<marketplace>` and the data directory is `<plugin>-<marketplace>`, so the
   // directory the caller was given picks its own entry out. A fork installed beside this plugin
   // therefore never answers for it.
@@ -77,14 +106,40 @@ export async function installedCommit(dataDirectory: string): Promise<string | u
     Object.entries(plugins).find(([key]) => key.replace("@", "-") === wanted)?.[1] ??
     Object.entries(plugins).find(([key]) => key.split("@")[0] === PLUGIN_NAME)?.[1];
   const commits = new Set<string>();
+  const directories = new Set<string>();
   for (const install of asArray(installs) ?? []) {
     const entry = asObject(install);
     const commit = stringField(entry, "gitCommitSha") ?? stringField(entry, "version");
     if (commit !== undefined) commits.add(commit);
+    const directory = stringField(entry, "installPath");
+    if (directory !== undefined) directories.add(directory);
   }
   // One project's install and another's may be different builds of the same plugin. Reporting one
   // of two would be a guess, and a guess is worse than the line the caller writes for `undefined`.
-  return commits.size === 1 ? [...commits][0] : undefined;
+  // Both fields answer that way, and independently: the same tree can be recorded under two
+  // commits, and the same commit can stand in two trees.
+  return {
+    commit: commits.size === 1 ? [...commits][0] : undefined,
+    directory: directories.size === 1 ? [...directories][0] : undefined,
+  };
+}
+
+export async function installedCommit(dataDirectory: string): Promise<string | undefined> {
+  return (await installedNow(dataDirectory)).commit;
+}
+
+/**
+ * Where the plugin installed on this machine **now** stands — the fallback the synthesis reads its
+ * text out of when the tree the run itself ran is gone (run-observation ticket 05).
+ *
+ * A different fact from the run's own directory, exactly as `installedCommit` is a different fact
+ * from the commit the records name, and the debrief says which of the two it read. One commit's
+ * tree stands on the machine this was written against, beside a marker naming it as in use, so
+ * nothing promises the tree a replayed run used survived an update — and a line quoted from a file
+ * that has since changed is worse than no line at all.
+ */
+export async function installedDirectory(dataDirectory: string): Promise<string | undefined> {
+  return (await installedNow(dataDirectory)).directory;
 }
 
 export interface PluginCommitInput {
