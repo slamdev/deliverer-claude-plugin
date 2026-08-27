@@ -93,6 +93,16 @@ export interface NotesSummary {
   readonly path: string | undefined;
   /** the dispatches nothing could be noted for, in a reader's words */
   readonly missing: readonly string[];
+  /**
+   * What this half alone spent, so the two tiers can be told apart by whoever is paying.
+   *
+   * The header's own figure covers both together and stays that way — one document, one number.
+   * This is for the line the replay command prints and for the measurement behind it: a
+   * contributor deciding whether to judge a thirteen-dispatch delivery needs to know which half
+   * the money is in, and summing the two before anybody sees them is what made that unmeasurable
+   * (run-observation ticket 06).
+   */
+  readonly spend: ObservationCost;
 }
 
 /**

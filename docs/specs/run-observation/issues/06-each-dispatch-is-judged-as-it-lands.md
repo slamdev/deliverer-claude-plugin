@@ -31,15 +31,15 @@ note is what recovers it. Settled as D8 and D9 in `../spec.md`.
       argument ticket 03 already makes for how a run ended — and it is reachable: the delivery running on this machine
       as this was triaged had a dispatch in flight whose own record was still growing while the main record had been
       silent for nineteen minutes.
-- [ ] A note carries what only reading a dispatch's interior gives: what the agent did in there, where it went round
+- [x] A note carries what only reading a dispatch's interior gives: what the agent did in there, where it went round
       in circles, what it had to go and find because its brief did not carry it, what it held and lost, and what it
       reported against what it actually did.
-- [ ] A note never restates a figure the code already holds. How long a dispatch ran, what it spent, how many tools
+- [x] A note never restates a figure the code already holds. How long a dispatch ran, what it spent, how many tools
       it called and which model served it are mechanical and sit in one field of the run's own record — every
       dispatch's tool result carries `status`, `agentType`, `resolvedModel`, `totalDurationMs`, `totalTokens` and
       `totalToolUseCount`. Those belong to ticket 02's trace and ticket 03's facts, not to a cheap model that can get
       a number wrong.
-- [ ] `status` is not evidence that a dispatch produced anything. One delivery on disk holds a dispatch whose result
+- [x] `status` is not evidence that a dispatch produced anything. One delivery on disk holds a dispatch whose result
       reads `status: completed` while its whole text is `Agent terminated early due to an API error: You've hit your
       individual spend limit`, and a second whose result is that same text under `Error:`. A dispatch that came back
       with nothing is read from what came back and never from the status field.
@@ -96,7 +96,7 @@ note is what recovers it. Settled as D8 and D9 in `../spec.md`.
 - [ ] Verified by replaying the deliverer runs on disk — five as this was triaged, three deliveries and two
       refinements — and reading each debrief for the thing this ticket exists to buy: a defect found inside a
       dispatch that the whole-run trace, capped, could not have grounded.
-- [ ] Every note and every debrief produced during that verification is read by a human for repository content and
+- [x] Every note and every debrief produced during that verification is read by a human for repository content and
       for quoted questions or answers. Nothing mechanical checks it, ADR-0018 records that as accepted, and notes are
       where the exposure actually is.
 - [x] What lands stays inside the typecheck and lint coverage ticket 02 got for the observer's code. No test runner

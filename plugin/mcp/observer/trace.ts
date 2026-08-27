@@ -175,6 +175,19 @@ export interface TraceDispatch {
   readonly tokens: TokenTotals;
   /** the dispatch's **report** — the only thing a dispatch returns — capped like every excerpt */
   readonly report: string;
+  /**
+   * The same **report**, uncapped, for the reader that has to weigh it rather than glance at it.
+   *
+   * `report` above is cut to the trace's own excerpt cap, and that cap is a share of the whole
+   * run's budget: on the thirteen-dispatch delivery this was measured against it came to **131
+   * characters**, against reports of five and six thousand. A **dispatch note** is asked what its
+   * dispatch reported against what it actually did (run-observation ticket 06), and 131 characters
+   * of a six-thousand-character report is not a report — that ticket's paid verification found
+   * three notes stating that a report had left out findings that were in it, past the cut. So the
+   * note is handed the whole thing and applies a cap of its own, which is wide enough to be one.
+   * The trace's own closing line still carries the capped one, capped once, exactly as before.
+   */
+  readonly reportInFull: string;
   readonly lines: readonly TraceLine[];
 }
 
@@ -243,9 +256,14 @@ interface Elision {
   chars: number;
 }
 
-function excerpt(value: unknown, cap: number, elision: Elision): string {
+/** An entry's text on one line, with nothing taken off it. The cap is the caller's to apply. */
+function collapse(value: unknown): string {
   const text = typeof value === "string" ? value : value === undefined ? "" : safeStringify(value);
-  const collapsed = text.replace(/\s+/g, " ").trim();
+  return text.replace(/\s+/g, " ").trim();
+}
+
+function excerpt(value: unknown, cap: number, elision: Elision): string {
+  const collapsed = collapse(value);
   if (collapsed.length <= cap) return collapsed;
   elision.chars += collapsed.length - cap;
   return `${collapsed.slice(0, cap)}…(+${collapsed.length - cap})`;
@@ -714,6 +732,12 @@ function buildDispatch(input: DispatchInput): TraceDispatch {
   const lines: TraceLine[] = [];
   const entries = input.record?.file.entries ?? [];
   const usageOf = usageReporter(entries);
+  // The last thing the agent itself said, kept uncapped as the loop goes past it. A dispatch with no
+  // tool result of its own — a background one, or one the run stopped inside — has this for a
+  // **report**, and `reportInFull` below has to hand it over whole: reading it back off `lines`
+  // afterwards would read the trace's own cut of it, which is what ticket 06's paid verification
+  // caught a note calling a report "cut off mid-content" over.
+  let lastSaid = "";
   for (const entry of entries) {
     const at = stringField(entry, "timestamp");
     const type = stringField(entry, "type");
@@ -736,6 +760,8 @@ function buildDispatch(input: DispatchInput): TraceDispatch {
           });
           continue;
         }
+        const said = blockType === "thinking" ? "" : collapse(stringField(block, "text"));
+        if (said !== "") lastSaid = said;
         lines.push({
           at,
           kind: blockType === "thinking" ? "think" : "say",
@@ -823,6 +849,14 @@ function buildDispatch(input: DispatchInput): TraceDispatch {
       input.result === undefined || background
         ? lastProseIn(lines)
         : excerpt(input.result.block["content"], input.cap, input.elision),
+    // Uncapped, and NOT counted as an elision: nothing was taken off it, and a figure about this
+    // field would be a figure about a note's reading rather than about the trace. A dispatch with no
+    // result of its own hands over the last thing it said, kept whole as the loop above went past it
+    // — never `lastProseIn`, which reads back the trace's cut of that same text and would hand a
+    // note a report with an elision marker inside it while telling the note it was whole
+    // (run-observation ticket 06).
+    reportInFull:
+      input.result === undefined || background ? lastSaid : collapse(input.result.block["content"]),
     lines,
   };
 }

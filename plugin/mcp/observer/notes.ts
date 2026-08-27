@@ -124,13 +124,39 @@ const MOST_TURNS = 4;
  * rather than to the run's entries, and its floor is the same honest failure: a dispatch with tens
  * of thousands of entries gets a slice that grows past the budget rather than one with entries
  * dropped out of it.
+ *
+ * **What ticket 06's paid verification found about this budget: it does not bind, and a note sees
+ * less interior than the arithmetic above allows.** `renderSlice` narrows lines the trace has
+ * ALREADY cut to its own cap, and `recap` can only take more off — so on the thirteen-dispatch
+ * delivery measured here every line reached the note at the trace's 131 characters while this cap
+ * allowed between 257 and 800, and the largest dispatch's note read 119,607 characters of a
+ * 1.5 MB record against a budget of 240,000. The report was the sharp end of it and is fixed above.
+ * The lines are not: recovering them means re-reading that dispatch's own record at this cap
+ * instead of narrowing the trace's, which changes what the notes cost and what the trace holds, so
+ * it is a maintainer's decision rather than a verifier's. Until it is taken, a note's value is the
+ * attention it pays one dispatch rather than a view of it the whole-run reading could not have had.
  */
 export const NOTE_BUDGET_CHARS = 240_000;
+
+/**
+ * The **report**'s own share of that budget, taken off the top.
+ *
+ * **A report is one thing and the record is thousands, so they cannot share one cap.** The trace's
+ * cap is a share of the whole run's budget spread over every entry, and on the thirteen-dispatch
+ * delivery this was measured against that came to 131 characters — so the report a note was asked
+ * to weigh arrived as its own first sentence. Three notes of that run then said a report had left
+ * out findings that were in it, past the cut. The report now arrives whole up to this figure, which
+ * is roughly 10,000 tokens and wider than any report either of the measured runs produced; what is
+ * left is the lines' budget, so the whole prompt stays bounded and the floor the arithmetic below
+ * rests on is unmoved (run-observation ticket 06).
+ */
+export const NOTE_REPORT_CHARS = 24_000;
 
 /** What one line of a slice may carry. Never wider than the trace's own cap, which already ran. */
 export function noteCapFor(lineCount: number): number {
   if (lineCount <= 0) return EXCERPT_CAP_MAX;
-  const share = Math.floor(NOTE_BUDGET_CHARS / lineCount) - LINE_OVERHEAD_CHARS;
+  const budget = NOTE_BUDGET_CHARS - NOTE_REPORT_CHARS;
+  const share = Math.floor(budget / lineCount) - LINE_OVERHEAD_CHARS;
   return Math.min(EXCERPT_CAP_MAX, Math.max(EXCERPT_CAP_MIN, share));
 }
 
@@ -257,6 +283,14 @@ export function readNote(text: string): NoteAnswer {
  * false: an orchestrator relays a **question round**'s answers into the brief it writes for the next
  * dispatch, so a spec-writer's record carries them verbatim. A prompt that tells a model something
  * untrue about what it is holding is a prompt that has excused the very thing it forbids.
+ *
+ * **A second untruth of the same kind was caught by ticket 06's paid verification, in the paragraph
+ * saying why the note exists.** It told the note the reading at the end "gets one line per dispatch",
+ * and `../observer/trace-file.ts` gives it every entry of every dispatch, each cut to the trace's own
+ * excerpt cap — 131 characters on the delivery measured here. What the note actually has that the
+ * final reading has not is those same entries at length and the report whole, so that is what the
+ * paragraph now says. The overstatement mattered: a note told it is the only thing that can see in
+ * here at all will report the shape of a dispatch back, which the trace already carried.
  */
 function notePrompt(input: {
   readonly dispatch: TraceDispatch;
@@ -264,6 +298,10 @@ function notePrompt(input: {
   readonly slice: { readonly text: string; readonly cap: number; readonly elidedChars: number };
 }): string {
   const { dispatch, slice } = input;
+  // The report whole, up to its own share of the budget — never the trace's 131-character cut of
+  // it, which is what a note was weighing before this ticket's paid verification found it out.
+  const reportElision: Elision = { chars: 0 };
+  const report = recap(dispatch.reportInFull, NOTE_REPORT_CHARS, reportElision);
   return `You are reading the inside of ONE dispatch of one finished run of the **deliverer** plugin — a
 Claude Code plugin that carries one feature from a rough idea to a change request a human can merge.
 A dispatch is one agent the run sent off to do one stage's work. You took no part in the run, and you
@@ -277,10 +315,13 @@ between you and it redacts anything.
 
 # Why this note exists
 
-That final reading sees this dispatch's SHAPE and never its inside. The records a run's dispatches
-leave are several times the size of the run's own, so no reading of the whole run can hold them: what
-it gets is one line per dispatch. **You are the only reading of this dispatch's interior there will
-ever be.**
+That final reading is handed this dispatch's own entries as well — and no more than the first
+hundred-odd characters of each, because the records a run's dispatches leave are several times the
+size of the run's own and every entry of all of them has to fit one reading. It can see the SHAPE of
+what happened in here. It cannot weigh a single thing in it. You are holding those same entries at
+${slice.cap} characters and this dispatch's report whole, so **yours is the only reading of this
+dispatch's interior that will ever read it at length** — which is why a note that hands back the shape
+gives the debrief nothing it did not already have.
 
 # Never restate a figure
 
@@ -288,6 +329,11 @@ How long this dispatch ran, what it spent, how many tools it called, which model
 the host says became of it are **mechanical, already counted by code, and already in the debrief**.
 They are not yours. A number you get slightly wrong here is worse than one you leave out, because
 nothing downstream can tell the two apart.
+
+**In words and in round figures too.** "For roughly fifty minutes", "for the full hour of its run",
+"most of its running time" are the same restatement as the number would be, and the start and end
+times above are there so a maintainer can find this dispatch — the span between them is not yours
+either. Say **what** it spent its time on and let the debrief say how long that was.
 
 Count something yourself only when the counting IS the observation — "it read the same file in four
 separate turns", "it wrote the same section three times" — and then say plainly that you counted it
@@ -373,7 +419,20 @@ The note.
 
 ## What it reported back
 
-${dispatch.report === "" ? "Nothing: no report of this dispatch is in the run's record." : dispatch.report}
+${
+  dispatch.reportInFull === ""
+    ? "Nothing: no report of this dispatch is in the run's record."
+    : `${
+        reportElision.chars === 0
+          ? "This is the whole of it, as it came back."
+          : `Its first ${NOTE_REPORT_CHARS} characters; \`…(+${reportElision.chars})\` marks the ` +
+            `rest, which you are NOT holding. What is past that mark may say anything, so a report ` +
+            `cut off there has omitted nothing as far as you can tell — say what it does carry ` +
+            `and leave what it does not alone.`
+      }
+
+${report}`
+}
 
 ## Its record, in order
 
@@ -677,6 +736,7 @@ export function runNotes(dataDirectory: string, how: { readonly beside: boolean 
       model: NOTE_MODEL,
       path: file?.path,
       missing,
+      spend: cost,
     }),
   };
 }

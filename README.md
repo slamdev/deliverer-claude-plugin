@@ -231,10 +231,13 @@ call:
 
 **What that came to when it was measured.** The reading at the end was measured over the runs on the machine this was
 written on: **$2.05 to $6.43 for a run, averaging $3.68**. It is the larger of the two by a distance, and it is one call
-however long the run was. What the per-dispatch notes add on top of it has not been measured yet — what is known is
-their number, one cheap-tier call for each dispatch your run made. So the figure follows **how many dispatches your run
-made, not how long it took**: a ten-hour delivery costs no more to observe than a two-hour one, and observing a whole
-delivery is a dozen-odd cheap calls and one expensive one against the hundreds of model calls the delivery itself makes.
+however long the run was. The per-dispatch notes were then measured over two of those runs — a four-dispatch refinement
+and a thirteen-dispatch delivery — at **$0.19 and $0.96**, which is **five to eight cents a dispatch**. Two runs is
+a narrow sample and a note costs what its dispatch left behind, so read that as an order of magnitude: the notes are the
+smaller half by a distance, and they are the half that grows with your run. So the figure follows **how many dispatches
+your run made, not how long it took**: a ten-hour delivery costs no more to observe than a two-hour one, and observing a
+whole delivery is a dozen-odd cheap calls and one expensive one against the hundreds of model calls the delivery itself
+makes.
 
 Your own figures will differ — with the size of your epic, with how many stages a run needed, and with what your
 account is charged. Treat them as an order of magnitude and read your own debrief for what your run actually cost.

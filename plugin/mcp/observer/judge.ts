@@ -223,6 +223,14 @@ export function readAnswer(text: string): Answer {
  * on its face that it is safe to forward. The instruction is therefore written to separate the two
  * things the trace puts side by side — the plugin's own files, which may be quoted, and the
  * repository's content, which may not — rather than to forbid a list of things.
+ *
+ * **One item in it was measured in rather than reasoned to.** Ticket 06's paid verification judged
+ * a refinement whose stages researched a third-party toolchain, and the debrief that came back
+ * quoted a stage's own sentence naming two products the delivery repository builds on — an
+ * assertion about the technology, which this text already called the repository's content wearing
+ * the plugin's voice, and which a reader can nonetheless read as the plugin's conduct. So the names
+ * of tools, packages, services and companies are now refused by name, the way `./notes.ts`'s own
+ * bound refuses them: what a category rule leaves to judgement, a named rule does not.
  */
 function synthesisPrompt(input: {
   readonly trace: Trace;
@@ -321,8 +329,13 @@ the run ended.
 **The repository this run delivered into travels as shape and never as content.** Its code, its
 diffs, its file names and paths, its spec and ticket prose, its commit messages and hashes, its
 branch names, its comment text, anything from the forge — all of it stays in the trace and in the
-notes. What you may say about it is countable: how many tickets, how large a diff, how long a stage
-took over it, how many comments a wave worked.
+notes. **And so does the name of every tool, package, library, service, product and company it
+uses** — including the ones you recognise, and including the forge, the cloud, the language and
+anything a stage was researching. Which technologies somebody builds on is their business and
+nothing about the plugin's conduct needs it: "a third-party tool the run had to establish a fact
+about" grounds a defect exactly as well as the tool's name would. What you may say about any of it is
+countable: how many tickets, how large a diff, how long a stage took over it, how many comments a
+wave worked.
 
 **The notes are bounded by nothing, exactly as the trace is.** Each was written by a cheap reading of
 one dispatch's own record — a dispatch's interior, which is where that repository's contents are

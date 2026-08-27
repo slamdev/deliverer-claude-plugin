@@ -169,7 +169,16 @@ function judgingLine(outcome: Extract<DebriefOutcome, { kind: "written" }>): str
     judging.notes === undefined || judging.notes.attempted === 0
       ? ""
       : `\n  notes: ${judging.notes.written}/${judging.notes.attempted} dispatches read from the ` +
-        `inside on ${judging.notes.model}` +
+        `inside on ${judging.notes.model}, ` +
+        // The cheap half's spend on its own, which the debrief's own header deliberately does not
+        // split: a contributor about to judge a thirteen-dispatch delivery is deciding whether to
+        // spend, and the two tiers differ by an order of magnitude (run-observation ticket 06). It
+        // says "of that" because the figure on the line above already covers both halves, and the
+        // paid verification read the two as one sum before the wording said so.
+        (judging.notes.spend.costUsd === undefined
+          ? "spend unknown"
+          : `$${judging.notes.spend.costUsd.toFixed(2)}` +
+            (judging.kind === "none" ? "" : " of that")) +
         (judging.notes.path === undefined ? "" : ` → ${judging.notes.path}`);
   if (judging.kind === "none") return `judging: none — ${judging.reason}${notes}`;
   return (
