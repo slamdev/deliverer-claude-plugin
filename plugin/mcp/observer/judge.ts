@@ -232,6 +232,26 @@ export function readAnswer(text: string): Answer {
  * the plugin's voice, and which a reader can nonetheless read as the plugin's conduct. So the names
  * of tools, packages, services and companies are now refused by name, the way `./notes.ts`'s own
  * bound refuses them: what a category rule leaves to judgement, a named rule does not.
+ *
+ * **Two more were measured in, from ticket 07's paid verification, and both reached a debrief rather
+ * than a note.** A defect's grounds paraphrased a fact correctly and then quoted the raw status line
+ * it came from beside the paraphrase — the repository's own directory name, out of a tool result in
+ * the trace — because the grounds section said to quote the short line you are pointing at and said
+ * nothing about which lines those are. And a hunch quoted a single procedural word of the human's,
+ * where the bound had been written about questions and answers and so read as though it were about
+ * length. Both are answered where they were opened: the trace's citation rule now turns on whether
+ * the line is machinery, the bound is stated as two lists rather than one permission and one
+ * refusal, and the human's turns are refused at any length. The prompt names the first leak by its
+ * shape and not by the line that leaked: the directory was somebody's, and a fix for the bound that
+ * copies the thing out into this file would be the failure it is against.
+ *
+ * **A third was measured in while verifying those two, and it is the only clause here no paid run has
+ * yet exercised.** Re-judging a refinement produced a defect that cited a question round by the two
+ * headers the trace prints on the round's own line — a product's name and a command-line flag, both
+ * the question's own text. The rule had been written about questions and answers as whole things,
+ * and a header reads as neither, so **Grounds**' instruction to name a round's subject was taken as
+ * leave to copy them. The headers are now named as part of the question. Ticket 08's or 09's next
+ * paid reading is where that clause first gets tested.
  */
 function synthesisPrompt(input: {
   readonly trace: Trace;
@@ -317,7 +337,9 @@ Cite each of the three the way it is written:
 
 - **the trace** — a timestamp (\`[19:15:56.069]\`), a dispatch by its number and agent
   (\`#7 deliverer:comments-addresser\`), a question round by its number, a poll, a turn. Quote the
-  short line you are pointing at.
+  short line you are pointing at **where that line is the plugin's own machinery**. Where it is the
+  repository's — a path, a filename, a diff, a command's output — the timestamp and the fact in your
+  own words are the whole citation, and the next section says why they are enough.
 - **a dispatch note** — name the dispatch it is about, the way the note's own heading names it, and
   say what the note reports. A note is the only reading there is of what happened INSIDE a stage, so
   a defect about a dispatch's interior rests on its note and needs nothing from the trace to stand.
@@ -325,11 +347,13 @@ Cite each of the three the way it is written:
   run the way that debrief is keyed: the skill that ran and that run's own timestamp. It is on the
   same disk as the trace, so it is as locatable.
 
-Where a run diverged from something the plugin told it to do, quote **both sides of the mismatch**:
+Where a run diverged from something the plugin told it to do, cite **both sides of the mismatch**:
 what the run did — from whichever of the three shows it — and the line of the plugin it was supposed
-to follow, from the tree below. That gap is the defect, and it is what makes the report actionable
-rather than a complaint. Plenty of defects have no plugin line to quote against; they still name the
-file the behaviour belongs to, and they are not lesser for it.
+to follow, from the tree below. The plugin's line is quoted. The run's side is quoted where it too is
+machinery, and stated in your own words against its timestamp where it is the repository's. That gap
+is the defect, and it is what makes the report actionable rather than a complaint. Plenty of defects
+have no plugin line to quote against; they still name the file the behaviour belongs to, and they are
+not lesser for it.
 
 **A count, a duration or a spend figure beats an adjective**, every time. "Seven of twelve dispatches
 signalled idle without delivering a report, costing 9m09s of recovery" is a defect. "The reporting is
@@ -341,21 +365,35 @@ The debrief is bounded to the plugin's own machinery, and that bound is what let
 unread. **You are the only thing holding it.** Nothing downstream redacts anything, and no second
 reader checks what you wrote before the human sends it.
 
-**In bounds, and quotable freely:** the plugin's own files — every skill, every agent definition,
-every line of its Node source, its hooks and its manifest, all of them in the tree named below. Its
-skills, its agents, its dispatches, its stages, its timings, its **spend**, its **round**s and how
-the run ended.
+**Your sources hold two kinds of material side by side, sometimes on one line, and the bound is
+telling them apart.** Say which kind a thing is before you copy a character of it.
 
-**The repository this run delivered into travels as shape and never as content.** Its code, its
-diffs, its file names and paths, its spec and ticket prose, its commit messages and hashes, its
-branch names, its comment text, anything from the forge — all of it stays in the trace and in the
-notes. **And so does the name of every tool, package, library, service, product and company it
-uses** — including the ones you recognise, and including the forge, the cloud, the language and
-anything a stage was researching. Which technologies somebody builds on is their business and
-nothing about the plugin's conduct needs it: "a third-party tool the run had to establish a fact
-about" grounds a defect exactly as well as the tool's name would. What you may say about any of it is
-countable: how many tickets, how large a diff, how long a stage took over it, how many comments a
-wave worked.
+**Quotable verbatim, wherever you found it:** the plugin's own files — every skill, every agent
+definition, every line of its Node source, its hooks and its manifest, all of them in the tree named
+below — and an earlier debrief of this epic, written under this same bound. The run's own account of
+that machinery, wherever in the trace or the notes it sits, on the split set out below. Beside them:
+its skills, its agents, its dispatches, its stages, its timings, its **spend**, its **round**s and
+how the run ended.
+
+**Never quotable, however much the defect would read better for it:** the repository this run
+delivered into. Its code, its diffs, its file names, paths and directories, its spec and ticket
+prose, its commit messages and hashes, its branch names, its comment text, the output of any command
+run against it, anything from the forge — all of it stays in the trace and in the notes. **So does
+the name of every tool, package, library, service, product and company it uses** — including the
+ones you recognise, and including the forge, the cloud, the language and anything a stage was
+researching. Which technologies somebody builds on is their business and nothing about the plugin's
+conduct needs it: "a third-party tool the run had to establish a fact about" grounds a defect exactly
+as well as the tool's name would. What you may say about any of it is countable: how many tickets,
+how large a diff, how long a stage took over it, how many comments a wave worked. **And the human's
+own turns**, on the terms set out below. Useful is not the test, and there is no length and no
+formatting at which any of it becomes sendable.
+
+**The shape that has already got through, so watch for it in your own draft:** a defect had the fact
+right in its own words — "a previously-empty directory in the workspace root" — and then set the raw
+line it came from beside it, a status command's untracked-directory line lifted out of a tool result
+in the trace. The paraphrase was already the whole citation; the maintainer holding the trace finds
+that line at that timestamp either way. The raw line added nothing and made the document unsendable.
+**Where you have both, the paraphrase is the citation and the raw line stays where it is.**
 
 **The notes are bounded by nothing, exactly as the trace is.** Each was written by a cheap reading of
 one dispatch's own record — a dispatch's interior, which is where that repository's contents are
@@ -378,12 +416,18 @@ assertion about the code it was working on — is the repository's content weari
 sweep's measurement in the decision's grounds rather than in its claims" grounds a defect exactly as
 well as the sentence would have, and it is sendable.
 
-**The conversation between the run and its human travels as shape too.** Count the question rounds,
-time them, say which earlier round or **sweep** had already covered the same ground, and name the
-subject in as few words as it takes to show two rounds are the same ground. **Quote neither the
-questions nor the answers.** The human's answers are their own product decisions, and a question the
-plugin generated out of somebody's idea carries their domain inside it — so quoting the plugin's own
-output there discloses the user by the other door.
+**The conversation between the run and its human travels as shape, and only as shape.** Count the
+question rounds, time them, say which earlier round or **sweep** had already covered the same
+ground, and name the subject in your own words, in as few of them as it takes to show two rounds are
+the same ground. Say that a turn happened, when it happened, and how long the run sat waiting on it.
+**The words on either side of it stay out** — the question, its own headers, which the trace prints
+on the round's line and which are the question in miniature, the answer, and anything the human
+typed anywhere else in the run, at any length. One word is their text as much as a paragraph is, a
+procedural word is their text as much as a decision is, and there is no length at which it stops
+being: a bare instruction to carry on travels as *the human's turn releasing the run*, never as what
+they typed. The human's answers are their own product decisions, and a question the plugin generated
+out of somebody's idea carries their domain inside it — so quoting the plugin's own output there
+discloses the user by the other door.
 
 The epic's slug is the one thing of the user's own domain that this document carries, and the header
 already carries it.

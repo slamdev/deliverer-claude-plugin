@@ -185,9 +185,10 @@ your run. It reads the session records Claude Code already writes for every sess
 dispatches, and turns them into a debrief: what the plugin's own machinery did, how long each stage took, how many
 questions it put to you, how long it waited on you, what the reviews ended on, and what the whole run spent in tokens.
 It then reads all of that — and each dispatch from the inside — and names the **defects**: the things the run cost you
-that it did not have to, each with the grounds from the run's own conduct that show it. When your run stops, a line
-names the debrief and where it is. If you closed the terminal before it finished, the line comes on your next prompt
-instead.
+that it did not have to, each with the grounds from the run's own conduct that show it. An epic takes several runs, and
+each later one reads the debriefs the earlier ones left beside it, so something the epic paid for twice is named as that
+rather than reported twice over. When your run stops, a line names the debrief and where it is. If you closed the
+terminal before it finished, the line comes on your next prompt instead.
 
 **It cannot affect your run.** The observer runs outside the run entirely, in its own process, with its own session and
 its input and output closed. It never speaks into your session while a run is going, never asks the run for anything,
