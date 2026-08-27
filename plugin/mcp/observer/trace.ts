@@ -202,8 +202,13 @@ export interface Trace {
 
 /* ──────────────────────────────────── building the trace ──────────────────────────────────── */
 
-/** Tool names that are the plugin's own review tools, wherever the host namespaced the server. */
-function isReviewTool(name: string): boolean {
+/**
+ * Tool names that are the plugin's own review tools, wherever the host namespaced the server.
+ *
+ * Exported for `./run-facts.ts`, which counts a run's **round**s off the same rule (ticket 03).
+ * One definition of what a poll is, so a trace and a debrief can never disagree about it.
+ */
+export function isReviewTool(name: string): boolean {
   // The host's MCP tool names are `mcp__<server>__<tool>`, and the server's name depends on how the
   // plugin was installed — `mcp__plugin_deliverer_tools__code_review_status` on this machine. So
   // the match is on the plugin's name and the tool's, never on the whole string. A claim, like
@@ -211,7 +216,8 @@ function isReviewTool(name: string): boolean {
   return name.startsWith("mcp__") && name.includes("deliverer") && name.includes("code_review_");
 }
 
-const TASK_TOOLS = new Set(["TaskCreate", "TaskUpdate"]);
+/** Exported for the same reason `isReviewTool` is: `./run-facts.ts` reads the task list too. */
+export const TASK_TOOLS = new Set(["TaskCreate", "TaskUpdate"]);
 
 interface Elision {
   chars: number;
@@ -235,8 +241,11 @@ function safeStringify(value: unknown): string {
   }
 }
 
-/** The text of a message's content, whether it is a bare string or a list of blocks. */
-function contentBlocks(message: JsonObject | undefined): readonly JsonObject[] {
+/**
+ * The text of a message's content, whether it is a bare string or a list of blocks. Exported
+ * because `./run-facts.ts` reaches into the same entries and must read them the same way.
+ */
+export function contentBlocks(message: JsonObject | undefined): readonly JsonObject[] {
   const content = message === undefined ? undefined : message["content"];
   if (typeof content === "string") return [{ type: "text", text: content }];
   const blocks: JsonObject[] = [];

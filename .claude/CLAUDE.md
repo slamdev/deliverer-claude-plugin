@@ -43,8 +43,9 @@ no money — before calling the change done. CONTRIBUTING.md § What CI does not
 ## The plugin's Node code (`plugin/mcp/`)
 
 One package holds everything the plugin runs on Node. What it holds today is the tools server, under `server/`, and the
-**observer**'s distiller, under `observer/` — the mechanical half that turns a **run**'s **session record**s into a
-**trace**, run by hand with `CLAUDE_PLUGIN_DATA` set and no host in play.
+**observer**'s mechanical half, under `observer/` — the distiller that turns a **run**'s **session record**s into a
+**trace**, and the **replay** that turns that trace into a **debrief** beside it. Both run by hand with
+`CLAUDE_PLUGIN_DATA` set, no host and no model in play; CONTRIBUTING.md § Replaying a run's records has the command.
 
 All of it **ships unbuilt**: Node's type stripping runs the TypeScript as-is, so `tsc --noEmit` is the only thing
 holding up the three options that make that possible. `plugin/mcp/tsconfig.json` names them and what each one prevents;

@@ -127,7 +127,7 @@ what moved.
 │   │   └── comments-addresser.md          unresolved comments → fixes, declines, hand-offs
 │   ├── mcp/                               the plugin's Node code, one package — ships UNBUILT (Node strips
 │   │                                      the types). What it holds today: the tools server, and the
-│   │                                      observer's distiller
+│   │                                      observer's distiller and debrief
 │   │   ├── launch.mjs                     what .mcp.json runs; resolves the staged copy, starts the
 │   │   │                                  install hook when nothing else has
 │   │   ├── server/index.ts                the three tools + the transcript resource
@@ -139,6 +139,11 @@ what moved.
 │   │   │                                  required, no host and no model in play
 │   │   ├── observer/{records,trace,trace-file}.ts  the host's format as a claim · the trace · where it
 │   │   │                                  lives and how it refuses forwarding
+│   │   ├── observer/debrief.ts            replay: a run's records → its debrief, beside that run's
+│   │   │                                  trace; the observer's cheap by-hand seam
+│   │   ├── observer/{run-facts,debrief-file,plugin-commit}.ts  the run's extent and every figure
+│   │   │                                  bounded by it · the debrief and the identity file beside
+│   │   │                                  it · which plugin the run used
 │   │   └── package.json · tsconfig.json · eslint.config.js
 │   ├── hooks/install-mcp-server.sh        SessionStart: install deps, republish source every session
 │   └── .mcp.json                          wires userConfig → the server's environment
@@ -215,8 +220,8 @@ Implements the work, using `/tdd` at the seams the spec named. Work one ticket a
 ## CI
 
 `.github/workflows/ci.yml` runs on pushes to `main` and on every change request. One job, `check`, over both packages
-this repository has: the plugin's Node code in `plugin/mcp` — today, the tools server and the observer's distiller — and
-the end-to-end **harness**
+this repository has: the plugin's Node code in `plugin/mcp` — today, the tools server, the observer's distiller and the
+**debrief** it writes — and the end-to-end **harness**
 in `e2e-tests`. One `setup-node`, then the other three steps once for each package:
 
 | Step                | What and why                                                                                |
@@ -258,8 +263,8 @@ Know this before you rely on a green tick:
 - **Nothing in CI runs the server, the launcher, or the SessionStart hook.** No manifest is validated against its
   `$schema` either.
 
-So behaviour is verified deliberately: by hand with the two procedures below, or in one command by the end-to-end tests
-after them, which spend real money every time. The **scripted backend** is what makes the by-hand route cheap: it
+So behaviour is verified deliberately: by hand with the three procedures below, or in one command by the end-to-end
+tests after them, which spend real money every time. The **scripted backend** is what makes the by-hand route cheap: it
 replays a canned event timeline in milliseconds, so you can exercise the whole lifecycle — cancellation, ordering,
 terminal absorption, the deadline — with no model, no forge and no money.
 
@@ -275,6 +280,43 @@ environment file is **required even scripted** (its absence is refused at `code_
 no configured identity must never run), and `DELIVERER_REVIEW_SCRIPT` takes JSON
 (`{"events":[{"afterMs":10,"kind":"completed",…}]}`) if you need a timeline other than the default happy path, such as a
 failed or cancelled round.
+
+### Replaying a run's records
+
+The **observer** has a by-hand route of exactly the same shape, and **replay** is what makes it cheap: point it at a
+session record the host has already written and it produces that **run**'s **trace** and its **debrief**. With nothing
+judging — which is all there is today — it calls no model, reaches no forge and spends nothing, and the same records
+give the same debrief byte for byte.
+
+```
+CLAUDE_PLUGIN_DATA=$(mktemp -d) \
+  node plugin/mcp/observer/debrief.ts ~/.claude/projects/<munged-cwd>/<session-id>.jsonl
+```
+
+**What it needs** is a record of a run of your own — they are under `~/.claude/projects/`, one `<session-id>.jsonl` per
+session with a directory of per-**dispatch** records beside it — and `CLAUDE_PLUGIN_DATA`, which is required and has no
+default. Point that at a throwaway directory to keep the output out of your own, or at
+`~/.claude/plugins/data/deliverer-<marketplace>/` to write exactly where the plugin itself would.
+`plugin/mcp/observer/distil.ts` takes the same argument and stops after the trace.
+
+One line of output and three exit codes: `0` with the debrief's path, `2` with why this record holds no run (a session
+that merely names the plugin is not one, and several on any machine do), `1` with what could not be read.
+
+**What to read in what it leaves behind**, all of it in `<data>/observations/<slug>/<the run's first timestamp>/`:
+
+- **`debrief.md`** — the document, and the only one of the three that is ever sent anywhere. Its header is the point:
+  the run's own wall clock, its dispatch count, its **round**s and the word each one ended on, how the run itself
+  ended, its **spend**, what the observation cost, and the plugin commit the run used. With nothing judging it carries
+  no **defect**s and one line saying what stopped the judging.
+- **`DO-NOT-FORWARD-trace.txt`** — every entry of the run in order, which is where a figure in the debrief is checked.
+- **`DO-NOT-FORWARD-identity.txt`** — which run and which repository that debrief is about, for the observer of a later
+  run of the same epic. Neither of these two is the document to send.
+
+Nothing already there is rewritten: a second replay of one run lands beside the first as `debrief-2.md`, byte for byte
+identical to it. The cases worth walking after any change to the observer, each of which reads differently: a delivery
+and a refinement, a run that stopped mid-stage (the header names the stage), a session that carried unrelated work
+after its run (the header says how many of its entries lie outside), and a record you have truncated or corrupted by
+hand — that last one has to say what was lost rather than read as a run with nothing wrong with it.
 
 ### Exercising the install by hand
 
