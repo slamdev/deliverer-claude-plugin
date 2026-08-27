@@ -235,11 +235,12 @@ each one carried. Nothing is left out by kind, and volume is all the cap bounds:
 window, so the trace is what makes a run readable at all. _Avoid_: log, transcript, timeline
 
 **Dispatch note**:
-What an **observer** made of one **dispatch** the moment that dispatch finished, read from its slice of the **trace** on
-a cheap tier and kept for the one synthesis at the end. It exists because a dispatch's interior is the part of a **run**
-nothing else ever reads: the per-dispatch **session record**s outweigh a delivery's main one several times over, so
-under the trace's cap the whole-run reading sees a stage's shape and never its inside. Carries no bound of its own and
-is never forwarded, exactly as the trace is not. _Avoid_: stage note, note, summary, annotation, commentary
+What an **observer** made of one **dispatch** the moment that dispatch finished, read on a cheap tier from that
+dispatch's own **session record** — re-read at the note's own budget, wider than the **trace**'s — and kept for the
+one synthesis at the end. It exists because a dispatch's interior is the part of a **run** nothing else ever reads:
+the per-dispatch **session record**s outweigh a delivery's main one several times over, so under the trace's cap the
+whole-run reading sees a stage's shape and never its inside. Carries no bound of its own and is never forwarded,
+exactly as the trace is not. _Avoid_: stage note, note, summary, annotation, commentary
 
 **Debrief**:
 What observing one **run** produced, written for the human who ran it to forward to whoever maintains the plugin.

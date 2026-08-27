@@ -347,9 +347,17 @@ CLAUDE_PLUGIN_DATA=$(mktemp -d) \
 authenticates with and reads no credential file of its own — the plugin's `code_review_claude_env_file` names the
 identity a **round** runs as and stays the review's — so from a plain container shell every call comes back
 `not_logged_in` and the debrief says so where its **defect**s belong. The first line above is what puts the wrapper's
-own `.env` in the environment; the free form needs none of it. Measured all in: a judged refinement **$3.18–$3.48**, a
-judged delivery **$5.24–$6.70**, of which roughly **$0.40** on a refinement is the notes, at about ten cents a
-dispatch. And it cannot reproduce byte for byte — determinism is the free form's claim and only the free form's.
+own `.env` in the environment; the free form needs none of it. And it cannot reproduce byte for byte — determinism is
+the free form's claim and only the free form's.
+
+**What it costs, and how little that rests on.** Measured all in — the notes and the one synthesis together — a judged
+refinement is **$3.18–$3.48** and a judged delivery **about $6.70**. That is four readings of three runs: three of two
+refinements (three and four dispatches), one of a single thirteen-dispatch delivery. The notes are roughly **$0.40**
+of a refinement and **$1.30** of that delivery, at about ten cents a dispatch. Two things to know before quoting any
+of it: the same delivery came to **$5.52** before the notes were widened to re-read each dispatch's own record, so
+figures from before that are not comparable; and the whole measurement is replays on one machine, priced from what the
+calls themselves reported. It is an order of magnitude and not a price list — `README.md` and `e2e-tests/README.md`
+carry the same two numbers and nothing further.
 
 **Continuity takes two runs of one epic, replayed in order.** The earlier debriefs a run reads are the ones already
 in the same data directory, under the same **slug**, matched on the identity file beside each — so it is exercised by
@@ -373,8 +381,9 @@ against came to about **$9.40**.
   the same two ways. Written on the judged path only: with nothing judging there is no notes file at all.
 - **`DO-NOT-FORWARD-identity.txt`** — the run's key (its slug and its first timestamp), the skill, the repository it
   ran in, the plugin commit and a `finalised` flag. It is what a later run of the same epic matches its earlier
-  debriefs on, and it carries a path off your machine, which the debrief deliberately does not — so it refuses
-  forwarding too, and no debrief ever mentions it.
+  debriefs on, and it names the repository the run delivered into, which the debrief never does — so it refuses
+  forwarding too, and no debrief ever mentions it. Paths on this machine are not the difference between the two: a
+  debrief prints its own trace's path, its notes' path and the installed plugin's.
 - **the earlier debriefs of the same slug**, in the sibling directories beside this one — what a judged run read of
   the runs before it, whole and oldest first, and never their traces and never their notes. The debrief's continuity
   section says how many it had. Nothing prints there where nothing judged: it read nothing because nothing read
@@ -407,6 +416,10 @@ loop's. Walk these after any change to either, each with what it should do:
   scanned again;
 - **a run resumed by prose in a fresh session** — an observer starts on attribution instead, off the plugin's own
   stamp in the session's record;
+- **a run that finished while its session stays open** — nothing is finalised and nothing is announced: the debrief
+  goes on being rewritten, and the line waits for one of the two below. What a run's records say about how it ended is
+  a reading rather than a signal — it reads `finished` at every question round of a refinement and between a
+  delivery's stages — so the observer has two finalisers, the session's end and the idle bound, and no third;
 - **a session ended mid-run** — `SessionEnd` signals and never finalises anything itself; the observer picks the
   signal up on its next tick and finalises the debrief;
 - **a terminal killed**, with no `SessionEnd` to be had — the idle bound finalises it, and the line naming the debrief

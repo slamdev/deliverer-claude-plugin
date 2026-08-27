@@ -302,6 +302,16 @@ export interface DistilInput {
   readonly losses: readonly string[];
 }
 
+/**
+ * `1 line` / `4 lines`.
+ *
+ * These losses are printed in the **debrief**, which is a document a human forwards unread to
+ * somebody else — and `1 line(s)` in one is the first thing its reader meets.
+ */
+export function lineCount(count: number): string {
+  return count === 1 ? "1 line" : `${count} lines`;
+}
+
 export function buildTrace(input: DistilInput): Trace {
   const own = input.record.entries;
   const dispatchEntryCount = input.dispatchRecords.reduce(
@@ -313,16 +323,16 @@ export function buildTrace(input: DistilInput): Trace {
   const losses = [...input.losses];
   if (input.record.unreadableLines.length > 0) {
     losses.push(
-      `${input.record.unreadableLines.length} line(s) of the run's own record were not readable ` +
-        `JSON and are not in this trace (first at line ${input.record.unreadableLines[0]}) — a ` +
-        `record still being written ends in one`,
+      `this trace is missing ${lineCount(input.record.unreadableLines.length)} of the run's own ` +
+        `record — not readable JSON, first at line ${input.record.unreadableLines[0]}; a record ` +
+        `still being written ends in one`,
     );
   }
   for (const record of input.dispatchRecords) {
     if (record.file.unreadableLines.length === 0) continue;
     losses.push(
-      `${record.file.unreadableLines.length} line(s) of dispatch record ${record.agentId} were ` +
-        `not readable JSON and are not in this trace`,
+      `this trace is missing ${lineCount(record.file.unreadableLines.length)} of dispatch ` +
+        `record ${record.agentId} — not readable JSON`,
     );
   }
 

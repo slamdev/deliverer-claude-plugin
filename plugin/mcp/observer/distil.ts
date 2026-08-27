@@ -25,7 +25,7 @@
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { attributionOf, readDispatchRecords, readRecordFile } from "./records.ts";
-import { buildTrace, formatDuration, tokenDetail, type Trace } from "./trace.ts";
+import { buildTrace, formatDuration, lineCount, tokenDetail, type Trace } from "./trace.ts";
 import { writeTrace } from "./trace-file.ts";
 
 /** The host names the plugin's persistent directory here, and nothing else may. */
@@ -73,7 +73,7 @@ export async function distil(options: DistilOptions): Promise<Distillation> {
         `${options.recordPath} holds no readable entries` +
         (record.unreadableLines.length === 0
           ? ""
-          : `, though ${record.unreadableLines.length} line(s) were not readable JSON`),
+          : `, though ${lineCount(record.unreadableLines.length)} of it could not be read as JSON`),
     };
   }
 

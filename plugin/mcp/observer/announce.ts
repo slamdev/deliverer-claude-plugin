@@ -29,7 +29,7 @@
  * next prompt otherwise, including the next prompt of a session started days later, which is what
  * a debrief finalised after its terminal closed needs (D25).
  */
-import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { OBSERVATIONS_DIRECTORY, writeFileAtomically } from "./trace-file.ts";
 
@@ -265,6 +265,10 @@ export async function writeRawAnnouncement(
   await mkdir(announceDirectory(dataDirectory), { recursive: true });
   const paths = announcePaths(dataDirectory, sessionId);
   const text = hookOutput(systemMessage);
-  await writeFile(paths.stop, text, "utf8");
-  await writeFile(paths.prompt, text, "utf8");
+  // Staged and renamed, like every other write here, because a hook reads these files while this
+  // process writes them: a half-written file read by `UserPromptSubmit` is not JSON, and what a
+  // hook prints on stdout that the host cannot parse is injected into the session as context —
+  // the one thing D1 forbids. `../observe.mjs` writes the same pair the same way.
+  await writeFileAtomically(paths.stop, text);
+  await writeFileAtomically(paths.prompt, text);
 }

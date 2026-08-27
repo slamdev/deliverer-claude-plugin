@@ -39,7 +39,7 @@
  * reads.
  */
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -122,14 +122,25 @@ try {
   process.exit(1);
 }
 
-/** Writes both halves of one announcement, in `observer/announce.ts`'s own format. */
+/**
+ * Writes both halves of one announcement, in `observer/announce.ts`'s own format.
+ *
+ * Staged and renamed, as `observer/announce.ts` and `observer/trace-file.ts` both write: a hook
+ * reads these files while this process writes them, and half a file is not JSON. What a hook
+ * prints on stdout that the host cannot parse is injected into the session as context, which is
+ * the one thing D1 forbids — so the file a hook can see is either the old one whole or the new one
+ * whole, and never the middle of a write.
+ */
 const announce = (systemMessage) => {
   try {
     const directory = join(dataDir, ...ANNOUNCE);
     mkdirSync(directory, { recursive: true });
     const text = `${JSON.stringify({ systemMessage })}\n`;
-    writeFileSync(join(directory, `${sessionId}.stop.json`), text, "utf8");
-    writeFileSync(join(directory, `${sessionId}.prompt.json`), text, "utf8");
+    for (const name of [`${sessionId}.stop.json`, `${sessionId}.prompt.json`]) {
+      const staged = join(directory, `${name}.staged.${process.pid}`);
+      writeFileSync(staged, text, "utf8");
+      renameSync(staged, join(directory, name));
+    }
   } catch {
     // Nowhere left to report anything to. The run is untouched either way, which is the property
     // that matters.

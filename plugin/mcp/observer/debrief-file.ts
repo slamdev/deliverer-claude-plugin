@@ -24,7 +24,7 @@
  *    the machine where the records carry no commit, so a debrief replayed after a plugin update
  *    legitimately differs there and nowhere else.
  */
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { NO_TOKENS, type TokenTotals } from "./records.ts";
 import { formatDuration, tokenDetail, type Trace, type TraceDispatch } from "./trace.ts";
@@ -152,6 +152,8 @@ export type Judging =
       readonly model: string;
       readonly servedBy: string | undefined;
       readonly judgedAgainst: JudgedTree;
+      /** how much of the run the one synthesis actually held when it read (D23) */
+      readonly readOf: SynthesisExtent;
       /** the notes and the synthesis together, at both tiers (run-observation ticket 06) */
       readonly cost: ObservationCost;
       readonly notes?: NotesSummary;
@@ -167,6 +169,23 @@ export type Judging =
        */
       readonly continuity?: ContinuitySummary;
     };
+
+/**
+ * The run as it stood at the moment the one synthesis read it (run-observation D23).
+ *
+ * **Why an answer can be older than the debrief carrying it.** The synthesis runs once per run
+ * (D9) and is then held, so a run finalised on the idle bound, resumed and finalised again is
+ * described by a reading taken before it resumed. D23 lets that bound be a guess because getting
+ * it wrong costs a label and never the content — and a debrief claiming a whole-run reading it did
+ * not have costs the content. So the reading says how far it got instead, and neither a second
+ * paid reading nor a silent lie is what the guess buys.
+ */
+export interface SynthesisExtent {
+  /** the run's last entry it had, 1-based into the session's record, as the header prints them */
+  readonly lastEntry: number;
+  /** how many of the run's dispatches it had */
+  readonly dispatches: number;
+}
 
 /**
  * What a live **observer** answers before the one synthesis has run.
@@ -207,9 +226,14 @@ export const IDENTITY_FILE_NAME = "DO-NOT-FORWARD-identity.txt";
 
 /** Read by a human who opened it. First line of the file, before anything else. */
 export const IDENTITY_REFUSAL =
+  // What separates the two files is the REPOSITORY and not paths in general: the debrief prints
+  // its own trace's path, its notes' path and the installed plugin's, all of them on this machine
+  // (ADR-0018 puts the plugin's own text inside the bound). The one path it never carries is the
+  // one this file exists to hold, so that is what this line says.
   "DO NOT FORWARD — this file says which run, and which repository of yours, the debrief beside " +
-  "it is about. It carries a path from your machine, which the debrief deliberately does not. It " +
-  "is read by the observer of a later run of the same epic and by nothing else.";
+  "it is about. It names that repository, which the debrief never does — the debrief carries " +
+  "paths on this machine, its own trace and notes among them, and none of yours. It is read by " +
+  "the observer of a later run of the same epic and by nothing else.";
 
 /**
  * The pair of names an nth replay writes under. The first replay takes the plain pair; every one
@@ -328,11 +352,23 @@ export async function writeDebrief(
     const identityPath = join(directory, names.identity);
     try {
       await writeFile(debriefPath, debrief, { encoding: "utf8", flag: "wx" });
+    } catch (error) {
+      if (isAlreadyThere(error)) continue;
+      throw error;
+    }
+    try {
       await writeFile(identityPath, renderIdentity(input, ordinal), {
         encoding: "utf8",
         flag: "wx",
       });
     } catch (error) {
+      // The two files are claimed one at a time, so the second can find its slot taken while the
+      // first did not — an earlier replay interrupted between the two writes leaves exactly that.
+      // The debrief just written is this call's own, which `wx` is what proves, so removing it
+      // undoes nobody else's work. A debrief with no identity file beside it is worse than
+      // neither: `./continuity.ts` places an epic's earlier debriefs by the identity file, so an
+      // orphan is counted as a run whose debrief could not be read rather than as one absent.
+      await rm(debriefPath, { force: true }).catch(() => undefined);
       if (isAlreadyThere(error)) continue;
       throw error;
     }
@@ -510,7 +546,7 @@ export function renderDebrief(input: DebriefInput): string {
 
   continuitySection(out, judging.continuity);
 
-  defectsSection(out, judging);
+  defectsSection(out, judging, facts);
 
   line(out, "## What this observation lost");
   blank(out);
@@ -649,7 +685,7 @@ function found(count: number): string {
   return count === 0 ? "**This run was read and nothing was found.**" : `**${count} named.**`;
 }
 
-function defectsSection(out: Document, judging: Judging): void {
+function defectsSection(out: Document, judging: Judging, facts: RunFacts): void {
   line(out, "## Defects");
   if (judging.kind === "none") {
     paragraph(out, `**None — nothing judged this run.** ${judging.reason}`);
@@ -671,8 +707,9 @@ function defectsSection(out: Document, judging: Judging): void {
       `that whoever holds this run's own files can find in them — its trace, the **dispatch note**s ` +
       `beside it, or an earlier debrief of this epic. ` +
       `${found(judging.defectCount)} ` +
-      `Read by \`${judging.model}\`${judging.servedBy === undefined ? "" : ` (served by \`${judging.servedBy}\`)`}, ` +
-      `over the whole run in one reading` +
+      `Read by \`${judging.model}\`` +
+      `${judging.servedBy === undefined ? "" : ` (served by \`${judging.servedBy}\`)`}, ` +
+      `${extentRead(judging.readOf, facts)}` +
       (judging.notes === undefined || judging.notes.written === 0
         ? ""
         : `, together with the ${plural(judging.notes.written, "dispatch note", "dispatch notes")} ` +
@@ -693,6 +730,30 @@ function defectsSection(out: Document, judging: Judging): void {
       "exactly those terms: act on one only after checking it yourself.",
   );
   out.lines.push("", judging.hunches, "");
+}
+
+/**
+ * How much of the run the one reading held, in the reader's words.
+ *
+ * **"The whole run" is earned here rather than asserted.** It is the ordinary answer and the one
+ * every replay gives, because a replay judges a record that has stopped. What it must not survive
+ * is the case D23 leaves open: a run finalised on the idle bound, resumed, and finalised again
+ * keeps the answer it already has (D9 — one synthesis per run, and a guess may not buy a second
+ * whole-run reading), so that answer is older than the run around it. A maintainer weighing a
+ * defect has to know which of the two they are holding, and the figures are the header's own, so
+ * they can see for themselves what was left out.
+ */
+function extentRead(read: SynthesisExtent, facts: RunFacts): string {
+  if (read.lastEntry >= facts.extent.lastEntry && read.dispatches >= facts.dispatches.length) {
+    return "over the whole run in one reading";
+  }
+  return (
+    `in one reading of the run **as far as it had got by then** — entries ` +
+    `${facts.extent.firstEntry}–${read.lastEntry} of ${facts.extent.lastEntry} and ` +
+    `${read.dispatches} of its ${facts.dispatches.length} dispatches. The run had gone quiet long ` +
+    `enough to be taken for over, and it resumed after this reading: there is one reading per run ` +
+    `and it was not made again, so nothing has judged what the run did after that entry`
+  );
 }
 
 /**

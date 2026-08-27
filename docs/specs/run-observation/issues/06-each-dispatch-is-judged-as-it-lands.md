@@ -93,10 +93,15 @@ note is what recovers it. Settled as D8 and D9 in `../spec.md`.
       difference between the two paths CONTRIBUTING § What CI does not check already documents, not a third one.
       Ticket 03's determinism criterion was amended during this triage to say which path it holds on, so nothing here
       re-opens it.
-- [x] Verified by replaying the deliverer runs on disk — five as this was triaged, three deliveries and two
+- [ ] Verified by replaying the deliverer runs on disk — five as this was triaged, three deliveries and two
       refinements — and reading each debrief for the thing this ticket exists to buy: a defect found inside a
-      dispatch that the whole-run trace, capped, could not have grounded.
-- [x] Every note and every debrief produced during that verification is read by a human for repository content and
+      dispatch that the whole-run trace, capped, could not have grounded. The replaying was done and the notes were
+      made wider for it; the defect this asks for has not appeared. Across the two runs judged once the grounds line
+      named all three sources as equals: nine defects, five citing a note among their grounds and every one of the
+      nine anchored in the trace's own timestamps and a line of the installed plugin.
+      `plugin/mcp/observer/notes.ts` carries both readings and what is still missing — a reason for the synthesis to
+      rest a defect on a note, rather than more characters in one.
+- [ ] Every note and every debrief produced during that verification is read by a human for repository content and
       for quoted questions or answers. Nothing mechanical checks it, ADR-0018 records that as accepted, and notes are
       where the exposure actually is.
 - [x] What lands stays inside the typecheck and lint coverage ticket 02 got for the observer's code. No test runner

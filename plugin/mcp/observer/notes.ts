@@ -260,6 +260,12 @@ export interface NoteSlice {
  * mismatch — the run's conduct and the plugin line it diverged from — which a note, holding no plugin
  * line, cannot do. So the width was necessary and is not sufficient: what D8 is still short of is a
  * reason for the synthesis to rest a defect on a note, not more characters in one.
+ *
+ * **And it did not close on the two judged after that either**, once ticket 07's grounds line was
+ * naming the trace, the notes and an earlier debrief as equals: nine defects across those two, five
+ * of them citing a note among their grounds and every one of the nine still anchored in the trace's
+ * own timestamps and in a line of the installed plugin. The criterion is unticked in ticket 06 on
+ * that evidence rather than left standing on the intention.
  */
 export async function readSlice(dispatch: TraceDispatch): Promise<NoteSlice> {
   const read = await noteLines(dispatch);
@@ -383,13 +389,22 @@ function notePrompt(input: {
   // it, which is what a note was weighing before this ticket's paid verification found it out.
   const reportElision: Elision = { chars: 0 };
   const report = recap(dispatch.reportInFull, NOTE_REPORT_CHARS, reportElision);
+  // Two of the prompt's own lines, assembled here rather than inline: a line of a prompt cannot be
+  // wrapped without wrapping what the model reads. Same text, same bytes.
+  const stage =
+    dispatch.description === "" ? "" : `, the stage the host names "${dispatch.description}"`;
+  const elided =
+    slice.elidedChars === 0
+      ? ""
+      : `, and ${slice.elidedChars} characters were elided by that cap`;
   return `You are reading the inside of ONE dispatch of one finished run of the **deliverer** plugin — a
 Claude Code plugin that carries one feature from a rough idea to a change request a human can merge.
 A dispatch is one agent the run sent off to do one stage's work. You took no part in the run, and you
 are reading the record the host kept of what happened inside this one.
 
-You are writing one short **dispatch note** about it. Up to twelve more like it are written for this
-run, one per dispatch. All of them, and the whole run's trace, are then read together by the one
+You are writing one short **dispatch note** about it. One like it is written for every other
+dispatch this run made — three or four on a refinement, nine to fifteen on a delivery. All of them,
+and the whole run's trace, are then read together by the one
 reading that writes this run's **debrief** — the document the human who started the run forwards,
 **without reading it**, to whoever maintains the plugin. Your note is an input to that, and nothing
 between you and it redacts anything.
@@ -500,7 +515,7 @@ The note.
 # The dispatch you are reading
 
 - run: \`${input.skill}\`
-- dispatch: #${dispatch.ordinal} \`${dispatch.agentType}\`${dispatch.description === "" ? "" : `, the stage the host names "${dispatch.description}"`}
+- dispatch: #${dispatch.ordinal} \`${dispatch.agentType}\`${stage}
 - ran: ${dispatch.startedAt ?? "unknown"} to ${dispatch.endedAt ?? "unknown"}
 - outcome: ${outcomeOf(dispatch)}
 - entries in its record: ${dispatch.entryCount}
@@ -525,7 +540,7 @@ ${report}`
 ## Its record, in order
 
 Every entry this dispatch left, in order, in the trace's own format — \`[time] kind label detail |
-what it carried\`. What each entry carried is capped at ${slice.cap} characters${slice.elidedChars === 0 ? "" : `, and ${slice.elidedChars} characters were elided by that cap`}; \`…(+N)\` marks
+what it carried\`. What each entry carried is capped at ${slice.cap} characters${elided}; \`…(+N)\` marks
 what is missing. Nothing is left out by kind.
 
 ${slice.text}
@@ -605,9 +620,9 @@ async function call(query: Query, input: NoteInput): Promise<NoteOutcome> {
         model: NOTE_MODEL,
         effort: NOTE_EFFORT,
         // D3's standing: the plugin's own data directory, which is outside every repository by
-        // construction. The synthesis stands in the installed plugin tree because it quotes the
-        // plugin's own lines; a note quotes nothing and reads nothing, so it stands where it can do
-        // the least.
+        // construction, and where the synthesis stands too. It reaches the installed plugin tree
+        // from there, because it quotes the plugin's own lines; a note quotes nothing and reads
+        // nothing, so it is not given the tree at all.
         cwd: input.dataDirectory,
         // **No tools at all.** Everything this call needs is in the prompt, and a note that cannot
         // open a file cannot be talked into opening one in the repository the run delivered into.
@@ -694,7 +709,9 @@ async function call(query: Query, input: NoteInput): Promise<NoteOutcome> {
   return {
     kind: "written",
     body: answer.body,
-    readBy: `\`${NOTE_MODEL}\`${served === undefined ? "" : ` (served by ${served})`} at ${NOTE_EFFORT} effort, over ${slice.text.length} characters of this dispatch's record`,
+    readBy:
+      `\`${NOTE_MODEL}\`${served === undefined ? "" : ` (served by ${served})`} at ` +
+      `${NOTE_EFFORT} effort, over ${slice.text.length} characters of this dispatch's record`,
     cost,
   };
 }

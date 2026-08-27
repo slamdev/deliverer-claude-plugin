@@ -263,6 +263,20 @@ function synthesisPrompt(input: {
 }): string {
   const { trace, facts, tree } = input;
   const skill = trace.skills.join(", ") || facts.extent.command || "a deliverer run";
+  // The header's four widest figures, assembled here rather than inline: every one of them is a
+  // line of the prompt below, and a line of a prompt cannot be wrapped without wrapping what the
+  // model reads. Same text, same bytes.
+  const wallClock =
+    `${formatDuration(facts.extent.durationMs)}, ${facts.extent.startedAt ?? "unknown"} to ` +
+    `${facts.extent.endedAt ?? "unknown"}`;
+  const rounds =
+    facts.rounds.length === 0
+      ? ""
+      : ` — ${facts.rounds.map((it) => it.status ?? "no status ever reported").join(", ")}`;
+  const endedIn = facts.ending.stage === undefined ? "" : ` in \`${facts.ending.stage}\``;
+  const waiting =
+    `${facts.human.questionRounds}, and ${formatDuration(facts.human.totalWaitMs)} of the run ` +
+    `spent waiting on them`;
   return `You are observing one finished run of the **deliverer** plugin — a Claude Code plugin that
 carries one feature from a rough idea to a change request a human can merge. You took no part in the
 run. You are reading what the host wrote down while it happened, and you are writing the part of that
@@ -275,11 +289,11 @@ plugin. Everything below follows from those two words.
 
 - skill: \`${skill}\`
 - epic slug: \`${trace.slug}\`
-- wall clock: ${formatDuration(facts.extent.durationMs)}, ${facts.extent.startedAt ?? "unknown"} to ${facts.extent.endedAt ?? "unknown"}
+- wall clock: ${wallClock}
 - dispatches: ${facts.dispatches.length}
-- review rounds: ${facts.rounds.length}${facts.rounds.length === 0 ? "" : ` — ${facts.rounds.map((it) => it.status ?? "no status ever reported").join(", ")}`}
-- how it ended: ${facts.ending.kind}${facts.ending.stage === undefined ? "" : ` in \`${facts.ending.stage}\``}
-- question rounds put to the human: ${facts.human.questionRounds}, and ${formatDuration(facts.human.totalWaitMs)} of the run spent waiting on them
+- review rounds: ${facts.rounds.length}${rounds}
+- how it ended: ${facts.ending.kind}${endedIn}
+- question rounds put to the human: ${waiting}
 
 Those figures are already in the debrief, worked out by code. **Use them; never restate them as a
 finding of your own, and never recompute one.** A figure you disagree with is worth a hunch, not a
@@ -439,9 +453,16 @@ otherwise.
 
 # The plugin, as this run ran it
 
-You are standing in \`${tree.directory}\`. ${tree.source === "the run's own"
-    ? "That is the installed tree this run actually ran, named by the run's own records."
-    : "**That is not the tree this run ran** — the tree the run ran is gone from this machine, or its records never named one, so this is what is installed there now. Say so beside any line you quote from it: a file that has changed since the run would make a quotation evidence about nothing."}
+The plugin is installed at \`${tree.directory}\`, and that is the one tree you open a file in. You
+are not standing in it: your own working directory is the plugin's data directory, where this
+observation is being written, so name the tree's files by their full path. ${
+    tree.source === "the run's own"
+      ? "It is the tree this run actually ran, named by the run's own records."
+      : "**It is not the tree this run ran** — the tree the run ran is gone from this machine, or " +
+        "its records never named one, so this is what is installed there now. Say so beside any " +
+        "line you quote from it: a file that has changed since the run would make a quotation " +
+        "evidence about nothing."
+  }
 
 What is in it: \`skills/refine/SKILL.md\` and \`skills/build/SKILL.md\` (the two commands, and the
 stages each run), \`agents/*.md\` (the seven agents a run dispatches — a dispatch's whole conduct is
@@ -758,13 +779,24 @@ export async function synthesise(input: SynthesisInput): Promise<Judging> {
       options: {
         model: SYNTHESIS_MODEL,
         effort: SYNTHESIS_EFFORT,
-        // D3's standing, as an option: the reading happens inside the installed plugin's own tree,
-        // which is outside every repository. It is what lets the synthesis open an agent's file for
-        // itself and quote the line a dispatch diverged from.
-        cwd: tree.directory,
+        // **D3's standing, literally: the plugin's data directory.** D3 says the observer stands
+        // there and never in a repository, because "a working directory inside that tree is the
+        // one thing between an unrestricted agent and a stray write" — and under D4 this call is
+        // that unrestricted agent. The installed plugin tree is not a repository, but it is not
+        // the data directory either: it is the code that runs in the user's next session, reached
+        // by a reading whose prompt carries a **trace** and **dispatch note**s that an arbitrary
+        // repository's own content walked into. So this stands where `../observe.mjs` `chdir`s and
+        // where a note already runs, and reaches the tree the other way, below.
+        cwd: input.dataDirectory,
+        // The tree stays READABLE from where it stands. Ticket 05 requires a defect to quote the
+        // line of the plugin the run diverged from, and a reading that cannot open `agents/*.md`
+        // cannot do that — so what moved is where this stands, not what it can reach.
+        additionalDirectories: [tree.directory],
         // D4: unrestricted, and recorded rather than accidental. No denied-tool list and no
-        // pre-tool guard, consistent with the review backend and ADR-0006. The protection is where
-        // this stands and not what it is forbidden.
+        // pre-tool guard, consistent with the review backend and ADR-0006 — narrowing what this
+        // may do would reverse that decision rather than tighten a detail. The protection is where
+        // it stands and not what it is forbidden, which is the whole of why the line above is the
+        // data directory.
         permissionMode: "bypassPermissions",
         allowDangerouslySkipPermissions: true,
         // The whole of what keeps the delivery repository's own conventions out of the
@@ -839,6 +871,15 @@ export async function synthesise(input: SynthesisInput): Promise<Judging> {
     model: SYNTHESIS_MODEL,
     servedBy: servedBy(result),
     judgedAgainst: tree,
+    // What this reading actually held, kept because the answer outlives the reading: one synthesis
+    // per run (D9) means a run finalised on the idle bound, resumed and finalised again carries an
+    // answer taken before it resumed, and `./debrief-file.ts` says so rather than claiming a
+    // whole-run reading it did not have. D23 lets that bound cost a label; this is what keeps it
+    // from costing the content.
+    readOf: {
+      lastEntry: input.facts.extent.lastEntry,
+      dispatches: input.facts.dispatches.length,
+    },
     cost: addCosts(before, cost),
     notes,
     continuity: input.earlier.summary,
@@ -897,7 +938,11 @@ function notJudged(
  * A run that was finalised on the idle bound, resumed, and finalised again keeps the answer it
  * already has, and writes no further notes. D23 makes that bound a guess whose cost is a label
  * rather than content, and paying for a second whole-run reading is not a cost a guess may impose —
- * and a note written after the synthesis has read them all is a note nothing would ever read.
+ * and a note written after the synthesis has read them all is a note nothing would ever read. What
+ * that costs is paid in words instead: the answer carries the extent it read (`readOf`), and the
+ * debrief says how far the reading got rather than claiming the whole run. Which is what makes the
+ * kept answer honest instead of merely cheap — and it is the finalise's own trigger, not this
+ * memo, that keeps the case rare: `./observer.ts` finalises on D23's two signals alone.
  *
  * `beside` is the notes file's placement and the caller's to choose, exactly as the debrief
  * writer's two forms are: a **replay** writes a set beside whatever is there (D19), and the live

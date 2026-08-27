@@ -18,13 +18,20 @@
  *  - *A stage landed* — a per-dispatch record appeared — so the debrief is rewritten at once. In
  *    between, a rewrite is throttled: re-reading a delivery's 6.7 MB of records for every entry
  *    would spend a core for the whole run on a file nobody is reading yet.
- *  - *The run is over* — the record has gone quiet and the run's own task list and closing words
- *    say it finished (`RunFacts.ending`). That finalises the debrief, which is the flag D23 makes
- *    it, and announces it.
+ *  - *The session ended* — the `SessionEnd` hook left a signal. That finalises the debrief, which
+ *    is the flag D23 makes it, and announces it. It is the one certain end there is: the session
+ *    is gone, so nothing could resume.
  *  - *The terminal is gone* — nothing has been written anywhere, main record or per-dispatch, for
  *    the idle bound. That finalises it too, and it is the guess of the three: D23 lets silence be
  *    a poor signal here because getting it wrong costs a label and never the content. So it is
  *    reversible — a run that turns out to be alive un-finalises and carries on.
+ *
+ * **Those two are the whole of it, and what the records SAY about themselves is not a third.**
+ * D23 names session end and the idle bound and nothing else. `RunFacts.ending` reads `finished` of
+ * any moment where every task is completed and the run's last word is prose — which is what a
+ * refinement looks like at every question round and a delivery between two stages — so finalising
+ * on it spends the one synthesis (D9) on a run that is still going and then holds that answer for
+ * the rest of it.
  *
  * **The stop line is best-effort by construction and the prompt line is the guarantee** (D25). The
  * host writes a run's last entry and then fires its `Stop` hooks immediately, so whether this loop
@@ -284,11 +291,17 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
       const advanced = extentNow > extentEnd || outcome.facts.dispatches.length > dispatchesInRun;
       extentEnd = extentNow;
       dispatchesInRun = outcome.facts.dispatches.length;
-      const finished = outcome.facts.ending.kind === "finished";
 
-      if (finalisedAt !== undefined && advanced && !finished && !finalisedBySignal) {
+      if (finalisedAt !== undefined && advanced && !finalisedBySignal) {
         // Reversible by construction (D23): the idle bound is a guess, and a run that turns out to
         // be alive gets its label back rather than a second debrief written beside the first.
+        //
+        // The run's own extent advancing is the whole test, and what the records say about
+        // themselves is deliberately not part of it: a run that reads `finished` and then writes
+        // more is a run that is alive, and gating this on `ending.kind` would refuse the label
+        // back in exactly the case the reading is worst at. What the answer already read is then
+        // said in the debrief rather than re-read — `./judge.ts` keeps it and `./debrief-file.ts`
+        // names its extent, because a second whole-run reading is not a cost a guess may impose.
         finalisedAt = undefined;
         await clearAnnouncement(options.dataDirectory, options.sessionId);
         await mark(options, "watching — a run that had gone quiet resumed");
@@ -298,7 +311,15 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
         if (resumed.kind === "written") written = resumed;
       }
 
-      if (finalisedAt === undefined && (finalising || finished)) {
+      // D23's two finalisers and only those: the session's own end, and the idle bound for the
+      // debrief a killed terminal left. `outcome.facts.ending.kind === "finished"` used to be a
+      // third, and it is a reading of the run's own words rather than a signal about it — true of
+      // every moment where the tasks are all completed and the last word is prose, which is a
+      // refinement at every question round. Measured on one 388-entry refinement record: its first
+      // 290 entries read `finished` at 2h28m and 10 question rounds against the whole run's 2h57m
+      // and 11. Finalising there announced the debrief mid-run and spent the one synthesis (D9) on
+      // three quarters of a run — content, which is exactly what D23 forbids the bound to cost.
+      if (finalisedAt === undefined && finalising) {
         // Read once more with the flag set before anything is announced: the line must never name
         // a debrief that still says the run is going. One extra reading, once per run.
         const final = await read(options, judge, { finalise: true }).catch(() => outcome);
@@ -310,7 +331,7 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
           debriefPath: written.written.debriefPath,
           headline: headlineOf(written),
         });
-        await mark(options, `finalised — ${why(signalled, idle, finished)}`);
+        await mark(options, `finalised — ${why(signalled)}`);
       }
     }
 
@@ -413,11 +434,9 @@ async function mark(options: ObserveOptions, state: string): Promise<void> {
   }).catch(() => undefined);
 }
 
-function why(signalled: boolean, idle: boolean, finished: boolean): string {
-  if (signalled) return "the session ended";
-  if (finished) return "the run reported itself finished";
-  if (idle) return "nothing was written anywhere for the idle bound";
-  return "unknown";
+function why(signalled: boolean): string {
+  // Two finalisers, so the second needs no test: `finalising` is `signalled || idle`.
+  return signalled ? "the session ended" : "nothing was written anywhere for the idle bound";
 }
 
 /* ──────────────────────────────── what the records look like ──────────────────────────── */

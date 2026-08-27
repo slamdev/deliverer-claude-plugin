@@ -174,13 +174,15 @@ is observed exactly as one that finished — which matters, because the runs wor
 ### How it judges
 
 - **D8. Each dispatch is judged as it lands, and one synthesis reads everything at the end.** A **dispatch note** is
-  written when a dispatch finishes, from that dispatch's slice of the trace. It is not the live half that buys this — a
-  session record decays no faster than the disk it is on, and a stage that hung, a human who waited and a dispatch that
-  came back with nothing are all mechanical in a finished record, which is why they are the trace's and D13's rather
-  than a note's. What a note buys is a dispatch's interior: the per-dispatch records are the bulk of a run — 5.9 MB
-  of one delivery's 6.7 MB — so under D6's cap the whole-run reading sees a stage's shape and never its inside. The
-  synthesis then reads the whole trace **and** every note: the notes are the only reading of what happened inside a
-  stage, and the whole trace is what makes a cross-stage defect findable, which is where the existing specs' best
+  written when a dispatch finishes, from that dispatch's own record, re-read at the note's own budget and never narrowed
+  from the trace's already-capped lines: a note fed the trace's cut sees exactly as little of a dispatch's interior as
+  the whole-run reading already does, which is the whole of what a note is for. It is not the live half that buys this —
+  a session record decays no faster than the disk it is on, and a stage that hung, a human who waited and a dispatch
+  that came back with nothing are all mechanical in a finished record, which is why they are the trace's and D13's
+  rather than a note's. What a note buys is a dispatch's interior: the per-dispatch records are the bulk of a run —
+  5.9 MB of one delivery's 6.7 MB — so under D6's cap the whole-run reading sees a stage's shape and never its inside.
+  The synthesis then reads the whole trace **and** every note: the notes are the only reading of what happened inside
+  a stage, and the whole trace is what makes a cross-stage defect findable, which is where the existing specs' best
   findings live. Ticket 06's triage settled the unit as the dispatch and not the numbered stage, and settled the word.
 
 - **D9. Depth is the plugin's choice, not the owner's.** Dispatch notes run on a cheap tier; the one synthesis per run
@@ -258,7 +260,11 @@ is observed exactly as one that finished — which matters, because the runs wor
 - **D23. The debrief is always current, and finalising is a flag.** It is rewritten as each stage lands, so a readable
   one exists at every moment. Session end finalises it; a generous idle bound — no new record anywhere, main or
   per-dispatch — finalises the one left by a killed terminal. Getting that bound wrong costs a label and never the
-  content, which is why silence is allowed to be a poor signal here.
+  content, which is why silence is allowed to be a poor signal here. **Those two and nothing else**: what the run's
+  own records say about how it ended is a reading and not a signal, true of any pause between stages, and finalising
+  on it would spend D9's one synthesis on a run still going. Where the idle bound is wrong anyway, the label comes
+  back and the kept answer says which extent it read — so the guess costs neither a second whole-run reading nor a
+  claim the reading cannot support.
 
 - **D24. Replay is a capability in its own right.** The same code path can be pointed at the records of a run that is
   already over. It costs almost nothing given where the trace comes from, and it is what lets a team member re-run a

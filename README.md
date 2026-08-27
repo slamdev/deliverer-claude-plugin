@@ -187,8 +187,11 @@ questions it put to you, how long it waited on you, what the reviews ended on, a
 It then reads all of that — and each dispatch from the inside — and names the **defects**: the things the run cost you
 that it did not have to, each with the grounds from the run's own conduct that show it. An epic takes several runs, and
 each later one reads the debriefs the earlier ones left beside it, so something the epic paid for twice is named as that
-rather than reported twice over. When your run stops, a line names the debrief and where it is. If you closed the
-terminal before it finished, the line comes on your next prompt instead.
+rather than reported twice over. A line then names the debrief and where it is, and **your next prompt is where you
+can count on it** — including the first prompt of a session you open days later, so a debrief is never lost with the
+terminal you ran in. There is a line when a run stops, too, but a debrief is only finished off once the session ends
+or the run has been quiet for about half an hour: at the moment your run stops there is usually nothing final to name
+yet, and that line says nothing at all rather than pointing at a debrief still being written.
 
 **It cannot affect your run.** The observer runs outside the run entirely, in its own process, with its own session and
 its input and output closed. It never speaks into your session while a run is going, never asks the run for anything,
@@ -215,8 +218,10 @@ directory per run, under the epic's name:
 ~/.claude/plugins/data/deliverer-<marketplace>/observations/<epic>/<when the run started>/
 ```
 
-**Nothing is ever removed.** No pruning, no expiry, no cleanup. A run's records are a few hundred kilobytes of debrief,
-trace and notes, and they stay until you delete them yourself.
+**Nothing is ever removed.** No pruning, no expiry, no cleanup. What a run leaves is a debrief of a few kilobytes, its
+notes of a few tens, and a trace that is nearly all of it — between 100 KB and 570 KB across the runs measured here,
+and bounded: the trace is built to a 600,000-character budget however long the run was. They stay until you delete
+them yourself.
 
 **What it costs.** Observation calls models of its own, and they are drawn on the **same account your run
 authenticates with** — it inherits the environment your session started in, so on a subscription your run and its
@@ -224,21 +229,20 @@ observer can compete for the same rate limit. There is no back-off and nothing t
 call:
 
 - **One per dispatch, on a cheap tier**, the moment that dispatch finishes. A dispatch is one agent your run sent off
-  to do one stage's work; a refinement makes three or four of them, and a delivery a dozen or more. Each of those calls
-  reads that one agent's own record — the part of a run nothing else can see, since a delivery's per-dispatch records
-  outrun any context window — and writes a short note.
+  to do one stage's work; the refinements measured here made three or four of them and the deliveries nine to fifteen.
+  Each of those calls reads that one agent's own record — the part of a run nothing else can see, since a delivery's
+  per-dispatch records outrun any context window — and writes a short note.
 - **One at the end, over the whole run**, on a long-context model, which reads the run's shape and all of those notes
   together and writes the defects.
 
-**What that came to when it was measured.** The reading at the end was measured over the runs on the machine this was
-written on: **$2.05 to $6.43 for a run, averaging $3.68**. It is the larger of the two by a distance, and it is one call
-however long the run was. The per-dispatch notes were then measured over two of those runs — a four-dispatch refinement
-and a thirteen-dispatch delivery — at **$0.39 and $1.30**, which is **about ten cents a dispatch**. Two runs is
-a narrow sample and a note costs what its dispatch left behind, so read that as an order of magnitude: the notes are the
-smaller half by a distance, and they are the half that grows with your run. So the figure follows **how many dispatches
-your run made, not how long it took**: a ten-hour delivery costs no more to observe than a two-hour one, and observing a
-whole delivery is a dozen-odd cheap calls and one expensive one against the hundreds of model calls the delivery itself
-makes.
+**What that came to when it was measured.** Both kinds of call together, per run: **$3.18 to $3.48 for a refinement**
+and **about $6.70 for a delivery**. Read that as an order of magnitude and not a price list — it is four measurements,
+all of them on one machine, over records of runs already finished: three readings of two refinements, and one of a
+single thirteen-dispatch delivery. Of it, the per-dispatch notes are **about ten cents a dispatch** — $0.39 on a
+four-dispatch refinement and $1.30 on the thirteen-dispatch delivery — and the one reading at the end is the rest of
+it, and the larger half by a distance. So the figure follows **how many dispatches your run made, not how long it
+took**: a ten-hour delivery costs no more to observe than a two-hour one, and observing a whole delivery is a
+dozen-odd cheap calls and one expensive one against the hundreds of model calls the delivery itself makes.
 
 Your own figures will differ — with the size of your epic, with how many stages a run needed, and with what your
 account is charged. Treat them as an order of magnitude and read your own debrief for what your run actually cost.
@@ -267,7 +271,8 @@ Every run reports what its reviews spent. If that is more than you want, turn th
 change is high-stakes, turn it up.
 
 Observation spends models too, on the same account — see [Observation](#observation). Most of it is the one reading at
-the end of a run, measured at $2.05 to $6.43 a run and averaging $3.68, with one cheap-tier call per dispatch beside it.
+the end of a run: measured all in at $3.18 to $3.48 for a refinement and about $6.70 for a delivery, on four readings
+of three runs, with one cheap-tier call per dispatch beside it.
 Turning it off is one setting.
 
 ## Troubleshooting
