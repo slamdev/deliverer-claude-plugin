@@ -24,7 +24,7 @@ Two packages carry every automated check there is, and CI runs both of them and 
 `node_modules/` is missing):
 
 ```
-(cd plugin/mcp && npm run typecheck && npm run lint)   # the tools server
+(cd plugin/mcp && npm run typecheck && npm run lint)   # the plugin's Node code
 (cd e2e-tests  && npm run typecheck && npm run lint)   # the end-to-end harness
 ```
 
@@ -40,9 +40,11 @@ Everything else is verified **by hand**: markdown, the manifests, the shell hook
 behaviour moves, exercise the review lifecycle against the **scripted backend** — a canned event timeline, no model and
 no money — before calling the change done. CONTRIBUTING.md § What CI does not check has the command.
 
-## The tools server (`plugin/mcp/`)
+## The plugin's Node code (`plugin/mcp/`)
 
-The server **ships unbuilt**: Node's type stripping runs the TypeScript as-is, so `tsc --noEmit` is the only thing
+One package holds everything the plugin runs on Node. What it holds today is the tools server, under `server/`.
+
+All of it **ships unbuilt**: Node's type stripping runs the TypeScript as-is, so `tsc --noEmit` is the only thing
 holding up the three options that make that possible. `plugin/mcp/tsconfig.json` names them and what each one prevents;
 a violation gets past you and surfaces in a user's session.
 

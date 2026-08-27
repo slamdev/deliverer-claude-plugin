@@ -10,33 +10,33 @@ tools server itself. Every ticket after this one adds a second entry point to th
 otherwise have to correct the same three documents on its way past. **Prefactoring**: it lands first so no later ticket
 leaves a document lying. Settled as D30 and D31 in `../spec.md`.
 
-- [ ] CONTRIBUTING's project tree describes `plugin/mcp/` as the plugin's Node code, and names the tools server as
+- [x] CONTRIBUTING's project tree describes `plugin/mcp/` as the plugin's Node code, and names the tools server as
       what it holds today rather than as what the directory is.
-- [ ] CONTRIBUTING says it outside the project tree too: § CI introduces the two packages it checks, and the one in
+- [x] CONTRIBUTING says it outside the project tree too: § CI introduces the two packages it checks, and the one in
       `plugin/mcp` is named there as the tools server. That is the same claim D31 retires, in the file this ticket
       already has open.
-- [ ] `.claude/CLAUDE.md`'s section on the directory is reworded the same way, and every claim it already makes
+- [x] `.claude/CLAUDE.md`'s section on the directory is reworded the same way, and every claim it already makes
       survives intact: that the code ships unbuilt, that `tsc --noEmit` is the only thing holding up the three
       options that allow it, and that the comments in `server/` carry the reasoning.
-- [ ] The label beside the first of the two commands `.claude/CLAUDE.md` lists as the whole of what is checked is
+- [x] The label beside the first of the two commands `.claude/CLAUDE.md` lists as the whole of what is checked is
       reworded with it, so the file does not name the package one way where it lists the checks and another way
       where it describes the directory.
-- [ ] The package's own `description` no longer says the directory is only an MCP server.
-- [ ] The package `name` is left alone. Renaming it churns the lockfile and the install for a word, and nothing
+- [x] The package's own `description` no longer says the directory is only an MCP server.
+- [x] The package `name` is left alone. Renaming it churns the lockfile and the install for a word, and nothing
       outside this repository reads it.
-- [ ] `.github/workflows/ci.yml` is left alone, though its job and step names say the retired thing as well. Those
+- [x] `.github/workflows/ci.yml` is left alone, though its job and step names say the retired thing as well. Those
       names label what each step checks and a run reports green under any of them; correcting them is a separate
       pass rather than this ticket's.
-- [ ] No file moves, no import changes, and nothing about what CI runs changes: both commands, their working
+- [x] No file moves, no import changes, and nothing about what CI runs changes: both commands, their working
       directories and the guard that stops one failure hiding another are untouched. A comment that labels a
       command is prose, and the criteria above have it.
-- [ ] The project tree's count of `docs/adrs/` is corrected in passing — it says fifteen where the directory holds
+- [x] The project tree's count of `docs/adrs/` is corrected in passing — it says fifteen where the directory holds
       eighteen. A figure nobody maintains is the same lying document this ticket exists to end, and it sits in the
       block already being edited.
-- [ ] The framing is durable: adding a second entry point later must not require rewriting these sentences again,
+- [x] The framing is durable: adding a second entry point later must not require rewriting these sentences again,
       only extending the list of what the directory holds.
-- [ ] No ADR is added — this is settled in the spec, not architecture in its own right.
-- [ ] The glossary's words are used, and each file's prevailing column width and register are matched.
+- [x] No ADR is added — this is settled in the spec, not architecture in its own right.
+- [x] The glossary's words are used, and each file's prevailing column width and register are matched.
 
 ## Comments
 

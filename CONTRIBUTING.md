@@ -125,7 +125,8 @@ what moved.
 │   │   ├── assumption-reviewer.md         assumption → accept / override / escalate
 │   │   ├── code-reviewer.md               drives one review round via the MCP server
 │   │   └── comments-addresser.md          unresolved comments → fixes, declines, hand-offs
-│   ├── mcp/                               the tools server — ships UNBUILT (Node strips the types)
+│   ├── mcp/                               the plugin's Node code, one package — ships UNBUILT (Node strips
+│   │                                      the types). What it holds today: the tools server
 │   │   ├── launch.mjs                     what .mcp.json runs; resolves the staged copy, starts the
 │   │   │                                  install hook when nothing else has
 │   │   ├── server/index.ts                the three tools + the transcript resource
@@ -139,7 +140,7 @@ what moved.
 ├── .claude-plugin/marketplace.json      the marketplace entry (git-subdir → plugin/)
 ├── CONTEXT.md                           the glossary / ubiquitous language
 ├── docs/
-│   ├── adrs/                              architectural decisions — fifteen, all on the plugin itself
+│   ├── adrs/                              architectural decisions — eighteen, all on the plugin itself
 │   ├── specs/<slug>/                      specs and tickets for work on THIS repo
 │   └── agents/                            how the contributor skills behave here
 │       ├── issue-tracker.md                → local markdown under docs/specs/, never gh issue
@@ -209,8 +210,8 @@ Implements the work, using `/tdd` at the seams the spec named. Work one ticket a
 ## CI
 
 `.github/workflows/ci.yml` runs on pushes to `main` and on every change request. One job, `check`, over both packages
-this repository has: the tools server in `plugin/mcp` and the end-to-end **harness** in `e2e-tests`. One `setup-node`,
-then the other three steps once for each package:
+this repository has: the plugin's Node code in `plugin/mcp` — today, the tools server — and the end-to-end **harness**
+in `e2e-tests`. One `setup-node`, then the other three steps once for each package:
 
 | Step                | What and why                                                                                |
 |---------------------|---------------------------------------------------------------------------------------------|
