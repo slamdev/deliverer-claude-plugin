@@ -51,7 +51,7 @@ import { earlierDebriefs, type Continuity, type ContinuitySummary } from "./cont
 import { installedDirectory } from "./plugin-commit.ts";
 import { renderTrace } from "./trace-file.ts";
 import { formatDuration, type Trace } from "./trace.ts";
-import type { RunFacts } from "./run-facts.ts";
+import { runSkills, type RunFacts } from "./run-facts.ts";
 import {
   addCosts,
   bound,
@@ -262,7 +262,7 @@ function synthesisPrompt(input: {
   readonly earlier: Continuity;
 }): string {
   const { trace, facts, tree } = input;
-  const skill = trace.skills.join(", ") || facts.extent.command || "a deliverer run";
+  const skill = runSkills(facts, trace) || facts.extent.command || "a deliverer run";
   // The header's four widest figures, assembled here rather than inline: every one of them is a
   // line of the prompt below, and a line of a prompt cannot be wrapped without wrapping what the
   // model reads. Same text, same bytes.

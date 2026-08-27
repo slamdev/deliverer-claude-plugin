@@ -401,10 +401,14 @@ from ADR-0018.
 
 Nothing already there is rewritten: a second replay of one run lands beside the first as `debrief-2.md`, byte for byte
 identical to it where nothing judged. The cases worth walking after any change to the observer, each of which reads
-differently: a delivery and a refinement, a run that stopped mid-stage (the header names the stage), a session that
-carried unrelated work after its run (the header says how many of its entries lie outside), and a record you have
-truncated or corrupted by hand — that last one has to say what was lost rather than read as a run with nothing wrong
-with it.
+differently: a delivery and a refinement, a run that stopped mid-stage (the header names the stage), a run whose task
+list was laid out and never updated (the header says **stopped**, because nothing there ended anything), a session that
+carried unrelated work after its run (the header says how many of its entries lie outside, and none of that work is in
+the wall clock, the dispatch count or the time the run spent waiting), a session that ran **two** runs (the debrief is
+about the first, and a loss says the second is outside it), and a record you have truncated or corrupted by hand — that
+last one has to say what was lost rather than read as a run with nothing wrong with it. A synthetic record hand-written
+to one of those shapes is a legitimate way to walk one: replay needs no host, and the shapes above are a few dozen
+lines of JSONL each.
 
 **The hook states worth walking.** Replay reaches everything the observer does with a record already on disk; what it
 cannot reach is the decision that there is a run to observe at all, which is `hooks/observe-run.sh`'s and the live
@@ -418,12 +422,16 @@ loop's. Walk these after any change to either, each with what it should do:
   stamp in the session's record;
 - **a run that finished while its session stays open** — nothing is finalised and nothing is announced: the debrief
   goes on being rewritten, and the line waits for one of the two below. What a run's records say about how it ended is
-  a reading rather than a signal — it reads `finished` at every question round of a refinement and between a
-  delivery's stages — so the observer has two finalisers, the session's end and the idle bound, and no third;
+  a reading rather than a signal — nothing about a task list forbids a run passing through "every stage completed, last
+  word prose" between two stages — so the observer has two finalisers, the session's end and the idle bound, and no
+  third;
 - **a session ended mid-run** — `SessionEnd` signals and never finalises anything itself; the observer picks the
   signal up on its next tick and finalises the debrief;
 - **a terminal killed**, with no `SessionEnd` to be had — the idle bound finalises it, and the line naming the debrief
   waits for the next prompt of any session;
+- **a record that stops being readable after a debrief was written** — move or `chmod` it and leave it that way. The
+  patience bounds the wait: the observer announces the debrief already on disk and stops, rather than ticking for the
+  rest of the machine's uptime over a record that is never coming back;
 - **observation switched off** (`CLAUDE_PLUGIN_OPTION_OBSERVE_RUNS=false`) — nothing starts at all: no process, no
   trace and no debrief.
 

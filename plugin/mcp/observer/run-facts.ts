@@ -18,7 +18,9 @@
  * So the run runs **from the `/deliverer:` command that started it to the last entry it or any of
  * its dispatches left**, and that is what every figure below is taken over: the wall clock, the
  * dispatch count, the rounds, the tokens and the human's own time are the RUN's and never the
- * session's.
+ * session's. **One record can hold two runs**, and where it does the second one's command closes
+ * the first one's extent: a refinement and the delivery the human started five hours later are two
+ * runs, and one debrief may only ever be about one of them.
  *
  * **Nothing here judges anything either.** Same records, same facts, no model and no clock read —
  * ticket 02's determinism holds through this file, which is what lets a **debrief** be replayed.
@@ -33,6 +35,7 @@
 import {
   addTokens,
   asObject,
+  attributionOf,
   numberField,
   objectField,
   requestUsage,
@@ -96,7 +99,11 @@ export interface RunRound {
   readonly provider: string | undefined;
   readonly model: string | undefined;
   readonly agentDurationMs: number | undefined;
-  /** set when the chronologically last poll came back an error rather than a status */
+  /**
+   * Set when the chronologically last poll came back an error rather than a status — as that
+   * answer's SHAPE, never its text, which the tools server's own refusals quote a repository into
+   * (ADR-0018). `./run-facts.ts`'s `errorShape` is the whole of what can appear here.
+   */
   readonly lastPollError: string | undefined;
   /** which records the polls sit in, so the figures above can be found in the trace */
   readonly where: readonly string[];
@@ -126,6 +133,15 @@ export interface HumanTime {
 
 export interface RunFacts {
   readonly extent: RunExtent;
+  /**
+   * The plugin skills that produced entries INSIDE the run, in first-seen order.
+   *
+   * `Trace.skills` is the whole record's and is deliberately left that way — a trace is one
+   * session's distillation. This is the run's, and the difference shows where one record holds two
+   * runs: a refinement and the delivery the human started five hours later put both skills in the
+   * trace, and a debrief naming both would be a document about one run titled after two.
+   */
+  readonly skills: readonly string[];
   readonly ending: RunEnding;
   /** the run's own dispatches — never the session's */
   readonly dispatches: readonly TraceDispatch[];
@@ -169,6 +185,18 @@ export interface RunFacts {
   readonly losses: readonly string[];
 }
 
+/**
+ * The skills to name a RUN by: its own before the record's (ticket 03).
+ *
+ * `RunFacts.skills` is bounded by the extent and `Trace.skills` is the whole session's, and where
+ * one record holds two runs those differ — so everything that names the run this observation is
+ * ABOUT reads this, and only the trace's own file names the record's list. Empty where neither has
+ * anything, which leaves each caller its own fallback: they differ, and none of them is a skill.
+ */
+export function runSkills(facts: RunFacts, trace: Trace): string {
+  return facts.skills.length > 0 ? facts.skills.join(", ") : trace.skills.join(", ");
+}
+
 /* ──────────────────────────────────── reading the records ──────────────────────────────────── */
 
 export interface RunFactsInput {
@@ -209,6 +237,7 @@ export function runFactsOf(input: RunFactsInput): RunFacts {
 
   return {
     extent,
+    skills: attributionOf(window),
     ending: endingOf(window),
     dispatches,
     rounds,
@@ -255,20 +284,31 @@ interface RunBounds {
 /**
  * Where the run starts and where it stops, as positions in the session's own record.
  *
- * The start is the `/deliverer:` command. The far end is found in two steps, because neither alone
- * is right: the last entry that is mechanically the run's — an attributed entry, a dispatch, a
- * question round, a review poll, a task update, or the answer to one of those — and then forward
- * through whatever the orchestrator wrote after it, up to the first turn the human typed. That
- * second step is what keeps a finished run's closing **report** inside the run; the first is what
- * keeps the human's unrelated work the next afternoon outside it.
+ * The start is the `/deliverer:` command. The far end is found in three steps, because no one of
+ * them is right on its own:
+ *
+ *  1. **A ceiling, past which nothing is ever this run's.** Closed by a second `/deliverer:`
+ *     command — one record can hold two runs and one debrief may only be about one of them — and by
+ *     the first turn the human typed after the run's last signal that is identifiably the RUN's.
+ *     Both are computed before anything else, because a scan that runs to the end of the record
+ *     first can land past either of them and then a cut applied afterwards has nothing left to cut.
+ *  2. **The last entry inside that ceiling that is mechanically the run's** — an attributed entry, a
+ *     dispatch, a question round, a review poll, a task update, or the answer to one of those.
+ *  3. **Forward through whatever the orchestrator wrote after it**, up to the first turn the human
+ *     typed. That is what keeps a finished run's closing **report** inside the run.
+ *
+ * **Step 1 is where the two strengths of signal matter, and the difference is the whole of the
+ * bound.** Deliverer attribution, a call to the plugin's own review tools and a dispatch of one of
+ * the plugin's own agents are the run's and nothing else's. `Agent`, `AskUserQuestion`, `TaskCreate`
+ * and `TaskUpdate` are host built-ins that any later work in the same session makes too, so they
+ * say a run is proceeding but cannot tell its continuation from somebody else's next afternoon —
+ * which is why step 2 trusts them inside a ceiling the run's own signals set, and never to set it.
  */
 function boundsOf(entries: readonly JsonObject[], losses: string[]): RunBounds {
   let firstIndex = 0;
   let command: string | undefined;
   for (const [index, entry] of entries.entries()) {
-    const named = /<command-name>(\/deliverer:[a-z0-9-]+)<\/command-name>/.exec(
-      typedText(entry) ?? "",
-    );
+    const named = OWN_COMMAND.exec(typedText(entry) ?? "");
     if (named?.[1] === undefined) continue;
     firstIndex = index;
     command = named[1];
@@ -289,9 +329,43 @@ function boundsOf(entries: readonly JsonObject[], losses: string[]): RunBounds {
     );
   }
 
+  // ── step 1: the ceiling ──
+  // A second `/deliverer:` command starts a second run, and merging the two reports the gap between
+  // them as time the plugin took from its human: a refinement at 09:00 and a delivery at 14:00 read
+  // as one 5h30m run whose 4h57m of that is nobody's doing. Only the first is this debrief's.
+  let ceiling = entries.length;
+  let ceilingReason = "the session's record ends there";
+  const second = indexOfOwnCommand(entries, firstIndex + 1);
+  if (second !== undefined) {
+    ceiling = second;
+    ceilingReason = "another `/deliverer:` command starts a second run there";
+    losses.push(
+      "another `/deliverer:` command was typed later in this same record, so the record holds " +
+        "more than one run: this debrief is about the first of them, and everything from that " +
+        "command on — its dispatches, its rounds, its tokens and the time between the two — is " +
+        "outside it",
+    );
+  }
+  // The first turn the human typed after the run's last signal of its OWN. Step 2 below reads host
+  // built-ins as well, and those are true of the human's unrelated work the next afternoon: with no
+  // ceiling here, one `TaskCreate` in that work pulls the far end a day past the turn that ended the
+  // run, and the wall clock, both human-time figures, the dispatch count, the tokens and the ending
+  // all go with it — the "far too long" failure this module opens by naming.
+  let lastOwn = firstIndex;
+  for (let index = firstIndex; index < ceiling; index += 1) {
+    if (isOwnSignal(entries[index] ?? {})) lastOwn = index;
+  }
+  for (let index = lastOwn + 1; index < ceiling; index += 1) {
+    if (typedText(entries[index] ?? {}) === undefined) continue;
+    ceiling = index;
+    ceilingReason = "the human typed something else next, and what follows is work of their own";
+    break;
+  }
+
+  // ── step 2: the last entry inside the ceiling that is mechanically the run's ──
   const raised = new Set<string>();
   let lastSignal = firstIndex;
-  for (let index = firstIndex; index < entries.length; index += 1) {
+  for (let index = firstIndex; index < ceiling; index += 1) {
     const entry = entries[index];
     if (entry === undefined) continue;
     if (stringField(entry, "attributionPlugin") === "deliverer") lastSignal = index;
@@ -317,16 +391,60 @@ function boundsOf(entries: readonly JsonObject[], losses: string[]): RunBounds {
     if (notified?.[1] !== undefined && raised.has(notified[1])) lastSignal = index;
   }
 
-  let lastIndex = entries.length - 1;
-  let boundedBy = "the session's record ends there";
-  for (let index = lastSignal + 1; index < entries.length; index += 1) {
+  // ── step 3: forward through what the orchestrator wrote after it ──
+  let lastIndex = ceiling - 1;
+  let boundedBy = ceilingReason;
+  for (let index = lastSignal + 1; index < ceiling; index += 1) {
     if (typedText(entries[index] ?? {}) === undefined) continue;
     lastIndex = index - 1;
-    boundedBy =
-      "the human typed something else next, and what follows is work of their own";
+    boundedBy = "the human typed something else next, and what follows is work of their own";
     break;
   }
   return { command, firstIndex, lastIndex, boundedBy, total: entries.length };
+}
+
+/** The plugin's own commands, as the host writes one into the prompt that ran it. */
+const OWN_COMMAND = /<command-name>(\/deliverer:[a-z0-9-]+)<\/command-name>/;
+
+/** Where the next `/deliverer:` command the human typed sits, at or after `from`. */
+function indexOfOwnCommand(entries: readonly JsonObject[], from: number): number | undefined {
+  for (let index = Math.max(from, 0); index < entries.length; index += 1) {
+    if (OWN_COMMAND.test(typedText(entries[index] ?? {}) ?? "")) return index;
+  }
+  return undefined;
+}
+
+/**
+ * The agents the plugin ships, as a dispatch's `subagent_type` names them.
+ *
+ * A dispatch of one of these is the run's and nothing else's, which is what lets the ceiling above
+ * trust it where it cannot trust a bare `Agent` call. Matched with the plugin's prefix and without,
+ * because how far the host qualifies an agent's name depends on the install — a claim, like every
+ * other shape read out of these records.
+ */
+const OWN_AGENTS = new Set([
+  "assumption-reviewer",
+  "change-request-creator",
+  "code-reviewer",
+  "comments-addresser",
+  "implementer",
+  "spec-writer",
+  "tickets-writer",
+]);
+
+/** Whether one entry carries a signal that is the RUN's rather than the session's. */
+function isOwnSignal(entry: JsonObject): boolean {
+  if (stringField(entry, "attributionPlugin") === "deliverer") return true;
+  for (const block of toolUses(entry)) {
+    const name = stringField(block, "name") ?? "";
+    if (isReviewTool(name)) return true;
+    if (name !== "Agent") continue;
+    const type = stringField(objectField(block, "input"), "subagent_type") ?? "";
+    if (OWN_AGENTS.has(type.startsWith("deliverer:") ? type.slice("deliverer:".length) : type)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /** The run's window as a wall clock, once its own dispatches are known. */
@@ -526,11 +644,37 @@ function pollsIn(entries: readonly JsonObject[], where: string): readonly PollEv
         payload,
         // A poll the server refused — an id it has no review for, a review already finished — is
         // not a status, and reading one as the round's end would report prose as a verdict.
-        error: payload === undefined ? text.replace(/\s+/g, " ").slice(0, 200) : undefined,
+        //
+        // **Its SHAPE and never its text** (ADR-0018). The tools server's own refusals quote what
+        // they refused — `change_request_url is not a URL: "<the forge URL>"`, `cwd does not exist:
+        // "<the delivery repository's path>"`, and any unhandled error's message — and a round
+        // whose `code_review_start` failed validation has exactly one call and one answer, so that
+        // refusal IS the round's last poll and would reach the debrief verbatim. That is the
+        // CODE's own output rather than the model's, so it is not the risk ADR-0018 accepts: the
+        // text stays in the **trace**, where the same rule already puts everything the repository
+        // touched, and what travels from here is that a poll came back and how much of it there
+        // was.
+        error: payload === undefined ? errorShape(text, block) : undefined,
       });
     }
   }
   return events;
+}
+
+/**
+ * A refused poll described without quoting it: whether the host flagged it an error, and its size.
+ *
+ * Enough for a maintainer to tell a server refusal from a transport failure and to find the text
+ * itself in the trace at the same timestamp, and bounded by construction — every character of it is
+ * this function's own or a digit.
+ */
+function errorShape(text: string, block: JsonObject): string {
+  const flagged = block["is_error"] === true;
+  return (
+    `${flagged ? "the host flagged it an error" : "it carried no status"}, ` +
+    `${text.trim().length} characters that are not the JSON a poll returns — the text itself is ` +
+    `in the trace, at this poll's own timestamp`
+  );
 }
 
 function resultText(block: JsonObject): string {
@@ -558,15 +702,27 @@ function parseObject(text: string): JsonObject | undefined {
  *
  * Read off the task list the orchestrator keeps — **one stage, one task** is both skills' own rule
  * — and off whether the run said anything after its last stage. A task left `in_progress` names
- * the stage outright; a run that closed with prose of its own finished; anything else stopped
- * where the record does, which is the run most worth reporting and the one with no **report** to
- * say so itself (ADR-0018).
+ * the stage outright; a run that completed at least one stage and closed with prose of its own
+ * finished; anything else stopped where the record does, which is the run most worth reporting and
+ * the one with no **report** to say so itself (ADR-0018).
+ *
+ * **`finished` is a claim about what the records hold, so it is counted and never inferred from the
+ * absence of the other cases.** A run that laid out its task list and was killed before the first
+ * update has nothing `in_progress` and closes with the words it laid the list out in — which used
+ * to read `finished`, in the one place a debrief must never be wrong: `kind` is what the observer's
+ * headline prints and what the synthesis is told the run's outcome was.
  */
 function endingOf(window: readonly JsonObject[]): RunEnding {
   const subjects = new Map<string, string>();
   const states = new Map<string, string>();
   let created = 0;
   let lastCompleted: string | undefined;
+  // Counted rather than assumed: `TaskCreate` seeds a task at `created` and nothing but a
+  // `TaskUpdate` moves it, so a run whose task list was laid out and never updated has no stage
+  // that ended anything. Without this the `finished` branch below asserted a completion no record
+  // holds — and `ending.kind` is what the observer's headline prints and what the synthesis is
+  // told, so an interrupted run read to the model as a clean one.
+  let completed = 0;
   for (const entry of window) {
     for (const block of toolUses(entry)) {
       const name = stringField(block, "name") ?? "";
@@ -583,8 +739,12 @@ function endingOf(window: readonly JsonObject[]): RunEnding {
       const id = stringField(call, "taskId");
       const status = stringField(call, "status");
       if (id === undefined || status === undefined) continue;
+      const was = states.get(id);
       states.set(id, status);
-      if (status === "completed") lastCompleted = subjects.get(id) ?? id;
+      if (status === "completed") {
+        if (was !== "completed") completed += 1;
+        lastCompleted = subjects.get(id) ?? id;
+      } else if (was === "completed") completed -= 1;
     }
   }
 
@@ -611,13 +771,27 @@ function endingOf(window: readonly JsonObject[]): RunEnding {
           : "It does not close with words of its own either."),
     };
   }
-  if (closedWithProse) {
+  if (closedWithProse && completed > 0) {
     return {
       kind: "finished",
+      // No stage: `stage` is the stage a run stopped IN, and `./judge.ts` renders it as "ended
+      // finished in `<stage>`", which would name the last one completed as though it were where the
+      // run got stuck.
       stage: undefined,
       line:
-        `**finished**: every one of its ${created} stages ended completed, and it closed with a ` +
-        `report of its own.`,
+        `**finished**: ${completed} of its ${created} stages ended completed, none was left in ` +
+        `progress, and it closed with a report of its own.`,
+    };
+  }
+  if (closedWithProse) {
+    // The task list was created and never updated. It closed with words of its own, which is why it
+    // is not the `stopped` line below — that one names a stage that completed, and none did.
+    return {
+      kind: "stopped",
+      stage: undefined,
+      line:
+        `**stopped**: none of its ${created} stages was ever marked completed — the task list was ` +
+        `laid out and no update to it followed — though it did close with words of its own.`,
     };
   }
   return {

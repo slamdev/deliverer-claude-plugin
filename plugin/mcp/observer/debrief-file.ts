@@ -29,11 +29,11 @@ import { join } from "node:path";
 import { NO_TOKENS, type TokenTotals } from "./records.ts";
 import { formatDuration, tokenDetail, type Trace, type TraceDispatch } from "./trace.ts";
 import { observationDirectory, writeFileAtomically } from "./trace-file.ts";
+import { runSkills, type RunFacts, type RunRound } from "./run-facts.ts";
 // Type-only, so nothing of `./continuity.ts` is loaded at runtime by this file: that module reads
 // this one's own naming and its identity parser, and a value import back would close the circle.
 import type { ContinuitySummary } from "./continuity.ts";
 import type { PluginCommit } from "./plugin-commit.ts";
-import type { RunFacts, RunRound } from "./run-facts.ts";
 
 /* ─────────────────────────────────── where it is sent ─────────────────────────────────── */
 
@@ -439,7 +439,9 @@ export function renderIdentity(input: DebriefInput, ordinal: number): string {
     // names the directory all three files sit in.
     `slug: ${trace.slug}${trace.slugRead ? "" : " (no task update carried one)"}`,
     `run-started-at: ${trace.startedAt ?? "unknown"}`,
-    `skill: ${trace.skills.length === 0 ? "unknown" : trace.skills.join(", ")}`,
+    // The RUN's skills and not the record's, for the reason `skillOf` gives: one record can hold
+    // two runs, and this file names one of them.
+    `skill: ${skillOf(input)}`,
     `command: ${facts.extent.command ?? "none — the run was resumed by prose"}`,
     `repository: ${facts.repository ?? "unknown"}`,
     `plugin-commit: ${input.commit.commit ?? "unknown"}`,
@@ -477,10 +479,21 @@ export function parseIdentity(text: string): Readonly<Record<string, string>> {
 /** What the document wraps at, and the whole of why nothing here builds a line by hand. */
 const WRAP_COLUMNS = 120;
 
+/**
+ * The skill this document is about, in the run's own words before the record's.
+ *
+ * `RunFacts.skills` is bounded by the run's extent and `Trace.skills` is the whole session's, and
+ * where one record holds two runs those differ: a title naming both would be a document about one
+ * run titled after two. The trace's own list stays behind it, for a run whose window carried no
+ * attributed entry at all, and the command the human typed stands in where neither has anything.
+ */
+function skillOf(input: DebriefInput): string {
+  return runSkills(input.facts, input.trace) || (input.facts.extent.command ?? "unknown");
+}
+
 export function renderDebrief(input: DebriefInput): string {
   const { trace, facts, judging } = input;
-  const skill =
-    trace.skills.length === 0 ? (facts.extent.command ?? "unknown") : trace.skills.join(", ");
+  const skill = skillOf(input);
   const out: Document = { lines: [] };
 
   line(out, `# Deliverer debrief — \`${skill}\`, epic \`${trace.slug}\``);
@@ -881,6 +894,11 @@ function roundsLine(rounds: readonly RunRound[]): string {
  * figure in the payload every poll returns — and it survives a **failed** round, which is the half
  * most likely to be lost. The provider that served it travels beside it, because a dollar figure
  * from one provider is not a dollar figure from another.
+ *
+ * **A poll that came back no status at all is named by its shape and never quoted.** The tools
+ * server's own refusals quote what they refused — a forge URL, a repository path — and this is the
+ * document that says on its face it carries neither, so `RunRound.lastPollError` is already the
+ * observer's own words about that answer rather than the answer (ADR-0018).
  */
 function roundLine(round: RunRound): string {
   const spend =
@@ -898,7 +916,7 @@ function roundLine(round: RunRound): string {
     `; ${spend}` +
     (round.lastPollError === undefined
       ? ""
-      : `. Its last call came back an error: ${round.lastPollError}`)
+      : `. Its last call came back no status — ${round.lastPollError}`)
   );
 }
 

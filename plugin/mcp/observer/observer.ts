@@ -28,10 +28,10 @@
  *
  * **Those two are the whole of it, and what the records SAY about themselves is not a third.**
  * D23 names session end and the idle bound and nothing else. `RunFacts.ending` reads `finished` of
- * any moment where every task is completed and the run's last word is prose — which is what a
- * refinement looks like at every question round and a delivery between two stages — so finalising
- * on it spends the one synthesis (D9) on a run that is still going and then holds that answer for
- * the rest of it.
+ * any moment where every task is completed and the run's last word is prose, and nothing about a
+ * task list forbids a run passing through that shape between two stages — so finalising on it
+ * spends the one synthesis (D9) on a run that is still going and then holds that answer for the
+ * rest of it. The finalise below carries what that costs, and what it measures.
  *
  * **The stop line is best-effort by construction and the prompt line is the guarantee** (D25). The
  * host writes a run's last entry and then fires its `Stop` hooks immediately, so whether this loop
@@ -59,6 +59,7 @@ import {
 import { NOTHING_JUDGES_YET, refreshDebrief, type Judging } from "./debrief-file.ts";
 import { debriefRun, type DebriefOutcome, type JudgingInput } from "./debrief.ts";
 import { synthesisJudge } from "./judge.ts";
+import { runSkills } from "./run-facts.ts";
 import { formatDuration } from "./trace.ts";
 
 /* ────────────────────────────────────── the clocks ────────────────────────────────────── */
@@ -91,8 +92,9 @@ const IDLE_FINALISE_MS = bound("DELIVERER_OBSERVER_IDLE_MS", 30 * 60_000);
 
 /**
  * How long the observer keeps watching after finalising on its own reading rather than on a
- * signal. This is the whole of "nothing waits forever": a signalled finalise exits at once, every
- * other one exits this long after.
+ * signal. With `RUN_PATIENCE_MS` below this is the whole of "nothing waits forever": a signalled
+ * finalise exits at once, every other one exits this long after, and a record that stops being
+ * readable exits on the patience instead.
  */
 const AFTER_FINALISE_MS = bound("DELIVERER_OBSERVER_AFTER_FINALISE_MS", 30 * 60_000);
 
@@ -103,6 +105,11 @@ const AFTER_FINALISE_MS = bound("DELIVERER_OBSERVER_AFTER_FINALISE_MS", 30 * 60_
  * written a single attributed entry — so "no run here" is the normal first answer and is waited
  * through. A `/deliverer:` command typed and immediately interrupted never produces one, and that
  * is what this bound is for.
+ *
+ * It bounds the same wait at the other end too: a record that stops being readable once a debrief
+ * has been written gets this long to come back, and then the debrief already on disk is announced
+ * and the loop stops. Nothing else would ever stop it there — a record that never comes back reaches
+ * neither the `SessionEnd` signal nor the idle bound.
  */
 const RUN_PATIENCE_MS = bound("DELIVERER_OBSERVER_PATIENCE_MS", 10 * 60_000);
 
@@ -192,6 +199,8 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
 
   let written: Extract<DebriefOutcome, { kind: "written" }> | undefined;
   let heldSince: number | undefined;
+  /** the first reading that came back unreadable after one had come back written */
+  let unreadableSince: number | undefined;
   let finalisedAt: number | undefined;
   let finalisedBySignal = false;
   let extentEnd = "";
@@ -218,21 +227,37 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
     const finalising = signalled || idle;
     const throttleExpired = now - lastRefreshAt >= REFRESH_THROTTLE_MS;
     const due =
-      finalising ||
+      // Only while the finalise is still owed, and that is what keeps the throttle applying
+      // afterwards. `idle` cannot go back to false on its own — `lastActivityAt` only moves when
+      // something is written — so `finalising` stays true for the whole of `AFTER_FINALISE_MS`, and
+      // an unqualified term here made every tick of that window due: with the shipped bounds, some
+      // 900 further whole readings of an 11 MB record set, each rebuilding the trace and the facts
+      // and rewriting both files, on a machine whose terminal has just been killed. A run that
+      // turns out to be alive still un-finalises at once: that is `grew`, `stageLanded` and
+      // `settling` below, none of which this touches.
+      (finalising && finalisedAt === undefined) ||
       stageLanded ||
       settling ||
       (grew && throttleExpired) ||
-      (written === undefined && throttleExpired);
+      (written === undefined && throttleExpired) ||
+      // A record that stopped being readable is re-read on the throttle until it comes back or the
+      // patience below runs out. Under the throttle rather than every tick, because the patience is
+      // ten minutes and nothing else here needs the record to have changed to notice time passing —
+      // and re-reading it is what lets a record that recovers by some route the footprint cannot see
+      // (a permission put back) be picked up at all.
+      (unreadableSince !== undefined && throttleExpired);
 
     if (due) {
       lastRefreshAt = now;
       let outcome: DebriefOutcome;
+      // `finalisedAt` is carried into every later reading, so a debrief that has been finalised does
+      // not lose the flag to the next rewrite. Only the un-finalise below takes it away, and it
+      // rewrites the file itself when it does. Held in a name rather than recomputed, because the
+      // finalise block needs to know whether the reading it is about to announce already has it.
+      const readAsFinal = finalising || finalisedAt !== undefined;
       try {
         outcome = await read(options, judge, {
-          // `finalisedAt` is carried into every later reading, so a debrief that has been
-          // finalised does not lose the flag to the next rewrite. Only the un-finalise below
-          // takes it away, and it rewrites the file itself when it does.
-          finalise: finalising || finalisedAt !== undefined,
+          finalise: readAsFinal,
           // A run that has been found but has not named its epic yet is held off disk — for one
           // reading or for its whole first minute, which is measured: the delivery this was walked
           // against carried attribution for 1m20s before its first task update. Past the patience
@@ -262,11 +287,36 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
         continue;
       }
       if (outcome.kind !== "written") {
+        // A record that stopped being readable AFTER a debrief was written gets the same patience,
+        // counted from the first reading that failed rather than from the start — a blip, a rotated
+        // file, a directory being moved under it — and then this loop stops with the debrief it
+        // already has. Waiting indefinitely was the one hole in "nothing waits forever": a record
+        // that never comes back — a cleaned `~/.claude/projects`, a per-run configuration directory
+        // torn down, a lasting permission error — left a detached process ticking every tick with
+        // no exit at all and never announcing the debrief it did write, since neither `SessionEnd`
+        // nor the idle bound is reached from here.
+        if (written !== undefined) {
+          unreadableSince ??= now;
+          if (now - unreadableSince < RUN_PATIENCE_MS) {
+            await sleep(TICK_MS);
+            continue;
+          }
+          // Announced as the debrief it is, because it is one: on disk, readable, and the last
+          // reading of this run there is ever going to be. What it cannot say is that the run
+          // finished, and it does not — it keeps whatever flag its last reading gave it.
+          await announce(options, {
+            kind: "debrief",
+            debriefPath: written.written.debriefPath,
+            headline: headlineOf(written),
+          });
+          await mark(options, `stopped watching — ${outcome.reason}`);
+          return { kind: "debriefed", debriefPath: written.written.debriefPath };
+        }
         // `refused` is a record nothing could read and `no-run` is one that holds no run YET. Both
         // are waited through, because the observer is started on the prompt carrying the command —
         // before the run has written a single entry of its own — and both run out of patience
         // together.
-        if (now - startedAt < RUN_PATIENCE_MS || written !== undefined) {
+        if (now - startedAt < RUN_PATIENCE_MS) {
           await sleep(TICK_MS);
           continue;
         }
@@ -283,6 +333,9 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
 
       written = outcome;
       heldSince = undefined;
+      unreadableSince = undefined;
+      /** whether the reading `written` now holds was taken with the finalise flag already set */
+      let heldIsFinal = readAsFinal;
 
       // The run's OWN extent decides whether it resumed, and never the session's: a human typing
       // unrelated work into the same session after their delivery finished is outside the run by
@@ -303,27 +356,53 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
         // said in the debrief rather than re-read — `./judge.ts` keeps it and `./debrief-file.ts`
         // names its extent, because a second whole-run reading is not a cost a guess may impose.
         finalisedAt = undefined;
-        await clearAnnouncement(options.dataDirectory, options.sessionId);
+        // Swallowed like every other side effect in this loop, and for the loop's own reason: this
+        // function never throws, and the one path it could throw from is the one that exists because
+        // the run turned out to be ALIVE — where `../observe.mjs` would turn the exception into
+        // "there is no debrief of your run" about a debrief sitting on disk, and stop observing.
+        await clearAnnouncement(options.dataDirectory, options.sessionId).catch(() => undefined);
         await mark(options, "watching — a run that had gone quiet resumed");
         // Rewritten at once rather than at the next throttled reading, because between the two the
         // file on disk would be claiming to be final while the observer already knows it is not.
         const resumed = await read(options, judge, { finalise: false }).catch(() => outcome);
-        if (resumed.kind === "written") written = resumed;
+        if (resumed.kind === "written") {
+          written = resumed;
+          heldIsFinal = false;
+        }
       }
 
       // D23's two finalisers and only those: the session's own end, and the idle bound for the
-      // debrief a killed terminal left. `outcome.facts.ending.kind === "finished"` used to be a
-      // third, and it is a reading of the run's own words rather than a signal about it — true of
-      // every moment where the tasks are all completed and the last word is prose, which is a
-      // refinement at every question round. Measured on one 388-entry refinement record: its first
-      // 290 entries read `finished` at 2h28m and 10 question rounds against the whole run's 2h57m
-      // and 11. Finalising there announced the debrief mid-run and spent the one synthesis (D9) on
-      // three quarters of a run — content, which is exactly what D23 forbids the bound to cost.
+      // debrief a killed terminal left. `outcome.facts.ending.kind === "finished"` is deliberately
+      // not a third, because it is a READING of the run's own words rather than a signal about the
+      // run: it is true of any moment where every task is completed and the last word is prose, and
+      // nothing about a task list forbids a run passing through that shape between two stages.
+      // Finalising there spends the one synthesis (D9) on part of a run and then holds that answer
+      // for the rest of it — content, which is exactly what D23 forbids the bound to cost.
+      //
+      // **The figure this comment used to carry does not reproduce any more, and the reason is
+      // `./run-facts.ts`'s extent rather than anything here.** It read one 388-entry refinement's
+      // first 290 entries as `finished` at 2h28m and 10 question rounds against the whole run's
+      // 2h57m and 11 — but those 29 minutes and that eleventh round were the human's own follow-up
+      // work after the refinement had published, and the ceiling the extent now applies cuts them
+      // out. Re-measured over all eleven run records on that machine — five refinements and six
+      // deliveries — `finished` first reads within twelve entries of the run's own last entry on
+      // every one of the ten that reach it at all, and the eleventh never does. So the case against
+      // this being a finaliser is what it always was — a reading is not a signal — and no longer a
+      // measured gap of three quarters of a run.
       if (finalisedAt === undefined && finalising) {
-        // Read once more with the flag set before anything is announced: the line must never name
-        // a debrief that still says the run is going. One extra reading, once per run.
-        const final = await read(options, judge, { finalise: true }).catch(() => outcome);
-        if (final.kind === "written") written = final;
+        // Nothing is announced naming a debrief that still says the run is going — and the reading
+        // above almost always already carried the flag, since it is taken with `finalising ||
+        // finalisedAt !== undefined` and this branch is inside `finalising`. So this re-reads only
+        // where it does not: the un-finalise above rewrote the file WITHOUT the flag and a
+        // `SessionEnd` signal landed on the same tick, which is the whole of that case. Re-reading
+        // unconditionally paid a second whole pass over the session record and every per-dispatch
+        // record — 11 MB across 16 files on the largest delivery measured — plus a second trace, a
+        // second set of facts and a second write of both files, on the one tick of the run that is
+        // already the most expensive there is, because the synthesis ran inside the reading above.
+        if (!heldIsFinal) {
+          const final = await read(options, judge, { finalise: true }).catch(() => outcome);
+          if (final.kind === "written") written = final;
+        }
         finalisedAt = Date.now();
         finalisedBySignal = signalled;
         await announce(options, {
@@ -408,7 +487,7 @@ async function judgeQuietly(judge: Judge, input: JudgeInput): Promise<Judging> {
 function headlineOf(outcome: Extract<DebriefOutcome, { kind: "written" }>): string {
   const { facts, trace } = outcome;
   return (
-    `${trace.skills.join(", ") || "a deliverer run"} · epic ${trace.slug} · ` +
+    `${runSkills(facts, trace) || "a deliverer run"} · epic ${trace.slug} · ` +
     `${formatDuration(facts.extent.durationMs)} · ${facts.dispatches.length} dispatches · ` +
     `${facts.rounds.length} rounds · ${facts.ending.kind} · ` +
     `${facts.human.questionRounds} question rounds put to you and ` +

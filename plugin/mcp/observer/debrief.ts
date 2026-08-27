@@ -42,7 +42,7 @@ import { formatDuration, type Trace } from "./trace.ts";
 import { DATA_DIRECTORY_ENV, distil } from "./distil.ts";
 import { resolvePluginCommit } from "./plugin-commit.ts";
 import { synthesisJudge } from "./judge.ts";
-import { runFactsOf, type RunFacts } from "./run-facts.ts";
+import { runFactsOf, runSkills, type RunFacts } from "./run-facts.ts";
 import {
   NOTHING_JUDGED,
   writeDebrief,
@@ -208,7 +208,7 @@ function judgingLine(outcome: Extract<DebriefOutcome, { kind: "written" }>): str
 export function summariseDebrief(outcome: Extract<DebriefOutcome, { kind: "written" }>): string {
   const { facts, trace } = outcome;
   return (
-    `${trace.skills.join(", ") || "unknown skill"} · slug ${trace.slug} · ` +
+    `${runSkills(facts, trace) || "unknown skill"} · slug ${trace.slug} · ` +
     `${formatDuration(facts.extent.durationMs)} · ${facts.dispatches.length} dispatches · ` +
     `${facts.rounds.length} rounds ` +
     `(${facts.rounds.map((it) => it.status ?? "unreported").join(", ") || "none"})\n` +
