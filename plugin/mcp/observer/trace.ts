@@ -252,7 +252,8 @@ export function isReviewTool(name: string): boolean {
 /** Exported for the same reason `isReviewTool` is: `./run-facts.ts` reads the task list too. */
 export const TASK_TOOLS = new Set(["TaskCreate", "TaskUpdate"]);
 
-interface Elision {
+/** How many characters a cap took off what the entries carried. The caller's, and added to. */
+export interface Elision {
   chars: number;
 }
 
@@ -715,28 +716,29 @@ interface DispatchInput {
   readonly losses: string[];
 }
 
-function buildDispatch(input: DispatchInput): TraceDispatch {
-  const outcome = asObject(input.result?.entry["toolUseResult"]);
-  const sidecar = input.record?.sidecar;
-  const status = stringField(outcome, "status");
-  const background = status === "async_launched" || field(outcome ?? {}, "isAsync") === true;
-  const notificationAt = stringField(input.notification, "timestamp");
-  const resultAt = stringField(input.result?.entry, "timestamp");
-  // A background dispatch's tool result lands in milliseconds and says nothing about the work; its
-  // finish is the `<task-notification>` carrying the same tool-use id. Taking the result's own
-  // timestamp would report a twenty-minute stage as having taken 17ms, so it is not a fallback —
-  // where there is no notification the dispatch's own last entry is, below.
-  const endedAt = background ? notificationAt : resultAt;
-  const reportedDuration = numberField(outcome, "totalDurationMs");
-
+/**
+ * Every entry of one **dispatch**'s own record, as trace lines, at whatever cap the caller sets.
+ *
+ * **Two readers run this over the same entries at two different caps**, which is why it is a
+ * function rather than a loop inside `buildDispatch`. The trace runs it at D6's cap — a share of the
+ * whole run's budget spread over every entry of every record — and a **dispatch note** runs it again
+ * over that one dispatch's record at its own, far wider budget (`./notes.ts`). Nothing here reads the
+ * run's own record or the dispatch's tool result, so one dispatch's lines are a function of that
+ * dispatch's entries alone, and re-running it costs nothing but the reading.
+ *
+ * `lastSaid` is the last thing the agent itself said, kept UNCAPPED as the loop goes past it: a
+ * dispatch with no tool result of its own — a background one, or one the run stopped inside — has it
+ * for a **report**, and `reportInFull` has to hand that over whole. Reading it back off the lines
+ * afterwards would read the caller's cut of it, which is what ticket 06's paid verification caught a
+ * note calling a report "cut off mid-content" over.
+ */
+export function dispatchLines(
+  entries: readonly JsonObject[],
+  cap: number,
+  elision: Elision,
+): { readonly lines: readonly TraceLine[]; readonly lastSaid: string } {
   const lines: TraceLine[] = [];
-  const entries = input.record?.file.entries ?? [];
   const usageOf = usageReporter(entries);
-  // The last thing the agent itself said, kept uncapped as the loop goes past it. A dispatch with no
-  // tool result of its own — a background one, or one the run stopped inside — has this for a
-  // **report**, and `reportInFull` below has to hand it over whole: reading it back off `lines`
-  // afterwards would read the trace's own cut of it, which is what ticket 06's paid verification
-  // caught a note calling a report "cut off mid-content" over.
   let lastSaid = "";
   for (const entry of entries) {
     const at = stringField(entry, "timestamp");
@@ -755,7 +757,7 @@ function buildDispatch(input: DispatchInput): TraceDispatch {
             detail: [stringField(toolInput, "description") ?? "", usage]
               .filter((it) => it !== "")
               .join(" "),
-            excerpt: excerpt(toolInput, input.cap, input.elision),
+            excerpt: excerpt(toolInput, cap, elision),
             dispatch: undefined,
           });
           continue;
@@ -769,8 +771,8 @@ function buildDispatch(input: DispatchInput): TraceDispatch {
           detail: usage,
           excerpt: excerpt(
             blockType === "thinking" ? stringField(block, "thinking") : stringField(block, "text"),
-            input.cap,
-            input.elision,
+            cap,
+            elision,
           ),
           dispatch: undefined,
         });
@@ -787,16 +789,35 @@ function buildDispatch(input: DispatchInput): TraceDispatch {
           detail: "",
           excerpt: excerpt(
             isResult ? block["content"] : stringField(block, "text"),
-            input.cap,
-            input.elision,
+            cap,
+            elision,
           ),
           dispatch: undefined,
         });
       }
       continue;
     }
-    lines.push(bookkeepingLine(entry, at, type, input.cap, input.elision));
+    lines.push(bookkeepingLine(entry, at, type, cap, elision));
   }
+  return { lines, lastSaid };
+}
+
+function buildDispatch(input: DispatchInput): TraceDispatch {
+  const outcome = asObject(input.result?.entry["toolUseResult"]);
+  const sidecar = input.record?.sidecar;
+  const status = stringField(outcome, "status");
+  const background = status === "async_launched" || field(outcome ?? {}, "isAsync") === true;
+  const notificationAt = stringField(input.notification, "timestamp");
+  const resultAt = stringField(input.result?.entry, "timestamp");
+  // A background dispatch's tool result lands in milliseconds and says nothing about the work; its
+  // finish is the `<task-notification>` carrying the same tool-use id. Taking the result's own
+  // timestamp would report a twenty-minute stage as having taken 17ms, so it is not a fallback —
+  // where there is no notification the dispatch's own last entry is, below.
+  const endedAt = background ? notificationAt : resultAt;
+  const reportedDuration = numberField(outcome, "totalDurationMs");
+
+  const entries = input.record?.file.entries ?? [];
+  const { lines, lastSaid } = dispatchLines(entries, input.cap, input.elision);
 
   if (input.record === undefined) {
     input.losses.push(

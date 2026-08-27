@@ -6,7 +6,11 @@
  * **This is the only reading of what happened inside a stage there will ever be.** A run's volume
  * is in its per-dispatch records — 5.9 MB of one measured delivery's 6.7 MB, one of them alone
  * 1.5 MB — so under D6's cap the one whole-run synthesis sees a dispatch's shape and never its
- * inside. It sees the notes instead. Four decisions here are load-bearing:
+ * inside. It sees the notes instead. Five decisions here are load-bearing:
+ *
+ *  - **A note re-reads its dispatch's own record**, at its own budget, and does not narrow the
+ *    trace's already-capped lines. `readSlice` carries why: a note fed the trace's cut recovers
+ *    nothing the synthesis could not already see, which is the whole of what D8 asks a note for.
  *
  *  - **The unit is the dispatch and never the numbered stage.** One delivery on disk ran six
  *    `implementer` dispatches inside stage 1 alone, so a note per stage would wait for the last of
@@ -42,6 +46,7 @@ import {
   type Query,
   type QueryMessage,
 } from "./model-call.ts";
+import { readRecordFile } from "./records.ts";
 import {
   keyOf,
   openNotes,
@@ -51,10 +56,11 @@ import {
   type NotesFile,
 } from "./notes-file.ts";
 import {
-  EXCERPT_CAP_MAX,
   EXCERPT_CAP_MIN,
   LINE_OVERHEAD_CHARS,
+  dispatchLines,
   formatDuration,
+  type Elision,
   type Trace,
   type TraceDispatch,
   type TraceLine,
@@ -125,16 +131,15 @@ const MOST_TURNS = 4;
  * of thousands of entries gets a slice that grows past the budget rather than one with entries
  * dropped out of it.
  *
- * **What ticket 06's paid verification found about this budget: it does not bind, and a note sees
- * less interior than the arithmetic above allows.** `renderSlice` narrows lines the trace has
- * ALREADY cut to its own cap, and `recap` can only take more off — so on the thirteen-dispatch
- * delivery measured here every line reached the note at the trace's 131 characters while this cap
- * allowed between 257 and 800, and the largest dispatch's note read 119,607 characters of a
- * 1.5 MB record against a budget of 240,000. The report was the sharp end of it and is fixed above.
- * The lines are not: recovering them means re-reading that dispatch's own record at this cap
- * instead of narrowing the trace's, which changes what the notes cost and what the trace holds, so
- * it is a maintainer's decision rather than a verifier's. Until it is taken, a note's value is the
- * attention it pays one dispatch rather than a view of it the whole-run reading could not have had.
+ * **The cap binds because the note reads the dispatch's OWN record and not the trace's cut of it**,
+ * which took ticket 06 two paid verifications to establish. The first narrowed lines the trace had
+ * already cut, and `recap` can only take more off — so on the thirteen-dispatch delivery every line
+ * reached the note at the trace's 131 characters while this cap allowed between 257 and 800, and the
+ * largest note read 119,607 characters of a 1.5 MB record against a budget of 240,000. A note fed
+ * the trace's cut sees exactly as little of a dispatch's interior as the whole-run reading does,
+ * which defeats the whole of D8: across the two runs judged that way not one **defect** was grounded
+ * in a note in a way the capped trace could not have grounded, and that was ticket 06's criterion 96
+ * — the last one it had open. `readSlice` below re-reads the record at this budget instead.
  */
 export const NOTE_BUDGET_CHARS = 240_000;
 
@@ -152,27 +157,44 @@ export const NOTE_BUDGET_CHARS = 240_000;
  */
 export const NOTE_REPORT_CHARS = 24_000;
 
-/** What one line of a slice may carry. Never wider than the trace's own cap, which already ran. */
+/**
+ * What one line of a slice may carry: the lines' whole budget, shared out over them.
+ *
+ * **Wider than the trace's own per-entry cap, deliberately.** While a note narrowed the trace's
+ * lines this was held under `EXCERPT_CAP_MAX` because going past it could not recover anything — the
+ * trace's cut had already run, and no cap applied afterwards puts a character back. `readSlice` now
+ * re-reads the record, so the ceiling is this budget and nothing else: a dispatch of a few dozen
+ * entries gets thousands of characters an entry where the trace gave it 131, which is the whole of
+ * what a note is for.
+ *
+ * The floor is D6's own honest failure, kept: a dispatch with tens of thousands of entries gets a
+ * slice that grows past the budget rather than one with entries silently dropped out of it.
+ */
 export function noteCapFor(lineCount: number): number {
-  if (lineCount <= 0) return EXCERPT_CAP_MAX;
   const budget = NOTE_BUDGET_CHARS - NOTE_REPORT_CHARS;
+  if (lineCount <= 0) return budget;
   const share = Math.floor(budget / lineCount) - LINE_OVERHEAD_CHARS;
-  return Math.min(EXCERPT_CAP_MAX, Math.max(EXCERPT_CAP_MIN, share));
+  return Math.max(EXCERPT_CAP_MIN, share);
 }
 
-/** An excerpt the trace already elided once, and what this cap took off it. */
+/**
+ * The cap the re-read runs at, which is none: an entry arrives whole and this cap takes nothing off
+ * it, so `noteCapFor` below can be worked out from the real line count and applied ONCE. Two passes
+ * are needed because the number of lines is not the number of entries — one assistant entry carrying
+ * a text block and two tool calls is three lines — and the budget is shared over lines.
+ */
+const UNCAPPED = Number.POSITIVE_INFINITY;
+
+/** An excerpt some earlier cap already elided, and what this cap took off it. */
 const ALREADY_ELIDED = /…\(\+(\d+)\)$/;
-
-interface Elision {
-  chars: number;
-}
 
 /**
  * One excerpt narrowed to a note's own cap.
  *
- * The trace's elision marker is unwound and re-stated rather than stacked, so a reader sees ONE
- * count and it is the number of characters missing from the original entry — two markers on one
- * line would be a figure about this file rather than about the run.
+ * An elision marker already on the excerpt is unwound and re-stated rather than stacked, so a reader
+ * sees ONE count and it is the number of characters missing from the original entry — two markers on
+ * one line would be a figure about this file rather than about the run. Nothing the re-read produces
+ * carries one; the fallback path below hands over lines the trace cut, and those do.
  */
 function recap(excerpt: string, cap: number, elision: Elision): string {
   const already = ALREADY_ELIDED.exec(excerpt);
@@ -183,29 +205,88 @@ function recap(excerpt: string, cap: number, elision: Elision): string {
   return `${body.slice(0, cap)}…(+${dropped + Number(already?.[1] ?? 0)})`;
 }
 
-/**
- * One dispatch's slice as the note reads it.
- *
- * **Rendered by `./trace-file.ts`'s own line renderer**, so a line a note points at is the line a
- * maintainer finds in `DO-NOT-FORWARD-trace.txt`. That is what makes a **defect** the synthesis
- * grounds in a note locatable (D11), and it is the whole reason this does not have a format of its
- * own.
- */
-export function renderSlice(dispatch: TraceDispatch): {
+export interface NoteSlice {
   readonly text: string;
   readonly cap: number;
   readonly elidedChars: number;
-} {
-  const cap = noteCapFor(dispatch.lines.length);
+  /**
+   * Whether this is the dispatch's own record read at the cap above, or the trace's already-cut
+   * lines standing in for it. The prompt says which, because a note told it holds a dispatch's
+   * interior at length when it holds the trace's 131-character cut of it is a note that has been
+   * told something untrue about what it is reading — the mistake ticket 06's verification caught
+   * twice already.
+   */
+  readonly reread: boolean;
+}
+
+/**
+ * One dispatch's slice as the note reads it: **that dispatch's own record, at the note's budget.**
+ *
+ * **Why this re-reads the record rather than narrowing the trace (D8, and ticket 06's criterion
+ * 96).** Criterion 13 says a note is written "from that dispatch's slice of the trace", and taken
+ * literally that is what this did: it narrowed `dispatch.lines`, every one of them already cut to
+ * D6's per-entry cap — 131 characters on the measured delivery, where a note's own cap allowed 257
+ * to 800. So the note saw exactly as little of a dispatch's interior as the whole-run synthesis
+ * does, and D8's premise is the opposite: the per-dispatch records are the bulk of a run, the
+ * whole-run reading therefore sees a stage's shape and never its inside, and **a note is what
+ * recovers the inside**. It cannot recover it from lines that were already cut. The maintainer's
+ * call is that D8's intent wins over criterion 13's wording, which now describes what a note is
+ * about rather than where its characters come from.
+ *
+ * **Only the entries the trace itself read.** A record is append-only and a note is written while
+ * the run may still be going, so the file can hold entries the trace does not — and the prompt tells
+ * the note it is holding "those same entries" at greater width, which has to stay true for a line a
+ * note points at to be findable in `DO-NOT-FORWARD-trace.txt`.
+ *
+ * **Rendered by `./trace-file.ts`'s own line renderer** for that same reason, which is why this has
+ * no format of its own: a line a note points at is the line a maintainer finds in the trace, and
+ * that is what makes a **defect** the synthesis grounds in a note locatable (D11).
+ *
+ * A record that cannot be re-read costs the note its width and nothing else: the trace's own lines
+ * stand in, the note is still written, and the prompt is told which of the two it holds.
+ *
+ * **What the re-read measured, and what it did not buy.** On the same two runs: the widest slice went
+ * from 119,607 characters to 163,240 of a 1.5 MB record, a four-dispatch refinement's notes from
+ * 26,539–85,377 characters to 52,705–96,404, and the notes' own spend from $0.19 and $0.96 to $0.39
+ * and $1.30 — about ten cents a dispatch on both. Nothing reached the budget: the
+ * per-line share binds first, at 257 characters on the 640-entry dispatch and thousands on a small
+ * one, so no note failed and none failed for a prompt too long. The notes themselves changed in kind
+ * — one read a 49-minute polling dispatch's interior and found that its brief carried no termination
+ * condition at all, which 131 characters an entry could never have shown. **And criterion 96 still
+ * did not close.** Across the fourteen defects those two debriefs name, two cite a note and both cite
+ * it to corroborate: every one of the fourteen is anchored in the trace's own timestamps and in a
+ * line of the installed plugin. The trace holds EVERY dispatch entry, short-quotable even at 131
+ * characters, and `./judge.ts` tells the synthesis that the strongest defect quotes both sides of a
+ * mismatch — the run's conduct and the plugin line it diverged from — which a note, holding no plugin
+ * line, cannot do. So the width was necessary and is not sufficient: what D8 is still short of is a
+ * reason for the synthesis to rest a defect on a note, not more characters in one.
+ */
+export async function readSlice(dispatch: TraceDispatch): Promise<NoteSlice> {
+  const read = await noteLines(dispatch);
+  const cap = noteCapFor(read.lines.length);
   const elision: Elision = { chars: 0 };
   const out: string[] = [];
   let day = "";
-  for (const line of dispatch.lines) {
+  for (const line of read.lines) {
     day = emitDay(out, line, day);
     const narrowed: TraceLine = { ...line, excerpt: recap(line.excerpt, cap, elision) };
     out.push(renderLine(narrowed, ""));
   }
-  return { text: out.join("\n"), cap, elidedChars: elision.chars };
+  return { text: out.join("\n"), cap, elidedChars: elision.chars, reread: read.reread };
+}
+
+async function noteLines(
+  dispatch: TraceDispatch,
+): Promise<{ readonly lines: readonly TraceLine[]; readonly reread: boolean }> {
+  if (dispatch.recordPath === undefined) return { lines: dispatch.lines, reread: false };
+  // Never throws: `readRecordFile` reports a file it could not open as `unreadable` and a line that
+  // is not JSON as a count, because a record the host is still writing ends in a partial line.
+  const file = await readRecordFile(dispatch.recordPath);
+  if (file.unreadable !== undefined || file.entries.length === 0) {
+    return { lines: dispatch.lines, reread: false };
+  }
+  const entries = file.entries.slice(0, dispatch.entryCount);
+  return { lines: dispatchLines(entries, UNCAPPED, { chars: 0 }).lines, reread: true };
 }
 
 /* ───────────────────────────────── the shape of the answer ───────────────────────────────── */
@@ -295,7 +376,7 @@ export function readNote(text: string): NoteAnswer {
 function notePrompt(input: {
   readonly dispatch: TraceDispatch;
   readonly skill: string;
-  readonly slice: { readonly text: string; readonly cap: number; readonly elidedChars: number };
+  readonly slice: NoteSlice;
 }): string {
   const { dispatch, slice } = input;
   // The report whole, up to its own share of the budget — never the trace's 131-character cut of
@@ -318,10 +399,17 @@ between you and it redacts anything.
 That final reading is handed this dispatch's own entries as well — and no more than the first
 hundred-odd characters of each, because the records a run's dispatches leave are several times the
 size of the run's own and every entry of all of them has to fit one reading. It can see the SHAPE of
-what happened in here. It cannot weigh a single thing in it. You are holding those same entries at
-${slice.cap} characters and this dispatch's report whole, so **yours is the only reading of this
-dispatch's interior that will ever read it at length** — which is why a note that hands back the shape
-gives the debrief nothing it did not already have.
+what happened in here. It cannot weigh a single thing in it. ${
+    slice.reread
+      ? `You are holding those same entries at ${slice.cap} characters — this dispatch's own record, ` +
+        `read again for you at a budget nothing else in the observation gets — and its report whole. ` +
+        `So **yours is the only reading of this dispatch's interior that will ever read it at ` +
+        `length**`
+      : `This dispatch's own record could not be read again for you, so you are holding those same ` +
+        `entries cut the same way, to ${slice.cap} characters, and only its report whole. Weigh what ` +
+        `you can actually see and say so where an entry stops short`
+  }
+— which is why a note that hands back the shape gives the debrief nothing it did not already have.
 
 # Never restate a figure
 
@@ -505,7 +593,7 @@ export async function noteFor(input: NoteInput): Promise<NoteOutcome> {
 }
 
 async function call(query: Query, input: NoteInput): Promise<NoteOutcome> {
-  const slice = renderSlice(input.dispatch);
+  const slice = await readSlice(input.dispatch);
   const controller = new AbortController();
   const deadline = setTimeout(() => controller.abort("deadline"), NOTE_DEADLINE_MS);
   let assistantTurns = 0;
