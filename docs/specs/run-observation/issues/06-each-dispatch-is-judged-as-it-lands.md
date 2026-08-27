@@ -86,7 +86,7 @@ note is what recovers it. Settled as D8 and D9 in `../spec.md`.
 - [x] What the observation itself cost, in ticket 03's header, covers every note call and the synthesis at both
       tiers — read the way a **round**'s **spend** is, per-model usage summed, per API request, `unknown` for a
       figure nobody measured and never zero.
-- [ ] Verification splits, and the procedure says which half costs money. Judging unavailable, replay stays D17's
+- [x] Verification splits, and the procedure says which half costs money. Judging unavailable, replay stays D17's
       free, model-free, byte-for-byte seam that tickets 02 and 03 are verified at, and no note is written at all.
       Judging on, a replay of one delivery makes up to thirteen cheap calls and one long-context synthesis, and the
       debrief it produces cannot reproduce byte for byte — no option turns notes off on their own, so this is the

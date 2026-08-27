@@ -17,34 +17,34 @@ text left behind mentions, and none of which a contributor has been told to exer
 two started and makes the claims around it true again. Every criterion below extends or corrects existing text; none of
 it rewrites what another ticket landed.
 
-- [ ] § What CI does not check names the hook states worth walking as a standing procedure, each with what it should
+- [x] § What CI does not check names the hook states worth walking as a standing procedure, each with what it should
       do: a session with no run in it, a `/deliverer:` command typed, a run resumed by prose, a session ended mid-run,
       a killed terminal, and observation switched off. Ticket 04 walks exactly this list once and reports what it saw;
       this is the list written down, so the next contributor to touch the hook walks it without re-deriving it.
-- [ ] The replay procedure is complete in both forms. Ticket 03 lands the one that needs no model — free, deterministic
+- [x] The replay procedure is complete in both forms. Ticket 03 lands the one that needs no model — free, deterministic
       and the only form there is while nothing judges — and this adds the form with judging on, which costs up to
       thirteen model calls for one run's **trace** and is what actually exercises the judgement. It says which of the
       two answers which question: the free one that the deterministic half still holds, the paid one whether the
       observer finds what a human found by hand.
-- [ ] It says which artifacts to read afterwards and what each one should contain, complete for the feature as it now
+- [x] It says which artifacts to read afterwards and what each one should contain, complete for the feature as it now
       stands: the **debrief** and its header, the **trace** with its refusals, the **dispatch note**s ticket 06 writes,
       the **identity file**, and the earlier debriefs of the same **slug** that ticket 07 makes an observer read. The
       last three exist in no procedure before this ticket.
-- [ ] It states plainly that the observer is verified by hand and that CI runs none of it — and that the one automated
+- [x] It states plainly that the observer is verified by hand and that CI runs none of it — and that the one automated
       check standing above it is the shallow assertion ticket 08 adds to the two paid tests, which says a debrief
       appeared and nothing about whether it is right.
-- [ ] Nothing claims a test runner, a fixture or a test suite covers the observer. **CONTRIBUTING's own first bullet
+- [x] Nothing claims a test runner, a fixture or a test suite covers the observer. **CONTRIBUTING's own first bullet
       under that heading is left standing**: "The tests exist and CI runs none of them." It replaced an older "There is
       no test suite" precisely to lose a falsehood while keeping its point, and nothing here puts that back.
-- [ ] The list of what CI does not check is accurate again once observation exists. It currently names the server, the
+- [x] The list of what CI does not check is accurate again once observation exists. It currently names the server, the
       launcher and the SessionStart hook; observation joins them as a **second** hook, so that bullet's singular goes
       with it.
-- [ ] The count-dependent claims elsewhere in the file are true again, each of which this epic moves and no other
+- [x] The count-dependent claims elsewhere in the file are true again, each of which this epic moves and no other
       ticket reaches: "the two procedures" in both places it appears — § What CI does not check and § The end-to-end
       tests — once replay makes three; "any change to a manifest, the hook or the launcher" in the smoke test's line;
       and "the plugin's three options at user scope" in what a run leaves behind, which ticket 04's criterion does not
       cover because that one is about the project tree.
-- [ ] This ticket's files are `CONTRIBUTING.md` and nothing else. The README's disclosure is ticket 04's,
+- [x] This ticket's files are `CONTRIBUTING.md` and nothing else. The README's disclosure is ticket 04's,
       `e2e-tests/README.md`'s is ticket 08's, the project tree's two lines are ticket 04's, and no source, manifest or
       glossary entry is touched here.
 
