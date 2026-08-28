@@ -52,7 +52,7 @@ const RUN_ROOT = join(tmpdir(), "deliverer-e2e");
  * CONTRIBUTING teaches `DELIVERER_REVIEW_BACKEND=scripted` as the way to exercise the lifecycle,
  * and the harness hands the repository's environment file to the session WHOLE and never reads it.
  * Left in that file or in the contributor's shell it reaches the session, from there the tools
- * server the session starts, and every **round** replays a canned timeline: all seven stages pass
+ * server the session starts, and every **round** replays a canned timeline: all eight stages pass
  * having reviewed nothing.
  *
  * So it is kept from arriving rather than trusted to be absent. The selector is the one that

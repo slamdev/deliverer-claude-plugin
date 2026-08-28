@@ -71,11 +71,12 @@ so a later round raising the same point again would meet a wave holding nothing 
 reached, or reversing them without ever seeing them. Those lines are an account of what has already been adjudicated
 and not a list of points to pass over: pass them on as they came, and form no view on either half.
 
-**Sequencing.** A stage you dispatched in this run is unfinished until its **report** is in hand, and an acknowledgement
-is not a report: a dispatch may answer you at once and finish its work in the background, and until the report lands
-that stage has not run. That holds inside stage 1 too, where the next implementer starts on the last one's report. Wait
-for the report itself. A `sleep` or a poll stands in for none — pick a duration too short and you dispatch again, too
-long and the epic waits on your guess.
+**Sequencing.** One dispatch at a time: while a **report** is owed, nothing else goes out — no stage runs beside
+another, and no stage is worth the minutes an overlap saves. A stage you dispatched in this run is unfinished until its
+**report** is in hand, and an acknowledgement is not a report: a dispatch may answer you at once and finish its work in
+the background, and until the report lands that stage has not run. That holds inside stage 1 too, where the next
+implementer starts on the last one's report. Wait for the report itself. A `sleep` or a poll stands in for none — pick a
+duration too short and you dispatch again, too long and the epic waits on your guess.
 
 ## Stages
 
@@ -84,24 +85,24 @@ long and the epic waits on your guess.
    that one ticket besides. You are done when every ticket the epic lists has a report naming its commits.
 2. **Open the change request** — dispatch `change-request-creator`. It opens the change request as a **draft** and
    mirrors into an `ASSUMPTION` comment every assumption recorded by a commit carrying a `Ticket:` line. A commit
-   without that line is a **fix wave**'s, and stage 4 says what becomes of its entries — so a report naming fewer
+   without that line is a **fix wave**'s, and stage 5 says what becomes of its entries — so a report naming fewer
    comments than the branch's commits recorded is this stage doing its job rather than half-doing it. Keep the URL it
    reports.
-3. **Adjudicate and review together** — dispatch `assumption-reviewer` and `code-reviewer` in one message so they run
-   concurrently. `assumption-reviewer` replies a verdict — `accept`, `override` or `escalate` — to every `ASSUMPTION`
-   comment. `code-reviewer` drives one **round** and reports its prose. Keep that prose: the review's prompt instructs
-   the reviewer to post its findings as comments on the change request, and where it did not, the prose is the only form
-   they exist in — so stage 4 is dispatched with it.
-4. **First fix wave** — dispatch `comments-addresser`, carrying the first round's prose (**Dispatch**). It works every
+3. **Adjudicate the assumptions** — dispatch `assumption-reviewer`. It replies a verdict — `accept`, `override` or
+   `escalate` — to every `ASSUMPTION` comment.
+4. **First round** — dispatch `code-reviewer`. It drives one **round** and reports its prose. Keep that prose: the
+   review's prompt instructs the reviewer to post its findings as comments on the change request, and where it did not,
+   the prose is the only form they exist in — so stage 5 is dispatched with it.
+5. **First fix wave** — dispatch `comments-addresser`, carrying the first round's prose (**Dispatch**). It works every
    unresolved comment and every point that prose raises: implementing the overrides and the findings, resolving what it
    implements or declines, and leaving the escalations for a human. Keep the **hand-off** list its report carries. Its
    own commits carry no `Ticket:` line and record the **forks** the wave closed silently: stage 2's mirror passes those
    over and nothing adjudicates them, so no stage is owed for them.
-5. **Second round** — dispatch `code-reviewer` again. It reviews the fix wave's commits, so what the first round missed
+6. **Second round** — dispatch `code-reviewer` again. It reviews the fix wave's commits, so what the first round missed
    still gets caught.
-6. **Second fix wave** — dispatch `comments-addresser` again, carrying the second round's prose and the findings the
+7. **Second fix wave** — dispatch `comments-addresser` again, carrying the second round's prose and the findings the
    first wave declined with their grounds (**Dispatch**), for what that round raised.
-7. **Flip it ready** — once two rounds have completed and you have read the change request's **checks** green on the
+8. **Flip it ready** — once two rounds have completed and you have read the change request's **checks** green on the
    forge, take the change request out of draft and report. The fix wave reports them too, and the two accounts agreeing
    is the ordinary case; where they disagree, put the stage back rather than choosing between them — a report and the
    forge disagreeing is exactly what a re-dispatch is for. Escalations and declined findings ride into the report rather
@@ -111,7 +112,7 @@ long and the epic waits on your guess.
 
 ## Rounds
 
-A round is one `code-reviewer` dispatch, and **two rounds that reached `completed`** is the bar stage 7 waits on.
+A round is one `code-reviewer` dispatch, and **two rounds that reached `completed`** is the bar stage 8 waits on.
 
 - **`completed`** — one of the two. Its report carries the round's `review_id` and its prose, and that prose is the
   round's whole deliverable: the findings it names are comments on the change request where the reviewer posted them and
@@ -137,11 +138,10 @@ looking — an idle notice for a dispatch you have already accounted for asks no
 signal that does ask something is not one of those: a **report** to read, a stage that went wrong, a round to put back.
 
 **One dispatch, one task.** Create one per dispatch as the run opens, named from the stage it serves and prefixed with
-the epic's slug so two epics can share a session — `<slug>: open the change request`. Stage 3's two concurrent
-dispatches get a task each, `adjudicate assumptions` and `first round`. A resumed run opens the same set, with the
-dispatches the branch and the change request already account for created `completed`. Mark a task `in_progress` as you
-dispatch it and `completed` once you have read its report. `completed` says the dispatch is over rather than that it
-succeeded, so a round that died carries its outcome in its subject — `<slug>: second round (failed — no review)`. A
+the epic's slug so two epics can share a session — `<slug>: open the change request`. A resumed run opens the same set,
+with the dispatches the branch and the change request already account for created `completed`. Mark a task `in_progress`
+as you dispatch it and `completed` once you have read its report. `completed` says the dispatch is over rather than that
+it succeeded, so a round that died carries its outcome in its subject — `<slug>: second round (failed — no review)`. A
 round you spend after one that died is another dispatch, so it gets a task of its own. Continuing an agent is the same
 dispatch rather than a new one, so it gets no task of its own: the task it already has flips back to `in_progress`, and
 `completed` once the report you were owed lands.

@@ -474,7 +474,7 @@ complete run, only what a human could read afterwards. Three tests, and CI runs 
 - **The refine happy path.** `/deliverer:refine` against a **standing repo**, with a **responder** answering the
   grilling in your place out of the **fixture**'s own **brief**. It asserts a published **spec** and one file per
   **ticket**, and then a **verifier** judges whether what came out is any good.
-- **The build happy path.** `/deliverer:build` against a **throwaway repo** created for the run: all seven stages, two
+- **The build happy path.** `/deliverer:build` against a **throwaway repo** created for the run: all eight stages, two
   real **rounds** through the tools server and both **fix waves**. It asserts a commit naming every ticket, a
   **verdict** on every **assumption**, and the **change request** **flipped ready** with its **checks** green — then
   the verifier judges the code behind it against the **epic**.
