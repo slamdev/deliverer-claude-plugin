@@ -84,7 +84,9 @@ a **fix wave** recorded has no comment, so it receives none and ships unratified
 
 **Grounds**:
 The evidence a verdict, a declined finding or a reopened ADR stands on: a spec line, an ADR, a caller that breaks, a
-concrete failure scenario. Never taste. _Avoid_: reason, justification, rationale
+concrete failure scenario. For a **defect**, what the observation itself kept — the **trace**, a **dispatch note**, an
+earlier **debrief** of the same **epic**. What makes any of them grounds is that whoever holds the file can find the
+thing cited in it. Never taste. _Avoid_: reason, justification, rationale
 
 **Claim**:
 A statement of fact a document rests on that nobody has checked. Never a finding: the reader's own first-hand look is
@@ -148,14 +150,20 @@ change request where the reviewer can post them, and carried by its prose where 
 bar a change request is flipped ready against, and a round that produced no review is not one of the two. _Avoid_:
 review, pass, iteration
 
+**Transcript**:
+Everything one **round**'s reviewer said as it arrived, in order, and the reason the round ended where it did not
+complete. A round hands back its prose; the transcript is the whole of what landed behind it, pulled by whoever wants it
+rather than carried in what a round reports. _Avoid_: log, output, stream, history
+
 **Fix wave**:
 One pass over every unresolved comment on a change request and over the preceding **round**'s prose, ending with each
 comment resolved or on the hand-off list and each point the prose raised fixed, declined or handed off. Prose carries no
 resolution state, so a wave interrupted part-way works its points again. _Avoid_: fix pass, cleanup, follow-up commit
 
 **Spend**:
-What one round cost — its tokens, and a dollar estimate labelled with the provider that served it. Unknown is the honest
-answer for a figure nobody measured, and never zero. _Avoid_: cost, usage, price
+What one round — or one whole **run** — cost: its tokens, and a dollar estimate labelled with the provider that served
+it. Either half can be known while the other is not. Unknown is the honest answer for a figure nobody measured, and
+never zero. _Avoid_: cost, usage, price
 
 **Gate**:
 Whatever the repository enforces before a commit lands. Work that was asked for is never undone to turn one green; a
@@ -206,6 +214,57 @@ A fact-finding dispatch a grilling makes to settle a question of fact, carrying 
 question on the frontier that turns on that subject waits for the sweep; every other question is asked now. _Avoid_:
 sub-agent, exploration, lookup, research
 
+### Observation
+
+**Session record**:
+The host's own account of one session, written as it happens, with one beside it for every agent that session
+**dispatch**ed. Each entry carries the plugin and skill that produced it, its timings and its tokens — which is what
+lets a **run** be found in a record the plugin never marked. The format is the host's, so it is read as a **claim** and
+never as a contract. _Avoid_: transcript, log, history, session file
+
+**Observer**:
+The process that watches one **run** as it happens and writes its **debrief** — started by the plugin's own hook, and
+running outside the run entirely. It changes nothing it watches: read-only over what the run leaves behind, never in
+touch with the orchestrator, and never reaching the repository or the forge. Nothing that happens to it reaches the run.
+_Avoid_: monitor, watcher, supervisor, critic
+
+**Trace**:
+What an **observer** reads in place of a run's own **session record**s: the whole run's shape in order — a line for each
+**dispatch**, question round, poll and task update, with its timings and its tokens — and a capped excerpt of whatever
+each one carried. Nothing is left out by kind, and volume is all the cap bounds: a delivery's records outrun any context
+window, so the trace is what makes a run readable at all. _Avoid_: log, transcript, timeline
+
+**Dispatch note**:
+What an **observer** made of one **dispatch** the moment that dispatch finished, read on a cheap tier from that
+dispatch's own **session record** — re-read at the note's own budget, wider than the **trace**'s — and kept for the
+one synthesis at the end. It exists because a dispatch's interior is the part of a **run** nothing else ever reads:
+the per-dispatch **session record**s outweigh a delivery's main one several times over, so under the trace's cap the
+whole-run reading sees a stage's shape and never its inside. Carries no bound of its own and is never forwarded,
+exactly as the trace is not. _Avoid_: stage note, note, summary, annotation, commentary
+
+**Debrief**:
+What observing one **run** produced, written for the human who ran it to forward to whoever maintains the plugin.
+Bounded to the plugin's own machinery — the skills, the agents, the dispatches, the timings and the **spend** — and
+never the repository being delivered into, which is what makes it sendable unread. _Avoid_: report, summary, analysis,
+feedback
+
+**Identity file**:
+The small file beside a **debrief** saying which **run** and which repository that debrief is about — the one fact a
+debrief may not carry itself, since it is bounded to the plugin's own machinery. It is read by the **observer** of a
+later run of the same **epic** and by nothing else, and like the **trace** and every **dispatch note** it is never
+forwarded. _Avoid_: sidecar (which is the host's own file beside a dispatch's record), index, manifest, marker
+
+**Defect**:
+One thing a **run** cost the human that it did not have to, named in a **debrief** with the **grounds** that show it: a
+question nobody needed to answer, a stage that ran twice, a **dispatch** that lost context it was holding, **spend**
+nothing came back for. Never about the work a run delivered — that is a **review finding**.
+_Avoid_: bug, issue, finding, regression, waste
+
+**Hunch**:
+Something an **observer** noticed that nothing it kept can ground, carried in the **debrief** and marked apart from
+every **defect**. It is the observer's nose rather than its evidence, and it is written down on those terms. _Avoid_:
+guess, suspicion, gut feeling
+
 ### Verification
 
 **Harness**:
@@ -237,6 +296,13 @@ on the branch. It is what makes a test cover work nobody has committed yet. _Avo
 Everything one test's run left on disk — the session records, the install it ran against, the staged copy and the
 verdict. It outlives the test, in a location no repository is watching, because a run that went wrong is only readable
 afterwards. _Avoid_: workspace, temp dir, output, artifacts
+
+**Ceiling**:
+What one **run** under test may take and may cost before the **harness** stops it — a wall clock and a **spend**
+figure, declared once by the test that runs under them. Reaching one is not a failing assertion and is never reported as
+one: it is a finding about the run rather than about the plugin, and it carries what the run had reached when it was
+stopped. It covers the run and what the harness spent in the human's seat beside it, and nothing spent out of band —
+a **round**'s own review, an **observer** — is in it. _Avoid_: budget, limit, threshold, timeout
 
 **Responder**:
 The agent that answers a grilling's questions in the human's place, from the fixture's own brief, and confirms the

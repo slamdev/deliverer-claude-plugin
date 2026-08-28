@@ -91,6 +91,9 @@ suffix does not — it selects a long-context beta, measured only against the fi
 refused as well; a round that meets that fails with a reason naming this option, and a bare alias is what you set
 instead. Leave it empty to take whatever your credentials already default to.
 
+**Observe runs** — _default on._ Whether each run is observed and comes back as a debrief. See
+[Observation](#observation) for what that means; turning it off stops the whole thing.
+
 ### The environment file
 
 Each review runs as its own Claude agent, and this file is how it logs in. One `KEY=value` per line; blank lines and `#`
@@ -172,11 +175,105 @@ questions again.
 - any assumption the run escalated instead of deciding
 - the final review and merge of the change request
 
+## Observation
+
+Every run is observed, and what it cost you comes back as a **debrief** — a short document you can forward to whoever
+maintains the plugin. It is on by default and you do not have to do anything to get one.
+
+**What it does.** When you type `/deliverer:refine` or `/deliverer:build`, the plugin starts a separate process beside
+your run. It reads the session records Claude Code already writes for every session and every agent a session
+dispatches, and turns them into a debrief: what the plugin's own machinery did, how long each stage took, how many
+questions it put to you, how long it waited on you, what the reviews ended on, and what the whole run spent in tokens.
+It then reads all of that — and each dispatch from the inside — and names the **defects**: the things the run cost you
+that it did not have to, each with the grounds from the run's own conduct that show it. An epic takes several runs, and
+each later one reads the debriefs the earlier ones left beside it, so something the epic paid for twice is named as that
+rather than reported twice over. A line then names the debrief and where it is, and **your next prompt is where you
+can count on it** — including the first prompt of a session you open days later, so a debrief is never lost with the
+terminal you ran in. There is a line when a run stops, too, but a debrief is only finished off once the session ends
+or the run has been quiet for about half an hour: at the moment your run stops there is usually nothing final to name
+yet, and that line says nothing at all rather than pointing at a debrief still being written.
+
+**It cannot affect your run.** The observer runs outside the run entirely, in its own process, with its own session and
+its input and output closed. It never speaks into your session while a run is going, never asks the run for anything,
+and never touches your repository or your forge. If it fails, it says so in that same line and your run carries on
+untouched. A run that fell over is observed exactly like one that finished — those are the ones most worth reporting.
+
+**What a debrief may and may not contain.** It is bounded to the plugin's own machinery: its skills, its agents, its
+dispatches, its timings and its spend. It carries **nothing from your repository** — no code, no spec, no ticket, no
+branch and no path — and **no word of what you and the run said to each other**: how many questions you were asked and
+how long you were waited on, never the questions or the answers. The one thing of yours it names is the epic's short
+name, which is what groups an epic's several runs together. That bound is what makes it safe to forward without
+reading it first, and the debrief says so at the top and again at the bottom, along with where to send it.
+
+Kept beside the debrief is the **trace** it was worked out from. That one is bounded by nothing — it holds whatever the
+run touched — so it is named `DO-NOT-FORWARD-trace.txt` and says the same thing on its first line. It is there so you
+can check a figure you doubt. Do not attach it. The same goes for the `DO-NOT-FORWARD-identity.txt` beside it, which
+records which repository the run was in so that a later run of the same epic can find its own earlier debriefs.
+
+**What it writes, and where.** Everything goes under the plugin's own data directory — the same place it installs
+itself — and never inside a repository, so nothing of its own can be swept into a commit or a change request. One
+directory per run, under the epic's name:
+
+```
+~/.claude/plugins/data/deliverer-<marketplace>/observations/<epic>/<when the run started>/
+```
+
+**Nothing is ever removed.** No pruning, no expiry, no cleanup. What a run leaves is a debrief of a few kilobytes, its
+notes of a few tens, and a trace that is nearly all of it — between 100 KB and 570 KB across the runs measured here,
+and bounded: the trace is built to a 600,000-character budget however long the run was. They stay until you delete
+them yourself.
+
+**What it costs.** Observation calls models of its own, and they are drawn on the **same account your run
+authenticates with** — it inherits the environment your session started in, so on a subscription your run and its
+observer can compete for the same rate limit. There is no back-off and nothing to configure. It makes two kinds of
+call:
+
+- **One per dispatch, on a cheap tier**, the moment that dispatch finishes. A dispatch is one agent your run sent off
+  to do one stage's work; the refinements measured here made three or four of them and the deliveries nine to fifteen.
+  Each of those calls reads that one agent's own record — the part of a run nothing else can see, since a delivery's
+  per-dispatch records outrun any context window — and writes a short note.
+- **One at the end, over the whole run**, on a long-context model, which reads the run's shape and all of those notes
+  together and writes the defects.
+
+**What that came to when it was measured.** Both kinds of call together, per run: **$3.18 to $3.48 for a refinement**
+and **about $6.70 for a delivery**. Read that as an order of magnitude and not a price list — it is four measurements,
+all of them on one machine, over records of runs already finished: three readings of two refinements, and one of a
+single thirteen-dispatch delivery. Of it, the per-dispatch notes are **about ten cents a dispatch** — $0.39 on a
+four-dispatch refinement and $1.30 on the thirteen-dispatch delivery — and the one reading at the end is the rest of
+it, and the larger half by a distance. So the figure follows **how many dispatches your run made, not how long it
+took**: a ten-hour delivery costs no more to observe than a two-hour one, and observing a whole delivery is a
+dozen-odd cheap calls and one expensive one against the hundreds of model calls the delivery itself makes.
+
+Your own figures will differ — with the size of your epic, with how many stages a run needed, and with what your
+account is charged. Treat them as an order of magnitude and read your own debrief for what your run actually cost.
+
+The debrief's own line, "what this observation cost", is the figure for your run: model calls at both tiers, tokens
+counted per API request, and the dollar figure the calls themselves reported. It is measured rather than assumed, and a
+figure nothing measured reads *unknown* rather than zero. Beside the models it spends a little CPU on the machine the
+run is on — it re-reads the run's records every few seconds while the run is going — and disk for what it keeps.
+
+Kept beside the debrief and the trace is `DO-NOT-FORWARD-notes.txt`, one file holding those per-dispatch notes. Like
+the trace it is bounded by nothing — a note reads what one agent read and wrote, which is where your repository is —
+so it is named and opened the same way. Do not attach it.
+
+**If your account has no long-context window**, that final reading is refused and your debrief carries the facts and
+never the defects. It says so on its face: which model was asked for (`opus[1m]`), and that the provider or account
+behind your credentials refused it. There is nothing to set — which models are used is the plugin's choice, not an
+option, so that every debrief a team produces was judged at the same depth.
+
+**Turning it off.** `/plugin` → **deliverer** → **Observe runs**. With it off nothing starts at all: no process, no
+trace and no debrief.
+
 ## Costs
 
 `/deliverer:build` runs real models over a whole epic, and each review round is a full review of the change request.
 Every run reports what its reviews spent. If that is more than you want, turn the **code review effort** down; if a
 change is high-stakes, turn it up.
+
+Observation spends models too, on the same account — see [Observation](#observation). Most of it is the one reading at
+the end of a run: measured all in at $3.18 to $3.48 for a refinement and about $6.70 for a delivery, on four readings
+of three runs, with one cheap-tier call per dispatch beside it.
+Turning it off is one setting.
 
 ## Troubleshooting
 

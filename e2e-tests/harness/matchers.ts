@@ -9,9 +9,11 @@
  * with, what the install wrote, what the loaded plugin contains. None of them asserts a mechanism.
  */
 import assert from "node:assert/strict";
+import { join } from "node:path";
 import type { BuildOutcome } from "./build-run.ts";
 import { minutes } from "./ceilings.ts";
 import type { ChangeRequest, DeliveredCommit } from "./change-request.ts";
+import { describeDebrief, dispatchRecordsOfRun } from "./debrief.ts";
 import { DEFAULT_BRANCH } from "./forge.ts";
 import type { PluginOptions } from "./install.ts";
 import type { RefineOutcome } from "./refine-run.ts";
@@ -309,6 +311,117 @@ export function assertSessionRecordsKept(
         `least ${dispatchedFloor} were expected — ${dispatches}, and a failure inside any of ` +
         `them is only readable from its own record. Kept: ` +
         `${records.dispatched.join(", ") || "none"}`,
+    );
+  }
+}
+
+/**
+ * The **observer** left a **debrief** for this run, and its header names the run (run-observation
+ * ticket 08).
+ *
+ * **Shallow by design.** That a debrief exists for the run and that its header names it, and
+ * nothing further: no defect, no hunch, no round. Depth belongs at the replay seam, which takes a
+ * record already on disk and needs no host, no forge and no money — where this one runs only
+ * inside a paid run and is priced accordingly. Nothing here costs a measurable dollar or a
+ * measurable second, and the **ceiling**s are untouched.
+ *
+ * Nothing arranged for it either. The run's first prompt is the observer's own trigger and the
+ * option that would switch it off is on by default, so what this judges is the observation a user
+ * gets rather than one the harness turned on.
+ *
+ * The three facts it holds the header to are all the run's own: the skill is the string the
+ * builder put in the command it sent, the **slug** is read off the epic the outcome carries rather
+ * than written down beside the assertion, and the dispatch count is checked against the session
+ * records the host itself kept for this run — not against a constant the skills can outgrow.
+ */
+export function assertDebriefWritten(outcome: RefineOutcome | BuildOutcome): void {
+  const { debriefs, records } = outcome;
+  const slug = outcome.epic.slug;
+  const skill = `${debriefs.pluginName}:${outcome.skill}`;
+  const mine = debriefs.found.filter((found) => found.filedUnder === slug);
+  // An observation is keyed by the run's own first timestamp, and one whose timestamp could not be
+  // read is filed under a stand-in name beside it. A run directory holds ONE run, so one of these
+  // is the run's — and where a stand-in sits beside a real stamp, the real one is the reading that
+  // knew when the run began. Sorting alone would pick the stand-in, whose name is not a date.
+  const debrief = mine.findLast((found) => /^\d/.test(found.startedAt)) ?? mine.at(-1);
+  if (debrief === undefined) {
+    assert.fail(
+      `the run left no debrief for epic ${slug}. Looked under ${debriefs.root}, DERIVED from ` +
+        `${debriefs.derivedFrom} — so a host that has moved or renamed its data directories ` +
+        `fails here, naming the path, rather than reading as a run that observed nothing. What ` +
+        `was there when the run returned (${debriefs.readAt}): ` +
+        `${debriefs.found.map(describeDebrief).join("; ") || debriefs.missing || "nothing"}. ` +
+        `Everything the run left is under ${outcome.runDirectory.root}, and is read there rather ` +
+        `than reproduced.`,
+    );
+  }
+
+  // Said in every failure below, because a debrief read the moment the run returns may be the
+  // observer's whole reading of the run or its reading so far — and the two are not the same
+  // claim. The finalise is a model call that outlives the session, so the second is the common
+  // case and waiting for the first is what this assertion deliberately does not do.
+  const state =
+    (debrief.finalised
+      ? "it was finalised when it was read"
+      : "it was not final when it was read — the observer was still rewriting it as stages " +
+        "landed") +
+    (mine.length === 1
+      ? ""
+      : `, and it is the one of ${mine.length} filed under ${slug} keyed by the run's own ` +
+        `start: ${mine.map(describeDebrief).join("; ")}`);
+
+  const named = (debrief.header.skill ?? "").split(", ");
+  if (!named.includes(skill)) {
+    assert.fail(
+      `the debrief at ${debrief.path} names ${debrief.header.skill ?? "no skill at all"} where ` +
+        `this test drove ${skill}, so the document is about some other run or the observer read ` +
+        `the wrong one. ${state}.`,
+    );
+  }
+  if (debrief.header.slug !== slug) {
+    assert.fail(
+      `the debrief at ${debrief.path} is filed under ${slug} but its header names epic ` +
+        `${debrief.header.slug ?? "none"}, so the document and the directory disagree about ` +
+        `which epic this run was. The slug is the run's own, read off the epic it published. ` +
+        `${state}.`,
+    );
+  }
+
+  const dispatched = dispatchRecordsOfRun(records, outcome.run.sessionId);
+  const counted = debrief.header.dispatches;
+  const held =
+    `${dispatched.length} kept by the host under ` +
+    `${join(records.root, "…", outcome.run.sessionId, "subagents")} — the orchestrator's own ` +
+    `session and no other, out of the ${records.dispatched.length} under that directory in all, ` +
+    `since the observer runs in the same configuration directory and leaves records of its own ` +
+    `there`;
+  if (counted === null) {
+    assert.fail(
+      `the debrief at ${debrief.path} names no dispatch count, where the run this test drove ` +
+        `left ${held}. ${state}.`,
+    );
+  }
+  if (dispatched.length === 0) {
+    assert.fail(
+      `nothing is filed under the run's own session ${outcome.run.sessionId} in ${records.root}, ` +
+        `so the debrief's count of ${counted} has nothing to be checked against. This count is ` +
+        `scoped to the orchestrator's own session on purpose; finding none of the run's own is ` +
+        `the harness's failure rather than the debrief's. Under that directory in all: ` +
+        `${records.dispatched.join(", ") || "no dispatched agents' records whatsoever"}.`,
+    );
+  }
+  // A finalised debrief has read every record the run left, so the two figures are one number or
+  // one of them is wrong. One caught mid-rewrite has read the run as far as the last stage that
+  // landed: it may be BEHIND the host's own files and can never be ahead of them, which is the
+  // whole of what "consistent with the run the test just drove" can mean at the moment it returns.
+  const consistent = debrief.finalised
+    ? counted === dispatched.length
+    : counted > 0 && counted <= dispatched.length;
+  if (!consistent) {
+    assert.fail(
+      `the debrief at ${debrief.path} counts ${counted} dispatches against ${held}. ` +
+        `${state}, so it was held to ` +
+        `${debrief.finalised ? "the same figure" : "at least one and no more than the host's"}.`,
     );
   }
 }

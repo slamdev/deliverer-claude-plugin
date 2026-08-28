@@ -19,6 +19,12 @@
       "title": "Code review environment file",
       "description": "A file in .env format (KEY=value per line, # comments, optional quotes) whose variables are handed to the Claude agent that runs each review. This is how a review is given credentials, and it is required: the server forwards no authentication of its own, so without it a review reaches the reviewer as an anonymous caller and comes back having reviewed nothing. The variables are layered OVER the server's own environment, so the file need only carry what it changes. Read once, when the server starts — an edit takes effect in a new session.",
       "required": true
+    },
+    "observe_runs": {
+      "type": "boolean",
+      "title": "Observe runs",
+      "description": "Whether each /deliverer:refine or /deliverer:build run is observed, on by default. An observer is a separate process, started beside the run and never inside it: it reads the session records Claude Code already writes and produces a debrief — a short account of what the plugin's own machinery did and what it cost you, which you can forward to whoever maintains the plugin. It cannot slow, block, edit or fail a run: nothing it does reaches the run at all, and a run that fell over is observed exactly like one that finished. What it writes goes under the plugin's own data directory and never inside a repository, nothing is ever removed, and the debrief is bounded to the plugin — nothing from your repository, and no word of what you and the run said to each other. A line names the debrief when your run stops, and again on your next prompt if you did not see the first. Turn this off and nothing starts at all: no process, no trace and no debrief.",
+      "default": true
     }
   }
 }

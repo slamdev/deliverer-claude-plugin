@@ -115,7 +115,7 @@ what moved.
 ```
 .
 ├── plugin/                              ← THE PRODUCT. Everything published; nothing outside ships.
-│   ├── .claude-plugin/plugin.json         manifest: name, mattpocock-skills dependency, 3 userConfig options
+│   ├── .claude-plugin/plugin.json         manifest: name, mattpocock-skills dependency, 4 userConfig options
 │   ├── skills/{refine,build}/SKILL.md     the two commands
 │   ├── agents/                            the seven dispatched agents
 │   │   ├── spec-writer.md                 brief   → published spec
@@ -125,21 +125,50 @@ what moved.
 │   │   ├── assumption-reviewer.md         assumption → accept / override / escalate
 │   │   ├── code-reviewer.md               drives one review round via the MCP server
 │   │   └── comments-addresser.md          unresolved comments → fixes, declines, hand-offs
-│   ├── mcp/                               the tools server — ships UNBUILT (Node strips the types)
+│   ├── mcp/                               the plugin's Node code, one package — ships UNBUILT (Node strips
+│   │                                      the types). What it holds today: the tools server, and the
+│   │                                      observer — its distiller, its debrief and the process that
+│   │                                      watches a live run
 │   │   ├── launch.mjs                     what .mcp.json runs; resolves the staged copy, starts the
 │   │   │                                  install hook when nothing else has
+│   │   ├── observe.mjs                    the observer's entry point, beside the server's: what the
+│   │   │                                  prompt hook spawns; detaches, stands in the data directory,
+│   │   │                                  waits for the install and imports the staged copy
 │   │   ├── server/index.ts                the three tools + the transcript resource
 │   │   ├── server/lifecycle.ts            start / poll / cancel, one-in-flight, the deadline
 │   │   ├── server/review-state.ts         the record, the reducer, the published projection
 │   │   ├── server/{agent,scripted}-backend.ts  the real review, and the shipped test double
 │   │   ├── server/{backend,store,config,env-file}.ts
+│   │   ├── observer/distil.ts             a run's records → its trace; run by hand, CLAUDE_PLUGIN_DATA
+│   │   │                                  required, no host and no model in play
+│   │   ├── observer/{records,trace,trace-file}.ts  the host's format as a claim · the trace · where it
+│   │   │                                  lives and how it refuses forwarding
+│   │   ├── observer/debrief.ts            replay: a run's records → its debrief, beside that run's
+│   │   │                                  trace; the observer's cheap by-hand seam
+│   │   ├── observer/{run-facts,debrief-file,plugin-commit}.ts  the run's extent and every figure
+│   │   │                                  bounded by it · the debrief and the identity file beside
+│   │   │                                  it · which plugin the run used
+│   │   ├── observer/{observer,announce}.ts  the loop that watches a live run and finalises its
+│   │   │                                  debrief · the two lines to the human, and the files the
+│   │   │                                  hooks read them out of
+│   │   ├── observer/continuity.ts         the earlier debriefs of this epic, read for the one
+│   │   │                                  synthesis: only the same repository's, newest per run,
+│   │   │                                  never an earlier run's trace or notes
+│   │   ├── observer/{judge,notes,notes-file,model-call}.ts  the judging half: one long-context
+│   │   │                                  reading of a whole run · a dispatch note per dispatch, on
+│   │   │                                  a cheap tier as each lands · where those notes live and
+│   │   │                                  how they refuse forwarding · what one model call the
+│   │   │                                  observation makes looks like, shared by both tiers
 │   │   └── package.json · tsconfig.json · eslint.config.js
-│   ├── hooks/install-mcp-server.sh        SessionStart: install deps, republish source every session
+│   ├── hooks/install-mcp-server.sh        SessionStart: install deps, republish both source trees
+│   ├── hooks/observe-run.sh               UserPromptSubmit / Stop / SessionEnd: start an observer,
+│   │                                      name a debrief, signal the finalise; reads the switch from
+│   │                                      CLAUDE_PLUGIN_OPTION_OBSERVE_RUNS and never ${user_config.*}
 │   └── .mcp.json                          wires userConfig → the server's environment
 ├── .claude-plugin/marketplace.json      the marketplace entry (git-subdir → plugin/)
 ├── CONTEXT.md                           the glossary / ubiquitous language
 ├── docs/
-│   ├── adrs/                              architectural decisions — fifteen, all on the plugin itself
+│   ├── adrs/                              architectural decisions — eighteen, all on the plugin itself
 │   ├── specs/<slug>/                      specs and tickets for work on THIS repo
 │   └── agents/                            how the contributor skills behave here
 │       ├── issue-tracker.md                → local markdown under docs/specs/, never gh issue
@@ -209,8 +238,9 @@ Implements the work, using `/tdd` at the seams the spec named. Work one ticket a
 ## CI
 
 `.github/workflows/ci.yml` runs on pushes to `main` and on every change request. One job, `check`, over both packages
-this repository has: the tools server in `plugin/mcp` and the end-to-end **harness** in `e2e-tests`. One `setup-node`,
-then the other three steps once for each package:
+this repository has: the plugin's Node code in `plugin/mcp` — today, the tools server and the **observer**, which
+distils a **run**'s records, writes its **debrief** and watches a live run to its end — and the end-to-end **harness**
+in `e2e-tests`. One `setup-node`, then the other three steps once for each package:
 
 | Step                | What and why                                                                                |
 |---------------------|---------------------------------------------------------------------------------------------|
@@ -245,16 +275,19 @@ Know this before you rely on a green tick:
 - **The tests exist and CI runs none of them.** `e2e-tests/` drives whole `/deliverer:refine` and `/deliverer:build`
   **runs**, and CI typechecks and lints that harness without ever running it — a run spends real money, so somebody
   has to mean it. Nothing else has tests at all: `plugin/mcp/package.json` has exactly two scripts, `lint` and
-  `typecheck`.
+  `typecheck`. The **observer** is no exception — no runner, no fixture and nothing recorded stands behind it, and
+  § Replaying a run's records below is the whole of how it is checked.
 - **No markdown is checked.** The skills, the agents, `README.md` and `CONTEXT.md` are the bulk of the product and
   nothing lints, wraps or spell-checks them.
-- **Nothing in CI runs the server, the launcher, or the SessionStart hook.** No manifest is validated against its
+- **Nothing in CI runs the server, either launcher, or any of the four hook events.** `SessionStart` installs and
+  publishes; `UserPromptSubmit`, `Stop` and `SessionEnd` are the **observer**'s. No manifest is validated against its
   `$schema` either.
 
-So behaviour is verified deliberately: by hand with the two procedures below, or in one command by the end-to-end tests
-after them, which spend real money every time. The **scripted backend** is what makes the by-hand route cheap: it
-replays a canned event timeline in milliseconds, so you can exercise the whole lifecycle — cancellation, ordering,
-terminal absorption, the deadline — with no model, no forge and no money.
+So behaviour is verified deliberately: by hand with the three procedures below — the server's, the **observer**'s and
+the launcher's — or in one command by the end-to-end tests after them, which spend real money every time. The
+**scripted backend** is what makes the server's half of that cheap: it replays a canned event timeline in
+milliseconds, so you can exercise the whole lifecycle — cancellation, ordering, terminal absorption, the deadline —
+with no model, no forge and no money.
 
 ```
 printf 'ANTHROPIC_API_KEY=not-a-real-key\n' > /tmp/review.env
@@ -269,6 +302,144 @@ no configured identity must never run), and `DELIVERER_REVIEW_SCRIPT` takes JSON
 (`{"events":[{"afterMs":10,"kind":"completed",…}]}`) if you need a timeline other than the default happy path, such as a
 failed or cancelled round.
 
+### Replaying a run's records
+
+The **observer** has a by-hand route of exactly the same shape, and **replay** is what makes it cheap: point it at a
+session record the host has already written and it produces that **run**'s **trace** and its **debrief**. It comes in
+two forms, and they answer two different questions.
+
+**The observer is verified by hand, and this section is how.** CI runs none of it. The one automated check standing
+above it is in the two paid end-to-end tests, which assert that a debrief exists for the run they drove and that its
+header names it — that one appeared, and nothing at all about whether it is right.
+
+**With nothing judging, replay is free.** It calls no model, reaches no forge and spends nothing; the same records
+give the same debrief byte for byte, and no **dispatch note** is written at all. This is the form the mechanical half
+is verified at — the distillation, the header, every figure in it, the files — and what it answers is whether that
+half still holds.
+
+```
+CLAUDE_PLUGIN_DATA=$(mktemp -d) \
+  node plugin/mcp/observer/debrief.ts ~/.claude/projects/<munged-cwd>/<session-id>.jsonl
+```
+
+**What it needs** is a record of a run of your own — they are under `~/.claude/projects/`, one `<session-id>.jsonl` per
+session with a directory of per-**dispatch** records beside it — and `CLAUDE_PLUGIN_DATA`, which is required and has no
+default. Point that at a throwaway directory to keep the output out of your own, or at
+`~/.claude/plugins/data/deliverer-<marketplace>/` to write exactly where the plugin itself would.
+`plugin/mcp/observer/distil.ts` takes the same argument and stops after the trace.
+
+Three exit codes, and a first line that names what was written: `0` with the debrief's path, and under it what the
+judging half did and where the trace and the **identity file** went; `2` with why this record holds no run (a session
+that merely names the plugin is not one, and several on any machine do), `1` with what could not be read.
+
+**With `--judge`, the same command runs the judging half**, which nothing else exercises: one cheap-tier call per
+**dispatch** as each is read from the inside, and one long-context synthesis over the whole run — thirteen-plus calls
+for a delivery. What it answers is the only question worth asking of that half: whether the observer finds what you
+found by hand in a run you remember.
+
+```
+set -a; . ./.env; set +a
+CLAUDE_PLUGIN_DATA=$(mktemp -d) \
+  node plugin/mcp/observer/debrief.ts --judge ~/.claude/projects/<munged-cwd>/<session-id>.jsonl
+```
+
+**The credentials are the step this trips on.** The observer authenticates with whatever the environment it inherits
+authenticates with and reads no credential file of its own — the plugin's `code_review_claude_env_file` names the
+identity a **round** runs as and stays the review's — so from a plain container shell every call comes back
+`not_logged_in` and the debrief says so where its **defect**s belong. The first line above is what puts the wrapper's
+own `.env` in the environment; the free form needs none of it. And it cannot reproduce byte for byte — determinism is
+the free form's claim and only the free form's.
+
+**What it costs, and how little that rests on.** Measured all in — the notes and the one synthesis together — a judged
+refinement is **$3.18–$3.48** and a judged delivery **about $6.70**. That is four readings of three runs: three of two
+refinements (three and four dispatches), one of a single thirteen-dispatch delivery. The notes are roughly **$0.40**
+of a refinement and **$1.30** of that delivery, at about ten cents a dispatch. Two things to know before quoting any
+of it: the same delivery came to **$5.52** before the notes were widened to re-read each dispatch's own record, so
+figures from before that are not comparable; and the whole measurement is replays on one machine, priced from what the
+calls themselves reported. It is an order of magnitude and not a price list — `README.md` and `e2e-tests/README.md`
+carry the same two numbers and nothing further.
+
+**Continuity takes two runs of one epic, replayed in order.** The earlier debriefs a run reads are the ones already
+in the same data directory, under the same **slug**, matched on the identity file beside each — so it is exercised by
+pointing both replays at ONE `CLAUDE_PLUGIN_DATA`, the earlier run first. Only the later one need carry `--judge`,
+since all the first has to leave behind is a debrief and its identity file, which the free form writes. The judged
+replay's own output says how many earlier debriefs it read, how many it could not, and how many were another
+repository's epic of the same name. Judged both times, the cheapest real pair on the records this was measured
+against came to about **$9.40**.
+
+**What to read in what it leaves behind**, all of it in `<data>/observations/<slug>/<the run's first timestamp>/`:
+
+- **`debrief.md`** — the document, and the only file here that is ever sent anywhere. Its header is the point: the
+  skill, the epic's slug, the run's own wall clock, its dispatch count, its **round**s and the word each one ended on,
+  how the run itself ended, its **spend**, what the observation cost, and the plugin commit the run used — then the
+  **defect**s with their **grounds**, the **hunch**es under them, and a footer naming where to send it. With nothing
+  judging it carries the header and the facts, and one line saying what stopped the judging; judged, its header gains
+  a line for the notes and, where the epic had earlier runs, the document gains what the reading had of them.
+- **`DO-NOT-FORWARD-trace.txt`** — every entry of the run in order, which is where a figure in the debrief is checked.
+  It refuses forwarding twice, in its file name and in its first line, because it is bounded by nothing at all.
+- **`DO-NOT-FORWARD-notes.txt`** — one **dispatch note** per dispatch, appended as each one lands, refusing forwarding
+  the same two ways. Written on the judged path only: with nothing judging there is no notes file at all.
+- **`DO-NOT-FORWARD-identity.txt`** — the run's key (its slug and its first timestamp), the skill, the repository it
+  ran in, the plugin commit and a `finalised` flag. It is what a later run of the same epic matches its earlier
+  debriefs on, and it names the repository the run delivered into, which the debrief never does — so it refuses
+  forwarding too, and no debrief ever mentions it. Paths on this machine are not the difference between the two: a
+  debrief prints its own trace's path, its notes' path and the installed plugin's.
+- **the earlier debriefs of the same slug**, in the sibling directories beside this one — what a judged run read of
+  the runs before it, whole and oldest first, and never their traces and never their notes. The debrief's continuity
+  section says how many it had. Nothing prints there where nothing judged: it read nothing because nothing read
+  anything.
+
+**Read every debrief for what it must not carry.** ADR-0018 holds that bound by instruction alone — nothing redacts
+mechanically, and no second reader checks the first — so the human replaying is the check. Verifying this epic found
+three real leaks that had reached a debrief and closed each in the instruction: a repository's own directory name
+quoted out of `git status`, the human's word "continue", and a question round's headers carrying a product name and a
+command-line flag. That last one no paid run has exercised since, which makes it the first thing to look for on the
+next one. The read is checkable rather than heroic — sweep the fenced quotations with
+``grep -oE '`[^`]+`' debrief.md`` and account for every one, then sweep for the names of technologies the delivered
+repository uses and the plugin does not. That is your own checklist and not a second reader, so it takes nothing away
+from ADR-0018.
+
+Nothing already there is rewritten: a second replay of one run lands beside the first as `debrief-2.md`, byte for byte
+identical to it where nothing judged. The cases worth walking after any change to the observer, each of which reads
+differently: a delivery and a refinement, a run that stopped mid-stage (the header names the stage), a run whose task
+list was laid out and never updated (the header says **stopped**, because nothing there ended anything), a session that
+carried unrelated work after its run (the header says how many of its entries lie outside, and none of that work is in
+the wall clock, the dispatch count or the time the run spent waiting), a session that ran **two** runs (the debrief is
+about the first, and a loss says the second is outside it), and a record you have truncated or corrupted by hand — that
+last one has to say what was lost rather than read as a run with nothing wrong with it. A synthetic record hand-written
+to one of those shapes is a legitimate way to walk one: replay needs no host, and the shapes above are a few dozen
+lines of JSONL each.
+
+**The hook states worth walking.** Replay reaches everything the observer does with a record already on disk; what it
+cannot reach is the decision that there is a run to observe at all, which is `hooks/observe-run.sh`'s and the live
+loop's. Walk these after any change to either, each with what it should do:
+
+- **a session with no run in it** — nothing starts: no process, no marker under `observations/.sessions/`, no trace.
+  This is every session of every other project on the machine, so it also has to cost nothing;
+- **a `/deliverer:` command typed** — an observer starts on that prompt, and no later prompt of that session is
+  scanned again;
+- **a run resumed by prose in a fresh session** — an observer starts on attribution instead, off the plugin's own
+  stamp in the session's record;
+- **a run that finished while its session stays open** — nothing is finalised and nothing is announced: the debrief
+  goes on being rewritten, and the line waits for one of the two below. What a run's records say about how it ended is
+  a reading rather than a signal — nothing about a task list forbids a run passing through "every stage completed, last
+  word prose" between two stages — so the observer has two finalisers, the session's end and the idle bound, and no
+  third;
+- **a session ended mid-run** — `SessionEnd` signals and never finalises anything itself; the observer picks the
+  signal up on its next tick and finalises the debrief;
+- **a terminal killed**, with no `SessionEnd` to be had — the idle bound finalises it, and the line naming the debrief
+  waits for the next prompt of any session;
+- **a record that stops being readable after a debrief was written** — move or `chmod` it and leave it that way. The
+  patience bounds the wait: the observer announces the debrief already on disk and stops, rather than ticking for the
+  rest of the machine's uptime over a record that is never coming back;
+- **observation switched off** (`CLAUDE_PLUGIN_OPTION_OBSERVE_RUNS=false`) — nothing starts at all: no process, no
+  trace and no debrief.
+
+The eight `DELIVERER_OBSERVER_*` bounds are what make that walk minutes rather than half-hours — the killed terminal
+is the idle bound's thirty minutes and nothing else: `TICK_MS` (2 s), `REFRESH_MS` (15 s), `IDLE_MS` (30 min),
+`AFTER_FINALISE_MS` (30 min), `PATIENCE_MS` (10 min), `INSTALL_WAIT_MS` (2 min), and the judging half's `NOTE_MS`
+(5 min) and `JUDGE_MS` (30 min).
+
 ### Exercising the install by hand
 
 `launch.mjs` is the other piece nothing runs for you, and it decides whether a session has a review tool at all. Point
@@ -279,27 +450,27 @@ CLAUDE_PLUGIN_DATA=$(mktemp -d) node plugin/mcp/launch.mjs < /dev/null
 ```
 
 Empty, that installs the dependencies, publishes the source and starts the server. The states worth walking after any
-change to the launcher or the hook, each of which reports differently: an install already present (starts at once), one
-still running when the wait runs out (`DELIVERER_REVIEW_INSTALL_WAIT_MS=1000` against an empty directory), one that runs
-and fails (`PATH` without `npm`), a hook that cannot be started (`chmod -x` it — the launcher retries through `bash`,
-which is the only recovery from an install that dropped the executable bit), and the launcher's own installer switched
-off (`DELIVERER_REVIEW_SELF_INSTALL=0`, which is also what keeps a caller that must not install from starting a real
-`npm ci`).
+change to the launcher or the install hook, each of which reports differently: an install already present (starts at
+once), one still running when the wait runs out (`DELIVERER_REVIEW_INSTALL_WAIT_MS=1000` against an empty directory),
+one that runs and fails (`PATH` without `npm`), a hook that cannot be started (`chmod -x` it — the launcher retries
+through `bash`, which is the only recovery from an install that dropped the executable bit), and the launcher's own
+installer switched off (`DELIVERER_REVIEW_SELF_INSTALL=0`, which is also what keeps a caller that must not install
+from starting a real `npm ci`).
 
-Two launchers and a hook against one empty data directory is the case the install's lock exists for, and it is worth
-re-running whenever either side of it moves: exactly one `npm ci`, one stamp, no `ERR_MODULE_NOT_FOUND` and no lock left
-behind.
+Two launchers and the install hook against one empty data directory is the case the install's lock exists for, and it
+is worth re-running whenever either side of it moves: exactly one `npm ci`, one stamp, no `ERR_MODULE_NOT_FOUND` and
+no lock left behind.
 
 ### The end-to-end tests
 
 `e2e-tests/` is the **harness**: it installs the plugin the way a user does — from a **staged copy** of your working
 tree, so a test covers what is in front of you rather than what is on the branch — and drives whole **runs** against it.
-It is the automated counterpart to the two procedures above, at a much higher seam: nothing is asserted below a complete
-run, only what a human could read afterwards. Three tests, and CI runs none of them:
+It is the automated counterpart to the three procedures above, at a much higher seam: nothing is asserted below a
+complete run, only what a human could read afterwards. Three tests, and CI runs none of them:
 
 - **The installation smoke test.** One command and, in seconds, you know the plugin still installs and still presents
   both commands, all seven agents and all three review tools. No repository on the forge and no model asked for more
-  than one trivial turn — cheap enough to run after any change to a manifest, the hook or the launcher.
+  than one trivial turn — cheap enough to run after any change to a manifest, either hook or the launcher.
 - **The refine happy path.** `/deliverer:refine` against a **standing repo**, with a **responder** answering the
   grilling in your place out of the **fixture**'s own **brief**. It asserts a published **spec** and one file per
   **ticket**, and then a **verifier** judges whether what came out is any good.
@@ -307,6 +478,13 @@ run, only what a human could read afterwards. Three tests, and CI runs none of t
   real **rounds** through the tools server and both **fix waves**. It asserts a commit naming every ticket, a
   **verdict** on every **assumption**, and the **change request** **flipped ready** with its **checks** green — then
   the verifier judges the code behind it against the **epic**.
+
+**Both paid tests are observed, and each asserts a debrief.** The plugin observes runs by default and the harness
+leaves that default alone, so an **observer** runs beside each of the two and the test asserts what a human would look
+for first: that a **debrief** exists for the run and that its header names it — the right skill, the right **slug**,
+and a dispatch count consistent with the records the **run directory** itself holds. It is shallow on purpose; depth
+lives at the replay seam above. The observation is a separate process on the same account and the same credentials the
+run uses, its **spend** is in none of the figures below, and `e2e-tests/README.md` says what it costs.
 
 **What they take and spend, measured rather than estimated.** The refinement took **21m 52s and $6.36** — the run
 itself 20m 12s and $5.82, the responder $0.16 across six rounds of questions, the verifier $0.39 — and published a spec
@@ -316,9 +494,9 @@ the two runs with their verdicts came to **$13.28**, then **$13.14** — the two
 slower of them plus a rounding error. The smoke test is seconds and effectively free.
 
 Those are the figures the harness reports, which are the **orchestrator** and its **dispatches** and nothing else — a
-delivery's **rounds** run as their own processes and their **spend** is not in them. `e2e-tests/README.md` breaks a
-measured pair of runs down per stage, says what the reported figure leaves out, and gives the method for doing it
-again from any **run directory**.
+delivery's **rounds** and the observation both run as their own processes, and neither's **spend** is in them.
+`e2e-tests/README.md` breaks a measured pair of runs down per stage, says what the reported figure leaves out — the
+observation among the four kinds it names — and gives the method for doing it again from any **run directory**.
 
 **The ceilings.** A run may take **ninety minutes** and spend **twenty-five dollars**: `DEFAULT_CEILINGS` in
 `e2e-tests/harness/ceilings.ts`, overridable per test. Neither has been raised — the longest run measured took 21m 23s
@@ -365,8 +543,13 @@ node --test tests/installation-smoke.test.ts   # one of them: here, the cheap on
 `deliverer-e2e/<test>-<timestamp>-<suffix>/`, and prints its path as its first diagnostic — a failing run is read there
 rather than reproduced. Nothing in it is ever removed, passed or failed:
 
-- `config/` — the run's own `CLAUDE_CONFIG_DIR`: both marketplaces, the install, the plugin's three options at user
-  scope, and under `projects/` the session records of every dispatched agent, not only the orchestrator's.
+- `config/` — the run's own `CLAUDE_CONFIG_DIR`: both marketplaces, the install, three of the plugin's four options at
+  user scope (`observe_runs` is left at its default, so the run meets the observer a user meets), and under
+  `projects/` the session records of every dispatched agent, not only the orchestrator's — the observer's own model
+  calls leave plain top-level records there too, so what is under `projects/` over-counts the run's own sessions.
+- `config/plugins/data/deliverer-<marketplace>/observations/` — what the observer left: the run's **debrief**, with
+  its **trace**, its **dispatch note**s and its identity file beside it. Worth reading after a failure — it is the run
+  as the observer saw it, and it is inside the run directory because the configuration directory is.
 - `clone/` — the working tree the run published into: a refinement's whole **epic**, or a delivery's commits.
 - `staged-plugin/` and `fixture-repo/` — the copy of the plugin that was installed, and the fixture as it was built
   into a repository before the forge was brought into step with it.

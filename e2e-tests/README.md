@@ -17,7 +17,7 @@ records by hand. It took a session to do the first time. It should take minutes 
 what it is: the orchestrator plus its dispatches reconstructs to within 0.25% of the reported figure for both runs
 below.
 
-Three kinds of **spend** sit outside it, and each is outside for its own reason:
+Four kinds of **spend** sit outside it, and each is outside for its own reason:
 
 - **The review rounds.** A **round** runs as its own `claude` process, spawned by the tools server through the Agent
   SDK, so it writes its own top-level session record and its cost never reaches the orchestrator's total. This is
@@ -27,6 +27,20 @@ Three kinds of **spend** sit outside it, and each is outside for its own reason:
   separately and holds the pair to one ceiling (`harness/ceilings.ts`) — this one is by design, not a gap.
 - **The verifier.** It judges what the run delivered once the run is over, carries its own ceiling and reports its own
   cost. Out of scope for anything called "what the run cost".
+- **The observation.** Both paid tests are observed, because the plugin observes **run**s by default and the harness
+  deliberately leaves that default alone — the run's own `/deliverer:refine …` or `/deliverer:build …` is the
+  **observer**'s trigger, so nothing switches it on and nothing switches it off. The observer runs as its own process
+  outside the session, started by the plugin's hook and inheriting the session's environment, so it draws on **the same
+  account and the same credentials the run does** and its cost reaches the orchestrator's total no more than a round's
+  does. Measured by hand against runs of both skills, judging on: a refinement's observation costs **$3.18–$3.48**, of
+  which roughly **$0.40** is the per-**dispatch** notes on the cheap tier; a delivery's **about $6.70**, of which
+  **$1.30** is. That is four readings of three runs and nothing more — CONTRIBUTING.md § Replaying a run's records
+  carries what it rests on.
+
+**So a run driven today spends its observation on top of every figure in this file** — the same shape of gap as the
+review spend above, and on a refinement a larger one. Nothing below is missing it: the two runs of 2026-08-15 predate
+the observer entirely, so their totals are the run alone and stay comparable to each other. What they cannot tell you
+is what the same pair would cost now, which is those totals plus a refinement's or a delivery's observation.
 
 **So the spend ceiling cannot see review spend at all.** On the delivery below that is $0.32 against a $25 ceiling —
 but the harness deliberately configures the cheapest review there is (`REVIEW_OPTIONS` in `harness/install.ts`: `low`
@@ -129,10 +143,11 @@ for path in sorted(glob.glob(root + "/*/*.jsonl") + glob.glob(root + "/*/*/subag
                        ("input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")})
     print(f"${spent:8.4f}  {len(reqs):3} req  {os.path.basename(path)[:28]:30} {dict(tokens)}"
           f"\n            {what(path)[:100]}")
-print(f"${total:8.4f}  ALL RECORDS (run + review + responder + verifier)")
+print(f"${total:8.4f}  ALL RECORDS (run + review + responder + verifier + observation)")
 ```
 
-It labels each record as it goes; group them into buckets — run, reviews, responder, verifier — with the map below.
+It labels each record as it goes; group them into buckets — run, reviews, responder, verifier and observation — with
+the map below.
 
 ### Which record is which
 
@@ -160,6 +175,11 @@ sidecar, so those are still read by their first user message:
   brief below`. One record per round of questions.
 - **the verifier** — prompt opening `A delivery run has just implemented…` or `A refinement run has just turned one
   idea into an epic…`.
+- **the observation** — the **observer**'s own model calls, one record each and all of them under the data
+  directory's own cwd slug rather than the clone's, because that is where the observer and every call it makes stand.
+  A **dispatch note**'s prompt opens `You are reading the inside of ONE dispatch of one finished run of the
+  **deliverer** plugin`; the one synthesis's opens `You are observing one finished run of the **deliverer** plugin`.
+  There is one of the first per **dispatch** the run made and exactly one of the second, and none of them is the run.
 
 And one thing to know before it costs you an hour: **some sessions make a request that leaves no assistant line.** A
 session carrying an `ai-title` line generated that title with a model call which bills into `total_cost_usd` and writes

@@ -23,6 +23,7 @@ import {
   assertAssumptionsAdjudicated,
   assertChangeRequestOpened,
   assertChecksGreen,
+  assertDebriefWritten,
   assertEveryTicketCommitted,
   assertFlippedReady,
   assertNoScriptedBackend,
@@ -70,6 +71,9 @@ test("a delivery implements an epic and flips its change request ready", {
   // question (`../harness/report.ts`).
   assertRoundsCompleted(outcome, ROUNDS);
   assertSessionRecordsKept(outcome, DISPATCHES, WHAT_IT_DISPATCHES);
+  // The run was observed because the plugin observes runs by default and nothing here switched
+  // that off. Shallow on purpose: a debrief exists for this epic and its header names this run.
+  assertDebriefWritten(outcome);
 
   const verdict = await verify(outcome);
   t.diagnostic(`the verifier: ${verdict.summary}`);

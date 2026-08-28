@@ -27,5 +27,13 @@
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true
   },
-  "include": ["server/**/*.ts"]
+  /**
+   * Every TypeScript file the plugin ships, and the whole of what `tsc --noEmit` reads.
+   *
+   * The list grows with the package (run-observation ticket 02 added `observer/`). Anything
+   * outside it is typechecked by NOTHING while CI stays green, and the three options above —
+   * `erasableSyntaxOnly` above all, which is the whole of what holds up the unbuilt shipping
+   * model — never reach it.
+   */
+  "include": ["server/**/*.ts", "observer/**/*.ts"]
 }
