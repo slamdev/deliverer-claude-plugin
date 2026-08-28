@@ -1,7 +1,7 @@
 /**
  * The build happy path (end-to-end-tests ticket 03).
  *
- * An **epic** goes in on the default branch of a **throwaway repo**, all seven stages run — two
+ * An **epic** goes in on the default branch of a **throwaway repo**, all eight stages run — two
  * real **rounds** through the tools server and both **fix waves** among them — and out comes a
  * **change request** **flipped ready** with its **checks** green. Both bars have to pass: the
  * mechanical assertions, because a fact should never rest on a model's opinion, and the
@@ -42,12 +42,12 @@ import {
  */
 const CEILINGS = DEFAULT_CEILINGS;
 
-/** The bar stage 7 waits on, and what this test holds the delivery to. */
+/** The bar stage 8 waits on, and what this test holds the delivery to. */
 const ROUNDS = 2;
 
 /**
  * What a delivery of this epic dispatches: one implementer per ticket, then one agent per stage
- * after it, with stage 3 dispatching two and the second round and wave repeating stages 3 and 4.
+ * after it, with the second round and the second fix wave repeating stages 4 and 5.
  */
 const DISPATCHES = 9;
 const WHAT_IT_DISPATCHES =
