@@ -1,6 +1,6 @@
 # 01 — The decision and the word
 
-Status: done
+Status: ready-for-agent
 
 **Blocked by:** None — can start immediately.
 
