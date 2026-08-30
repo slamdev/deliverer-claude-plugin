@@ -24,9 +24,12 @@
  *    by instruction, exactly as the bound is, so nothing but this check stands between a malformed
  *    answer and a debrief reading as a run with nothing wrong with it.
  *  - **A refused model is a named failure and nothing else.** No fallback, no second call on a bare
- *    alias, no option. D9's comparability is the whole reason: a debrief judged at a depth nobody
- *    can see is worse than one that says it was not judged, so a machine whose provider or account
- *    lacks the long-context window gets the facts-only debrief with the refusal named in it.
+ *    alias, and no option of the observation's own: a debrief judged at a depth nobody can see is
+ *    worse than one that says it was not judged, so a machine whose provider or account lacks the
+ *    long-context window gets the facts-only debrief with the refusal named in it. What the owner
+ *    does have is the knob they already met for the review: the model this call asks for follows
+ *    their `code_review_model` (one-environment-file ticket 03; D7), which is a knob and not a
+ *    retry, while the DEPTH stays the plugin's (D8) — so D9's comparability holds where it aimed.
  *  - **What this call authenticates as is the owner's to say, and nothing else about it is.** It runs
  *    under the **environment file** the owner named, layered over the environment the observation
  *    inherited (ADR-0009; one-environment-file ticket 02) — `./model-env.ts` is where that is read,
@@ -67,7 +70,16 @@ import {
   type Query,
   type QueryMessage,
 } from "./model-call.ts";
-import { envOption, readModelEnvironment, type ModelEnvironment } from "./model-env.ts";
+import {
+  envOption,
+  MODEL_OPTION,
+  modelOption,
+  namedModel,
+  readModelChoice,
+  readModelEnvironment,
+  type ModelChoice,
+  type ModelEnvironment,
+} from "./model-env.ts";
 import { runNotes } from "./notes.ts";
 import {
   NOTHING_JUDGES_YET,
@@ -80,7 +92,7 @@ import {
 /* ──────────────────────────────── the model, and its bounds ──────────────────────────────── */
 
 /**
- * The model the one synthesis runs on (D9).
+ * The model the one synthesis runs on where the owner named none (D9; one-environment-file D7).
  *
  * **An alias, never a pinned id**, for the reason the review's own `code_review_model` option
  * already records: an alias resolves against whatever provider the environment authenticates to,
@@ -90,9 +102,16 @@ import {
  * holds a whole run: a delivery's trace is capped at 600,000 characters, which is roughly a
  * quarter of that window and past a bare alias's outright.
  *
- * **Where it is refused, the debrief says so and carries no defects.** That is the whole of the
- * handling: no fallback to a bare alias, no second call, and no option to change it (D9 keeps
- * depth out of the owner's hands, so debriefs stay comparable across a team).
+ * **It is `code_review_model`'s manifest default, written out here, and the two move together.**
+ * `./model-env.ts` reads the owner's own value and falls back to this one, and that variable is
+ * absent on every machine where the option was never touched — so this constant is what the common
+ * case runs on, and moving the manifest's default alone would move nothing. `MODEL_OPTION_ENV` there
+ * carries why absence may be read as the default at all, which this repository forbids in general.
+ *
+ * **Where the model is refused, the debrief says so and carries no defects.** That is the whole of
+ * the handling, whether the model was this constant or the owner's: no fallback to a bare alias and
+ * no second call. What the owner may change is which model is asked for; the depth below is not
+ * theirs (D8), so debriefs stay comparable across a team.
  */
 export const SYNTHESIS_MODEL = "opus[1m]";
 
@@ -103,6 +122,12 @@ export const SYNTHESIS_MODEL = "opus[1m]";
  * model through a slash command whose depth is an argument, and this call reaches the SDK
  * directly. `high` is the review's own shipped default, and it is stated rather than left to
  * whatever the SDK's default becomes.
+ *
+ * **The review's `code_review_effort` is deliberately NOT read here** (one-environment-file ticket
+ * 03; D8). The model above became the owner's for a portability reason — a long-context suffix some
+ * providers refuse — and depth has no such failure mode: the observation's two depths were chosen
+ * deliberately, and tying them to a review tier would let an owner who wants cheap reviews quietly
+ * halve every debrief's depth. Widening this to match the model is the symmetry to refuse.
  */
 export const SYNTHESIS_EFFORT = "high";
 
@@ -623,13 +648,29 @@ function earlierSection(earlier: Continuity): string {
 
 /* ─────────────────────────── a success that is really a failure ─────────────────────────── */
 
-/** What the review says about a model that had no room for what it was handed. */
-const NO_ROOM =
-  `The whole trace goes into this call's prompt, along with every dispatch note the run produced, ` +
-  `so the synthesis needs a model with the room to hold them: \`${SYNTHESIS_MODEL}\` is the ` +
-  `long-context alias asked for. Where the provider or the account behind this machine's ` +
-  `credentials does not offer that window, no debrief on it carries defects — the observation is ` +
-  `deliberately not configurable, so there is nothing to set.`;
+/**
+ * What the review says about a model that had no room for what it was handed — about the model this
+ * call actually asked for (one-environment-file ticket 03; D7).
+ *
+ * It was a constant until the model became the owner's, and a constant naming `SYNTHESIS_MODEL` would
+ * now name a model the call may never have asked for. Its last sentence changed with it, and had to:
+ * it told the reader the observation is not configurable and there is nothing to set, which is the
+ * opposite of what is true — there is one thing to set, and it is the option the owner already met
+ * once for the review.
+ */
+function noRoom(model: ModelChoice): string {
+  const asked =
+    model.kind === "named"
+      ? `\`${model.model}\` is what this call asked for`
+      : `this call named no model at all, so the provider's own default served it`;
+  return (
+    `The whole trace goes into this call's prompt, along with every dispatch note the run produced, ` +
+    `so the synthesis needs a model with the room to hold them: ${asked}. Where the provider or the ` +
+    `account behind this machine's credentials does not offer that window, no debrief on it carries ` +
+    `defects until a model that does is named, and the plugin's ${MODEL_OPTION} option is where to ` +
+    `name one — the same option each round's own review runs on.`
+  );
+}
 
 /* ──────────────────────────────── which tree is read ──────────────────────────────── */
 
@@ -724,6 +765,16 @@ export interface SynthesisInput {
    */
   readonly earlier: Continuity;
   /**
+   * Which model this call names, or that it names none at all (one-environment-file ticket 03; D7).
+   *
+   * Passed in beside the environment below and read in the same place, for the same reason: the
+   * owner's answer is read once when the observation starts, and a synthesis that went and read it
+   * for itself would be a second reading of a value that cannot change under it. `SYNTHESIS_MODEL`
+   * is what it falls back to. A **dispatch note** has none of this and stays on `./notes.ts`'s own
+   * cheap alias, which is the same decision (D7).
+   */
+  readonly model: ModelChoice;
+  /**
    * What this call runs under: the owner's **environment file**, or the environment the observation
    * was started in (one-environment-file ticket 02; D1, D2).
    *
@@ -790,7 +841,13 @@ export async function synthesise(input: SynthesisInput): Promise<Judging> {
         earlier: input.earlier,
       }),
       options: {
-        model: SYNTHESIS_MODEL,
+        // The owner's `code_review_model` where they set one, this call's own default where they
+        // never touched it, and NO `model` key at all where they set it empty (ticket 03; D7).
+        // Spread for that third case exactly as the environment below is spread for its own: an
+        // empty model is the absence of the option and not an id to send.
+        ...modelOption(input.model),
+        // Not the review's tier, and deliberately not widened with the model above (D8) —
+        // `SYNTHESIS_EFFORT` carries why the two are not the same kind of setting.
         effort: SYNTHESIS_EFFORT,
         // The owner's **environment file**, layered over this process's own environment, or nothing
         // at all where there was no usable one to layer (one-environment-file ticket 02; D1, D2).
@@ -857,9 +914,10 @@ export async function synthesise(input: SynthesisInput): Promise<Judging> {
     return failed(
       `the synthesis ended as ${String(result.subtype)}${errors === "" ? "" : `: ${errors}`}, so ` +
         `nothing judged this run. A model or a long-context window the provider behind this ` +
-        `machine's credentials refuses is reported here and nowhere else: there is no second call ` +
-        `on a bare alias and no option to change the model, so that every debrief a team produces ` +
-        `was judged at the same depth`,
+        `machine's credentials refuses is reported here and nowhere else: there is no fallback and ` +
+        `no second call on a bare alias. The model to change is the plugin's ${MODEL_OPTION} ` +
+        `option, which each round's review runs on too; the DEPTH every debrief is judged at stays ` +
+        `the plugin's, so debriefs from one team stay comparable`,
       cost,
     );
   }
@@ -867,7 +925,7 @@ export async function synthesise(input: SynthesisInput): Promise<Judging> {
   // reads it: a call reported successful whose whole deliverable is absent is a failed call.
   const text = typeof result.result === "string" ? result.result : "";
 
-  const carried = failureInText(text, "the synthesis", NO_ROOM);
+  const carried = failureInText(text, "the synthesis", noRoom(input.model));
   if (carried !== undefined) return failed(`${carried.code}: ${carried.detail}`, cost);
 
   const answer = readAnswer(text);
@@ -886,7 +944,10 @@ export async function synthesise(input: SynthesisInput): Promise<Judging> {
     defects: answer.defects,
     hunches: answer.hunches,
     defectCount: answer.count,
-    model: SYNTHESIS_MODEL,
+    // The model ASKED FOR, and `undefined` where none was — which is how a debrief tells the
+    // owner's empty option from their absent one (ticket 03; D7). `servedBy` is what actually ran,
+    // and the debrief prints the pair.
+    model: namedModel(input.model),
     servedBy: servedBy(result),
     judgedAgainst: tree,
     // What this reading actually held, kept because the answer outlives the reading: one synthesis
@@ -971,12 +1032,19 @@ function notJudged(
  * is asked to judge — so building it is the moment "the observation starts", and one run therefore
  * has one identity: a parse failure is met once, and an owner editing their **environment file**
  * mid-delivery cannot change who is paying halfway through a debrief.
+ *
+ * **And which model its synthesis asks for** (ticket 03; D7), read here for the same reason and at the
+ * same moment: one observation asks for one model, where a value read per call could differ between a
+ * mid-run catch-up and the finalise.
  */
 export function synthesisJudge(
   dataDirectory: string,
   how: { readonly beside: boolean },
 ): (input: { trace: Trace; facts: RunFacts; finalising: boolean }) => Promise<Judging> {
   const environment = readModelEnvironment();
+  const model = readModelChoice(SYNTHESIS_MODEL);
+  // The model is the synthesis's alone: `runNotes` is given the environment and never the model,
+  // because a note stays on its own cheap alias (ticket 03; D7).
   const notes = runNotes(dataDirectory, how, environment);
   let made: Judging | undefined;
   /**
@@ -1031,6 +1099,7 @@ export function synthesisJudge(
           notesCost: notes.cost(),
           notesSummary: notes.summary(),
           earlier,
+          model,
           environment,
         }),
       );

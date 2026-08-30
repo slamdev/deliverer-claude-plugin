@@ -210,7 +210,8 @@ function judgingLine(outcome: Extract<DebriefOutcome, { kind: "written" }>): str
     return `judging: none — ${judging.reason}${notes}${continuity}${environment}`;
   }
   return (
-    `judging: ${judging.defectCount} defect(s) on ${judging.model} ` +
+    `judging: ${judging.defectCount} defect(s) on ` +
+    `${judging.model ?? "no model named — the provider's own default"} ` +
     `(${judging.servedBy ?? "an unnamed model"}), ${dollars}, ` +
     `read against ${judging.judgedAgainst.source}${notes}${continuity}${environment}`
   );
@@ -248,8 +249,10 @@ const USAGE =
  * inherited environment where nothing usable is named — answering the only question the judging half
  * has: whether the observer finds what a human found by hand.
  *
- * It switches judging on and nothing else. The model and the depth are the plugin's (D9) and no
- * flag, option or variable reaches them.
+ * It switches judging on and nothing else, and no flag here reaches the model or the depth. The
+ * depth is the plugin's (D9); the synthesis's model is the owner's own `code_review_model`, read from
+ * the environment by the same variable a live observation reads (one-environment-file ticket 03; D7),
+ * so this route exercises that path rather than a second one.
  */
 const JUDGE_FLAG = "--judge";
 

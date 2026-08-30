@@ -81,6 +81,13 @@ import { emitDay, renderLine } from "./trace-file.ts";
  * this alias, and a note has one dispatch to hold rather than a whole run, which is what the cap
  * below is for.
  *
+ * **A note does NOT follow the owner's `code_review_model`, and the synthesis does**
+ * (one-environment-file ticket 03; D7). That option exists for the synthesis's portability problem
+ * and a note has none of it: a note never needed the long-context window that makes the synthesis's
+ * model provider-sensitive, and the bare alias here is already the portable way to name a model — so
+ * there is nothing for an owner to fix, and following the option would put thirteen calls per run on
+ * whatever a review happens to be set to.
+ *
  * **Where it is refused, that note is a named failure and nothing else**: no fallback to another
  * alias, no second call, and no option (D9 keeps depth out of the owner's hands). Where every note
  * fails that way the debrief says so and the synthesis still runs on the trace alone.
@@ -627,6 +634,8 @@ async function call(query: Query, input: NoteInput): Promise<NoteOutcome> {
     for await (const message of query({
       prompt: notePrompt({ dispatch: input.dispatch, skill: input.skill, slice }),
       options: {
+        // The cheap alias, always: a note is not the synthesis and does not follow the owner's model
+        // option (one-environment-file ticket 03; D7). `NOTE_MODEL` carries why.
         model: NOTE_MODEL,
         effort: NOTE_EFFORT,
         // The owner's **environment file**, layered over this process's own environment, or nothing

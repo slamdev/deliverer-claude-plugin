@@ -1,7 +1,14 @@
 /**
  * What every model call the **observation** makes runs under: the **environment file** the owner
  * named, layered over this process's own environment (one-environment-file ticket 02; D1 to D6, D10
- * and D12, with ADR-0009 holding the decision).
+ * and D12, with ADR-0009 holding the decision) — and which model the one synthesis names, which is
+ * the same option variable's twin (ticket 03; D7).
+ *
+ * **Both are read out of the host's own `CLAUDE_PLUGIN_OPTION_<KEY>` variables, and that is one rule
+ * with two different exceptions to it.** The rule is stated once below, on `ENV_FILE_OPTION_ENV`,
+ * with what lifts it for each of the two — which is why the model is read here beside the file
+ * rather than beside the constant it falls back to. What a **dispatch note** runs on is not the
+ * owner's and is not here (D7); `./notes.ts` carries that.
  *
  * **The plugin forwards no authentication of its own, and neither does this.** One file the owner
  * writes authenticates every model call the plugin makes — each **round**'s review, which has read
@@ -62,8 +69,44 @@ export const ENV_FILE_OPTION = "code_review_claude_env_file";
  * observation is started by a hook and never by the MCP configuration, so that name never reaches
  * it. One name for the live observer and for **replay** is what keeps the by-hand route exercising
  * the path users get rather than a second one (D6).
+ *
+ * **A SECOND option is read this way below, and its absence does not mean what this one's would**
+ * (ticket 03; D7). What lifts the rule here is `required`; what lifts it there is the opposite fact
+ * about the same variable, and `MODEL_OPTION_ENV` states only that difference rather than the rule
+ * over again.
  */
 export const ENV_FILE_OPTION_ENV = "CLAUDE_PLUGIN_OPTION_CODE_REVIEW_CLAUDE_ENV_FILE";
+
+/**
+ * The option's key for the model, as a **debrief** and a failed judging may name it (ticket 03; D7).
+ *
+ * The review's own option, widened rather than joined by a second one: an owner whose **environment
+ * file** points at a provider that refuses a long-context suffix is exactly the owner whose
+ * synthesis needs another model, and they have already answered that question once for the review.
+ * It is named out loud because it is the whole recourse for a model a provider refused — there is no
+ * fallback and no second call, so a debrief that does not name the knob leaves the reader nothing.
+ */
+export const MODEL_OPTION = "code_review_model";
+
+/**
+ * The host's own variable for that option — read the same way, for the reason above, with the one
+ * difference a reader needs (D7).
+ *
+ * **The rule and what lifts it are on `ENV_FILE_OPTION_ENV`, and are not restated here.** What
+ * differs is what ABSENCE means. That option is `required`, so it has no manifest default to sit at
+ * and its variable missing would mean the plugin is broken. This one carries a manifest default —
+ * `opus[1m]`, which `./judge.ts`'s `SYNTHESIS_MODEL` writes out — so its variable is missing on
+ * every machine where the owner never touched the option, which makes absence the COMMON case and
+ * makes it mean exactly that default. The harm the rule guards against cannot happen here: absence
+ * IS the owner's answer rather than a gap standing in for one. What it costs is a constant that has
+ * to move when the manifest's default moves, and that is the price of the observation being reached
+ * through a hook at all.
+ *
+ * **And the variable is READ rather than defaulted**, which is the other half of D7: the option set
+ * EMPTY means "take the environment's own default", and that is a third answer. A `?? SYNTHESIS_MODEL`
+ * over the value would collapse it into absence and quietly overrule an owner who chose it.
+ */
+export const MODEL_OPTION_ENV = "CLAUDE_PLUGIN_OPTION_CODE_REVIEW_MODEL";
 
 /**
  * The environment this observation's model calls run under, and which of the two it is.
@@ -97,6 +140,71 @@ export type ModelEnvironment =
  */
 export function envOption(environment: ModelEnvironment): { env?: NodeJS.ProcessEnv } {
   return environment.kind === "file" ? { env: environment.env } : {};
+}
+
+/**
+ * Which model one of the observation's calls names, or that it names none at all (ticket 03; D7).
+ *
+ * **Two members, because a name and NO name are two different requests and a bare string could only
+ * carry one of them.** An empty `model` is not a model id no provider recognises — it is the absence
+ * of the option, which is what the owner's own setting means when they clear it, and a provider
+ * serves the two differently. A **debrief** has to be able to tell them apart for the same reason it
+ * tells the two environments apart: a reader has to see whether what served the call was asked for.
+ *
+ * A **dispatch note** has none of these. It stays on the bare cheap alias `./notes.ts` names, which
+ * is D7 as well and is recorded there.
+ */
+export type ModelChoice =
+  | { readonly kind: "named"; readonly model: string }
+  | { readonly kind: "provider-default" };
+
+/**
+ * What the owner's `code_review_model` says this call runs on, in the three cases D7 names.
+ *
+ * Present and non-empty → that value verbatim, exactly as the review passes it: an alias resolves
+ * against whatever provider the environment file names, a pinned id only means the same thing on the
+ * provider it came from, and nothing here interprets either. Set and EMPTY → no model at all, so the
+ * provider's own default serves the call. ABSENT → `whenAbsent`, and `MODEL_OPTION_ENV` above carries
+ * why absence may be read that way here when the repository forbids it in general.
+ *
+ * `whenAbsent` is a parameter rather than a constant of this module's own because the default belongs
+ * to the call that has one: `./judge.ts` owns the synthesis's model and the reasoning behind it, and
+ * reaching back for it from here would close a circle this module is deliberately on the far side of.
+ *
+ * Whitespace-only counts as empty, and the value is trimmed, exactly as `../server/agent-backend.ts`
+ * trims the review's: a value that arrived as spaces is no model id anybody meant, and sending it as
+ * one would fail the call where the owner's plain answer is what they wrote.
+ */
+export function readModelChoice(
+  whenAbsent: string,
+  from: NodeJS.ProcessEnv = process.env,
+): ModelChoice {
+  const named = from[MODEL_OPTION_ENV];
+  if (named === undefined) return { kind: "named", model: whenAbsent };
+  const model = named.trim();
+  return model === "" ? { kind: "provider-default" } : { kind: "named", model };
+}
+
+/**
+ * The SDK's `model` option for one call, spread into the call's own options.
+ *
+ * Spread rather than assigned, so a call that names no model passes NO `model` at all and takes the
+ * provider's own default — the same construction `../server/agent-backend.ts` uses for the review,
+ * where an empty option leaves the key off entirely rather than sending an id no provider knows.
+ */
+export function modelOption(choice: ModelChoice): { model?: string } {
+  return choice.kind === "named" ? { model: choice.model } : {};
+}
+
+/**
+ * The model this call asked for, or `undefined` where it asked for none — the one thing a **debrief**
+ * needs off a `ModelChoice` (D7).
+ *
+ * A debrief says what was asked for beside what actually served the call, so a reader can tell the
+ * owner's three cases apart without being told which one they are in.
+ */
+export function namedModel(choice: ModelChoice): string | undefined {
+  return choice.kind === "named" ? choice.model : undefined;
 }
 
 /** Where a read failure says what went wrong without saying what it was reading (D12). */

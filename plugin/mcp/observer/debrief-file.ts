@@ -154,8 +154,17 @@ export type Judging =
       readonly hunches: string;
       /** how many defects it named, counted off the shape rather than claimed by the model */
       readonly defectCount: number;
-      /** the alias the synthesis was asked for, and what the provider actually served */
-      readonly model: string;
+      /**
+       * The model the synthesis was asked for, beside what the provider actually served — and
+       * `undefined` where the call named NO model at all, which is the owner's `code_review_model`
+       * set empty (one-environment-file ticket 03; D7).
+       *
+       * Two fields rather than one because they answer different questions, and the pair is what
+       * lets a reader tell the owner's three cases apart without being told which they are in: what
+       * was asked for, and what came back. `servedBy` is `undefined` only where the result reported
+       * no per-model usage at all.
+       */
+      readonly model: string | undefined;
       readonly servedBy: string | undefined;
       readonly judgedAgainst: JudgedTree;
       /** how much of the run the one synthesis actually held when it read (D23) */
@@ -736,8 +745,7 @@ function defectsSection(out: Document, judging: Judging, facts: RunFacts): void 
       `that whoever holds this run's own files can find in them — its trace, the **dispatch note**s ` +
       `beside it, or an earlier debrief of this epic. ` +
       `${found(judging.defectCount)} ` +
-      `Read by \`${judging.model}\`` +
-      `${judging.servedBy === undefined ? "" : ` (served by \`${judging.servedBy}\`)`}, ` +
+      `Read by ${askedFor(judging.model)}${servedClause(judging.servedBy)}, ` +
       `${extentRead(judging.readOf, facts)}` +
       (judging.notes === undefined || judging.notes.written === 0
         ? ""
@@ -1037,9 +1045,31 @@ function tiers(judging: Judging): string {
         `\`${judging.notes.model}\``;
   const synthesis =
     judging.kind === "judged"
-      ? `one synthesis over the whole run on \`${judging.model}\``
+      ? `one synthesis over the whole run on ${askedFor(judging.model)}` +
+        servedClause(judging.servedBy)
       : "no synthesis: nothing read the whole run";
   return notes === undefined ? synthesis : `${notes}, and ${synthesis}`;
+}
+
+/**
+ * The model a call asked for, in the reader's words (one-environment-file ticket 03; D7).
+ *
+ * **`undefined` is not a figure nobody measured: it is a model nobody named.** It is what the owner's
+ * `code_review_model` set empty means — no model reaches the provider and the provider's own default
+ * serves the call — so it is said in words rather than left as a gap, which is what a blank between
+ * two backticks would read as. Said beside `servedClause` below, the pair is what lets a reader tell
+ * that case from an owner who named a model and from one who never touched the option.
+ */
+function askedFor(model: string | undefined): string {
+  return model === undefined
+    ? "the provider's own default, with no model named"
+    : `\`${model}\``;
+}
+
+/** What actually served a call, where the result said, so the cost line names it whether or not one
+ *  was asked for (ticket 03; D7). */
+function servedClause(servedBy: string | undefined): string {
+  return servedBy === undefined ? "" : ` (served by \`${servedBy}\`)`;
 }
 
 /**
