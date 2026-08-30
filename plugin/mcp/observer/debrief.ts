@@ -15,8 +15,9 @@
  *
  * **`--judge` runs the other half** (run-observation tickets 05 and 06), and it is the one thing
  * here that spends money: a **dispatch note** per dispatch on a cheap tier — up to thirteen of them
- * — and then one long-context reading of the whole **trace** and every note together, on whatever
- * account the terminal authenticates, producing the **defect**s a maintainer actually wants. That
+ * — and then one long-context reading of the whole **trace** and every note together, on the
+ * identity the owner's **environment file** names — the same variable a live observation reads, so
+ * this route exercises the path users get — producing the **defect**s a maintainer actually wants. It
  * answers the only question the judging half has — whether the observer finds what a human found by
  * hand — and it is a deliberate paid run rather than something a contributor reaches by accident.
  * The two paths are the same code and the same document; what differs is whether anything read it.
@@ -196,11 +197,22 @@ function judgingLine(outcome: Extract<DebriefOutcome, { kind: "written" }>): str
         (judging.continuity.hole === undefined
           ? ""
           : ", and this run resumed work none of them covers");
-  if (judging.kind === "none") return `judging: none — ${judging.reason}${notes}${continuity}`;
+  // What the calls above ran under, PATH AND ALL (one-environment-file ticket 02; D12). This is
+  // stdout and not the debrief: the debrief may never carry that path, and this is how a contributor
+  // verifying the judging half sees that the file they named is the file that was read.
+  const environment =
+    judging.modelEnvironment === undefined
+      ? ""
+      : judging.modelEnvironment.kind === "file"
+        ? `\n  environment: ${judging.modelEnvironment.path}, layered over this process's own`
+        : `\n  environment: inherited — ${judging.modelEnvironment.why}`;
+  if (judging.kind === "none") {
+    return `judging: none — ${judging.reason}${notes}${continuity}${environment}`;
+  }
   return (
     `judging: ${judging.defectCount} defect(s) on ${judging.model} ` +
     `(${judging.servedBy ?? "an unnamed model"}), ${dollars}, ` +
-    `read against ${judging.judgedAgainst.source}${notes}${continuity}`
+    `read against ${judging.judgedAgainst.source}${notes}${continuity}${environment}`
   );
 }
 
@@ -231,9 +243,10 @@ const USAGE =
  * **Off by default, and that is the whole of why the free seam survives.** Without it the same
  * records give the same debrief byte for byte, no model is called and nothing is spent — which is
  * what tickets 02 and 03 are verified at and what CONTRIBUTING's replay procedure documents. With
- * it, this command runs the whole feature: one long-context reading of the run, on the account the
- * terminal authenticates, answering the only question the judging half has — whether the observer
- * finds what a human found by hand.
+ * it, this command runs the whole feature: one long-context reading of the run, on the identity the
+ * owner's **environment file** names — the same variable the live observation reads, and the
+ * inherited environment where nothing usable is named — answering the only question the judging half
+ * has: whether the observer finds what a human found by hand.
  *
  * It switches judging on and nothing else. The model and the depth are the plugin's (D9) and no
  * flag, option or variable reaches them.

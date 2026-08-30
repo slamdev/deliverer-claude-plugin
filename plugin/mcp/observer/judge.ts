@@ -27,11 +27,13 @@
  *    alias, no option. D9's comparability is the whole reason: a debrief judged at a depth nobody
  *    can see is worse than one that says it was not judged, so a machine whose provider or account
  *    lacks the long-context window gets the facts-only debrief with the refusal named in it.
- *  - **Nothing here is configured.** The call authenticates from the environment the observer
- *    inherited (D27) and reads no environment file of its own — the review's is the review's, and
- *    `../../../docs/specs/run-observation/spec.md`'s what-must-not-regress keeps it that way.
- *    Contention with the run is not managed either (D28): no back-off, no deferral, and no
- *    detection of what kind of credential is in hand.
+ *  - **What this call authenticates as is the owner's to say, and nothing else about it is.** It runs
+ *    under the **environment file** the owner named, layered over the environment the observation
+ *    inherited (ADR-0009; one-environment-file ticket 02) — `./model-env.ts` is where that is read,
+ *    once per observation, and where an unusable one falls back to inheriting. Contention with the
+ *    run is not managed (D28): no back-off, no deferral, and no detection of what kind of credential
+ *    is in hand — which the widening leaves decided as it was, since the observation may now draw on
+ *    a different account than the run without any of the three becoming this file's business.
  *
  * **The classification of a success that is really a failure is the review's, re-implemented rather
  * than imported.** `hooks/install-mcp-server.sh` publishes `server/` and `observer/` as two
@@ -65,6 +67,7 @@ import {
   type Query,
   type QueryMessage,
 } from "./model-call.ts";
+import { envOption, readModelEnvironment, type ModelEnvironment } from "./model-env.ts";
 import { runNotes } from "./notes.ts";
 import {
   NOTHING_JUDGES_YET,
@@ -720,6 +723,16 @@ export interface SynthesisInput {
    * finalising flag.
    */
   readonly earlier: Continuity;
+  /**
+   * What this call runs under: the owner's **environment file**, or the environment the observation
+   * was started in (one-environment-file ticket 02; D1, D2).
+   *
+   * Passed in rather than read here, because it is read ONCE when the observation starts (D3), and
+   * this is the second of the two halves that spend under it — `./notes.ts` is the other. Both run as
+   * the same identity, which is what makes the debrief's one spend line true of the whole
+   * observation.
+   */
+  readonly environment: ModelEnvironment;
 }
 
 /**
@@ -779,6 +792,11 @@ export async function synthesise(input: SynthesisInput): Promise<Judging> {
       options: {
         model: SYNTHESIS_MODEL,
         effort: SYNTHESIS_EFFORT,
+        // The owner's **environment file**, layered over this process's own environment, or nothing
+        // at all where there was no usable one to layer (one-environment-file ticket 02; D1, D2).
+        // Spread rather than assigned so that inheriting passes no `env` at all — see
+        // `./model-env.ts`, which is also where the reason the file is read once lives.
+        ...envOption(input.environment),
         // **D3's standing, literally: the plugin's data directory.** D3 says the observer stands
         // there and never in a repository, because "a working directory inside that tree is the
         // one thing between an unrestricted agent and a stray write" — and under D4 this call is
@@ -947,13 +965,28 @@ function notJudged(
  * `beside` is the notes file's placement and the caller's to choose, exactly as the debrief
  * writer's two forms are: a **replay** writes a set beside whatever is there (D19), and the live
  * observer comes back to its own.
+ *
+ * **This is also where the observation reads what it authenticates as** (one-environment-file ticket
+ * 02; D3). Both callers build this once — the live observer when it starts watching, a replay when it
+ * is asked to judge — so building it is the moment "the observation starts", and one run therefore
+ * has one identity: a parse failure is met once, and an owner editing their **environment file**
+ * mid-delivery cannot change who is paying halfway through a debrief.
  */
 export function synthesisJudge(
   dataDirectory: string,
   how: { readonly beside: boolean },
 ): (input: { trace: Trace; facts: RunFacts; finalising: boolean }) => Promise<Judging> {
-  const notes = runNotes(dataDirectory, how);
+  const environment = readModelEnvironment();
+  const notes = runNotes(dataDirectory, how, environment);
   let made: Judging | undefined;
+  /**
+   * What every answer this observation gives says its calls ran under (D12).
+   *
+   * Attached here, once, rather than by each of the paths out of `synthesise` and `notJudged`: it is
+   * a fact about the observation and not about how the judging went, and every answer's spend line
+   * owes the reader the same one.
+   */
+  const under = (judging: Judging): Judging => ({ ...judging, modelEnvironment: environment });
   return async (input) => {
     if (made !== undefined) return made;
     // The run's OWN dispatches and never the session's, which is the set `./run-facts.ts` already
@@ -978,7 +1011,7 @@ export function synthesisJudge(
           `run's dispatches have no note: ${errorText(error)}`,
       );
     }
-    if (!input.finalising) return stillWatching(notes.cost(), notes.summary());
+    if (!input.finalising) return under(stillWatching(notes.cost(), notes.summary()));
     // Read here rather than inside `synthesise`, and read ONCE at the finalise: the earlier debriefs
     // are a whole-run reading by construction (they reach the one synthesis and no dispatch note),
     // and a listing done on every mid-run rewrite would be a listing nothing reads. It never throws
@@ -989,26 +1022,31 @@ export function synthesisJudge(
       dataDirectory,
     });
     try {
-      made = await synthesise({
-        trace: input.trace,
-        facts: input.facts,
-        dataDirectory,
-        notes: await notes.text(),
-        notesCost: notes.cost(),
-        notesSummary: notes.summary(),
-        earlier,
-      });
+      made = under(
+        await synthesise({
+          trace: input.trace,
+          facts: input.facts,
+          dataDirectory,
+          notes: await notes.text(),
+          notesCost: notes.cost(),
+          notesSummary: notes.summary(),
+          earlier,
+          environment,
+        }),
+      );
     } catch (error) {
       // `synthesise` answers rather than throws for every failure it can foresee, so this is the
       // one it cannot: a throw from somewhere none was expected. Held as this run's answer like any
       // other, both because the notes' own spend has to survive it and because a second whole-run
       // reading is not something a surprise may buy.
-      made = notJudged(
-        `it failed where nothing expected it to and nothing of its own spend was measured: ` +
-          `${errorText(error)}`,
-        notes.cost(),
-        notes.summary(),
-        earlier.summary,
+      made = under(
+        notJudged(
+          `it failed where nothing expected it to and nothing of its own spend was measured: ` +
+            `${errorText(error)}`,
+          notes.cost(),
+          notes.summary(),
+          earlier.summary,
+        ),
       );
     }
     return made;

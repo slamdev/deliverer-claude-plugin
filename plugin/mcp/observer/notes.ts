@@ -46,6 +46,7 @@ import {
   type Query,
   type QueryMessage,
 } from "./model-call.ts";
+import { envOption, type ModelEnvironment } from "./model-env.ts";
 import { readRecordFile } from "./records.ts";
 import {
   keyOf,
@@ -563,6 +564,15 @@ export interface NoteInput {
   readonly dispatch: TraceDispatch;
   readonly skill: string;
   readonly dataDirectory: string;
+  /**
+   * What this call runs under: the owner's **environment file**, or the environment the observation
+   * was started in (one-environment-file ticket 02; D1, D2).
+   *
+   * Passed in and never read here, because the file is read ONCE when the observation starts (D3):
+   * up to thirteen of these run per **run**, and thirteen reads of one file is thirteen chances for
+   * a mid-delivery edit to change who is paying halfway through a **debrief**.
+   */
+  readonly environment: ModelEnvironment;
 }
 
 /**
@@ -619,6 +629,11 @@ async function call(query: Query, input: NoteInput): Promise<NoteOutcome> {
       options: {
         model: NOTE_MODEL,
         effort: NOTE_EFFORT,
+        // The owner's **environment file**, layered over this process's own environment, or nothing
+        // at all where there was no usable one to layer (one-environment-file ticket 02; D1, D2).
+        // The same construction the synthesis uses, from the same read: a note and the synthesis run
+        // as one identity, which is what makes the debrief's one spend line true of both.
+        ...envOption(input.environment),
         // D3's standing: the plugin's own data directory, which is outside every repository by
         // construction, and where the synthesis stands too. It reaches the installed plugin tree
         // from there, because it quotes the plugin's own lines; a note quotes nothing and reads
@@ -749,7 +764,12 @@ export interface RunNotes {
   readonly lost: (reason: string) => void;
 }
 
-export function runNotes(dataDirectory: string, how: { readonly beside: boolean }): RunNotes {
+export function runNotes(
+  dataDirectory: string,
+  how: { readonly beside: boolean },
+  // Read once by `./judge.ts`'s factory and handed to every note this half makes (D3).
+  environment: ModelEnvironment,
+): RunNotes {
   let file: NotesFile | undefined;
   let cost: ObservationCost = NOTHING_SPENT;
   let written = 0;
@@ -802,6 +822,7 @@ export function runNotes(dataDirectory: string, how: { readonly beside: boolean 
           dispatch,
           skill: trace.skills.join(", ") || "a deliverer run",
           dataDirectory,
+          environment,
         });
         cost = addCosts(cost, outcome.cost);
         const where = `#${dispatch.ordinal} \`${dispatch.agentType}\``;

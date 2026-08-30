@@ -30,6 +30,10 @@ import { NO_TOKENS, type TokenTotals } from "./records.ts";
 import { formatDuration, tokenDetail, type Trace, type TraceDispatch } from "./trace.ts";
 import { observationDirectory, writeFileAtomically } from "./trace-file.ts";
 import { runSkills, type RunFacts, type RunRound } from "./run-facts.ts";
+// The option's own KEY, which is the most this document may say about the owner's **environment
+// file** (D12): the file's path is never in here, and `ModelEnvironment.path` is read by nothing
+// below. `./model-env.ts` imports nothing of this file, so naming it here closes no circle.
+import { ENV_FILE_OPTION, type ModelEnvironment } from "./model-env.ts";
 // Type-only, so nothing of `./continuity.ts` is loaded at runtime by this file: that module reads
 // this one's own naming and its identity parser, and a value import back would close the circle.
 import type { ContinuitySummary } from "./continuity.ts";
@@ -133,6 +137,8 @@ export type Judging =
       readonly notes?: NotesSummary;
       /** what continuity the reading had, where it got as far as looking (ticket 07) */
       readonly continuity?: ContinuitySummary;
+      /** what this observation's model calls ran under (one-environment-file ticket 02; D12) */
+      readonly modelEnvironment?: ModelEnvironment;
     }
   | {
       readonly kind: "judged";
@@ -168,6 +174,16 @@ export type Judging =
        * something that never happened.
        */
       readonly continuity?: ContinuitySummary;
+      /**
+       * What this observation's model calls ran under: the owner's own **environment file**, or the
+       * environment the observation was started in (one-environment-file ticket 02; D12).
+       *
+       * Carried on the judging for the same reason continuity is — the judging half is the only half
+       * that calls a model, so nothing else here has an identity to attribute — and absent on the
+       * facts-only path for the same reason: nothing judged it, so nothing was paid for and there is
+       * nobody to name. Only `costLine` reads it, and it reads `kind` and `why` and never `path`.
+       */
+      readonly modelEnvironment?: ModelEnvironment;
     };
 
 /**
@@ -952,6 +968,13 @@ function spendLine(facts: RunFacts): string {
  * usage a **round**'s spend is read off, summed per API request, and the SDK's own dollar figure
  * beside it. So the two halves of the header's spend say different things on purpose, and neither
  * is added to the other.
+ *
+ * **And it says WHOSE money it was** (one-environment-file ticket 02; D12). The observation used to
+ * run on whatever the session it was started beside authenticates with, so "the same account the run
+ * was" needed no saying; now it runs under the **environment file** the owner named wherever there is
+ * a usable one, which may be a different account entirely. So the line names the option that decided
+ * that — and never the file's path, which is on the owner's filesystem and routinely names their
+ * repository, the one fact a document that is safe to forward unread may not hold.
  */
 function costLine(judging: Judging): string {
   const { cost } = judging;
@@ -960,16 +983,43 @@ function costLine(judging: Judging): string {
     return (
       `**nothing, measured rather than assumed**: 0 model calls, 0 tokens, ${dollars}. Nothing ` +
       `judged this run, so this document was written by code alone. A figure nobody could measure ` +
-      `reads unknown; this one was measured, and it is zero.`
+      // Nothing was paid, so there is no identity to attribute — but a named source that could not
+      // be used is still worth saying here, since it is the reason a later call would fail too.
+      `reads unknown; this one was measured, and it is zero.${unusableSource(judging)}`
     );
   }
   return (
     `${plural(cost.modelCalls, "model call", "model calls")} — ${tiers(judging)}. ` +
     `${tokenDetail(cost.tokens) || "no tokens reported"}, ${dollars}. Counted per API request off ` +
     `the per-model usage each call itself reported, the way a round's spend above is, and summed ` +
-    `across every one of them; a counter nobody measured reads unknown and never zero. It is ` +
-    `drawn on the same account the run was.`
+    `across every one of them; a counter nobody measured reads unknown and never zero. ` +
+    `${whoPaid(judging)}`
   );
+}
+
+/**
+ * Which identity paid for the observation (D12).
+ *
+ * Today's wording where it inherited, which is then true — the environment it inherited is the
+ * session's, so the run's own account is what paid — with the reason it inherited after it, where
+ * a source was named and could not be used.
+ */
+function whoPaid(judging: Judging): string {
+  if (judging.modelEnvironment?.kind !== "file") {
+    return `It is drawn on the same account the run was.${unusableSource(judging)}`;
+  }
+  return (
+    `It is drawn on the identity the plugin's \`${ENV_FILE_OPTION}\` option names: that file's ` +
+    `variables were layered over this observation's own environment for every call counted here, ` +
+    `so this spend may not have come out of the account the run's did. The file itself is not ` +
+    `named — this document carries the option and never a path of yours.`
+  );
+}
+
+/** Why the named source was not used, where one was named at all — a line and never a value (D10). */
+function unusableSource(judging: Judging): string {
+  const environment = judging.modelEnvironment;
+  return environment === undefined || environment.kind === "file" ? "" : ` ${environment.why}`;
 }
 
 /**

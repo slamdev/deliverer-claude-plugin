@@ -29,10 +29,19 @@
 #
 # THIS hook reads its options from NOTHING. `CLAUDE_PLUGIN_OPTION_<KEY>` reaches a hook only when the
 # option was explicitly set — at the manifest default the variable is absent entirely (measured,
-# ticket 02) — so a hook must not read one to learn an effective VALUE. Effort, model and the review's
+# ticket 02) — so a hook must not read one to learn an effective VALUE. Effort, model and the
 # environment file reach the server through the MCP `env` map instead, which has no such gap. What a
 # hook CAN read that way is a switch whose default is on, where absence is the answer rather than a
 # gap: `hooks/observe-run.sh` reads exactly one, and nothing here does.
+#
+# ONE EXCEPTION to that rule, and it is an option's own `required` (one-environment-file ticket 02).
+# A required option has no manifest default to sit at, it is saved whenever it is set at all, and the
+# plugin refuses every review while it is not — so on any machine where the plugin works,
+# `CLAUDE_PLUGIN_OPTION_CODE_REVIEW_CLAUDE_ENV_FILE` is in the environment, and it was verified
+# present in a live observer's. `mcp/observer/model-env.ts` reads exactly that one and records the
+# same reasoning at the read: the observation is launched by a hook and never by the MCP
+# configuration, so the `env` map above never reaches it, and the option it needs is the one option
+# that cannot be absent. The rule stands unchanged for every other option, and for this hook.
 set -uo pipefail
 
 # Derived from this script's own location, not from `CLAUDE_PLUGIN_ROOT`: that variable is guaranteed
