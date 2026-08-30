@@ -285,14 +285,20 @@ is observed exactly as one that finished — which matters, because the runs wor
   through `${user_config.*}`: an option at its manifest default reaches a hook with no value by either route, and only
   the variable's absence is survivable — a `${user_config.*}` reference refuses the hook outright.
 
-- **D27. The observer authenticates with the session's own environment.** A hook-launched process inherits what the
-  human authenticated the session with, so there is nothing to configure — which is what on-by-default requires, since
-  a required file could not be added to existing installs without breaking them. **Claim (C2).**
+- **D27. The observer authenticates from the environment file the owner already names**, layered over what the
+  hook-launched process inherited — ADR-0009 holds that decision, for every model call the plugin makes. There is
+  still nothing new to configure, which is what on-by-default requires: that option is required, so every install
+  that works already names a file, and no second required option was added to existing installs. The inheritance
+  this decision used to rest on is where it now FALLS BACK — a file that cannot be read, does not parse or assigns
+  nothing leaves the observation on whatever the process it was started in authenticates with. **Claim (C2)**,
+  settled below.
 
-- **D28. Contention with the run is accepted and documented.** Drawing on the same account means the observer and the
-  delivery it watches can compete for one rate limit on a subscription. No back-off, no deferral, no detection of what
-  kind of credential is in hand: dispatch notes run cheap and a delivery spends most of its wall-clock inside
-  dispatches, so contention is expected to be rare. The README states that observation draws on the same account.
+- **D28. Contention with the run is accepted and documented.** Which account the observation draws on follows the
+  environment file (D27): the run's own wherever that file is what the human's session authenticates with, and since
+  ADR-0009 possibly another account entirely. Either way the observer and the delivery it watches can compete for one
+  rate limit on a subscription, and what this decided stands unchanged — no back-off, no deferral, no detection of
+  what kind of credential is in hand: dispatch notes run cheap and a delivery spends most of its wall-clock inside
+  dispatches, so contention is expected to be rare. The README states which account an observation draws on.
 
 - **D29. Failure never reaches the run, and is never silent.** No error in the session, no exit code that matters,
   nothing the human must act on — and the degradation is recorded where a human meets it: the debrief says what the
@@ -423,7 +429,7 @@ Taken from this machine, on Claude Code 2.1.241, against runs of this plugin tha
 
 ### The claims this spec rests on
 
-Each is a **claim** in the glossary's sense: a statement this design rests on that nobody had checked. Two are now
+Each is a **claim** in the glossary's sense: a statement this design rests on that nobody had checked. Three are now
 settled, and their answers are recorded here rather than in the ticket that needed them, because more than one ticket
 reads them.
 
@@ -440,12 +446,13 @@ reads them.
    Code 2.1.241's own implementation and confirmed against a machine carrying this plugin's three options, where the
    one that is `required` is saved and the two that carry defaults are absent. `plugin/hooks/install-mcp-server.sh`
    already recorded the second half of this.
-2. **C2 — a hook-launched detached process inherits enough environment to authenticate an Agent SDK query.** D27 rests
-   on it, and so does on-by-default working without configuration. **Narrowed, not closed**: the host injects
-   credentials into a plugin hook's environment for plugins on an allowlist of its own, which a third-party plugin is
-   not on — so nothing is handed to this hook, and what is left is whatever the human's own environment and credential
-   store already give the SDK. It closes in two halves, and ticket 05's triage split them: a **replay** reaching a
-   model from the environment a terminal hands it, and a hook-launched observer reaching one.
+2. **C2 — a hook-launched detached process inherits enough environment to authenticate an Agent SDK query.** D27 used
+   to rest on it, and so did on-by-default working without configuration; ADR-0009 is what D27 rests on now, and this
+   is the measurement that moved it. **SETTLED, in the two halves ticket 05's triage split it into** — a **replay**
+   reaching a model from the environment a terminal hands it, and a hook-launched observer reaching one — and the
+   second came back false. The starting point was already narrow: the host injects credentials into a plugin hook's
+   environment for plugins on an allowlist of its own, which a third-party plugin is not on, so nothing is handed to
+   this hook and what is left is whatever the human's own environment and credential store already give the SDK.
    **The replay half: SETTLED, both ways.** A replay run from a terminal carrying this machine's own credential — the
    repository's `.env`, which `./claude` exports into every session it starts — authenticated an Agent SDK query with
    no configuration of its own, on nine runs' records: the alias `opus[1m]` resolved and was served, and the debriefs
@@ -454,10 +461,20 @@ reads them.
    the same machine, from a terminal carrying no Anthropic credential at all: the SDK answers `subtype: success`
    carrying `Not logged in · Please run /login`, with `total_cost_usd: 0` and an empty `modelUsage` — which is why the
    review's `not_logged_in` classification is reused rather than a second one invented, and why that debrief names a
-   judging failure instead of putting a login error where its defects belong. So D27 holds where the environment
-   carries a credential and degrades exactly as D17 and D29 require where it does not.
-   **The hook half stays ticket 04's**, and nothing here closes it: what a `UserPromptSubmit` hook's detached child
-   inherits is not what a terminal hands a command.
+   judging failure instead of putting a login error where its defects belong. So the fallback D27 now names holds
+   where the environment carries a credential, and degrades exactly as D17 and D29 require where it does not.
+   **The hook half: SETTLED, and it came back FALSE on the host that measured it.** What a `UserPromptSubmit` hook's
+   detached child inherits is not what a terminal hands a command. Measured against **Claude Code 2.1.251**, on a
+   session launched by a daemon rather than from a terminal, the boundary withholds `CLAUDE_CODE_OAUTH_TOKEN`
+   SPECIFICALLY: an unrelated variable set in the project's own `.claude/settings.json` `env` block crossed it intact
+   and so did an inherited `ANTHROPIC_AUTH_TOKEN`, while a session whose whole Anthropic credential is that one
+   variable handed its observer nothing to authenticate with. Setting that same name explicitly in the same `env`
+   block does not get it through either, so no configuration on the consumer's side could have fixed it — which is
+   why D27 now names a file rather than what the boundary carries, on the decision ADR-0009 holds.
+   **Read this as a claim about a version and never as a contract.** It is what was measured, on one host and one
+   version, with a probe project whose hook dumps what it inherits; nothing in the plugin relies on the host going on
+   behaving this way, and an observation whose named file is unusable falls back to that boundary's environment
+   whatever it turns out to carry.
 3. **C3 — a stop-time hook's output actually reaches the human. SETTLED: through `systemMessage` and nothing else.**
    A hook's JSON output carries `systemMessage`, which the host displays to the human on every event, and the host's
    own hook documentation gives a `Stop` hook printing one as its worked example. `hookSpecificOutput.additionalContext`
@@ -473,6 +490,7 @@ reads them.
 - No stage, task or dispatch is added to either skill, and neither learns that observation exists.
 - Nothing the observer does can slow, block, edit or fail a run, and nothing it writes lands inside a repository.
 - CI stays `typecheck` and `lint` over the two packages, and no end-to-end test is added to it.
-- The plugin's three existing configuration options keep their meanings, and the review's environment file stays
-  required and stays the review's.
+- The plugin's three existing configuration options keep their meanings, and the environment file stays required.
+  ADR-0009 has since widened that file off the review — it authenticates every model call the plugin makes, this
+  observation's included — so what stands here is its being required and not its being the review's alone.
 - Session-start time does not grow: no second `npm ci`, no additional install.

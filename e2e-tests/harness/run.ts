@@ -183,7 +183,7 @@ export async function driveRun(options: RunOptions): Promise<RunOutcome> {
     options: {
       cwd: options.cwd,
       // User and project settings and nothing else. User scope is the run's own configuration
-      // directory — the marketplaces, the install and the plugin's three options; project scope is
+      // directory — the marketplaces, the install and the three options it wrote; project scope is
       // the clone's, which is how a fixture tells the plugin what its repository's conventions are.
       // The contributor's own machine settings are never a source, and neither are this
       // repository's.

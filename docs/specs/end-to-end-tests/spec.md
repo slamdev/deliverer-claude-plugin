@@ -179,7 +179,8 @@ is a directory.
   temporary directory under a name derived from the **epic**'s **slug**, and refinement treats a brief on disk as proof
   that stage 1 already ran. A stable slug plus a shared temporary directory means the second run skips the grilling
   entirely and the **responder** is never exercised — a pass that tested nothing.
-- The whole of the repository's environment file is handed to the session and named as the review's environment file.
+- The whole of the repository's environment file is handed to the session and named as the plugin's environment file —
+  which since ADR-0009 authenticates every model call the plugin makes, so an observed run's own calls draw on it too.
   The harness does not read, classify or forward any individual credential, so it works unchanged whether the
   contributor authenticates with a subscription token, an API key or something else — which is the arrangement ADR-0009
   exists to allow.
@@ -329,7 +330,7 @@ None. Every decision this spec rests on was settled during refinement.
   uncommitted work.
 - ADR-0011 settles that the scripted review double ships and is how the review lifecycle is verified cheaply; this work
   deliberately does not use it.
-- ADR-0009 settles that the review's credentials come from a file the owner names, which is what lets the harness stay
-  ignorant of how a contributor authenticates.
+- ADR-0009 settles that the plugin's model calls run under an environment file the owner names, which is what lets the
+  harness stay ignorant of how a contributor authenticates.
 - ADR-0001 settles that the tools server ships as source and runs unbuilt; the harness follows the same arrangement for
   the same reason.

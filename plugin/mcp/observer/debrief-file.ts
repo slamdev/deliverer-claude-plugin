@@ -30,6 +30,10 @@ import { NO_TOKENS, type TokenTotals } from "./records.ts";
 import { formatDuration, tokenDetail, type Trace, type TraceDispatch } from "./trace.ts";
 import { observationDirectory, writeFileAtomically } from "./trace-file.ts";
 import { runSkills, type RunFacts, type RunRound } from "./run-facts.ts";
+// The option's own KEY, which is the most this document may say about the owner's **environment
+// file** (D12): the file's path is never in here, and `ModelEnvironment.path` is read by nothing
+// below. `./model-env.ts` imports nothing of this file, so naming it here closes no circle.
+import { ENV_FILE_OPTION, type ModelEnvironment } from "./model-env.ts";
 // Type-only, so nothing of `./continuity.ts` is loaded at runtime by this file: that module reads
 // this one's own naming and its identity parser, and a value import back would close the circle.
 import type { ContinuitySummary } from "./continuity.ts";
@@ -97,6 +101,17 @@ export interface NotesSummary {
   /** the dispatches nothing could be noted for, in a reader's words */
   readonly missing: readonly string[];
   /**
+   * Why this half stopped before the dispatches ran out, where it did (one-environment-file ticket
+   * 04; D11).
+   *
+   * **It is not a second statement of why nothing was judged** — that is said once, in the
+   * `Judging`'s own reason, and the whole point of the ticket is that it is said once. This is the
+   * clause that keeps `written` and `attempted` from reading as the whole story: a run of thirteen
+   * dispatches whose first note came back unauthenticated reports one call made and no others, and
+   * without this the figure would read as a run that owed exactly one note.
+   */
+  readonly stopped?: string;
+  /**
    * What this half alone spent, so the two tiers can be told apart by whoever is paying.
    *
    * The header's own figure covers both together and stays that way — one document, one number.
@@ -128,11 +143,22 @@ export type Judging =
       readonly kind: "none";
       /** the one line naming what stopped the judging */
       readonly reason: string;
+      /**
+       * That what stopped it was that no credential reached the observation (one-environment-file
+       * ticket 04; D11 and D13).
+       *
+       * The reason above already says so in full, and this is not a second copy of it: it is the flag
+       * the **announcement** reads, because the line a human meets at the stop gains one clause in
+       * this case and carries none of the document's other wording. Nothing in the debrief reads it.
+       */
+      readonly noCredential?: true;
       readonly cost: ObservationCost;
       /** what the notes half did before it, where anything did (run-observation ticket 06) */
       readonly notes?: NotesSummary;
       /** what continuity the reading had, where it got as far as looking (ticket 07) */
       readonly continuity?: ContinuitySummary;
+      /** what this observation's model calls ran under (one-environment-file ticket 02; D12) */
+      readonly modelEnvironment?: ModelEnvironment;
     }
   | {
       readonly kind: "judged";
@@ -148,8 +174,17 @@ export type Judging =
       readonly hunches: string;
       /** how many defects it named, counted off the shape rather than claimed by the model */
       readonly defectCount: number;
-      /** the alias the synthesis was asked for, and what the provider actually served */
-      readonly model: string;
+      /**
+       * The model the synthesis was asked for, beside what the provider actually served — and
+       * `undefined` where the call named NO model at all, which is the owner's `code_review_model`
+       * set empty (one-environment-file ticket 03; D7).
+       *
+       * Two fields rather than one because they answer different questions, and the pair is what
+       * lets a reader tell the owner's three cases apart without being told which they are in: what
+       * was asked for, and what came back. `servedBy` is `undefined` only where the result reported
+       * no per-model usage at all.
+       */
+      readonly model: string | undefined;
       readonly servedBy: string | undefined;
       readonly judgedAgainst: JudgedTree;
       /** how much of the run the one synthesis actually held when it read (D23) */
@@ -168,6 +203,16 @@ export type Judging =
        * something that never happened.
        */
       readonly continuity?: ContinuitySummary;
+      /**
+       * What this observation's model calls ran under: the owner's own **environment file**, or the
+       * environment the observation was started in (one-environment-file ticket 02; D12).
+       *
+       * Carried on the judging for the same reason continuity is — the judging half is the only half
+       * that calls a model, so nothing else here has an identity to attribute — and absent on the
+       * facts-only path for the same reason: nothing judged it, so nothing was paid for and there is
+       * nobody to name. Only `costLine` reads it, and it reads `kind` and `why` and never `path`.
+       */
+      readonly modelEnvironment?: ModelEnvironment;
     };
 
 /**
@@ -720,8 +765,7 @@ function defectsSection(out: Document, judging: Judging, facts: RunFacts): void 
       `that whoever holds this run's own files can find in them — its trace, the **dispatch note**s ` +
       `beside it, or an earlier debrief of this epic. ` +
       `${found(judging.defectCount)} ` +
-      `Read by \`${judging.model}\`` +
-      `${judging.servedBy === undefined ? "" : ` (served by \`${judging.servedBy}\`)`}, ` +
+      `Read by ${askedFor(judging.model)}${servedClause(judging.servedBy)}, ` +
       `${extentRead(judging.readOf, facts)}` +
       (judging.notes === undefined || judging.notes.written === 0
         ? ""
@@ -952,6 +996,13 @@ function spendLine(facts: RunFacts): string {
  * usage a **round**'s spend is read off, summed per API request, and the SDK's own dollar figure
  * beside it. So the two halves of the header's spend say different things on purpose, and neither
  * is added to the other.
+ *
+ * **And it says WHOSE money it was** (one-environment-file ticket 02; D12). The observation used to
+ * run on whatever the session it was started beside authenticates with, so "the same account the run
+ * was" needed no saying; now it runs under the **environment file** the owner named wherever there is
+ * a usable one, which may be a different account entirely. So the line names the option that decided
+ * that — and never the file's path, which is on the owner's filesystem and routinely names their
+ * repository, the one fact a document that is safe to forward unread may not hold.
  */
 function costLine(judging: Judging): string {
   const { cost } = judging;
@@ -960,16 +1011,49 @@ function costLine(judging: Judging): string {
     return (
       `**nothing, measured rather than assumed**: 0 model calls, 0 tokens, ${dollars}. Nothing ` +
       `judged this run, so this document was written by code alone. A figure nobody could measure ` +
-      `reads unknown; this one was measured, and it is zero.`
+      // Nothing was paid, so there is no identity to attribute — but a named source that could not
+      // be used is still worth saying here, since it is the reason a later call would fail too.
+      `reads unknown; this one was measured, and it is zero.${unusableSource(judging)}`
     );
   }
   return (
     `${plural(cost.modelCalls, "model call", "model calls")} — ${tiers(judging)}. ` +
     `${tokenDetail(cost.tokens) || "no tokens reported"}, ${dollars}. Counted per API request off ` +
     `the per-model usage each call itself reported, the way a round's spend above is, and summed ` +
-    `across every one of them; a counter nobody measured reads unknown and never zero. It is ` +
-    `drawn on the same account the run was.`
+    `across every one of them; a counter nobody measured reads unknown and never zero. ` +
+    `${whoPaid(judging)}`
   );
+}
+
+/**
+ * Which identity paid for the observation (D12).
+ *
+ * Today's wording where it inherited, which is then true — the environment it inherited is the
+ * session's, so the run's own account is what paid — with the reason it inherited after it, where
+ * a source was named and could not be used.
+ */
+function whoPaid(judging: Judging): string {
+  if (judging.modelEnvironment?.kind !== "file") {
+    return `It is drawn on the same account the run was.${unusableSource(judging)}`;
+  }
+  return (
+    `It is drawn on the identity the plugin's \`${ENV_FILE_OPTION}\` option names: that file's ` +
+    `variables were layered over this observation's own environment for every call counted here, ` +
+    `so this spend may not have come out of the account the run's did. The file itself is not ` +
+    `named — this document carries the option and never a path of yours.`
+  );
+}
+
+/** Why the named source was not used, where one was named at all — a line and never a value (D10). */
+function unusableSource(judging: Judging): string {
+  const environment = judging.modelEnvironment;
+  if (environment === undefined || environment.kind === "file") return "";
+  // Where nothing was judged for want of a credential, the *Defects* section says which option names
+  // one and whether what it named was used or was unusable — the whole of it, in one place
+  // (one-environment-file ticket 04; D11). This clause is that same sentence, and a document carrying
+  // it twice is what that ticket exists to stop.
+  if (judging.kind === "none" && judging.noCredential === true) return "";
+  return ` ${environment.why}`;
 }
 
 /**
@@ -987,9 +1071,31 @@ function tiers(judging: Judging): string {
         `\`${judging.notes.model}\``;
   const synthesis =
     judging.kind === "judged"
-      ? `one synthesis over the whole run on \`${judging.model}\``
+      ? `one synthesis over the whole run on ${askedFor(judging.model)}` +
+        servedClause(judging.servedBy)
       : "no synthesis: nothing read the whole run";
   return notes === undefined ? synthesis : `${notes}, and ${synthesis}`;
+}
+
+/**
+ * The model a call asked for, in the reader's words (one-environment-file ticket 03; D7).
+ *
+ * **`undefined` is not a figure nobody measured: it is a model nobody named.** It is what the owner's
+ * `code_review_model` set empty means — no model reaches the provider and the provider's own default
+ * serves the call — so it is said in words rather than left as a gap, which is what a blank between
+ * two backticks would read as. Said beside `servedClause` below, the pair is what lets a reader tell
+ * that case from an owner who named a model and from one who never touched the option.
+ */
+function askedFor(model: string | undefined): string {
+  return model === undefined
+    ? "the provider's own default, with no model named"
+    : `\`${model}\``;
+}
+
+/** What actually served a call, where the result said, so the cost line names it whether or not one
+ *  was asked for (ticket 03; D7). */
+function servedClause(servedBy: string | undefined): string {
+  return servedBy === undefined ? "" : ` (served by \`${servedBy}\`)`;
 }
 
 /**
@@ -1004,7 +1110,10 @@ function notesLine(notes: NotesSummary): string {
     `${notes.written} of ${plural(notes.attempted, "dispatch", "dispatches")} read from the ` +
     `inside, on \`${notes.model}\` — a cheap reading of each dispatch's own record as it finished, ` +
     `which is the only reading of what happened INSIDE a stage this debrief has. They are kept ` +
-    `beside the trace and, like it, are not to be forwarded.`;
+    `beside the trace and, like it, are not to be forwarded.` +
+    // Where this half stopped early, the figures above are the calls that were made and not the
+    // dispatches that were due, and a reader has to be able to tell (ticket 04; D11).
+    (notes.stopped === undefined ? "" : ` **It stopped there**: ${notes.stopped}.`);
   if (notes.missing.length === 0) return head;
   return (
     `${head} **No note for ${plural(notes.missing.length, "dispatch", "dispatches")}**, so this ` +

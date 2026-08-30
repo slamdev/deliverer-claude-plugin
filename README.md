@@ -56,8 +56,8 @@ You are needed for the conversation at the start and the merge at the end. Every
    The plugin depends on [`mattpocock-skills`](https://github.com/mattpocock/skills), which Claude Code installs
    alongside it.
 
-2. **Point the code review at credentials.** Claude Code asks for the plugin's options when you enable it, and you can
-   change them later from `/plugin`. The one that must be set is the **code review environment file** — see below.
+2. **Point the plugin at credentials.** Claude Code asks for the plugin's options when you enable it, and you can
+   change them later from `/plugin`. The one that must be set is the **environment file** — see below.
 
 3. **Give it a few seconds.** The first time on a new machine, the plugin sets itself up in the background — from the
    session you installed in, or from the next one you start, whichever comes first. If a review fails before that
@@ -76,28 +76,31 @@ You are needed for the conversation at the start and the merge at the end. Every
 
 Set these from `/plugin` → **deliverer**.
 
-**Code review environment file** — _required, no default._ Path to a file in `.env` format holding the credentials the
-code review runs under. Read once when a session starts, so an edit takes effect in your next session.
+**Environment file** — _required, no default._ Path to a file in `.env` format holding the credentials every model
+call the plugin makes runs under — each code review, and the observation of each run. Read once when a session starts,
+so an edit takes effect in your next session.
 
 **Code review effort** — _default `high`._ How deep each review goes: `low`, `medium`, `high`, `xhigh` or `max`. Deeper
 costs more time and money, and raises more findings for the fix waves to work through.
 
-**Code review model** — _default `opus[1m]`._ Which model reviews. The `[1m]` suffix is the one-million-token context
-window, and it is what lets a review read a large diff at all: the whole diff goes into the review's prompt before the
-model runs, so a bare alias meets an epic-sized change request with a "prompt is too long" failure and no review.
-Whatever you set is used verbatim, so a bare alias gives that window up. An alias travels between providers; the `[1m]`
-suffix does not — it selects a long-context beta, measured only against the first-party provider, where it works on
-`opus` and `sonnet` and is refused on `haiku`. On another provider, or on an account without that window, it may be
-refused as well; a round that meets that fails with a reason naming this option, and a bare alias is what you set
-instead. Leave it empty to take whatever your credentials already default to.
+**Code review model** — _default `opus[1m]`._ Which model reviews, and the model the observation's own synthesis runs on
+with it. The `[1m]` suffix is the one-million-token context window, and it is what lets a review read a large diff at
+all: the whole diff goes into the review's prompt before the model runs, so a bare alias meets an epic-sized change
+request with a "prompt is too long" failure and no review. Whatever you set is used verbatim, so a bare alias gives that
+window up. An alias travels between providers; the `[1m]` suffix does not — it selects a long-context beta, measured
+only against the first-party provider, where it works on `opus` and `sonnet` and is refused on `haiku`. On another
+provider, or on an account without that window, it may be refused as well; a round that meets that fails with a reason
+naming this option, and a bare alias is what you set instead. Leave it empty to take whatever your credentials already
+default to.
 
 **Observe runs** — _default on._ Whether each run is observed and comes back as a debrief. See
 [Observation](#observation) for what that means; turning it off stops the whole thing.
 
 ### The environment file
 
-Each review runs as its own Claude agent, and this file is how it logs in. One `KEY=value` per line; blank lines and `#`
-comments are fine. Put in whatever authenticates Claude Code for you, for example:
+Each review runs as its own Claude agent, and so does each reading an observation makes; this file is how they log in.
+One `KEY=value` per line; blank lines and `#` comments are fine. Put in whatever authenticates Claude Code for you, for
+example:
 
 ```
 CLAUDE_CODE_OAUTH_TOKEN=...
@@ -107,7 +110,9 @@ or an API key, or the variables for Bedrock or Vertex if that is how you are set
 control — it holds a credential.
 
 If the file is missing, unreadable, not in `.env` format, or assigns nothing, every review is refused with a message
-saying exactly that, rather than quietly running as whatever identity happened to be lying around.
+saying exactly that, rather than quietly running as whatever identity happened to be lying around. An observation is
+not refused: it falls back to whatever the process it was started in authenticates with, and its debrief says the file
+you named could not be used and why.
 
 ### Claude Code's own settings
 
@@ -223,10 +228,11 @@ notes of a few tens, and a trace that is nearly all of it — between 100 KB and
 and bounded: the trace is built to a 600,000-character budget however long the run was. They stay until you delete
 them yourself.
 
-**What it costs.** Observation calls models of its own, and they are drawn on the **same account your run
-authenticates with** — it inherits the environment your session started in, so on a subscription your run and its
-observer can compete for the same rate limit. There is no back-off and nothing to configure. It makes two kinds of
-call:
+**What it costs.** Observation calls models of its own, and they run under the **environment file you named above** —
+the same one each code review runs under. Where that file is what your own session authenticates with, which is the
+usual case, the observation draws on the same account your run does, so on a subscription your run and its observer can
+compete for the same rate limit; where it names another identity, that is the one the observation spends on, and the
+debrief says so. There is no back-off. It makes two kinds of call:
 
 - **One per dispatch, on a cheap tier**, the moment that dispatch finishes. A dispatch is one agent your run sent off
   to do one stage's work; the refinements measured here made three or four of them and the deliveries nine to fifteen.
@@ -270,9 +276,10 @@ trace and no debrief.
 Every run reports what its reviews spent. If that is more than you want, turn the **code review effort** down; if a
 change is high-stakes, turn it up.
 
-Observation spends models too, on the same account — see [Observation](#observation). Most of it is the one reading at
-the end of a run: measured all in at $3.18 to $3.48 for a refinement and about $6.70 for a delivery, on four readings
-of three runs, with one cheap-tier call per dispatch beside it.
+Observation spends models too, on the identity your **environment file** names — see
+[Observation](#observation). Most of it is the one reading at the end of a run: measured all in at $3.18 to $3.48 for a
+refinement and about $6.70 for a delivery, on four readings of three runs, with one cheap-tier call per dispatch beside
+it.
 Turning it off is one setting.
 
 ## Troubleshooting

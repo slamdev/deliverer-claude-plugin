@@ -165,6 +165,12 @@ What one round — or one whole **run** — cost: its tokens, and a dollar estim
 it. Either half can be known while the other is not. Unknown is the honest answer for a figure nobody measured, and
 never zero. _Avoid_: cost, usage, price
 
+**Environment file**:
+The file of `KEY=value` assignments the owner names, whose variables are layered over the environment of every model
+call the plugin makes — a **round**'s review as much as an **observer**'s reading. The owner writes it and the plugin
+neither enumerates nor interprets it, so whatever they authenticate with is what those calls run under. _Avoid_:
+credentials file, `.env`, secrets file, identity
+
 **Gate**:
 Whatever the repository enforces before a commit lands. Work that was asked for is never undone to turn one green; a
 gate red for work nobody asked for stays red, and is recorded on the commit as well as in the report. What was asked for

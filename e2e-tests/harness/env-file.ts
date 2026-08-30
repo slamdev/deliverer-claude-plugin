@@ -5,9 +5,10 @@
  * becomes an entry and none of them is looked at: which one authenticates what is never the
  * harness's business, which is exactly what lets a contributor authenticate with a subscription
  * token, an API key or something else and run these tests unchanged. ADR-0009 settles the same
- * arrangement for the delegated review, and the file this reads is the one a run then names as the
- * review's own environment file — read here for the session, named there for the review, inspected
- * in neither place.
+ * arrangement for the plugin's own model calls, and the file this reads is the one a run then names
+ * as the plugin's environment file — so it authenticates the delegated review and every call the
+ * **observer** beside the run makes. Read here for the session, named there for the plugin,
+ * inspected in neither place.
  *
  * Nothing here ever echoes a VALUE, for the reason the server's own parser gives: the whole point
  * of the file is that its values are credentials.
@@ -30,8 +31,8 @@ export async function readEnvFileWhole(path: string): Promise<Record<string, str
   } catch {
     throw new Error(
       `no environment file at ${path}. Every run hands that file to its session and names it as ` +
-        `the delegated review's environment file, so the tests cannot run without one. It is the ` +
-        `same .env the ./claude wrapper loads; CONTRIBUTING.md says what belongs in it.`,
+        `the plugin's own environment file, so the tests cannot run without one. It is the same ` +
+        `.env the ./claude wrapper loads; CONTRIBUTING.md says what belongs in it.`,
     );
   }
   const variables: Record<string, string> = {};
