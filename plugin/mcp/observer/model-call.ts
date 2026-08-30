@@ -83,6 +83,14 @@ export function errorText(error: unknown): string {
  */
 const NOT_LOGGED_IN = /^\s*not logged in\b/i;
 
+/**
+ * The code that one carries, named once (one-environment-file ticket 04; D11).
+ *
+ * Both callers compare a classification against it to decide whether a failure ends the judging,
+ * and a bare string literal in each of them is exactly the drift nothing would catch.
+ */
+export const NOT_LOGGED_IN_CODE = "not_logged_in";
+
 /** The other answers the SDK reports as a SUCCESS while the whole result is its own failure text. */
 const SDK_FAILURES: readonly { readonly pattern: RegExp; readonly code: string }[] = [
   { pattern: /^\s*API Error:\s*Connection closed mid-response\b/i, code: "connection_lost" },
@@ -112,13 +120,18 @@ export function failureInText(
   }
   if (NOT_LOGGED_IN.test(text)) {
     return {
-      code: "not_logged_in",
+      code: NOT_LOGGED_IN_CODE,
+      // What this sentence used to say was that the observer reads no credential file of its own
+      // and that the plugin's option "names the identity the REVIEW runs as and stays the review's"
+      // — the opposite of what is true since one file began authenticating every model call the
+      // plugin makes (one-environment-file ticket 04; D18, with ADR-0009 holding the decision), and
+      // it said it in the one document a maintainer reads. Where this detail lands NOW is the notes
+      // file and not the debrief: the debrief says the whole of it once, in `./judge.ts`.
       detail:
         `${what} ran but was NOT LOGGED IN, so nothing was judged — it answered: ` +
-        `${text.trim().slice(0, 300)}. The observer authenticates with whatever the session it was ` +
-        `started beside authenticates with, and it reads no credential file of its own: the ` +
-        `plugin's code_review_claude_env_file names the identity the REVIEW runs as and stays the ` +
-        `review's`,
+        `${text.trim().slice(0, 300)}. No credential reached this observation: what the plugin's ` +
+        `code_review_claude_env_file option names is what its model calls run under, layered over ` +
+        `the environment the observation was started in`,
     };
   }
   const self = SDK_FAILURES.find(({ pattern }) => pattern.test(text));
@@ -132,6 +145,46 @@ export function failureInText(
     };
   }
   return undefined;
+}
+
+/* ──────────────────── the one failure that ends the judging, once ──────────────────── */
+
+/**
+ * That no credential reached this observation, remembered for the life of it
+ * (one-environment-file ticket 04; D11).
+ *
+ * **The first result classified `not_logged_in` ends the judging**: no further **dispatch note** is
+ * attempted and the synthesis is not attempted. What the human is owed is that fact once, in the
+ * line they were going to be shown anyway and in one place in the **debrief** — not the same
+ * sixty-word disclaimer thirteen times over where the account of each stage's interior belongs.
+ *
+ * **Sticky, and that is the whole of why this is an object rather than a local.** The notes half
+ * catches up on every rewrite of a live debrief and the synthesis runs at the finalise, so a fact
+ * remembered for one rewrite only would be rediscovered on the next — which is the defect this
+ * exists to prevent rather than a tidiness. One of these per observation, built where the
+ * **environment file** is read (`./judge.ts`'s factory, D3) and shared by the two halves that
+ * spend, because either of them may be the call that learns it: the notes ordinarily, and the
+ * synthesis on a run whose dispatches had no interior to read.
+ *
+ * **Only that one classification closes it.** No result, prompt too long and connection lost are
+ * per-call conditions — a lost connection may come back, and an oversized slice says nothing about
+ * the next one — so none of them may cost a run every remaining note.
+ */
+export interface CredentialGate {
+  /** whether a call has already come back not logged in */
+  readonly closed: () => boolean;
+  /** remember that one has, for the rest of this observation */
+  readonly close: () => void;
+}
+
+export function credentialGate(): CredentialGate {
+  let closed = false;
+  return {
+    closed: () => closed,
+    close: () => {
+      closed = true;
+    },
+  };
 }
 
 /* ───────────────────────────── what the observation itself cost ───────────────────────────── */

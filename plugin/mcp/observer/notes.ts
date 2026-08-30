@@ -26,7 +26,11 @@
  *    which is where the delivery repository's own content actually is.
  *  - **A failed note costs the debrief that dispatch's interior and nothing else.** The synthesis
  *    still runs, on the trace and on whatever notes did come back, and the debrief names the
- *    dispatches it has no note for (D29).
+ *    dispatches it has no note for (D29). **With one exception**: a note that came back not logged
+ *    in ends the judging outright (one-environment-file ticket 04; D11), because there is no
+ *    credential for the calls after it either — `CredentialGate` in `./model-call.ts`
+ *    carries why that is remembered rather than met again, and it is the only classification that
+ *    does it.
  *
  * **The classification of a success that is really a failure is ticket 05's**, in
  * `./model-call.ts`, reused rather than re-invented for the reason that file gives: the one outcome
@@ -40,9 +44,11 @@ import {
   errorText,
   failureInText,
   loadQuery,
+  NOT_LOGGED_IN_CODE,
   NOTHING_MEASURED,
   NOTHING_SPENT,
   servedBy,
+  type CredentialGate,
   type Query,
   type QueryMessage,
 } from "./model-call.ts";
@@ -565,7 +571,21 @@ export type NoteOutcome =
       readonly readBy: string;
       readonly cost: ObservationCost;
     }
-  | { readonly kind: "failed"; readonly why: string; readonly cost: ObservationCost };
+  | {
+      readonly kind: "failed";
+      readonly why: string;
+      readonly cost: ObservationCost;
+      /**
+       * That this note failed because nothing authenticated it, which is the one failure that ends
+       * the judging (one-environment-file ticket 04; D11).
+       *
+       * Reported rather than acted on here: `noteFor` reads one dispatch and classifies what came
+       * back, and what a classification COSTS the rest of the observation is `runNotes`' below —
+       * the half that knows how many dispatches are left and holds the gate the fact is remembered
+       * in.
+       */
+      readonly noCredential?: true;
+    };
 
 export interface NoteInput {
   readonly dispatch: TraceDispatch;
@@ -716,7 +736,15 @@ async function call(query: Query, input: NoteInput): Promise<NoteOutcome> {
       `slice, and it is the cap that is wrong rather than the run.`,
   );
   if (carried !== undefined) {
-    return { kind: "failed", why: `${carried.code}: ${carried.detail}`, cost };
+    return {
+      kind: "failed",
+      why: `${carried.code}: ${carried.detail}`,
+      cost,
+      // The one of the four that ends the judging rather than costing this dispatch alone (ticket
+      // 04; D11). The other three are per-call conditions and are reported as this note's failure
+      // and nothing more.
+      ...(carried.code === NOT_LOGGED_IN_CODE ? ({ noCredential: true } as const) : {}),
+    };
   }
 
   const answer = readNote(text);
@@ -752,7 +780,8 @@ async function call(query: Query, input: NoteInput): Promise<NoteOutcome> {
  * rather than written over.
  */
 export interface RunNotes {
-  /** notes every dispatch that has finished, or — when finalising — every dispatch at all */
+  /** notes every dispatch that has finished, or — when finalising — every dispatch at all; and
+   *  nothing at all once a call has come back not logged in (ticket 04; D11) */
   readonly catchUp: (input: {
     readonly trace: Trace;
     readonly dispatches: readonly TraceDispatch[];
@@ -778,6 +807,8 @@ export function runNotes(
   how: { readonly beside: boolean },
   // Read once by `./judge.ts`'s factory and handed to every note this half makes (D3).
   environment: ModelEnvironment,
+  // Built once beside it, and shared with the synthesis (one-environment-file ticket 04; D11).
+  credential: CredentialGate,
 ): RunNotes {
   let file: NotesFile | undefined;
   let cost: ObservationCost = NOTHING_SPENT;
@@ -785,9 +816,16 @@ export function runNotes(
   let attempted = 0;
   const noted = new Set<string>();
   const missing: string[] = [];
+  let stopped: string | undefined;
 
   return {
     catchUp: async ({ trace, dispatches, finalising }) => {
+      // **Nothing further is attempted once a call has come back not logged in** (ticket 04; D11).
+      // Before the `due` set below rather than inside it, because a run of thirteen dispatches asks
+      // this half to catch up on every rewrite of a live debrief and once more at the finalise: the
+      // dispatches left are deliberately not marked noted and not counted as attempted, so what the
+      // debrief reports is the calls that were made and no others.
+      if (credential.closed()) return;
       // A dispatch is noted the moment it FINISHES — its tool result for a foreground one, its
       // completion notification for a background one. A background dispatch's result lands in
       // milliseconds carrying `async_launched`, so keying this to the result would note a stage
@@ -835,7 +873,13 @@ export function runNotes(
         });
         cost = addCosts(cost, outcome.cost);
         const where = `#${dispatch.ordinal} \`${dispatch.agentType}\``;
-        if (outcome.kind === "failed") missing.push(`${where} — ${outcome.why}`);
+        // Every failure but the credential one is named here, dispatch by dispatch, because each is
+        // that dispatch's own loss. The credential one is not: what it costs is the whole judging
+        // rather than this dispatch, the debrief states that once where nothing was judged, and a
+        // per-dispatch entry repeating it is precisely what ticket 04 exists to remove (D11).
+        if (outcome.kind === "failed" && outcome.noCredential !== true) {
+          missing.push(`${where} — ${outcome.why}`);
+        }
         const landed = await open
           .append(
             renderNote({
@@ -844,9 +888,16 @@ export function runNotes(
               body:
                 outcome.kind === "written"
                   ? outcome.body
-                  : `NO NOTE. Nothing read this dispatch's interior: ${outcome.why}. The one ` +
-                    `synthesis at the end of this run still ran, on the trace and on the notes ` +
-                    `that did come back; what is missing from it is this dispatch's inside.`,
+                  : `NO NOTE. Nothing read this dispatch's interior: ${outcome.why}. ` +
+                    // The ordinary loss is this dispatch's alone and the synthesis still reads the
+                    // rest; the credential one is not, and saying it was would be a claim about a
+                    // call that was never made (one-environment-file ticket 04; D11).
+                    (outcome.noCredential === true
+                      ? `The judging stopped here: no dispatch after this one was read, and the ` +
+                        `one synthesis at the end of this run was not attempted either.`
+                      : `The one synthesis at the end of this run still ran, on the trace and on ` +
+                        `the notes that did come back; what is missing from it is this dispatch's ` +
+                        `inside.`),
             }),
           )
           .then(() => true)
@@ -860,6 +911,22 @@ export function runNotes(
         // then could not be written down would otherwise be counted twice over — once in `written`
         // and once in `missing` — and the header would claim a reading the debrief does not have.
         if (outcome.kind === "written" && landed) written += 1;
+        // **The judging ends here** (ticket 04; D11). Remembered in the gate first, so the rewrite
+        // after this one attempts nothing and the synthesis is not attempted either, and then the
+        // loop stops: every dispatch still due would learn the same thing at the same price. The
+        // record above is written first, so the notes file says why it stops where it
+        // does; the debrief says the whole of it once, and `stopped` below is only how that
+        // document's notes figure keeps from reading as a run that owed one note.
+        if (outcome.kind === "failed" && outcome.noCredential === true) {
+          credential.close();
+          // Deliberately says nothing about WHY, which the debrief states once and in one place: it
+          // is here so that a count of the calls made cannot read as a count of the dispatches that
+          // were due (ticket 04; D11).
+          stopped =
+            `the judging stopped at this call, so no dispatch after it was read either — what ` +
+            `stopped it is under *Defects* below, and it is not about this dispatch`;
+          break;
+        }
       }
     },
     text: async () => (file === undefined ? undefined : readNotes(file.path)),
@@ -872,6 +939,7 @@ export function runNotes(
       path: file?.path,
       missing,
       spend: cost,
+      stopped,
     }),
   };
 }

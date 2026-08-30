@@ -37,6 +37,11 @@
  *    run is not managed (D28): no back-off, no deferral, and no detection of what kind of credential
  *    is in hand — which the widening leaves decided as it was, since the observation may now draw on
  *    a different account than the run without any of the three becoming this file's business.
+ *  - **And where nothing authenticates it, this call is not made at all.** The first result
+ *    classified `not_logged_in` ends the judging, once (one-environment-file ticket 04; D11):
+ *    `CredentialGate` in `./model-call.ts` carries why that fact is remembered for the life of the
+ *    observation rather than met again by every call, and `noCredentialReached` below is the one
+ *    place a debrief states it. The other three classifications are per-call and unchanged.
  *
  * **The classification of a success that is really a failure is the review's, re-implemented rather
  * than imported.** `hooks/install-mcp-server.sh` publishes `server/` and `observer/` as two
@@ -61,16 +66,20 @@ import {
   addCosts,
   bound,
   costFromResult,
+  credentialGate,
   errorText,
   failureInText,
   loadQuery,
+  NOT_LOGGED_IN_CODE,
   NOTHING_MEASURED,
   NOTHING_SPENT,
   servedBy,
+  type CredentialGate,
   type Query,
   type QueryMessage,
 } from "./model-call.ts";
 import {
+  credentialSource,
   envOption,
   MODEL_OPTION,
   modelOption,
@@ -784,6 +793,16 @@ export interface SynthesisInput {
    * observation.
    */
   readonly environment: ModelEnvironment;
+  /**
+   * Whether a call has already come back not logged in, and where this call says so if it is the
+   * first one that does (one-environment-file ticket 04; D11).
+   *
+   * Passed in for the reason the environment above is: one observation has one of these, built when
+   * it starts. This is not the ordinary place it closes — a **dispatch note** lands long before the
+   * synthesis — but it is the place it closes on a run whose dispatches left no interior for a note
+   * to read, and the fact the **debrief** states has to be the same fact either way.
+   */
+  readonly credential: CredentialGate;
 }
 
 /**
@@ -926,7 +945,24 @@ export async function synthesise(input: SynthesisInput): Promise<Judging> {
   const text = typeof result.result === "string" ? result.result : "";
 
   const carried = failureInText(text, "the synthesis", noRoom(input.model));
-  if (carried !== undefined) return failed(`${carried.code}: ${carried.detail}`, cost);
+  if (carried !== undefined) {
+    // The one of the four that is about the observation rather than about this call (ticket 04;
+    // D11). Remembered — so a later finalise of the same observation attempts nothing — and
+    // answered in the words the debrief says once, rather than with the classification's own detail:
+    // that detail is the account of a call, and what a reader needs here is the account of why
+    // nothing was judged at all. The call's own words are in the notes file where every other call's
+    // are. The other three stay per-call failures and read exactly as they did.
+    if (carried.code === NOT_LOGGED_IN_CODE) {
+      input.credential.close();
+      return noCredentialReached(
+        input.environment,
+        addCosts(before, cost),
+        notes,
+        input.earlier.summary,
+      );
+    }
+    return failed(`${carried.code}: ${carried.detail}`, cost);
+  }
 
   const answer = readAnswer(text);
   if (answer.kind === "malformed") {
@@ -992,6 +1028,47 @@ function notJudged(
   };
 }
 
+/**
+ * The one place a **debrief** says that nothing was judged for want of a credential
+ * (one-environment-file ticket 04; D11 and D13).
+ *
+ * **One statement, and it carries the three things a reader is owed**: that nothing was judged and
+ * why, which option names an identity, and — where a file was named — whether it was used or was
+ * unusable. `./model-env.ts`'s `credentialSource` is where the last two are worded, because that is
+ * the module that knows which of them happened.
+ *
+ * **What this replaces is thirteen copies of one sentence.** Every note and then the synthesis met
+ * the same missing credential and each said so where the account of a stage's interior belongs, in a
+ * document whose shape then looked complete. So the judging now stops at the first of them and this
+ * is what the reader gets instead — beside the header and every mechanical figure, which are read
+ * from the host's own records and are untouched by any of it.
+ *
+ * **It quotes nothing of the call and carries nothing of the file but the option's own key.** No
+ * value the owner's file assigns, no variable name and no path: the debrief is the document the human
+ * is told to forward unread (D12), and the SDK's own answer to the call is in the notes file with
+ * every other call's.
+ */
+function noCredentialReached(
+  environment: ModelEnvironment,
+  cost: ObservationCost,
+  notes: NotesSummary | undefined,
+  continuity?: ContinuitySummary,
+): Judging {
+  return {
+    kind: "none",
+    noCredential: true,
+    reason:
+      `No credential reached this observation, so nothing judged this run: a model call it made came ` +
+      `back not logged in, and the judging stopped at that one. Nothing further was attempted — one ` +
+      `observation reads one identity, so every call after it would have been the same call. ` +
+      `${credentialSource(environment)} Every figure above is the run's own, read from the host's ` +
+      `records by code that calls no model, and it stands.`,
+    cost,
+    notes,
+    continuity,
+  };
+}
+
 /* ────────────────────────────── the judge the observer holds ────────────────────────────── */
 
 /**
@@ -1043,9 +1120,16 @@ export function synthesisJudge(
 ): (input: { trace: Trace; facts: RunFacts; finalising: boolean }) => Promise<Judging> {
   const environment = readModelEnvironment();
   const model = readModelChoice(SYNTHESIS_MODEL);
+  // **Built here because here is where "the life of the observation" is** (ticket 04; D11). This
+  // factory is what both callers build once — the live observer when it starts watching, a replay
+  // when it is asked to judge — so a fact kept in it survives every rewrite of a live debrief and
+  // reaches the finalise, which is exactly what the notes half catching up on each rewrite and the
+  // synthesis running at the finalise would otherwise rediscover call by call.
+  const credential = credentialGate();
   // The model is the synthesis's alone: `runNotes` is given the environment and never the model,
-  // because a note stays on its own cheap alias (ticket 03; D7).
-  const notes = runNotes(dataDirectory, how, environment);
+  // because a note stays on its own cheap alias (ticket 03; D7). The gate it IS given, because a
+  // note is ordinarily the call that learns there is no credential.
+  const notes = runNotes(dataDirectory, how, environment, credential);
   let made: Judging | undefined;
   /**
    * What every answer this observation gives says its calls ran under (D12).
@@ -1079,6 +1163,20 @@ export function synthesisJudge(
           `run's dispatches have no note: ${errorText(error)}`,
       );
     }
+    // **Nothing further is attempted, and the answer is the same one at every rewrite** (ticket 04;
+    // D11). Before the mid-run answer below and before the finalise's own work, because both of them
+    // would otherwise promise a synthesis that is not going to run: `stillWatching` says the
+    // synthesis reads the notes as well as the trace, and the finalise would go on to make the call
+    // that has already been answered. Held on the finalise so a second finalise — the idle bound's
+    // case — reads it back rather than working it out again. And the earlier debriefs of this epic
+    // are neither listed nor read on this path: they exist to reach the one whole-run reading, so a
+    // debrief saying it had two of them would name a reading that never happened (ticket 07).
+    if (credential.closed()) {
+      const answer = under(noCredentialReached(environment, notes.cost(), notes.summary()));
+      if (!input.finalising) return answer;
+      made = answer;
+      return made;
+    }
     if (!input.finalising) return under(stillWatching(notes.cost(), notes.summary()));
     // Read here rather than inside `synthesise`, and read ONCE at the finalise: the earlier debriefs
     // are a whole-run reading by construction (they reach the one synthesis and no dispatch note),
@@ -1101,6 +1199,7 @@ export function synthesisJudge(
           earlier,
           model,
           environment,
+          credential,
         }),
       );
     } catch (error) {

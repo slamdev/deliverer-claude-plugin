@@ -101,6 +101,17 @@ export interface NotesSummary {
   /** the dispatches nothing could be noted for, in a reader's words */
   readonly missing: readonly string[];
   /**
+   * Why this half stopped before the dispatches ran out, where it did (one-environment-file ticket
+   * 04; D11).
+   *
+   * **It is not a second statement of why nothing was judged** — that is said once, in the
+   * `Judging`'s own reason, and the whole point of the ticket is that it is said once. This is the
+   * clause that keeps `written` and `attempted` from reading as the whole story: a run of thirteen
+   * dispatches whose first note came back unauthenticated reports one call made and no others, and
+   * without this the figure would read as a run that owed exactly one note.
+   */
+  readonly stopped?: string;
+  /**
    * What this half alone spent, so the two tiers can be told apart by whoever is paying.
    *
    * The header's own figure covers both together and stays that way — one document, one number.
@@ -132,6 +143,15 @@ export type Judging =
       readonly kind: "none";
       /** the one line naming what stopped the judging */
       readonly reason: string;
+      /**
+       * That what stopped it was that no credential reached the observation (one-environment-file
+       * ticket 04; D11 and D13).
+       *
+       * The reason above already says so in full, and this is not a second copy of it: it is the flag
+       * the **announcement** reads, because the line a human meets at the stop gains one clause in
+       * this case and carries none of the document's other wording. Nothing in the debrief reads it.
+       */
+      readonly noCredential?: true;
       readonly cost: ObservationCost;
       /** what the notes half did before it, where anything did (run-observation ticket 06) */
       readonly notes?: NotesSummary;
@@ -1027,7 +1047,13 @@ function whoPaid(judging: Judging): string {
 /** Why the named source was not used, where one was named at all — a line and never a value (D10). */
 function unusableSource(judging: Judging): string {
   const environment = judging.modelEnvironment;
-  return environment === undefined || environment.kind === "file" ? "" : ` ${environment.why}`;
+  if (environment === undefined || environment.kind === "file") return "";
+  // Where nothing was judged for want of a credential, the *Defects* section says which option names
+  // one and whether what it named was used or was unusable — the whole of it, in one place
+  // (one-environment-file ticket 04; D11). This clause is that same sentence, and a document carrying
+  // it twice is what that ticket exists to stop.
+  if (judging.kind === "none" && judging.noCredential === true) return "";
+  return ` ${environment.why}`;
 }
 
 /**
@@ -1084,7 +1110,10 @@ function notesLine(notes: NotesSummary): string {
     `${notes.written} of ${plural(notes.attempted, "dispatch", "dispatches")} read from the ` +
     `inside, on \`${notes.model}\` — a cheap reading of each dispatch's own record as it finished, ` +
     `which is the only reading of what happened INSIDE a stage this debrief has. They are kept ` +
-    `beside the trace and, like it, are not to be forwarded.`;
+    `beside the trace and, like it, are not to be forwarded.` +
+    // Where this half stopped early, the figures above are the calls that were made and not the
+    // dispatches that were due, and a reader has to be able to tell (ticket 04; D11).
+    (notes.stopped === undefined ? "" : ` **It stopped there**: ${notes.stopped}.`);
   if (notes.missing.length === 0) return head;
   return (
     `${head} **No note for ${plural(notes.missing.length, "dispatch", "dispatches")}**, so this ` +

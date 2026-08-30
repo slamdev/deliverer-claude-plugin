@@ -107,11 +107,40 @@ const WHAT_A_DEBRIEF_IS =
   "the file says where to send it. The trace beside it is NOT — that one is bounded by nothing, " +
   "and its own name says so.";
 
+/**
+ * The one clause a line gains where nothing in the debrief was judged for want of a credential
+ * (one-environment-file ticket 04; D13).
+ *
+ * **The human meets this where they already meet the feature.** Without it they open a document whose
+ * shape looks complete — a header, every figure, a *Defects* section — and find that the part it
+ * exists for is the absence of anybody having looked. The debrief says the whole of it in one place;
+ * this says the fact and the option, and leaves the rest to the file.
+ *
+ * **It names the option and nothing else about it**: no value, no variable name and no path, exactly
+ * as the debrief may not carry them — and a line printed into a session is read by the human and
+ * seen by the host, which is one more reason than the debrief has.
+ */
+const NOTHING_WAS_JUDGED =
+  "Nothing in it was judged: no credential reached the observation, so a model call it made came " +
+  "back not logged in and it stopped there rather than making the same call again. Your run itself " +
+  "was not affected — the observation runs outside it — and every figure in the debrief is still " +
+  "the run's own. What those model calls authenticate as is the plugin's " +
+  "code_review_claude_env_file option, and the debrief says what became of it here.";
+
 export interface DebriefAnnouncement {
   readonly kind: "debrief";
   readonly debriefPath: string;
   /** one line naming the skill, the epic and how the run went */
   readonly headline: string;
+  /**
+   * Whether nothing in that debrief was judged because no credential reached the observation
+   * (ticket 04; D11 and D13).
+   *
+   * Required rather than optional, and a boolean rather than the clause itself: the two producers are
+   * one file — `./observer.ts` — and both of them have the judging in hand, while the WORDING of
+   * every line the human meets lives here and in one place.
+   */
+  readonly noCredential: boolean;
 }
 
 export interface FailureAnnouncement {
@@ -122,12 +151,26 @@ export interface FailureAnnouncement {
 
 export type Announcement = DebriefAnnouncement | FailureAnnouncement;
 
+/**
+ * The clauses that go between the headline and what a debrief is — today exactly one, and only where
+ * it applies (ticket 04; D13).
+ *
+ * Placed after the headline because the headline is what the debrief is ABOUT and this is what it
+ * came to; placed before `WHAT_A_DEBRIEF_IS` because that paragraph tells the human it is safe to
+ * forward, which is true of an unjudged debrief as well and reads oddly in front of the reason it is
+ * thin.
+ */
+function whatCameOfIt(announcement: DebriefAnnouncement): readonly string[] {
+  return announcement.noCredential ? [NOTHING_WAS_JUDGED] : [];
+}
+
 /** The line the `Stop` hook prints: the run has stopped and here is what came of watching it. */
 export function stopLine(announcement: Announcement): string {
   if (announcement.kind === "failure") return failureLine(announcement);
   return [
     `deliverer watched this run and wrote a debrief of it: ${announcement.debriefPath}`,
     announcement.headline,
+    ...whatCameOfIt(announcement),
     WHAT_A_DEBRIEF_IS,
     SWITCH_OFF_LINE,
   ].join("\n\n");
@@ -140,6 +183,9 @@ export function promptLine(announcement: Announcement): string {
     `deliverer has a debrief you have not seen yet, from a run it watched: ` +
       `${announcement.debriefPath}`,
     announcement.headline,
+    // The same clause, for the same reason both lines already say what a debrief is: a human meets
+    // exactly one of the two for any given debrief (ticket 04; D13).
+    ...whatCameOfIt(announcement),
     WHAT_A_DEBRIEF_IS,
     SWITCH_OFF_LINE,
   ].join("\n\n");

@@ -308,6 +308,7 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
             kind: "debrief",
             debriefPath: written.written.debriefPath,
             headline: headlineOf(written),
+            noCredential: nothingJudgedFor(written),
           });
           await mark(options, `stopped watching — ${outcome.reason}`);
           return { kind: "debriefed", debriefPath: written.written.debriefPath };
@@ -409,6 +410,7 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
           kind: "debrief",
           debriefPath: written.written.debriefPath,
           headline: headlineOf(written),
+          noCredential: nothingJudgedFor(written),
         });
         await mark(options, `finalised — ${why(signalled)}`);
       }
@@ -493,6 +495,20 @@ function headlineOf(outcome: Extract<DebriefOutcome, { kind: "written" }>): stri
     `${facts.human.questionRounds} question rounds put to you and ` +
     `${formatDuration(facts.human.totalWaitMs)} of the run spent waiting on you.`
   );
+}
+
+/**
+ * Whether nothing in the debrief just written was judged for want of a credential
+ * (one-environment-file ticket 04; D11 and D13).
+ *
+ * Read off the judging the reading already carries rather than out of the file, which is why
+ * `DebriefOutcome` carries it at all: the line is written in the same breath as the debrief, and
+ * re-reading a document to learn what the code that wrote it already knew is how the two come apart.
+ * `./announce.ts` owns the wording; this is the whole of what it needs.
+ */
+function nothingJudgedFor(outcome: Extract<DebriefOutcome, { kind: "written" }>): boolean {
+  const { judging } = outcome;
+  return judging.kind === "none" && judging.noCredential === true;
 }
 
 async function announce(options: ObserveOptions, announcement: Announcement): Promise<void> {

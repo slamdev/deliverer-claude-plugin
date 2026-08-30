@@ -143,6 +143,26 @@ export function envOption(environment: ModelEnvironment): { env?: NodeJS.Process
 }
 
 /**
+ * Where this observation's model calls got their environment from, in the reader's words
+ * (ticket 04; D11 and D13).
+ *
+ * **One sentence, for the one place a debrief says nothing was judged for want of a credential.**
+ * The reader owes that fact which option names an identity and — where a file was named — whether it
+ * was used or was unusable, and those are exactly the two things this type already knows. The
+ * inheriting cases say it themselves already, in `why`, so this adds the sentence the used case has
+ * no other reason to carry.
+ *
+ * **Never the path and never a value** (D12): it names the option key, which is the most a document
+ * the human is told to forward unread may hold.
+ */
+export function credentialSource(environment: ModelEnvironment): string {
+  return environment.kind === "file"
+    ? `The environment file the plugin's ${ENV_FILE_OPTION} option names was read and used: what ` +
+        `it assigns is what that call ran under. Its own path is not named here.`
+    : environment.why;
+}
+
+/**
  * Which model one of the observation's calls names, or that it names none at all (ticket 03; D7).
  *
  * **Two members, because a name and NO name are two different requests and a bare string could only
