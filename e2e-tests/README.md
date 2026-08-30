@@ -30,9 +30,10 @@ Four kinds of **spend** sit outside it, and each is outside for its own reason:
 - **The observation.** Both paid tests are observed, because the plugin observes **run**s by default and the harness
   deliberately leaves that default alone — the run's own `/deliverer:refine …` or `/deliverer:build …` is the
   **observer**'s trigger, so nothing switches it on and nothing switches it off. The observer runs as its own process
-  outside the session, started by the plugin's hook and inheriting the session's environment, so it draws on **the same
-  account and the same credentials the run does** and its cost reaches the orchestrator's total no more than a round's
-  does. Measured by hand against runs of both skills, judging on: a refinement's observation costs **$3.18–$3.48**, of
+  outside the session, started by the plugin's hook, and it authenticates from the environment file the install named —
+  the repository's own, which is what the session gets too (ADR-0009) — so it draws on **the same account and the same
+  credentials the run does** and its cost reaches the orchestrator's total no more than a round's does. Measured by
+  hand against runs of both skills, judging on: a refinement's observation costs **$3.18–$3.48**, of
   which roughly **$0.40** is the per-**dispatch** notes on the cheap tier; a delivery's **about $6.70**, of which
   **$1.30** is. That is four readings of three runs and nothing more — CONTRIBUTING.md § Replaying a run's records
   carries what it rests on.

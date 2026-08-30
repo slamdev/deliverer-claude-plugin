@@ -289,5 +289,11 @@ export function readModelEnvironment(from: NodeJS.ProcessEnv = process.env): Mod
   }
 
   // D2, and the whole of it: this process's environment first, the file's variables second.
+  //
+  // Why a file is layered here at all, rather than the inherited environment being enough:
+  // `docs/specs/run-observation/spec.md`'s claim C2 holds the measurement. On Claude Code 2.1.251
+  // the hook boundary withholds `CLAUDE_CODE_OAUTH_TOKEN` specifically, and no setting on the
+  // consumer's side gets it through. That is a claim about a version and never a contract, which
+  // is why an unusable file falls back above instead of refusing.
   return { kind: "file", path, env: { ...from, ...variables } };
 }

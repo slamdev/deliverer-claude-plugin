@@ -43,9 +43,12 @@ const OFFICIAL_MARKETPLACE = {
 };
 
 /**
- * The plugin's three `userConfig` options, as a run sets them. The keys are the manifest's own
- * names rather than this package's spelling of them, because each one is handed to `--config`
- * verbatim and the host validates it against the manifest.
+ * The three `userConfig` options a run sets, of the four the plugin declares. The keys are the
+ * manifest's own names rather than this package's spelling of them, because each one is handed to
+ * `--config` verbatim and the host validates it against the manifest.
+ *
+ * The fourth is the observation switch, and it is deliberately absent: it is on by default and a
+ * run meets the default a user meets, which `./debrief.ts` records.
  */
 export interface PluginOptions {
   readonly code_review_effort: string;
@@ -61,6 +64,11 @@ export interface PluginOptions {
  * `sonnet` model and the `low` effort tier — and at the repository's own environment file, handed
  * over whole. A refinement never starts a round; a delivery against the same install would, and
  * these are the values it runs at.
+ *
+ * Two of the three reach further than the review since ADR-0009: that environment file
+ * authenticates every model call the plugin makes, and the model setting carries the observation's
+ * synthesis with the review. So an observed run's own calls run on these values too, and their
+ * **spend** is outside every figure a **ceiling** sees — `../README.md` says what it comes to.
  *
  * One copy, because both tests install the same plugin the same way: a second copy is one that goes
  * stale in whichever test nobody ran.

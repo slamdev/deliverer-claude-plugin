@@ -338,17 +338,44 @@ for a delivery. What it answers is the only question worth asking of that half: 
 found by hand in a run you remember.
 
 ```
-set -a; . ./.env; set +a
 CLAUDE_PLUGIN_DATA=$(mktemp -d) \
+CLAUDE_PLUGIN_OPTION_CODE_REVIEW_CLAUDE_ENV_FILE=$PWD/.env \
   node plugin/mcp/observer/debrief.ts --judge ~/.claude/projects/<munged-cwd>/<session-id>.jsonl
 ```
 
-**The credentials are the step this trips on.** The observer authenticates with whatever the environment it inherits
-authenticates with and reads no credential file of its own — the plugin's `code_review_claude_env_file` names the
-identity a **round** runs as and stays the review's — so from a plain container shell every call comes back
-`not_logged_in` and the debrief says so where its **defect**s belong. The first line above is what puts the wrapper's
-own `.env` in the environment; the free form needs none of it. And it cannot reproduce byte for byte — determinism is
-the free form's claim and only the free form's.
+**The credentials come from the file that variable names, and from nothing else.** One **environment file** the owner
+names authenticates every model call the plugin makes — each **round**'s review and every call an observation makes
+alike, per ADR-0009 — and the observation reads its path from the host's own
+`CLAUDE_PLUGIN_OPTION_CODE_REVIEW_CLAUDE_ENV_FILE`, which is the second line above and is the same variable a live
+observer is handed. So the shell you replay from needs to carry no credential of its own: name the repository's own
+`.env`, the one `./claude` already loads, and the judged run authenticates as that file does. The free form takes
+none of it — no variable, no model, no spend. Replay's own output is how you check that the file you named is the file
+that was read: under the line saying what the judging did it prints an `environment:` line naming that path, or saying
+it inherited and why. And a judged replay cannot reproduce byte for byte — determinism is the free form's claim and
+only the free form's.
+
+**Four credential shapes, and the artefact that answers each.** Change what the variable names and read the answer in
+what the run left behind rather than in the observer's internals:
+
+- **a file assigning a real credential** — `debrief.md` carries the **defect**s, its header has the notes line, its
+  cost line attributes the spend to the identity the option names, and `DO-NOT-FORWARD-notes.txt` holds one
+  **dispatch note** per dispatch. This is the shape the costs below were measured on;
+- **a file assigning a bogus credential** — `debrief.md` says once, where its defects belong, that no credential
+  reached the observation, naming the option and that the file it named was read and used. Exactly one model call is
+  attempted and no synthesis is: the notes file holds that one dispatch's `NO NOTE` saying the judging stopped there,
+  and the header's notes figure says the same rather than counting dispatches nobody called for. Two things about
+  getting there. The file is layered OVER your shell's environment rather than replacing it, so assign the bogus value
+  to the very variable your shell authenticates with, or replay from a shell carrying nothing — a bogus
+  `ANTHROPIC_API_KEY` beside an inherited working token authenticates perfectly well, and you will have paid for the
+  first shape by accident. And this shape needs a provider that refuses the credential as a login: measured against a
+  gateway, a bad token came back as an answer in no instructed shape at all, which is a failed note per dispatch and a
+  malformed synthesis, not the one credential statement;
+- **an unreadable or malformed file**, or one that assigns nothing at all — the same one statement, worded for a named
+  source that could not be used: it gives a line number or the errno code and never a value, and says the observation
+  ran on the environment it inherited instead. Replay's `environment:` line says `inherited` with the same reason;
+- **no variable at all** — that same fallback, worded for a source nobody named. From a plain container shell both
+  fallback shapes then end in `not_logged_in` too, since the shell authenticates nothing either; from a terminal
+  carrying a credential they are how you see the inherited path still work.
 
 **What it costs, and how little that rests on.** Measured all in — the notes and the one synthesis together — a judged
 refinement is **$3.18–$3.48** and a judged delivery **about $6.70**. That is four readings of three runs: three of two
