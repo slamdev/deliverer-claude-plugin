@@ -83,14 +83,15 @@ so an edit takes effect in your next session.
 **Code review effort** — _default `high`._ How deep each review goes: `low`, `medium`, `high`, `xhigh` or `max`. Deeper
 costs more time and money, and raises more findings for the fix waves to work through.
 
-**Code review model** — _default `opus[1m]`._ Which model reviews. The `[1m]` suffix is the one-million-token context
-window, and it is what lets a review read a large diff at all: the whole diff goes into the review's prompt before the
-model runs, so a bare alias meets an epic-sized change request with a "prompt is too long" failure and no review.
-Whatever you set is used verbatim, so a bare alias gives that window up. An alias travels between providers; the `[1m]`
-suffix does not — it selects a long-context beta, measured only against the first-party provider, where it works on
-`opus` and `sonnet` and is refused on `haiku`. On another provider, or on an account without that window, it may be
-refused as well; a round that meets that fails with a reason naming this option, and a bare alias is what you set
-instead. Leave it empty to take whatever your credentials already default to.
+**Code review model** — _default `opus[1m]`._ Which model reviews, and the model the observation's own synthesis runs on
+with it. The `[1m]` suffix is the one-million-token context window, and it is what lets a review read a large diff at
+all: the whole diff goes into the review's prompt before the model runs, so a bare alias meets an epic-sized change
+request with a "prompt is too long" failure and no review. Whatever you set is used verbatim, so a bare alias gives that
+window up. An alias travels between providers; the `[1m]` suffix does not — it selects a long-context beta, measured
+only against the first-party provider, where it works on `opus` and `sonnet` and is refused on `haiku`. On another
+provider, or on an account without that window, it may be refused as well; a round that meets that fails with a reason
+naming this option, and a bare alias is what you set instead. Leave it empty to take whatever your credentials already
+default to.
 
 **Observe runs** — _default on._ Whether each run is observed and comes back as a debrief. See
 [Observation](#observation) for what that means; turning it off stops the whole thing.
