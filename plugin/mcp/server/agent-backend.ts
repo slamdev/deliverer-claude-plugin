@@ -340,9 +340,9 @@ function spendFromResult(message: AgentQueryMessage): ReviewSpend {
 
 /**
  * Narrow one SDK message to a lifecycle event, or null for the ones that say nothing the lifecycle
- * has a vocabulary for. Everything verdict-shaped is deliberately absent from the `completed` event:
- * there is no findings parser (above), so `code_review_status` reports the count and the verdict as
- * `unknown` and the prose as the whole answer.
+ * has a vocabulary for. The `completed` event carries the prose and nothing about what the review
+ * found: there is no findings parser (above), and no judgement of the reviewer's rides beside the
+ * prose, which `code_review_status` reports as the whole answer.
  *
  * The spend is the exception, and it rides on EVERY event this branch can return — the failures as
  * much as the success. `SDKResultError` carries the identical counters, and a review that burned

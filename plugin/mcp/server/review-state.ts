@@ -8,10 +8,11 @@
  *  - **Terminal states absorb.** Once a review is `completed`, `failed` or `cancelled`, no event may
  *    move it. That is what makes cancellation trustworthy against a backend message already in
  *    flight, and it is why the reducer's very first act is to check for it.
- *  - **Nothing verdict-shaped survives a non-`completed` status.** The verdict, the finding count and
- *    the summary all read `unknown` / absent unless the run actually finished. A prototype produced
- *    the exact lie this prevents: an approving verdict beside prose describing two crash-level
- *    bugs. A review that never finished must never be reportable as clean.
+ *  - **Nothing verdict-shaped survives a non-`completed` status.** A review that did not finish
+ *    carries no prose at all, and that is the whole of what there is left to guard: a verdict and a
+ *    finding count were never things a real review had. A prototype produced the exact lie this
+ *    prevents: an approving verdict beside prose describing two crash-level bugs. A review that
+ *    never finished must never be reportable as clean.
  *
  * This module is deliberately **not a seam** (spec, "Testing Decisions"): every behaviour above is
  * observable at the tool surface, and the suite pins it there.
@@ -131,7 +132,7 @@ export type ReviewEvent =
   | { type: "preparing" }
   | { type: "running" }
   | { type: "text"; text: string }
-  | ({ type: "completed"; summary?: string; verdict?: string; findings?: number } & ReviewSpend)
+  | ({ type: "completed"; summary?: string } & ReviewSpend)
   | ({ type: "failed"; message: string } & ReviewSpend)
   | { type: "cancelled"; reason: string };
 
@@ -142,8 +143,6 @@ export interface ReviewRecord extends RecordedSpend {
   cwd: string | null;
   status: ReviewStatus;
   /** set ONLY by a completion event — never inferred, so an unfinished run has nothing to report */
-  verdict: string | null;
-  findings: number | null;
   summary: string;
   /** everything that landed, in order; a cancelled or failed run keeps whatever it got */
   transcript: string;
@@ -204,8 +203,6 @@ export function newRecord(
     changeRequestUrl: input.changeRequestUrl,
     cwd: input.cwd,
     status: "pending",
-    verdict: null,
-    findings: null,
     summary: "",
     transcript: "",
     reason: "",
@@ -249,8 +246,6 @@ export function reduce(record: ReviewRecord, event: ReviewEvent, now: number): R
         ...mergedSpend(record, event),
         status: "completed",
         endedAt: now,
-        verdict: event.verdict ?? null,
-        findings: event.findings ?? null,
         summary: event.summary ?? "",
       };
     case "failed":
@@ -262,9 +257,9 @@ export function reduce(record: ReviewRecord, event: ReviewEvent, now: number): R
         status: "failed",
         endedAt: now,
         // Kept twice, deliberately: in the transcript, where everything that landed is kept in
-        // order, and in `reason`, which is what `code_review_status` publishes. The nine-key shape
-        // has no `error` field and gains none — `reason` took the slot `transcript` vacated, so the
-        // failure path stopped being dark without the payload growing (grill A6/A20).
+        // order, and in `reason`, which is what `code_review_status` publishes. The published
+        // shape has no `error` field and gains none — `reason` took the slot `transcript` vacated,
+        // so the failure path stopped being dark without the payload growing (grill A6/A20).
         transcript: appended(record.transcript, `[failed] ${event.message}`),
         reason: event.message,
       };
@@ -279,20 +274,15 @@ export function reduce(record: ReviewRecord, event: ReviewEvent, now: number): R
   }
 }
 
-/** The literal every verdict-shaped field falls back to. Never `null`, never an empty verdict. */
-export const UNKNOWN = "unknown";
-
-/** Exactly the nine keys the tool contract names — no more, so a consumer can rely on the shape. */
+/** Exactly the keys the tool contract names — no more, so a consumer can rely on the shape. */
 export interface ReviewStatusResult {
   reviewId: string;
   changeRequestUrl: string;
   status: ReviewStatus;
-  verdict: string;
-  counts: { findings: number | "unknown" };
   /**
    * The spend fields here are `ReviewSpend`'s, published flat and whatever the status — what a
-   * round cost is a fact about the run rather than a claim about the code, so unlike everything
-   * verdict-shaped it survives a `failed` status.
+   * round cost is a fact about the run rather than a claim about the code, so unlike the prose it
+   * survives a `failed` status.
    *
    * The RECORD's own elapsed wall-clock is deliberately no key here (review-reliability ticket 10,
    * D19): it rose whether the review was working or wedged and answered neither, and the shipped
@@ -329,7 +319,6 @@ export interface ReviewStatusResult {
    * never reaches. The full stream stays available, pull-only, at `code-review://transcript/<id>`.
    */
   reason: string;
-  partial: boolean;
   summary: string;
 }
 
@@ -342,8 +331,6 @@ export function project(
     reviewId: record.reviewId,
     changeRequestUrl: record.changeRequestUrl,
     status: record.status,
-    verdict: done ? (record.verdict ?? UNKNOWN) : UNKNOWN,
-    counts: { findings: done && record.findings !== null ? record.findings : UNKNOWN },
     stats: {
       startedAt: new Date(record.createdAt).toISOString(),
       endedAt: record.endedAt === null ? null : new Date(record.endedAt).toISOString(),
@@ -364,9 +351,9 @@ export function project(
       deadlineSec: context.deadlineSec,
     },
     reason: record.reason,
-    // `partial` is the whole truth of "is this the finished review?", so it is derived from the
-    // status rather than from whether anything landed: only `completed` is not partial
-    partial: !done,
+    // The prose is the whole deliverable, and it is published only for a review that COMPLETED: a
+    // round that failed or was cancelled carries none of it, which is the stronger statement of
+    // what a `partial` flag used to make by restating the status (ADR-0010).
     summary: done ? record.summary : "",
   };
 }

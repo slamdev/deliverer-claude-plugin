@@ -10,7 +10,7 @@
  *   code_review_start(change_request_url, cwd?, review_id?)
  *     → { review_id, status, transcript_uri, poll_after_ms }      returns in <1s
  *   code_review_status(review_id)
- *     → { reviewId, changeRequestUrl, status, verdict, counts, stats, reason, partial, summary }
+ *     → { reviewId, changeRequestUrl, status, stats, reason, summary }
  *   code_review_cancel(review_id)
  *     → { review_id, status }   the status the review HOLDS after the attempt: "cancelled" for one
  *                               that was still running, the existing terminal status for one that
@@ -21,7 +21,7 @@
  * caller can quietly review at a different depth than the owner configured.
  *
  * `code_review_status` is the only result-bearing tool and the only one carrying an output schema.
- * Everything a caller could mistake for a verdict reads `unknown` unless the run reached
+ * The reviewer's prose is the whole result, and it is published only for a run that reached
  * `completed` — see `./review-state.ts` for why that is not a defensive nicety.
  *
  * Runs UNBUILT: Node strips the types (see `../tsconfig.json` for the constraints that keeps), so
@@ -248,13 +248,11 @@ server.registerTool(
   {
     title: "Read a review's status and result",
     description:
-      "Report everything known about one review: its status, the reviewer's prose, and whether " +
-      "what is reported is partial. This is the only result-bearing tool. A review that found " +
-      "problems is a SUCCESSFUL call; an error result means the call could not be answered at all " +
-      "(an unknown id). Every verdict-shaped field reads \"unknown\" unless the status is " +
-      '"completed" — a review that did not complete is not a clean review — and on a real ' +
-      "delegated review they read \"unknown\" even then, because it reports no verdict and no " +
-      "finding count; its prose is the whole result.",
+      "Report everything known about one review: its status and the reviewer's prose. This is the " +
+      "only result-bearing tool. A review that found problems is a SUCCESSFUL call; an error " +
+      "result means the call could not be answered at all (an unknown id). The prose is the whole " +
+      'result a review carries, and it is reported only when the status is "completed" — a review ' +
+      "that did not complete is not a clean review, and carries none of it.",
     inputSchema: {
       review_id: z.string().describe("the id returned by the start tool"),
     },
@@ -262,22 +260,6 @@ server.registerTool(
       reviewId: z.string(),
       changeRequestUrl: z.string(),
       status: z.enum(STATUSES_TUPLE),
-      verdict: z
-        .string()
-        .describe(
-          'the backend\'s verdict. The real delegated review reports NONE, so this reads "unknown" ' +
-            "on every real run, completed or not — only a scripted backend ever populates it. The " +
-            "prose in `summary` is the whole result.",
-        ),
-      counts: z.object({
-        findings: z
-          .union([z.number(), z.literal("unknown")])
-          .describe(
-            'the number of findings. The real delegated review reports none, so this reads "unknown" ' +
-              "on every real run, completed or not (there is no findings parser, by design) — only a " +
-              "scripted backend ever populates it.",
-          ),
-      }),
       stats: z.object({
         startedAt: z.string(),
         endedAt: z.string().nullable(),
@@ -354,7 +336,6 @@ server.registerTool(
             "scripted backend's, which replays whatever its script says. The full stream is " +
             "pull-only, at code-review://transcript/<id>",
         ),
-      partial: z.boolean().describe('true whenever the status is not "completed"'),
       summary: z
         .string()
         .describe('the reviewer\'s prose; empty whenever the status is not "completed"'),
