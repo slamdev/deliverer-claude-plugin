@@ -55,7 +55,6 @@ export const DEFAULT_SCRIPT: Script = {
       // to read cannot show whether the fields reach a caller at all. The provider says `scripted`
       // so nobody mistakes these for a measurement, and the duration is the timeline above.
       costUsd: 0.42,
-      turns: 1,
       inputTokens: 1_200,
       outputTokens: 340,
       cacheReadTokens: 8_600,
@@ -63,7 +62,6 @@ export const DEFAULT_SCRIPT: Script = {
       agentDurationMs: 40,
       model: "scripted-model",
       provider: "scripted",
-      canonicalModel: "scripted-model",
     },
   ],
 };
@@ -133,7 +131,6 @@ export function parseScript(raw: string | null): Script {
  */
 const scriptedSpend = (event: ScriptedEvent): ReviewSpend => ({
   costUsd: event.costUsd,
-  turns: event.turns,
   inputTokens: event.inputTokens,
   outputTokens: event.outputTokens,
   cacheReadTokens: event.cacheReadTokens,
@@ -141,7 +138,6 @@ const scriptedSpend = (event: ScriptedEvent): ReviewSpend => ({
   agentDurationMs: event.agentDurationMs,
   model: event.model,
   provider: event.provider,
-  canonicalModel: event.canonicalModel,
 });
 
 const toEvent = (event: ScriptedEvent): ReviewEvent => {

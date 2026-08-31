@@ -73,7 +73,9 @@ export const STORE_TTL_ENV = "DELIVERER_REVIEW_STORE_TTL_SEC";
  * ABSOLUTE — FOUR HOURS from the start, whatever the review is doing. It catches nothing on its own
  * account; it exists so that "never" is unreachable, because an inner agent emitting one event a
  * minute for a week resets the idle clock every time. Four hours is above any round anyone has seen
- * finish and still finite, and it is the figure `code_review_status` publishes as `deadlineSec`.
+ * finish and still finite. Neither figure travels on an answer: both are documented where a caller
+ * reads what `code_review_status` does, and named again in the refusal a second start meets
+ * (ADR-0007).
  *
  * A FIXED HOUR used to be the whole of this, and it was picked against the wrong measurement: a round
  * at the shipped depth on a twenty-line diff runs ~122 s, which made an hour look far above anything

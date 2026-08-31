@@ -57,7 +57,6 @@ export const isTerminal = (status: ReviewStatus): boolean => TERMINAL_STATUSES.i
  */
 export interface ReviewSpend {
   costUsd?: number;
-  turns?: number;
   inputTokens?: number;
   outputTokens?: number;
   cacheReadTokens?: number;
@@ -67,8 +66,6 @@ export interface ReviewSpend {
   /** the model that served the round, and the provider that served that model */
   model?: string;
   provider?: string;
-  /** the pricing-lookup id behind `model`, which is not always the same string */
-  canonicalModel?: string;
 }
 
 /** The same fields as everything downstream of the reducer holds them: unknown is `null`. */
@@ -157,6 +154,12 @@ export interface ReviewRecord extends RecordedSpend {
    */
   reason: string;
   createdAt: number;
+  /**
+   * When the reducer last accepted an event. INTERNAL and load-bearing: `./store.ts` evicts a
+   * terminal record on it when that record has no ending timestamp. It used to be published as the
+   * last event's time too, and is not any more — the count of events moves with it and is the whole
+   * signal on its own, so the timestamp only ever added a clock (ADR-0007's second amendment).
+   */
   updatedAt: number;
   endedAt: number | null;
   events: number;
@@ -165,7 +168,6 @@ export interface ReviewRecord extends RecordedSpend {
 /** No spend known yet: what a record opens with, and what a run that never reported one keeps. */
 const NO_SPEND: RecordedSpend = {
   costUsd: null,
-  turns: null,
   inputTokens: null,
   outputTokens: null,
   cacheReadTokens: null,
@@ -173,7 +175,6 @@ const NO_SPEND: RecordedSpend = {
   agentDurationMs: null,
   model: null,
   provider: null,
-  canonicalModel: null,
 };
 
 /**
@@ -183,7 +184,6 @@ const NO_SPEND: RecordedSpend = {
  */
 const mergedSpend = (record: RecordedSpend, event: ReviewSpend): RecordedSpend => ({
   costUsd: event.costUsd ?? record.costUsd,
-  turns: event.turns ?? record.turns,
   inputTokens: event.inputTokens ?? record.inputTokens,
   outputTokens: event.outputTokens ?? record.outputTokens,
   cacheReadTokens: event.cacheReadTokens ?? record.cacheReadTokens,
@@ -191,7 +191,6 @@ const mergedSpend = (record: RecordedSpend, event: ReviewSpend): RecordedSpend =
   agentDurationMs: event.agentDurationMs ?? record.agentDurationMs,
   model: event.model ?? record.model,
   provider: event.provider ?? record.provider,
-  canonicalModel: event.canonicalModel ?? record.canonicalModel,
 });
 
 export function newRecord(
@@ -277,38 +276,32 @@ export function reduce(record: ReviewRecord, event: ReviewEvent, now: number): R
 /** Exactly the keys the tool contract names — no more, so a consumer can rely on the shape. */
 export interface ReviewStatusResult {
   reviewId: string;
-  changeRequestUrl: string;
   status: ReviewStatus;
   /**
    * The spend fields here are `ReviewSpend`'s, published flat and whatever the status — what a
    * round cost is a fact about the run rather than a claim about the code, so unlike the prose it
    * survives a `failed` status.
    *
-   * The RECORD's own elapsed wall-clock is deliberately no key here (review-reliability ticket 10,
-   * D19): it rose whether the review was working or wedged and answered neither, and the shipped
-   * `code-reviewer` read it every poll and reasoned aloud about a deadline off the back of it. What
-   * this leaves is stated rather than implied: `startedAt` still dates the review's start and
-   * `deadlineSec` still names the bound, so a caller can still build a clock of its own — what is
-   * gone is anything telling the shipped agent those numbers are its to act on.
+   * **Nothing here is a clock, and that is the whole design of it.** The RECORD's own elapsed
+   * wall-clock left first (review-reliability ticket 10, D19): it rose whether the review was
+   * working or wedged and answered neither, and the shipped `code-reviewer` read it every poll and
+   * reasoned aloud about a deadline off the back of it. Then the last event's own timestamp went,
+   * and with it both bounds as figures (ADR-0007): `events` moves only when that timestamp does, so
+   * it is the whole working-versus-wedged signal on its own, and a bound a caller can neither
+   * configure nor act on is documented where a caller reads what the status tool does instead of
+   * riding on every answer. What is left is `startedAt`, which dates the review's start and nothing
+   * else.
    */
   stats: RecordedSpend & {
     startedAt: string;
     endedAt: string | null;
+    /**
+     * How many events have landed. The only field that moves while a review is alive — the SDK's
+     * iterable says nothing until the inner agent finishes (`agent-backend.ts`'s header) — so it is
+     * the whole of what tells a poller "working" from "wedged", and two polls agreeing on it need
+     * no clock to compare.
+     */
     events: number;
-    /**
-     * When the last event landed, or null before any has. This and `events` are the only fields that
-     * move while a review is alive — the SDK's iterable says nothing until the inner agent finishes
-     * (`agent-backend.ts`'s header) — so together they are the whole of what tells a poller
-     * "working" from "wedged", and two polls agreeing on both need no clock to read.
-     */
-    lastEventAt: string | null;
-    /**
-     * the ABSOLUTE deadline every review on this server is bounded by — a constant, so never absent.
-     * NOT the bound a wedged round ordinarily ends on: that is the idle one, which is deliberately
-     * no key of its own here (review-reliability ticket 04). A caller learns it exists from this
-     * field's own description on the status tool, and from the reason a round aborted on it gives.
-     */
-    deadlineSec: number;
   };
   /**
    * Why a non-completed run ended, verbatim; empty when the run is alive or completed. A FAILED
@@ -322,24 +315,16 @@ export interface ReviewStatusResult {
   summary: string;
 }
 
-export function project(
-  record: ReviewRecord,
-  context: { deadlineSec: number },
-): ReviewStatusResult {
+export function project(record: ReviewRecord): ReviewStatusResult {
   const done = record.status === "completed";
   return {
     reviewId: record.reviewId,
-    changeRequestUrl: record.changeRequestUrl,
     status: record.status,
     stats: {
       startedAt: new Date(record.createdAt).toISOString(),
       endedAt: record.endedAt === null ? null : new Date(record.endedAt).toISOString(),
       events: record.events,
-      // `updatedAt` only moves when the reducer accepts an event, so it IS the last event's time —
-      // but it starts equal to `createdAt`, so it is published only once something has landed.
-      lastEventAt: record.events === 0 ? null : new Date(record.updatedAt).toISOString(),
       costUsd: record.costUsd,
-      turns: record.turns,
       inputTokens: record.inputTokens,
       outputTokens: record.outputTokens,
       cacheReadTokens: record.cacheReadTokens,
@@ -347,8 +332,6 @@ export function project(
       agentDurationMs: record.agentDurationMs,
       model: record.model,
       provider: record.provider,
-      canonicalModel: record.canonicalModel,
-      deadlineSec: context.deadlineSec,
     },
     reason: record.reason,
     // The prose is the whole deliverable, and it is published only for a review that COMPLETED: a

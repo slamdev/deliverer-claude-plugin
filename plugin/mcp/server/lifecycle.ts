@@ -139,8 +139,9 @@ export interface LifecycleDeps {
   /** the required environment file's variables, layered over the server's own environment */
   claudeEnv: Record<string, string>;
   /**
-   * the ABSOLUTE deadline every review is bounded by, in seconds — the outer of the two bounds, and
-   * the figure `code_review_status` publishes as `deadlineSec`.
+   * the ABSOLUTE deadline every review is bounded by, in seconds — the outer of the two bounds.
+   * Neither travels on an answer as a figure: both are documented where a caller reads what
+   * `code_review_status` does, and named again in the refusal a second start meets (ADR-0007).
    *
    * Neither bound is nullable or optional: both are the server's own constants (`./config.ts`'s
    * `DEADLINE_SEC` and `IDLE_DEADLINE_SEC`) rather than anything a host configures, so "no bound" is
@@ -473,7 +474,7 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
             `started, or it finished long enough ago to have been evicted.`,
         );
       }
-      return project(record, { deadlineSec: deps.deadlineSec });
+      return project(record);
     },
 
     cancel(reviewId) {

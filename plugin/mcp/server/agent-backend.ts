@@ -286,7 +286,6 @@ function summedTokens(modelUsage: unknown, field: string): number | undefined {
  * A counter nobody measured and a counter measured at zero are the same answer: unknown.
  * `CONTEXT.md` defines **spend** so that unknown is the honest answer for a figure nobody measured
  * and never zero, and a confident zero beside a real dollar figure reads as a cheap review.
- * Dropping the zero here rather than publishing it is also what lets the source behind it stand in.
  */
 const measured = (count: number | undefined): number | undefined =>
   count === undefined || count === 0 ? undefined : count;
@@ -312,8 +311,6 @@ const measured = (count: number | undefined): number | undefined =>
  * unreachable instead of merely unlikely, and leaves `measured()` the one job its own comment
  * describes. Nothing reads a transcript off disk for any of it: the counters are already on the
  * message this function is handed.
- *
- * `turns` is not here, because it alone falls back to something not on the message.
  */
 function spendFromResult(message: AgentQueryMessage): ReviewSpend {
   const usage = asRecord(message.usage);
@@ -334,7 +331,6 @@ function spendFromResult(message: AgentQueryMessage): ReviewSpend {
     agentDurationMs: asNumber(message.duration_ms),
     model: model?.key,
     provider: asString(model?.entry.provider),
-    canonicalModel: asString(model?.entry.canonicalModel),
   };
 }
 
@@ -353,32 +349,16 @@ function spendFromResult(message: AgentQueryMessage): ReviewSpend {
  * every other terminal failure this server can produce — see `./review-state.ts` for the closed
  * vocabulary and what a caller may read off it.
  *
- * `assistantTurns` is how many assistant messages the caller has seen on this run, and it is what
- * the turn count falls back to. Passed in rather than counted here so this stays a pure function of
- * one message.
+ * A pure function of one message: everything it reports is on the message it is handed.
  */
-export function eventFromMessage(
-  message: AgentQueryMessage,
-  assistantTurns: number,
-): ReviewEvent | null {
+export function eventFromMessage(message: AgentQueryMessage): ReviewEvent | null {
   if (message.type === "system" && message.subtype === "init") return { type: "running" };
   if (message.type === "assistant") {
     const text = assistantText(message);
     return text === null ? null : { type: "text", text };
   }
   if (message.type === "result") {
-    const spend: ReviewSpend = {
-      ...spendFromResult(message),
-      // `measured()` does the same work here that it does for the token counters. A round measured
-      // at $0.65 over 170s reported `num_turns: 0`, and 0 is a finite number — so `asNumber` accepts
-      // it and the reducer's own `?? record.turns` never falls back, publishing a zero that looks
-      // trustworthy beside the two fields the `code-reviewer` agent is told to distrust. The
-      // assistant messages this run actually yielded are the honest floor, so they stand in whenever
-      // the SDK's own number is absent OR zero. What is particular to `turns` is only where its
-      // fallback comes FROM — the caller's own count, not a second set of counters on the message —
-      // which is why this one line sits here rather than in `spendFromResult`.
-      turns: measured(asNumber(message.num_turns)) ?? assistantTurns,
-    };
+    const spend = spendFromResult(message);
     if (message.subtype === "success") {
       const summary = typeof message.result === "string" ? message.result : "";
       // A result with NO PROSE IN IT is not a review, and after ADR-0005's amendment that is not
@@ -553,17 +533,13 @@ export function createAgentBackend(deps: AgentBackendDeps): ReviewBackend {
 
       const run = async (): Promise<void> => {
         let sawResult = false;
-        // Counted here because this is the only place that sees the whole stream, and it is what
-        // `eventFromMessage` reports when the SDK's own `num_turns` says zero.
-        let assistantTurns = 0;
         for await (const message of deps.query({
           prompt: reviewPrompt(request.changeRequestUrl, request.effort),
           options,
         })) {
           if (aborted) return;
-          if (message.type === "assistant") assistantTurns += 1;
           if (message.type === "result") sawResult = true;
-          const event = eventFromMessage(message, assistantTurns);
+          const event = eventFromMessage(message);
           if (event !== null) emit(event);
         }
         if (!sawResult && !aborted) {

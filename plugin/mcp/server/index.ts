@@ -10,7 +10,7 @@
  *   code_review_start(change_request_url, cwd?, review_id?)
  *     → { review_id, status, transcript_uri, poll_after_ms }      returns in <1s
  *   code_review_status(review_id)
- *     → { reviewId, changeRequestUrl, status, stats, reason, summary }
+ *     → { reviewId, status, stats, reason, summary }
  *   code_review_cancel(review_id)
  *     → { review_id, status }   the status the review HOLDS after the attempt: "cancelled" for one
  *                               that was still running, the existing terminal status for one that
@@ -252,13 +252,18 @@ server.registerTool(
       "only result-bearing tool. A review that found problems is a SUCCESSFUL call; an error " +
       "result means the call could not be answered at all (an unknown id). The prose is the whole " +
       'result a review carries, and it is reported only when the status is "completed" — a review ' +
-      "that did not complete is not a clean review, and carries none of it.",
+      "that did not complete is not a clean review, and carries none of it. A review reaches a " +
+      "terminal status without anyone acting, on one of two bounds this server owns: it is aborted " +
+      `after ${IDLE_DEADLINE_SEC}s with no event of any kind, counted from the last one, which is ` +
+      `what ordinarily ends a wedged review, and by its absolute deadline of ${DEADLINE_SEC}s from ` +
+      "the start at the latest. Both are constants rather than configuration, and NEITHER is a " +
+      "figure on any answer: a round aborted on either reports deadline_exceeded, and its reason " +
+      "says which one ended it.",
     inputSchema: {
       review_id: z.string().describe("the id returned by the start tool"),
     },
     outputSchema: {
       reviewId: z.string(),
-      changeRequestUrl: z.string(),
       status: z.enum(STATUSES_TUPLE),
       stats: z.object({
         startedAt: z.string(),
@@ -267,15 +272,9 @@ server.registerTool(
           .number()
           .describe(
             "how many events have landed. It RISES while the review works — the inner agent's tool " +
-              "calls are observed as they happen — so two polls with the same number and the same " +
-              "`lastEventAt` mean nothing has happened since the last one.",
-          ),
-        lastEventAt: z
-          .string()
-          .nullable()
-          .describe(
-            "when the last event landed, or null before any has. With `events`, this is the whole " +
-              "of what says a live review is working rather than wedged.",
+              "calls are observed as they happen — so two polls with the same number mean nothing " +
+              "has happened since the last one, and it is the whole of what says a live review is " +
+              "working rather than wedged.",
           ),
         costUsd: z
           .number()
@@ -287,7 +286,6 @@ server.registerTool(
               "figure. Null — never zero — whenever no result message arrived, which is every " +
               "cancelled round.",
           ),
-        turns: z.number().nullable(),
         inputTokens: z.number().nullable(),
         outputTokens: z.number().nullable(),
         cacheReadTokens: z.number().nullable(),
@@ -307,21 +305,6 @@ server.registerTool(
             "what served `model` — \"firstParty\", \"bedrock\", \"vertex\" and so on. It is what " +
               "`costUsd` has to be labelled with, because it is what decides whether that number " +
               "is a price or an estimate.",
-          ),
-        canonicalModel: z
-          .string()
-          .nullable()
-          .describe("the pricing-lookup id behind `model`, which is not always the same string"),
-        deadlineSec: z
-          .number()
-          .describe(
-            "the ABSOLUTE deadline this review is bounded by, in seconds — the outer of the two " +
-              "bounds it can end on, and not the one that ordinarily ends a wedged round: a " +
-              `review is also aborted after ${IDLE_DEADLINE_SEC}s with no event of any kind, ` +
-              "counted from the last one. That idle bound has no key of its own here; a round " +
-              "aborted on either reports deadline_exceeded, and its reason says which. Both are " +
-              "constants of the server, not configuration — so this is always present and the " +
-              "same for every review.",
           ),
       }),
       reason: z
