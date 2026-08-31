@@ -38,8 +38,8 @@ handle. So a refusal names which review holds the slot, how long it has held it,
 anyone acting.
 
 Running out of time is one cause with two ways of arriving at it, so a round aborted on either bound is reported the
-same way, and its failure text names which bound ended it. Only the cap is published as a figure — the idle bound is
-documented where a caller reads the published one, so that it can be learned before a round ends on it.
+same way, and its failure text names which bound ended it. Neither bound is published as a figure on a poll — both are
+documented where a caller reads what the status tool does, so that either can be learned before a round ends on it.
 
 There is no configuration under which a review runs unbounded, and adding one would reintroduce precisely the failure
 the bounds exist to prevent.
@@ -53,8 +53,32 @@ while still emitting events — 273 of them — so the bound whose whole job is 
 killing reviews that were plainly working, and the run it belonged to received no review on any axis.
 
 So elapsed time stopped being the signal. What the server can actually tell a working review from a wedged one by is
-silence, and it already publishes the two figures that measure it — how many events have landed and when the last one
-did — so the bound that catches the failure now measures exactly that: silence, with nothing arriving. The hour
-became the four-hour cap, kept only so that no configuration reaches "never", and that cap is the figure the status tool
-goes on publishing under the name it always had. One review at a time is unchanged, and so is the refusal to let an
-owner tune any of it.
+silence, and a poll already reports what measures it — how many events have landed — so the bound that catches the
+failure now measures exactly that: silence, with nothing arriving. The hour became the four-hour cap, kept only so that
+no configuration reaches "never". One review at a time is unchanged, and so is the refusal to let an owner tune any of
+it.
+
+## Amendment
+
+The cap used to travel on the answers as well as in the server: it was published as a figure on every poll, under a key
+of its own, and the idle bound was documented beside it so that a caller could learn the bound a wedged round would more
+likely end on. Neither is published now: both are documented where a caller reads what the status tool does, and no
+answer a poll gives carries a bound at all.
+
+The published figure was never something its reader could use. A caller cannot configure either bound, cannot act on
+either, and is told by the refusal it meets on a second start that a round in flight ends by itself without anyone
+acting — so all a figure on every answer offered was arithmetic, and arithmetic is what it invited: an agent told it has
+a clock invents one, and one round that had already finished sat unnoticed for seventeen minutes by the one agent whose
+whole job was to notice. Set against nothing, the same constant repeated over hundreds of answers to a long round takes
+context from the one dispatch that also has to carry the review's prose back.
+
+The amendment above leaned on two published figures measuring silence — how many events have landed and when the last
+one did. There is one, and by construction there only ever was: the record's own timestamp moves when an event is
+accepted and the count of events increments with it, so the timestamp cannot differ between two answers where the count
+does not. The count alone is the whole working-versus-wedged signal, and two answers agreeing on it need no clock to
+compare.
+
+Nothing in the grounds above moves, because none of it ever rested on where a figure was written down. Silence is still
+the signal, the idle bound still catches the failure, the cap still exists only so that "never" stays out of reach, both
+bounds are still the server's own, and no owner can tune either. A refusal goes on naming both of them, because a caller
+that has just been refused is the one caller with something to wait for.
