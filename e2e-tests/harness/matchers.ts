@@ -16,6 +16,7 @@ import type { ChangeRequest, DeliveredCommit } from "./change-request.ts";
 import { describeDebrief, dispatchRecordsOfRun } from "./debrief.ts";
 import { DEFAULT_BRANCH } from "./forge.ts";
 import type { PluginOptions } from "./install.ts";
+import { describeLastAnswer, describePolledRound } from "./polls.ts";
 import type { RefineOutcome } from "./refine-run.ts";
 import type { ObservedRun } from "./run.ts";
 import type { SessionSurface } from "./session.ts";
@@ -836,6 +837,64 @@ export function assertRoundsCompleted(outcome: BuildOutcome, floor: number): voi
     assert.fail(
       `the run reported ${completed} completed rounds where stage 8 waits on ${floor}. A change ` +
         `request flipped ready on fewer is one shipping a review nobody did.`,
+    );
+  }
+}
+
+/**
+ * Every **round** that reached a result reported its **spend**: a dollar figure, and the provider
+ * that labels it (a-poll-says-what-it-knows ticket 06).
+ *
+ * **This is the harness's one assertion on what a poll answers, and a paid delivery is where it
+ * belongs.** A round's spend is extracted from the real backend's own result message, and the
+ * scripted review double's spend is *scripted* rather than extracted — so nothing free reaches that
+ * extraction and these two rounds are the only place it runs (`./polls.ts` says the rest). What it
+ * holds up is the **debrief**: the **observer** reads a round's money under exactly the nesting this
+ * reads it under, and it is the only measured money a debrief has.
+ *
+ * **The bar is the round's own outcome rather than every answer it gave.** A poll of a live round
+ * carries no spend because no result has arrived yet, and a cancelled round never gets one at all —
+ * so what is owed a spend is a round some poll reported `completed` or `failed`.
+ *
+ * **Two vacuous passes are failures instead**, because an assertion that judged nothing would go on
+ * passing after the payload moved out from under it: no poll answer in the records whatsoever, and
+ * no round in them that ever reached a result. Either is this harness having read the wrong thing
+ * or an answer having lost the keys every one of them carries, and both are worth hearing.
+ */
+export function assertRoundsReportedSpend(outcome: BuildOutcome): void {
+  const rounds = outcome.rounds;
+  const claimed =
+    `The run's own report is evidence of ${outcome.roundsCompleted ?? "no"} completed rounds, and ` +
+    `everything the run left is under ${outcome.runDirectory.root}.`;
+  if (rounds.length === 0) {
+    assert.fail(
+      `no answer to any poll of any round is in the session records under ${outcome.records.root}, ` +
+        `so there is nothing here to hold to a spend. An answer is recognised by the reviewId and ` +
+        `the status that every one carries — so either those two keys have moved, or these are ` +
+        `not the records this run polled from. ${claimed}`,
+    );
+  }
+  const withResult = rounds.filter((round) => round.reachedAResult);
+  if (withResult.length === 0) {
+    assert.fail(
+      `not one of the ${rounds.length} ${rounds.length === 1 ? "round" : "rounds"} polled in this ` +
+        `run was ever answered completed or failed, so nothing here was owed a spend. ${claimed} ` +
+        `What the polls of each said:\n  ${rounds.map(describePolledRound).join("\n  ")}`,
+    );
+  }
+  const silent = withResult.filter((round) => round.reported === undefined);
+  if (silent.length > 0) {
+    const named = silent.map(
+      (round) => `${describePolledRound(round)}; ${describeLastAnswer(round)}`,
+    );
+    assert.fail(
+      `${silent.length} of the ${withResult.length} rounds that reached a result report no spend a ` +
+        `reader can be handed: a poll of each answered completed or failed, and not one answer of ` +
+        `any of them carried both the dollars and the provider that labels them. That is the only ` +
+        `measured money a debrief has, and it is read under one key:\n  ${named.join("\n  ")}\n` +
+        `  A round that FAILED before its reviewer reported a result has no spend to publish and ` +
+        `is the one honest way to reach here; a round that COMPLETED with none is the extraction, ` +
+        `or the key it publishes under.`,
     );
   }
 }
