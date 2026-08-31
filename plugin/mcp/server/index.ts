@@ -10,7 +10,9 @@
  *   code_review_start(change_request_url, cwd?, review_id?)
  *     → { review_id, status, transcript_uri, poll_after_ms }      returns in <1s
  *   code_review_status(review_id)
- *     → { reviewId, status, stats, reason, summary }
+ *     → { reviewId, status, startedAt, events }   always, because all four are always known
+ *       + endedAt, reason, agentDurationMs, spend, summary — each ONLY once there is something to
+ *         read in it, so a key that is absent is a figure nobody has measured yet
  *   code_review_cancel(review_id)
  *     → { review_id, status }   the status the review HOLDS after the attempt: "cancelled" for one
  *                               that was still running, the existing terminal status for one that
@@ -252,76 +254,98 @@ server.registerTool(
       "only result-bearing tool. A review that found problems is a SUCCESSFUL call; an error " +
       "result means the call could not be answered at all (an unknown id). The prose is the whole " +
       'result a review carries, and it is reported only when the status is "completed" — a review ' +
-      "that did not complete is not a clean review, and carries none of it. A review reaches a " +
-      "terminal status without anyone acting, on one of two bounds this server owns: it is aborted " +
-      `after ${IDLE_DEADLINE_SEC}s with no event of any kind, counted from the last one, which is ` +
-      `what ordinarily ends a wedged review, and by its absolute deadline of ${DEADLINE_SEC}s from ` +
-      "the start at the latest. Both are constants rather than configuration, and NEITHER is a " +
-      "figure on any answer: a round aborted on either reports deadline_exceeded, and its reason " +
-      "says which one ended it.",
+      "that did not complete is not a clean review, and carries none of it. A key is present ONLY " +
+      "when there is something to read in it, so an answer grows as the review does: reviewId, " +
+      "status, startedAt and events are always there, while endedAt, reason, agentDurationMs, " +
+      "spend and summary each arrive once known. An absent key means nobody has measured it — it " +
+      'is never a zero and never the word "unknown". A review reaches a terminal status without ' +
+      "anyone acting, on one of two bounds this server owns: it is aborted after " +
+      `${IDLE_DEADLINE_SEC}s with no event of any kind, counted from the last one, which is what ` +
+      `ordinarily ends a wedged review, and by its absolute deadline of ${DEADLINE_SEC}s from the ` +
+      "start at the latest. Both are constants rather than configuration, and NEITHER is a figure " +
+      "on any answer: a round aborted on either reports deadline_exceeded, and its reason says " +
+      "which one ended it.",
     inputSchema: {
       review_id: z.string().describe("the id returned by the start tool"),
     },
+    // FOUR keys are required here and every other one is optional, which is what makes the
+    // omission rule above a shape a caller can rely on rather than a paragraph of prose: the four
+    // are always known, and anything optional is absent exactly when nobody has measured it
+    // (a-poll-says-what-it-knows D3).
     outputSchema: {
       reviewId: z.string(),
       status: z.enum(STATUSES_TUPLE),
-      stats: z.object({
-        startedAt: z.string(),
-        endedAt: z.string().nullable(),
-        events: z
-          .number()
-          .describe(
-            "how many events have landed. It RISES while the review works — the inner agent's tool " +
-              "calls are observed as they happen — so two polls with the same number mean nothing " +
-              "has happened since the last one, and it is the whole of what says a live review is " +
-              "working rather than wedged.",
-          ),
-        costUsd: z
-          .number()
-          .nullable()
-          .describe(
-            "what the round cost in dollars, as the SDK's OWN list-rate arithmetic rather than an " +
-              "invoice: on a partner provider (see `provider`) it says what these tokens would " +
-              "have cost first-party. The token counters beside it are the provider-neutral " +
-              "figure. Null — never zero — whenever no result message arrived, which is every " +
-              "cancelled round.",
-          ),
-        inputTokens: z.number().nullable(),
-        outputTokens: z.number().nullable(),
-        cacheReadTokens: z.number().nullable(),
-        cacheCreationTokens: z.number().nullable(),
-        agentDurationMs: z
-          .number()
-          .nullable()
-          .describe(
-            "how long the INNER review agent ran, in milliseconds: what the round itself took, " +
-              "and no part of what this record has been open for.",
-          ),
-        model: z.string().nullable(),
-        provider: z
-          .string()
-          .nullable()
-          .describe(
-            "what served `model` — \"firstParty\", \"bedrock\", \"vertex\" and so on. It is what " +
-              "`costUsd` has to be labelled with, because it is what decides whether that number " +
-              "is a price or an estimate.",
-          ),
-      }),
+      startedAt: z.string().describe("when this server accepted the review and opened its record"),
+      events: z
+        .number()
+        .describe(
+          "how many events have landed, published even at zero: nothing has landed is a " +
+            "measurement. It RISES while the review works — the inner agent's tool calls are " +
+            "observed as they happen — so two polls with the same number mean nothing has " +
+            "happened since the last one, and it is the whole of what says a live review is " +
+            "working rather than wedged.",
+        ),
+      endedAt: z
+        .string()
+        .optional()
+        .describe("when the review reached a terminal status; absent while it is still going"),
       reason: z
         .string()
+        .optional()
         .describe(
-          "why a failed or cancelled run ended, in one line; empty while the run is alive and " +
-            "empty when it completed. A FAILED run's reason begins with one machine-readable code " +
-            'naming the cause, then ": " and the prose — one of: ' +
+          "why a failed or cancelled run ended, in one line; absent while the run is alive and " +
+            "absent when it completed. A FAILED run's reason begins with one machine-readable " +
+            'code naming the cause, then ": " and the prose — one of: ' +
             `${FAILURE_CODES.join(", ")}. The list is closed, and every bound a review has ` +
             "reports deadline_exceeded with the prose saying which bound ended the round. A " +
             "CANCELLED run's reason carries NO code, so do not look for one there; neither does a " +
             "scripted backend's, which replays whatever its script says. The full stream is " +
             "pull-only, at code-review://transcript/<id>",
         ),
+      agentDurationMs: z
+        .number()
+        .optional()
+        .describe(
+          "how long the INNER review agent ran, in milliseconds: what the round itself took, and " +
+            "no part of what this record has been open for. The reviewer's own figure, which is " +
+            "why it is here and not arithmetic on the two timestamps.",
+        ),
+      spend: z
+        .object({
+          costUsd: z
+            .number()
+            .optional()
+            .describe(
+              "what the round cost in dollars, as the SDK's OWN list-rate arithmetic rather than " +
+                "an invoice: on a partner provider (see `provider`) it says what these tokens " +
+                "would have cost first-party. The token counters beside it are the " +
+                "provider-neutral figure.",
+            ),
+          inputTokens: z.number().optional(),
+          outputTokens: z.number().optional(),
+          cacheReadTokens: z.number().optional(),
+          cacheCreationTokens: z.number().optional(),
+          model: z.string().optional(),
+          provider: z
+            .string()
+            .optional()
+            .describe(
+              "what served `model` — \"firstParty\", \"bedrock\", \"vertex\" and so on. It is " +
+                "what `costUsd` has to be labelled with, because it is what decides whether that " +
+                "number is a price or an estimate.",
+            ),
+        })
+        .optional()
+        .describe(
+          "what the round spent, whatever status it ended on — a round that burned money and " +
+            "died spent it exactly as one that finished did. The whole object is absent until a " +
+            "result message arrives, so a running round carries no spend at all and neither does " +
+            "a cancelled one, which never receives one. Never zero for a figure nobody measured.",
+        ),
       summary: z
         .string()
-        .describe('the reviewer\'s prose; empty whenever the status is not "completed"'),
+        .optional()
+        .describe('the reviewer\'s prose; absent whenever the status is not "completed"'),
     },
     annotations: { readOnlyHint: true, openWorldHint: false },
   },

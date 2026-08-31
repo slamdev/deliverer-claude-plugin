@@ -67,9 +67,11 @@ Whoever reads this has your report and nothing else. Always the `review_id` and 
 tells this round from the next one. Then, by status:
 
 - **`completed`** — the `summary`, **verbatim**. That prose is the whole deliverable: where the reviewer did not post
-  its findings, it is the only record of them anybody has. And what it **spent**, however the round ended: the tokens
-  are the figure, `costUsd` an estimate labelled with its `provider`, and `unknown` for whatever reads `null`. A
-  **cancelled** round got no result, so it has none.
+  its findings, it is the only record of them anybody has. And what it **spent**, however the round ended: **two
+  numbers and no more** — the token counters inside `spend` added into one total, which is the figure that depends on
+  no price list, and `spend.costUsd` labelled with the `spend.provider` that served it, which is what says whether
+  those dollars are a price or an estimate. Report a key that is not there as `unknown`, never as zero, and a round
+  with no `spend` at all — a **cancelled** one never gets one — as a round whose spend is unknown.
 - **`failed` or `cancelled`** — the one-line `reason`, and that this round produced no review. It carries no prose at
   all, because a review that did not finish is not a clean review.
 - **an unknown `review_id`** — the id, and that a round ran under it whose record is gone: the server keeps a finished
