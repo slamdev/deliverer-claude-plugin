@@ -150,6 +150,11 @@ change request where the reviewer can post them, and carried by its prose where 
 bar a change request is flipped ready against, and a round that produced no review is not one of the two. _Avoid_:
 review, pass, iteration
 
+**Poll**:
+One call asking after a **round**, and what it reports back. It is the only way a round's progress or its result is ever
+seen, because nothing about a round arrives unsolicited. What it carries is what is known when it is asked and no more,
+so a figure it says nothing about is one nobody has measured yet. _Avoid_: status call, ping, check, progress update
+
 **Transcript**:
 Everything one **round**'s reviewer said as it arrived, in order, and the reason the round ended where it did not
 complete. A round hands back its prose; the transcript is the whole of what landed behind it, pulled by whoever wants it
