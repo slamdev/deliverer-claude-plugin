@@ -28,7 +28,7 @@
  * into whichever run holds the slot next.
  *
  * The record has to be failed and not merely abandoned (PR #11 review round 2): releasing the slot
- * alone leaves a `pending` record no eviction and no bound can ever move, and
+ * alone leaves a `preparing` record no eviction and no bound can ever move, and
  * `agents/code-reviewer.md` tells that agent to retry under the SAME id — so the retry branch would
  * hand that dead handle back for ever, and the agent would poll it until the run's budget was gone.
  * The wedge would have moved from the slot to the id, not gone.
@@ -430,7 +430,7 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
       } catch (error) {
         // only if it is still ours: a synchronous terminal event before the throw already released it
         if (inFlightId === reviewId) {
-          // The record `put` above must not survive as an unmovable `pending` either: it is not
+          // The record `put` above must not survive as an unmovable `preparing` either: it is not
           // terminal, so `store.evict` never drops it; `arm()` was never reached, so no deadline can
           // fail it; and `agents/code-reviewer.md` tells that agent to retry under the SAME id,
           // which would hit the retry branch above and hand back this dead handle for ever — an

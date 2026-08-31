@@ -5,8 +5,8 @@
  * MCP server"). Today the only implementation keeps records in memory for the life of the stdio
  * process, which is exactly as long as the session that spawned it.
  *
- * **Only terminal records expire.** A review that is still `pending`, `preparing` or `running` is
- * never evicted, however long it has been quiet: a deep round can go minutes without an event, and
+ * **Only terminal records expire.** A review that is still `preparing` or `running` is never
+ * evicted, however long it has been quiet: a deep round can go minutes without an event, and
  * evicting one out from under its own poll loop would turn a slow review into an unknown-id error —
  * which `agents/code-reviewer.md` reports as a round whose record is gone rather than as a round to
  * start again — and which, for a review still running, would simply be false. The clock therefore

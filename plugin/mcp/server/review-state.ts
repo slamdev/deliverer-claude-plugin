@@ -18,9 +18,15 @@
  * observable at the tool surface, and the suite pins it there.
  */
 
-/** Every status a review can hold. `pending` is the handle before the backend has said anything. */
+/**
+ * Every status a review can hold. Five words, and a record opens on the first: `preparing` is honest
+ * for both of the states it covers — the server has accepted the review, and it is starting the
+ * backend. A sixth, `pending`, sat in front of it and was unreachable through either tool, because
+ * the agent backend's first act inside its own `start` is to report `preparing` — synchronously,
+ * before the handle is read back from the store. No caller ever saw the word and only a script could
+ * produce it, so it is gone (a-poll-says-what-it-knows D14).
+ */
 export type ReviewStatus =
-  | "pending"
   | "preparing"
   | "running"
   | "completed"
@@ -31,7 +37,6 @@ export const TERMINAL_STATUSES: readonly ReviewStatus[] = ["completed", "failed"
 
 /** The same set as a tuple, because the published output schema needs one and must not drift. */
 export const STATUSES_TUPLE = [
-  "pending",
   "preparing",
   "running",
   "completed",
@@ -201,7 +206,7 @@ export function newRecord(
     reviewId: input.reviewId,
     changeRequestUrl: input.changeRequestUrl,
     cwd: input.cwd,
-    status: "pending",
+    status: "preparing",
     summary: "",
     transcript: "",
     reason: "",
@@ -233,10 +238,12 @@ export function reduce(record: ReviewRecord, event: ReviewEvent, now: number): R
     case "running":
       return { ...base, status: "running" };
     case "text":
-      // text before any status event still means the run has started talking
+      // The reviewer's own words, so an inner agent that is talking is running — whatever the
+      // backend has got round to saying about itself. Text promotes the status a record opens in
+      // and moves nothing else (a-poll-says-what-it-knows D15).
       return {
         ...base,
-        status: record.status === "pending" ? "running" : record.status,
+        status: record.status === "preparing" ? "running" : record.status,
         transcript: appended(record.transcript, event.text),
       };
     case "completed":
