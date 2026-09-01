@@ -72,11 +72,10 @@ a clock invents one, and one round that had already finished sat unnoticed for s
 whole job was to notice. Set against nothing, the same constant repeated over hundreds of answers to a long round takes
 context from the one dispatch that also has to carry the review's prose back.
 
-The amendment above leaned on two published figures measuring silence — how many events have landed and when the last
-one did. There is one, and by construction there only ever was: the record's own timestamp moves when an event is
-accepted and the count of events increments with it, so the timestamp cannot differ between two answers where the count
-does not. The count alone is the whole working-versus-wedged signal, and two answers agreeing on it need no clock to
-compare.
+Two published figures used to measure silence — how many events have landed and when the last one did. There is one,
+and by construction there only ever was: the record's own timestamp moves when an event is accepted and the count of
+events increments with it, so the timestamp cannot differ between two answers where the count does not. The count alone
+is the whole working-versus-wedged signal, and two answers agreeing on it need no clock to compare.
 
 Nothing in the grounds above moves, because none of it ever rested on where a figure was written down. Silence is still
 the signal, the idle bound still catches the failure, the cap still exists only so that "never" stays out of reach, both

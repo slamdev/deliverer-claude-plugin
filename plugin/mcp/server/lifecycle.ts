@@ -381,7 +381,7 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
         // ordinarily ends a wedged round, and the caller reading this is the one waiting on the
         // slot. Giving it only the four-hour figure tells it to expect nothing sooner than four
         // hours from a round that will in fact end after half an hour of silence — the same defect
-        // the status tool's own `deadlineSec` description was rewritten to avoid (ticket 04).
+        // the status tool's own description names both bounds to avoid.
         const bound =
           `It reaches a terminal status without anyone acting: after ${deps.idleDeadlineSec}s ` +
           `with no event of any kind, which is what ordinarily ends a wedged review, and by its ` +
