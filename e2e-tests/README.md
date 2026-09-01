@@ -65,10 +65,11 @@ epic's reviews. The number is small here because of how the harness is configure
 ### Verify the price table before trusting any total
 
 The tools server records the **round**'s own cost, from the SDK, in the `code_review_status` result the `code-reviewer`
-**dispatch** reads — and the reviewer repeats it in its report:
+**dispatch** reads — so it is in that dispatch's own session record, under the one `spend` key a poll publishes it in,
+whatever the reviewer's report then carries forward (a total and the dollars, not these four classes):
 
 ```
-"stats":{...,"costUsd":0.2175945,"turns":1,"inputTokens":4,"outputTokens":4620,
+"spend":{"costUsd":0.2175945,"inputTokens":4,"outputTokens":4620,
          "cacheReadTokens":17835,"cacheCreationTokens":23822,"model":"claude-sonnet-5",...}
 ```
 

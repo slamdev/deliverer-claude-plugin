@@ -158,7 +158,8 @@ Whoever reads this has your report and nothing else.
 - the change request's URL, and whether it ended draft or ready
 - how many tickets were implemented, and how many rounds completed — with the reason each round that did not complete
   ended on, so the count says why the rest did not
-- what the rounds cost — each round's tokens and its provider-labelled dollar estimate, unknown where a round has none
+- what the rounds cost — each round's total tokens and its provider-labelled dollar estimate, unknown where a round
+  has none
 - how many assumptions were adjudicated `accept`, `override` and `escalate`
 - every hand-off, one line each — the escalations and anything else still waiting on a human
 - every finding the fix waves declined, one line each, with its grounds

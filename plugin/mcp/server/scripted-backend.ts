@@ -30,8 +30,6 @@ export interface ScriptedEvent extends ReviewSpend {
   kind: "preparing" | "running" | "text" | "completed" | "failed";
   text?: string;
   summary?: string;
-  verdict?: string;
-  findings?: number;
   message?: string;
 }
 
@@ -43,7 +41,7 @@ export interface Script {
 
 const KINDS = ["preparing", "running", "text", "completed", "failed"];
 
-/** A short, ordinary review: prepares, runs, says something, finds nothing, finishes. */
+/** A short, ordinary review: prepares, runs, says something, finishes, and says what it spent. */
 export const DEFAULT_SCRIPT: Script = {
   events: [
     { afterMs: 10, kind: "preparing" },
@@ -53,13 +51,10 @@ export const DEFAULT_SCRIPT: Script = {
       afterMs: 10,
       kind: "completed",
       summary: "Scripted review: no findings.",
-      verdict: "approved",
-      findings: 0,
       // A spend, rather than the zero this used to report: a default script that publishes nothing
       // to read cannot show whether the fields reach a caller at all. The provider says `scripted`
       // so nobody mistakes these for a measurement, and the duration is the timeline above.
       costUsd: 0.42,
-      turns: 1,
       inputTokens: 1_200,
       outputTokens: 340,
       cacheReadTokens: 8_600,
@@ -67,7 +62,6 @@ export const DEFAULT_SCRIPT: Script = {
       agentDurationMs: 40,
       model: "scripted-model",
       provider: "scripted",
-      canonicalModel: "scripted-model",
     },
   ],
 };
@@ -137,7 +131,6 @@ export function parseScript(raw: string | null): Script {
  */
 const scriptedSpend = (event: ScriptedEvent): ReviewSpend => ({
   costUsd: event.costUsd,
-  turns: event.turns,
   inputTokens: event.inputTokens,
   outputTokens: event.outputTokens,
   cacheReadTokens: event.cacheReadTokens,
@@ -145,7 +138,6 @@ const scriptedSpend = (event: ScriptedEvent): ReviewSpend => ({
   agentDurationMs: event.agentDurationMs,
   model: event.model,
   provider: event.provider,
-  canonicalModel: event.canonicalModel,
 });
 
 const toEvent = (event: ScriptedEvent): ReviewEvent => {
@@ -168,8 +160,6 @@ const toEvent = (event: ScriptedEvent): ReviewEvent => {
         ...scriptedSpend(event),
         type: "completed",
         summary: event.summary,
-        verdict: event.verdict,
-        findings: event.findings,
       };
   }
 };

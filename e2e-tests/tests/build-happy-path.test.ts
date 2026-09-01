@@ -28,6 +28,7 @@ import {
   assertFlippedReady,
   assertNoScriptedBackend,
   assertRoundsCompleted,
+  assertRoundsReportedSpend,
   assertRunFinished,
   assertSessionRecordsKept,
   assertVerdictPassed,
@@ -71,6 +72,12 @@ test("a delivery implements an epic and flips its change request ready", {
   // question (`../harness/report.ts`).
   assertRoundsCompleted(outcome, ROUNDS);
   assertSessionRecordsKept(outcome, DISPATCHES, WHAT_IT_DISPATCHES);
+  // After the records are known to be there, because this is the one bar read out of what the
+  // tools server itself answered rather than out of what the delivery produced: every round that
+  // reached a result reports what it spent. It is the only automated seam that reaches the real
+  // backend's spend extraction, since the scripted double's spend is scripted rather than
+  // extracted (`../harness/polls.ts`).
+  assertRoundsReportedSpend(outcome);
   // The run was observed because the plugin observes runs by default and nothing here switched
   // that off. Shallow on purpose: a debrief exists for this epic and its header names this run.
   assertDebriefWritten(outcome);

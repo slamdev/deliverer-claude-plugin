@@ -935,9 +935,10 @@ function roundsLine(rounds: readonly RunRound[]): string {
  * One round's line: the poll's own word for how it ended, and the dollars that poll measured.
  *
  * A round's spend IS money, unlike the run's own, because the tools server puts the SDK's own
- * figure in the payload every poll returns — and it survives a **failed** round, which is the half
- * most likely to be lost. The provider that served it travels beside it, because a dollar figure
- * from one provider is not a dollar figure from another.
+ * figure in the `spend` object a poll publishes once the round has a result — and it survives a
+ * **failed** round, which is the half most likely to be lost. The provider that served it travels
+ * beside it, because a dollar figure from one provider is not a dollar figure from another. A round
+ * no poll ever answered with a spend says so in those words: unknown, and never zero.
  *
  * **A poll that came back no status at all is named by its shape and never quoted.** The tools
  * server's own refusals quote what they refused — a forge URL, a repository path — and this is the

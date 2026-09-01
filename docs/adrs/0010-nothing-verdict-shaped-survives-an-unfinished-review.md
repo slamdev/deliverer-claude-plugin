@@ -1,8 +1,8 @@
 # Nothing verdict-shaped survives a review that did not complete
 
-A review's verdict, its finding count and its prose are reported only when the review actually completed. Every one of
-them reads unknown or empty otherwise, and any status short of completed is reported as partial. A review that has
-reached a terminal status cannot be moved by anything that arrives afterwards, a cancellation included.
+A review's prose is reported only when the review actually completed, and any status short of that carries none of it at
+all. A review that has reached a terminal status cannot be moved by anything that arrives afterwards, a cancellation
+included. The verdict and the finding count this rule once named beside the prose are gone; the amendments say why.
 
 ## Grounds
 
@@ -44,3 +44,24 @@ no more a findings parser than the status field it sets is.
 Nothing else moves. What a round **spent** survives a manufactured failure exactly as the Consequences above say it
 survives any other, and it is worth reporting for precisely that reason: one of those two rounds burned eight dollars
 before it died.
+
+## Amendment
+
+The rule used to have three subjects — a review's verdict, its finding count and its prose — and two of them were never
+things a real review had. The deliverable is prose and nothing structured: no judgement is extracted from it, the parser
+that would extract one must not be added, and so on every real **round**, completed or not, the verdict and the count
+read unknown. The only thing that could ever fill either was the scripted double. A rule about them was therefore a
+promise about a test double in the clothes of a promise about reviews, and the two fields had reached the point of
+documenting their own emptiness to the agent that read them. Both are gone, and the rule loses them as subjects.
+
+The word went with them, for a second reason of its own. A **verdict** in this domain is the adjudication one
+**assumption** receives — accept, override or escalate — and a round has nothing of that kind to hold. Spelling one on
+every **poll** of every round gave the word a second meaning inside the one product that has to keep it to a single one.
+
+Nothing verdict-shaped is weakened by their going. What this rule was written against was never a field beside the prose
+but the prose itself reading clean, so a review that did not complete carrying no prose at all is the whole of what
+there is left to guard — and a stronger statement than the partial marking it replaces, which restated the status a
+caller had already been handed and qualified an empty string that is now simply not sent. Terminal states still absorb
+whatever arrives after them, a cancellation included. What a round **spent** still survives a failed status, and no
+figure of it is ever defaulted to zero: unknown is still the honest answer, said now by the absence of the figure rather
+than by a key carrying nothing.

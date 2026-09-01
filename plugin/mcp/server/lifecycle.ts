@@ -28,7 +28,7 @@
  * into whichever run holds the slot next.
  *
  * The record has to be failed and not merely abandoned (PR #11 review round 2): releasing the slot
- * alone leaves a `pending` record no eviction and no bound can ever move, and
+ * alone leaves a `preparing` record no eviction and no bound can ever move, and
  * `agents/code-reviewer.md` tells that agent to retry under the SAME id — so the retry branch would
  * hand that dead handle back for ever, and the agent would poll it until the run's budget was gone.
  * The wedge would have moved from the slot to the id, not gone.
@@ -139,8 +139,9 @@ export interface LifecycleDeps {
   /** the required environment file's variables, layered over the server's own environment */
   claudeEnv: Record<string, string>;
   /**
-   * the ABSOLUTE deadline every review is bounded by, in seconds — the outer of the two bounds, and
-   * the figure `code_review_status` publishes as `deadlineSec`.
+   * the ABSOLUTE deadline every review is bounded by, in seconds — the outer of the two bounds.
+   * Neither travels on an answer as a figure: both are documented where a caller reads what
+   * `code_review_status` does, and named again in the refusal a second start meets (ADR-0007).
    *
    * Neither bound is nullable or optional: both are the server's own constants (`./config.ts`'s
    * `DEADLINE_SEC` and `IDLE_DEADLINE_SEC`) rather than anything a host configures, so "no bound" is
@@ -380,7 +381,7 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
         // ordinarily ends a wedged round, and the caller reading this is the one waiting on the
         // slot. Giving it only the four-hour figure tells it to expect nothing sooner than four
         // hours from a round that will in fact end after half an hour of silence — the same defect
-        // the status tool's own `deadlineSec` description was rewritten to avoid (ticket 04).
+        // the status tool's own description names both bounds to avoid.
         const bound =
           `It reaches a terminal status without anyone acting: after ${deps.idleDeadlineSec}s ` +
           `with no event of any kind, which is what ordinarily ends a wedged review, and by its ` +
@@ -429,7 +430,7 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
       } catch (error) {
         // only if it is still ours: a synchronous terminal event before the throw already released it
         if (inFlightId === reviewId) {
-          // The record `put` above must not survive as an unmovable `pending` either: it is not
+          // The record `put` above must not survive as an unmovable `preparing` either: it is not
           // terminal, so `store.evict` never drops it; `arm()` was never reached, so no deadline can
           // fail it; and `agents/code-reviewer.md` tells that agent to retry under the SAME id,
           // which would hit the retry branch above and hand back this dead handle for ever — an
@@ -473,7 +474,7 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
             `started, or it finished long enough ago to have been evicted.`,
         );
       }
-      return project(record, { deadlineSec: deps.deadlineSec });
+      return project(record);
     },
 
     cancel(reviewId) {

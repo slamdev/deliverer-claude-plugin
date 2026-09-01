@@ -2,24 +2,36 @@
  * The review lifecycle's state and its reducer (delegated-review ticket 04).
  *
  * One record per review, one pure function that folds a backend event into it, and one projection
- * that turns a record into what `code_review_status` publishes. Two rules are load-bearing and live
- * here rather than in any caller, because a caller can forget them:
+ * that turns a record into what `code_review_status` publishes. Three rules are load-bearing and
+ * live here rather than in any caller, because a caller can forget them:
  *
  *  - **Terminal states absorb.** Once a review is `completed`, `failed` or `cancelled`, no event may
  *    move it. That is what makes cancellation trustworthy against a backend message already in
  *    flight, and it is why the reducer's very first act is to check for it.
- *  - **Nothing verdict-shaped survives a non-`completed` status.** The verdict, the finding count and
- *    the summary all read `unknown` / absent unless the run actually finished. A prototype produced
- *    the exact lie this prevents: an approving verdict beside prose describing two crash-level
- *    bugs. A review that never finished must never be reportable as clean.
+ *  - **Nothing verdict-shaped survives a non-`completed` status.** A review that did not finish
+ *    carries no prose at all, and that is the whole of what there is left to guard: a verdict and a
+ *    finding count were never things a real review had. A prototype produced the exact lie this
+ *    prevents: an approving verdict beside prose describing two crash-level bugs. A review that
+ *    never finished must never be reportable as clean.
+ *  - **A poll publishes a key only where there is something to read.** No `null`, no literal
+ *    `"unknown"`, no empty string: unknown is absence, which makes the same claim and costs nothing
+ *    to send. The record holds `null` and `""` internally — the reducer needs somewhere to fold
+ *    into — and `project` below is the one place that turns them back into silence
+ *    (a-poll-says-what-it-knows D1/D2).
  *
  * This module is deliberately **not a seam** (spec, "Testing Decisions"): every behaviour above is
  * observable at the tool surface, and the suite pins it there.
  */
 
-/** Every status a review can hold. `pending` is the handle before the backend has said anything. */
+/**
+ * Every status a review can hold. Five words, and a record opens on the first: `preparing` is honest
+ * for both of the states it covers — the server has accepted the review, and it is starting the
+ * backend. A sixth, `pending`, sat in front of it and was unreachable through either tool, because
+ * the agent backend's first act inside its own `start` is to report `preparing` — synchronously,
+ * before the handle is read back from the store. No caller ever saw the word and only a script could
+ * produce it, so it is gone (a-poll-says-what-it-knows D14).
+ */
 export type ReviewStatus =
-  | "pending"
   | "preparing"
   | "running"
   | "completed"
@@ -30,7 +42,6 @@ export const TERMINAL_STATUSES: readonly ReviewStatus[] = ["completed", "failed"
 
 /** The same set as a tuple, because the published output schema needs one and must not drift. */
 export const STATUSES_TUPLE = [
-  "pending",
   "preparing",
   "running",
   "completed",
@@ -42,8 +53,8 @@ export const isTerminal = (status: ReviewStatus): boolean => TERMINAL_STATUSES.i
 
 /**
  * What one run of a review spent, as its backend reports it. One shape for the whole path — a
- * backend event carries it, the record holds it, `stats` publishes it — so a field added here is a
- * field the compiler then demands at every place it travels through.
+ * backend event carries it, the record holds it, a poll's `spend` object publishes it — so a field
+ * added here is a field the compiler then demands at every place it travels through.
  *
  * Every field is independently optional, and absence is the honest answer rather than a defect: a
  * round that died before its result message arrived knows none of them. Nothing here is ever
@@ -53,10 +64,13 @@ export const isTerminal = (status: ReviewStatus): boolean => TERMINAL_STATUSES.i
  * says what these tokens would have cost first-party. The token counters are the portable figure,
  * which is why `provider` travels beside them and the `code-reviewer` agent is told to label the
  * dollars with it.
+ *
+ * `agentDurationMs` rides here because a result message is where it is measured, and is the one
+ * field of this shape a poll publishes OUTSIDE the `spend` object: time is not money, so it sits at
+ * the top level beside the record's own timestamps (a-poll-says-what-it-knows D12).
  */
 export interface ReviewSpend {
   costUsd?: number;
-  turns?: number;
   inputTokens?: number;
   outputTokens?: number;
   cacheReadTokens?: number;
@@ -66,11 +80,13 @@ export interface ReviewSpend {
   /** the model that served the round, and the provider that served that model */
   model?: string;
   provider?: string;
-  /** the pricing-lookup id behind `model`, which is not always the same string */
-  canonicalModel?: string;
 }
 
-/** The same fields as everything downstream of the reducer holds them: unknown is `null`. */
+/**
+ * The same fields as the RECORD holds them: unknown is `null`, because the reducer needs a slot to
+ * fold the next event into. Nothing published carries that `null` — `project` below turns it back
+ * into an absent key.
+ */
 export type RecordedSpend = {
   [Field in keyof ReviewSpend]-?: NonNullable<ReviewSpend[Field]> | null;
 };
@@ -131,7 +147,7 @@ export type ReviewEvent =
   | { type: "preparing" }
   | { type: "running" }
   | { type: "text"; text: string }
-  | ({ type: "completed"; summary?: string; verdict?: string; findings?: number } & ReviewSpend)
+  | ({ type: "completed"; summary?: string } & ReviewSpend)
   | ({ type: "failed"; message: string } & ReviewSpend)
   | { type: "cancelled"; reason: string };
 
@@ -142,8 +158,6 @@ export interface ReviewRecord extends RecordedSpend {
   cwd: string | null;
   status: ReviewStatus;
   /** set ONLY by a completion event — never inferred, so an unfinished run has nothing to report */
-  verdict: string | null;
-  findings: number | null;
   summary: string;
   /** everything that landed, in order; a cancelled or failed run keeps whatever it got */
   transcript: string;
@@ -158,6 +172,12 @@ export interface ReviewRecord extends RecordedSpend {
    */
   reason: string;
   createdAt: number;
+  /**
+   * When the reducer last accepted an event. INTERNAL and load-bearing: `./store.ts` evicts a
+   * terminal record on it when that record has no ending timestamp. It used to be published as the
+   * last event's time too, and is not any more — the count of events moves with it and is the whole
+   * signal on its own, so the timestamp only ever added a clock (ADR-0007's second amendment).
+   */
   updatedAt: number;
   endedAt: number | null;
   events: number;
@@ -166,7 +186,6 @@ export interface ReviewRecord extends RecordedSpend {
 /** No spend known yet: what a record opens with, and what a run that never reported one keeps. */
 const NO_SPEND: RecordedSpend = {
   costUsd: null,
-  turns: null,
   inputTokens: null,
   outputTokens: null,
   cacheReadTokens: null,
@@ -174,17 +193,15 @@ const NO_SPEND: RecordedSpend = {
   agentDurationMs: null,
   model: null,
   provider: null,
-  canonicalModel: null,
 };
 
 /**
  * Fold an event's spend over what the record already holds, field by field: a backend that names
- * some of them and not others must not blank the rest. Absent stays absent, so `null` survives all
- * the way to the caller as "unknown" rather than turning into a number nobody measured.
+ * some of them and not others must not blank the rest. Absent stays absent, so a field no event ever
+ * named is one no answer ever carries, rather than a number nobody measured.
  */
 const mergedSpend = (record: RecordedSpend, event: ReviewSpend): RecordedSpend => ({
   costUsd: event.costUsd ?? record.costUsd,
-  turns: event.turns ?? record.turns,
   inputTokens: event.inputTokens ?? record.inputTokens,
   outputTokens: event.outputTokens ?? record.outputTokens,
   cacheReadTokens: event.cacheReadTokens ?? record.cacheReadTokens,
@@ -192,7 +209,6 @@ const mergedSpend = (record: RecordedSpend, event: ReviewSpend): RecordedSpend =
   agentDurationMs: event.agentDurationMs ?? record.agentDurationMs,
   model: event.model ?? record.model,
   provider: event.provider ?? record.provider,
-  canonicalModel: event.canonicalModel ?? record.canonicalModel,
 });
 
 export function newRecord(
@@ -203,9 +219,7 @@ export function newRecord(
     reviewId: input.reviewId,
     changeRequestUrl: input.changeRequestUrl,
     cwd: input.cwd,
-    status: "pending",
-    verdict: null,
-    findings: null,
+    status: "preparing",
     summary: "",
     transcript: "",
     reason: "",
@@ -237,10 +251,12 @@ export function reduce(record: ReviewRecord, event: ReviewEvent, now: number): R
     case "running":
       return { ...base, status: "running" };
     case "text":
-      // text before any status event still means the run has started talking
+      // The reviewer's own words, so an inner agent that is talking is running — whatever the
+      // backend has got round to saying about itself. Text promotes the status a record opens in
+      // and moves nothing else (a-poll-says-what-it-knows D15).
       return {
         ...base,
-        status: record.status === "pending" ? "running" : record.status,
+        status: record.status === "preparing" ? "running" : record.status,
         transcript: appended(record.transcript, event.text),
       };
     case "completed":
@@ -249,8 +265,6 @@ export function reduce(record: ReviewRecord, event: ReviewEvent, now: number): R
         ...mergedSpend(record, event),
         status: "completed",
         endedAt: now,
-        verdict: event.verdict ?? null,
-        findings: event.findings ?? null,
         summary: event.summary ?? "",
       };
     case "failed":
@@ -262,9 +276,9 @@ export function reduce(record: ReviewRecord, event: ReviewEvent, now: number): R
         status: "failed",
         endedAt: now,
         // Kept twice, deliberately: in the transcript, where everything that landed is kept in
-        // order, and in `reason`, which is what `code_review_status` publishes. The nine-key shape
-        // has no `error` field and gains none — `reason` took the slot `transcript` vacated, so the
-        // failure path stopped being dark without the payload growing (grill A6/A20).
+        // order, and in `reason`, which is what `code_review_status` publishes. The published
+        // shape has no `error` field and gains none — `reason` took the slot `transcript` vacated,
+        // so the failure path stopped being dark without the payload growing (grill A6/A20).
         transcript: appended(record.transcript, `[failed] ${event.message}`),
         reason: event.message,
       };
@@ -279,94 +293,119 @@ export function reduce(record: ReviewRecord, event: ReviewEvent, now: number): R
   }
 }
 
-/** The literal every verdict-shaped field falls back to. Never `null`, never an empty verdict. */
-export const UNKNOWN = "unknown";
+/**
+ * What a round **spent**, as a poll publishes it: `ReviewSpend` less the duration, which is a fact
+ * about the run rather than a figure about money and travels at the top level instead
+ * (a-poll-says-what-it-knows D12). It is the glossary's own word for what this object holds — the
+ * four token counters and the dollar estimate — plus `provider`, which labels the dollars, and
+ * `model`, which is what that provider served.
+ *
+ * The four counters stay separate: they are the figure that does not depend on a provider's price
+ * list, and each of the four is priced differently, which is what makes a completed answer a usable
+ * oracle for the **harness**'s own price table (`e2e-tests/README.md`).
+ */
+export type PublishedSpend = Omit<ReviewSpend, "agentDurationMs">;
 
-/** Exactly the nine keys the tool contract names — no more, so a consumer can rely on the shape. */
+/**
+ * What one poll answers. **Four keys are always present because they are always known** — the
+ * review's id, its status, when the record was opened and how many events have landed — and every
+ * other key is optional, which is what makes the omission rule in this file's header expressible in
+ * the type and in the published output schema rather than merely documented
+ * (a-poll-says-what-it-knows D3).
+ *
+ * **Nothing here is a clock, and that is the whole design of it.** The RECORD's own elapsed
+ * wall-clock left first (review-reliability ticket 10, D19): it rose whether the review was working
+ * or wedged and answered neither, and the shipped `code-reviewer` read it every poll and reasoned
+ * aloud about a deadline off the back of it. Then the last event's own timestamp went, and with it
+ * both bounds as figures (ADR-0007): `events` moves only when that timestamp does, so it is the
+ * whole working-versus-wedged signal on its own, and a bound a caller can neither configure nor act
+ * on is documented where a caller reads what the status tool does instead of riding on every answer.
+ * What dates anything at all is `startedAt`, which dates the review's start, and `endedAt`, which
+ * arrives once there is an ending to date.
+ */
 export interface ReviewStatusResult {
   reviewId: string;
-  changeRequestUrl: string;
   status: ReviewStatus;
-  verdict: string;
-  counts: { findings: number | "unknown" };
+  startedAt: string;
   /**
-   * The spend fields here are `ReviewSpend`'s, published flat and whatever the status — what a
-   * round cost is a fact about the run rather than a claim about the code, so unlike everything
-   * verdict-shaped it survives a `failed` status.
-   *
-   * The RECORD's own elapsed wall-clock is deliberately no key here (review-reliability ticket 10,
-   * D19): it rose whether the review was working or wedged and answered neither, and the shipped
-   * `code-reviewer` read it every poll and reasoned aloud about a deadline off the back of it. What
-   * this leaves is stated rather than implied: `startedAt` still dates the review's start and
-   * `deadlineSec` still names the bound, so a caller can still build a clock of its own — what is
-   * gone is anything telling the shipped agent those numbers are its to act on.
+   * How many events have landed, published even at zero: nothing has landed is a measurement rather
+   * than an absence, and it is what the first poll of a round has to say
+   * (a-poll-says-what-it-knows D4). The only field that moves while a review is alive — the SDK's
+   * iterable says nothing until the inner agent finishes (`agent-backend.ts`'s header) — so it is
+   * the whole of what tells a poller "working" from "wedged", and two polls agreeing on it need no
+   * clock to compare.
    */
-  stats: RecordedSpend & {
-    startedAt: string;
-    endedAt: string | null;
-    events: number;
-    /**
-     * When the last event landed, or null before any has. This and `events` are the only fields that
-     * move while a review is alive — the SDK's iterable says nothing until the inner agent finishes
-     * (`agent-backend.ts`'s header) — so together they are the whole of what tells a poller
-     * "working" from "wedged", and two polls agreeing on both need no clock to read.
-     */
-    lastEventAt: string | null;
-    /**
-     * the ABSOLUTE deadline every review on this server is bounded by — a constant, so never absent.
-     * NOT the bound a wedged round ordinarily ends on: that is the idle one, which is deliberately
-     * no key of its own here (review-reliability ticket 04). A caller learns it exists from this
-     * field's own description on the status tool, and from the reason a round aborted on it gives.
-     */
-    deadlineSec: number;
-  };
+  events: number;
+  endedAt?: string;
   /**
-   * Why a non-completed run ended, verbatim; empty when the run is alive or completed. A FAILED
-   * run's reason opens with a `FailureCode`; a cancelled one's does not. It replaced
-   * `transcript` in this payload rather than joining it (grill A6): a deadline-length run costs
-   * hundreds of polls, and returning the whole accumulated stream on each one grows the polling
-   * agent's context with the reviewer's verbosity until it hits a ceiling the server's deadline
-   * never reaches. The full stream stays available, pull-only, at `code-review://transcript/<id>`.
+   * Why a non-completed run ended, verbatim; absent while the run is alive and absent when it
+   * completed. A FAILED run's reason opens with a `FailureCode`; a cancelled one's does not. It
+   * replaced `transcript` in this payload rather than joining it (grill A6): a deadline-length run
+   * costs hundreds of polls, and returning the whole accumulated stream on each one grows the
+   * polling agent's context with the reviewer's verbosity until it hits a ceiling the server's
+   * deadline never reaches. The full stream stays available, pull-only, at
+   * `code-review://transcript/<id>`.
    */
-  reason: string;
-  partial: boolean;
-  summary: string;
+  reason?: string;
+  /** how long the round ran INSIDE the reviewer — the reviewer's own figure, never a subtraction */
+  agentDurationMs?: number;
+  /**
+   * What the round spent, whatever the status — what a round cost is a fact about the run rather
+   * than a claim about the code, so unlike the prose it survives a `failed` status (ADR-0010). The
+   * whole object is absent until a result arrives, so a running round has no spend key rather than
+   * an empty one, and a cancelled round never gets one at all (a-poll-says-what-it-knows D11).
+   */
+  spend?: PublishedSpend;
+  summary?: string;
 }
 
-export function project(
-  record: ReviewRecord,
-  context: { deadlineSec: number },
-): ReviewStatusResult {
-  const done = record.status === "completed";
+/**
+ * The `spend` object a poll publishes, or nothing at all when not one figure of it is known.
+ *
+ * Read off a record that holds `null` for unknown, and every `null` is then DROPPED rather than
+ * sent: a figure nobody measured is unknown, absence says exactly that, and `CONTEXT.md`'s
+ * **spend** entry forbids the confident zero that would otherwise read as a cheap review
+ * (a-poll-says-what-it-knows D1/D2).
+ *
+ * `held` names every key of the published shape ONCE, which is what makes this exhaustive in both
+ * directions: a field added to `ReviewSpend` does not compile until it is named here, and the copy
+ * below walks whatever `held` holds, so it cannot then be left out of what is published.
+ */
+function publishedSpend(record: RecordedSpend): PublishedSpend | undefined {
+  const held: { [Field in keyof PublishedSpend]-?: PublishedSpend[Field] | null } = {
+    costUsd: record.costUsd,
+    inputTokens: record.inputTokens,
+    outputTokens: record.outputTokens,
+    cacheReadTokens: record.cacheReadTokens,
+    cacheCreationTokens: record.cacheCreationTokens,
+    model: record.model,
+    provider: record.provider,
+  };
+  const spend: PublishedSpend = {};
+  for (const [field, value] of Object.entries(held)) {
+    if (value !== null) Object.assign(spend, { [field]: value });
+  }
+  return Object.keys(spend).length === 0 ? undefined : spend;
+}
+
+export function project(record: ReviewRecord): ReviewStatusResult {
+  const spend = publishedSpend(record);
   return {
     reviewId: record.reviewId,
-    changeRequestUrl: record.changeRequestUrl,
     status: record.status,
-    verdict: done ? (record.verdict ?? UNKNOWN) : UNKNOWN,
-    counts: { findings: done && record.findings !== null ? record.findings : UNKNOWN },
-    stats: {
-      startedAt: new Date(record.createdAt).toISOString(),
-      endedAt: record.endedAt === null ? null : new Date(record.endedAt).toISOString(),
-      events: record.events,
-      // `updatedAt` only moves when the reducer accepts an event, so it IS the last event's time —
-      // but it starts equal to `createdAt`, so it is published only once something has landed.
-      lastEventAt: record.events === 0 ? null : new Date(record.updatedAt).toISOString(),
-      costUsd: record.costUsd,
-      turns: record.turns,
-      inputTokens: record.inputTokens,
-      outputTokens: record.outputTokens,
-      cacheReadTokens: record.cacheReadTokens,
-      cacheCreationTokens: record.cacheCreationTokens,
-      agentDurationMs: record.agentDurationMs,
-      model: record.model,
-      provider: record.provider,
-      canonicalModel: record.canonicalModel,
-      deadlineSec: context.deadlineSec,
-    },
-    reason: record.reason,
-    // `partial` is the whole truth of "is this the finished review?", so it is derived from the
-    // status rather than from whether anything landed: only `completed` is not partial
-    partial: !done,
-    summary: done ? record.summary : "",
+    startedAt: new Date(record.createdAt).toISOString(),
+    events: record.events,
+    // Each of these is omitted where the record has nothing to say, which is the whole omission
+    // rule at the one place it can be enforced: an ending a live round has not reached, the reason
+    // a healthy round has no need of, the duration and the money no result has reported yet, and
+    // the prose an unfinished round does not have.
+    ...(record.endedAt === null ? {} : { endedAt: new Date(record.endedAt).toISOString() }),
+    ...(record.reason === "" ? {} : { reason: record.reason }),
+    ...(record.agentDurationMs === null ? {} : { agentDurationMs: record.agentDurationMs }),
+    ...(spend === undefined ? {} : { spend }),
+    // The prose is the whole deliverable, and it is published only for a review that COMPLETED: a
+    // round that failed or was cancelled carries none of it, which is the stronger statement of
+    // what a `partial` flag used to make by restating the status (ADR-0010).
+    ...(record.status === "completed" && record.summary !== "" ? { summary: record.summary } : {}),
   };
 }

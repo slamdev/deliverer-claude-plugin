@@ -94,10 +94,15 @@ export interface RunRound {
   readonly lastPollAt: string | undefined;
   readonly status: string | undefined;
   readonly reason: string;
-  /** a round's spend IS measured in dollars, with the provider that served it */
+  /**
+   * A round's spend IS measured in dollars, with the provider that served it, and all three are
+   * read off the one `spend` object a poll publishes them in rather than found among a bag of
+   * statistics. Undefined is what a poll that carried no spend says: unknown, and never zero.
+   */
   readonly costUsd: number | undefined;
   readonly provider: string | undefined;
   readonly model: string | undefined;
+  /** the reviewer's own figure, off the poll's top level, where time sits apart from money */
   readonly agentDurationMs: number | undefined;
   /**
    * Set when the chronologically last poll came back an error rather than a status — as that
@@ -587,7 +592,14 @@ function roundsOf(
   for (const reviewId of order) {
     const polls = grouped.get(reviewId) ?? [];
     const reported = polls.filter((it) => stringField(it.payload, "status") !== undefined).at(-1);
-    const stats = objectField(reported?.payload, "stats");
+    // The money is under `spend`, the ONE key a poll puts it under, and the time inside the
+    // reviewer sits at the top level beside it — time is not spend. There is no fallback to the
+    // `stats` bag these three used to arrive in: a record written before that change holds the
+    // figures under the old name and this reports that round's spend as unknown, which is the
+    // consequence the spec accepted rather than a defect to chase, and reading both names would
+    // keep a shape the product no longer has alive in the one reader of it
+    // (a-poll-says-what-it-knows D23).
+    const spend = objectField(reported?.payload, "spend");
     const last = polls.filter((it) => it.kind === "answer").at(-1);
     rounds.push({
       reviewId,
@@ -595,11 +607,13 @@ function roundsOf(
       startedAt: polls[0]?.at,
       lastPollAt: last?.at,
       status: stringField(reported?.payload, "status"),
+      // A poll omits the reason a healthy round has no need of, so absent and empty are the same
+      // answer here: no reason to print.
       reason: stringField(reported?.payload, "reason") ?? "",
-      costUsd: numberField(stats, "costUsd"),
-      provider: stringField(stats, "provider"),
-      model: stringField(stats, "model"),
-      agentDurationMs: numberField(stats, "agentDurationMs"),
+      costUsd: numberField(spend, "costUsd"),
+      provider: stringField(spend, "provider"),
+      model: stringField(spend, "model"),
+      agentDurationMs: numberField(reported?.payload, "agentDurationMs"),
       lastPollError: last?.error,
       where: [...new Set(polls.map((it) => it.where))],
     });

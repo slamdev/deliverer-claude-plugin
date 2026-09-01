@@ -14,9 +14,9 @@ exists only in the prose — which is what a human reads and what the fix wave i
 
 ## Consequences
 
-A round's verdict and its finding count read unknown on every real review, completed or not, and the prose is the whole
-result a round carries. A reader will meet that absence and want to close it with a findings parser, a second turn that
-extracts them, or a tool the reviewer reports findings through. None of those should be added.
+The prose is the whole result a round carries, and a poll publishes nothing of a judgement's shape beside it. A reader
+will meet that absence and want to close it with a findings parser, a second turn that extracts them, or a tool the
+reviewer reports findings through. None of those should be added.
 
 Reading what a round **spent** is not an exception. Those figures say what the review cost and never what it found, so
 no judgement is extracted and no structure of the reviewer's own is consumed. They are worth reading because nothing
@@ -32,3 +32,13 @@ ignored, prints the findings to a terminal nobody reads, and reports success. A 
 findings nobody can see, and counts toward the two rounds a change request is **flipped ready** against. So the fact is
 now an instruction, the prose carries what the instruction does not place, and the grounds no longer lean on a posting
 that may not have happened. The refusal of a structured result is unchanged, and so is every consequence of it.
+
+## Amendment
+
+The consequence used to open by naming two fields on a **poll** — a round's verdict and its finding count — and saying
+that both read `unknown` on every real review. Neither is published now. Nothing but the scripted double could ever fill
+either, so a payload carrying them stated this record's own finding as a pair of empty keys, and a field whose
+documentation is an apology for its own emptiness teaches the agent reading it that there is a judgement to reason
+about. Nothing in the grounds moves and nothing in the decision moves: the prose is still the whole deliverable, there
+is still nothing to parse for, and the reader who meets the absence and wants to close it is still the reader this
+record exists to answer. What changed is only that the absence is silence rather than a word.

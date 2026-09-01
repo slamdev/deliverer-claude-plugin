@@ -34,6 +34,7 @@ import { readEpic, type PublishedEpic } from "./epic.ts";
 import { DEFAULT_BRANCH } from "./forge.ts";
 import { loadFixture, type Fixture } from "./fixture.ts";
 import { installPluginUnderTest, REVIEW_OPTIONS } from "./install.ts";
+import { describePolledRound, readPolledRounds, type PolledRound } from "./polls.ts";
 import { roundsCompleted } from "./report.ts";
 import { createUnattendedSeat, type ResponderRecord } from "./responder.ts";
 import {
@@ -88,6 +89,8 @@ export interface BuildOutcome {
   readonly changeRequest: ChangeRequest | null;
   /** how many **rounds** the run's own report is evidence for (`./report.ts`) */
   readonly roundsCompleted: number | null;
+  /** every round this run polled, and what those polls answered (`./polls.ts`) */
+  readonly rounds: readonly PolledRound[];
   readonly scriptedBackend: ScriptedBackend;
   readonly records: SessionRecords;
   /** what the observer had left beside the run the moment it returned (`./debrief.ts`) */
@@ -205,6 +208,17 @@ export function buildRun(fixtureName: string): BuildRunBuilder {
         ? null
         : await readChangeRequest(runDirectory, repo.fullName, only);
 
+      // What the rounds were answered when they were polled, read off the records the run left
+      // (`./polls.ts`). Reported as well as asserted on: a round's spend is in none of the figures
+      // above — a round runs as its own process and its money never reaches the session's total —
+      // so this is the only place a reader is told what the reviews themselves cost.
+      const records = await readSessionRecords(runDirectory);
+      const rounds = await readPolledRounds(records);
+      t.diagnostic(
+        `the rounds, as their polls answered them: ` +
+          `${rounds.map(describePolledRound).join("; ") || "none were polled in this run"}`,
+      );
+
       return {
         runDirectory,
         fixture,
@@ -216,8 +230,9 @@ export function buildRun(fixtureName: string): BuildRunBuilder {
         changeRequests,
         changeRequest,
         roundsCompleted: roundsCompleted(run.report),
+        rounds,
         scriptedBackend,
-        records: await readSessionRecords(runDirectory),
+        records,
         debriefs,
         spend,
         deliveredDiffPath: changeRequest === null
