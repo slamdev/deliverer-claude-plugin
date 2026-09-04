@@ -197,7 +197,8 @@ The verdict that stands is what decides your work:
   **directive** stating the change. Implement that directive: implementing is the default and declining it takes
   **grounds**, exactly as a **review finding** does. It ends where step 4 has every comment you collected end — a fix
   you commit, a reply carrying the grounds you declined it on, or a place on the **hand-off** list, which it reaches the
-  way any comment you could not clear does.
+  way any comment you could not clear does and with a reply saying you handed it off: the hand-off list lives in your
+  report alone, and the comment is where whoever reads that fork next is already looking.
 - **`accept`** — the choice stands, so there is nothing to implement. Reply with the verdict's grounds and resolve it.
 - **`escalate`** — the fork is a human's to close.
 - **no verdict reply** — nothing has adjudicated the fork yet.

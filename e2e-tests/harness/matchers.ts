@@ -835,11 +835,12 @@ const IMPROVE = /^improve/;
  *
  * **The bar is answered-AFTER rather than resolved, and that is deliberate.** A wave may put an
  * improvement on its **hand-off** list the way it may any comment it could not clear, and that list
- * lives only in the run's report prose — the forge carries nothing that tells a handed-off comment
- * from an abandoned one. So what is owed is a reply landing after the verdict, which is the mark the
- * wave leaves on a comment it worked either way, or the resolution the channel offers where the wave
- * resolved it outright. Holding an `improve` to `resolved` would fail a run that did exactly what it
- * was told.
+ * lives only in the run's report prose — so holding an `improve` to `resolved` would fail a run that
+ * did exactly what it was told. What every legal outcome does leave is a reply: the mark naming the
+ * commit that fixed it, the grounds it was declined on, or — since the report is the only other place
+ * a hand-off exists — one saying it was handed off. `comments-addresser.md` owes that third reply in
+ * so many words, which is what makes answered-after a bar an honest wave clears and an abandoned
+ * directive does not.
  *
  * **What it reads is a position and not a count**, off the same seam and no other:
  * `./change-request.ts` reports the STANDING verdict — the newest answer to name one, since later
