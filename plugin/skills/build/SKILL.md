@@ -51,7 +51,15 @@ say — not a mechanical fact, so not yours. A resumed run therefore counts no c
 and `comments-addresser` again and let each read its own filter. One meeting a fully adjudicated change request replies
 nothing and reports it; one meeting no unresolved comment commits nothing and reports that. That is what makes either
 dispatch worth spending whenever it is in doubt: one with nothing to do costs time, while a skipped wave flips a change
-request ready with an **override** unimplemented and an **escalation** nobody has seen.
+request ready with an `improve` or an `override` unimplemented and an **escalation** nobody has seen.
+
+**Two accounts reach you for every improvement, and the fix wave's is the one your report carries.**
+`assumption-reviewer` names every **directive** an `improve` stated and each wave names what it did with them; what
+happened to the code is the wave's to say — the precedence a **gate** a commit names and a report does not already
+takes, where the account nearer the code is the one to trust. Where a wave leaves a directive out altogether, neither
+implemented nor declined nor handed off, no account of the code exists at all and putting the stage back is the whole of
+your move: which report is right turns on what the replies on those comments say, and reading them is the judgement that
+was never yours.
 
 **Dispatch.** Every dispatch carries the epic, and — once each exists — the change request's URL and the **epic branch's
 name**, so none of them has to find it again. Neither exists at the first stage-1 dispatch: that implementer creates the
@@ -88,16 +96,19 @@ duration too short and you dispatch again, too long and the epic waits on your g
    without that line is a **fix wave**'s, and stage 5 says what becomes of its entries — so a report naming fewer
    comments than the branch's commits recorded is this stage doing its job rather than half-doing it. Keep the URL it
    reports.
-3. **Adjudicate the assumptions** — dispatch `assumption-reviewer`. It replies a verdict — `accept`, `override` or
-   `escalate` — to every `ASSUMPTION` comment.
+3. **Adjudicate the assumptions** — dispatch `assumption-reviewer`. For each `ASSUMPTION` comment it compares the roads
+   the **fork** left open and replies one verdict — `accept`, `improve`, `override` or `escalate`. An `improve` is a
+   road that beat the one the code took on a named **axis**, so it carries a **directive** stage 5 implements and code
+   no ticket asked for changes on a judgement nobody ratified. Keep the four counts, and every `improve` its report
+   names directing.
 4. **First round** — dispatch `code-reviewer`. It drives one **round** and reports its prose. Keep that prose: the
    review's prompt instructs the reviewer to post its findings as comments on the change request, and where it did not,
    the prose is the only form they exist in — so stage 5 is dispatched with it.
 5. **First fix wave** — dispatch `comments-addresser`, carrying the first round's prose (**Dispatch**). It works every
-   unresolved comment and every point that prose raises: implementing the overrides and the findings, resolving what it
-   implements or declines, and leaving the escalations for a human. Keep the **hand-off** list its report carries. Its
-   own commits carry no `Ticket:` line and record the **forks** the wave closed silently: stage 2's mirror passes those
-   over and nothing adjudicates them, so no stage is owed for them.
+   unresolved comment and every point that prose raises: implementing the improvements, the overrides and the findings,
+   resolving what it implements or declines, and leaving the escalations for a human. Keep the **hand-off** list and the
+   `improve` lines its report carries. Its own commits carry no `Ticket:` line and record the **forks** the wave closed
+   silently: stage 2's mirror passes those over and nothing adjudicates them, so no stage is owed for them.
 6. **Second round** — dispatch `code-reviewer` again. It reviews the fix wave's commits, so what the first round missed
    still gets caught.
 7. **Second fix wave** — dispatch `comments-addresser` again, carrying the second round's prose and the findings the
@@ -160,8 +171,13 @@ Whoever reads this has your report and nothing else.
   ended on, so the count says why the rest did not
 - what the rounds cost — each round's total tokens and its provider-labelled dollar estimate, unknown where a round
   has none
-- how many assumptions were adjudicated `accept`, `override` and `escalate`
+- how many assumptions were adjudicated `accept`, `improve`, `override` and `escalate`
+- every `improve` a fix wave implemented, one line each — the **fork**, the road taken and the **axis** that carried it
 - every hand-off, one line each — the escalations and anything else still waiting on a human
-- every finding the fix waves declined, one line each, with its grounds
+- every finding and every `improve` the fix waves declined, one line each, with its grounds
 - every **gate** left red for work nobody asked for, one line each — from the commits as well as from the reports
 - whether the checks ended green
+
+**The `improve` lines are the only trace of code the run redesigned.** Nothing ratified those changes before they
+landed, and the comment each one came from is resolved by then and collapsed where the human is reading — so one you
+leave out is a redesign they meet by reading the diff or never at all.

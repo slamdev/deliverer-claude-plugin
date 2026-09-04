@@ -44,8 +44,9 @@ may be fixed already with nothing anywhere saying so.
    change request by someone else. What the plugin itself posted is neither kind, and says as much: a **verdict** reply,
    and a mark naming the comment it worked, are its own record of the work and never a finding to work again. Read the
    replies, not the resolution state alone — an assumption's verdict lives in a reply, and on a channel that carries no
-   resolution a reply naming the comment is what says it was worked. An `override` or an `escalate` verdict is work
-   **owed** rather than work done, so a comment carrying one stays collected however that verdict was replied.
+   resolution a reply naming the comment is what says it was worked. An `improve`, an `override` or an `escalate`
+   verdict is work **owed** rather than work done, so a comment carrying one stays collected however that verdict was
+   replied.
 4. **Work each comment, and every point the prose raised**, giving the last one the same scrutiny as the first: do what
    its kind below calls for, following the project's conventions and the nearest existing call sites, and
    **Review findings** covers the prose. You are done when every comment from step 3 has a fix waiting to commit, a
@@ -187,11 +188,17 @@ assumption may carry more than one: later legwork can overturn a verdict already
 beside the one it replaced and **the newest verdict reply is the one that stands**. Order them by the channel's own
 account of when each landed — a thread's replies come back in order, and on a channel with no threading the `created_at`
 the projection reads is what says which is newer — and read only the newest. Acting on a superseded `accept` drops the
-**directive** the `override` that replaced it stated, and resolves a comment that owed work.
+**directive** the `improve` or the `override` that replaced it stated, and resolves a comment that owed work.
 
 The verdict that stands is what decides your work:
 
 - **`override`** — the reply states the change to make. Implement that **directive**.
+- **`improve`** — the choice was defensible and the reply names a road that beats it on an **axis**, plus the
+  **directive** stating the change. Implement that directive: implementing is the default and declining it takes
+  **grounds**, exactly as a **review finding** does. It ends where step 4 has every comment you collected end — a fix
+  you commit, a reply carrying the grounds you declined it on, or a place on the **hand-off** list, which it reaches the
+  way any comment you could not clear does and with a reply saying you handed it off: the hand-off list lives in your
+  report alone, and the comment is where whoever reads that fork next is already looking.
 - **`accept`** — the choice stands, so there is nothing to implement. Reply with the verdict's grounds and resolve it.
 - **`escalate`** — the fork is a human's to close.
 - **no verdict reply** — nothing has adjudicated the fork yet.
@@ -219,6 +226,11 @@ Clause 1 alone is taste. Clause 2 alone is a forced move. Neither is a fork you 
 your wave existed, and nothing after you mirrors an entry of yours into a comment — so a fork you closed ships
 **unratified**, and the human meets it on this commit rather than as an adjudicated comment. That is what the entry is
 for: off the commit, that fork exists nowhere at all.
+
+**A directive you implemented closed no fork of yours.** The verdict compared the roads and chose one; you executed
+that choice. So it earns no numbered entry here, and no `Ticket:` line either — the ticket whose commit recorded that
+assumption never asked for this change, the verdict on it did — and nothing mirrors it into a comment of its own. Where
+it lands is the reply that marks its comment and one line in your report.
 
 **What may stay red is narrower than a ticket's, and the two cases are told apart by when the gate went red** — not by
 what it is waiting on, which reads the same either way.
@@ -251,7 +263,13 @@ Gates:
 Whoever reads this has your report and nothing else.
 
 - every commit you added — hash and message — and that the branch on the remote carries them
+- every `improve` you implemented, one line each — the **fork**, the road you took and the **axis** that carried it
 - every **gate** you left red, one line each — and the work no comment asked for that it belongs to
-- every finding you declined, one line each, with its grounds
+- every finding and every `improve` you declined, one line each, with its grounds
 - every hand-off, one line each — those are the only ones still waiting on someone else
 - whether the checks ended green
+
+**The `improve` lines are the whole account of code the run redesigned.** Nothing ratified those changes before they
+landed — the human meets them on the branch and in these lines, and nowhere else. So each one says what you implemented
+rather than what the verdict directed: a directive you declined rides the declined line, one you handed off rides the
+hand-off list, and neither of those is a road taken.

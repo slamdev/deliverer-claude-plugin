@@ -44,8 +44,14 @@ const ASSUMPTION = /^[ \t]*ASSUMPTION[ \t]*\(([0-9a-f]{7,40})\)/i;
  */
 const RE_ASSUMPTION = /^[ \t]*re:[ \t]*ASSUMPTION[ \t]*\(([0-9a-f]{7,40})\)/i;
 
-/** The three verdicts, as an adjudication states them — read for the reader, never asserted on. */
-const VERDICT = /\b(accept(?:ed)?|override(?:n|s)?|escalat(?:e|ed|ion))\b/i;
+/**
+ * The four verdicts, as an adjudication states them — read for the reader, and turned on by exactly
+ * one matcher: `improve` is the one of the four that leaves a **fix wave** work owed, so
+ * `assertImprovementsAnswered` finds it here (the-adjudication-compares-roads ticket 05). For the
+ * other three the word stays a reading, because what an adjudication promises is a reply stating
+ * its **grounds** rather than the word.
+ */
+const VERDICT = /\b(accept(?:ed)?|improve(?:s|d|ments?)?|override(?:n|s)?|escalat(?:e|ed|ion))\b/i;
 
 /** One change request, as the forge lists it. */
 export interface ChangeRequestSummary {
@@ -78,8 +84,19 @@ export interface DeliveredCommit {
  * for it would be this harness holding the plugin to a wording nobody promised. What IS promised is
  * structural: a reply on the thread, or — where the channel carries no threading — a comment
  * opening `re: ASSUMPTION (<hash>)`, which the agent's own instructions require so that a verdict
- * says which fork it closed. That is what `answers` counts. The word is kept beside it because a
- * reader wants to see which way the forks went, and a matcher reports it without turning on it.
+ * says which fork it closed. That is what `answers` counts.
+ *
+ * **The word is the reading, and one matcher does now turn on it.** `improve` is the verdict that
+ * agrees the choice was defensible and directs a better road anyway, so it is the one of the four
+ * that leaves a **fix wave** work owed — and nothing else on the forge tells it from an `accept`.
+ * `assertImprovementsAnswered` reads it for exactly that (the-adjudication-compares-roads ticket
+ * 05); every other matcher still reports the word without turning on it. What is read is the
+ * STANDING verdict — the NEWEST answer to name one, because later legwork can overturn a verdict
+ * already posted and the newest reply is the one that stands — so an `accept` a further reply
+ * corrected to an `improve` reads here as the `improve` it now is. `answeredAfterVerdict` is the
+ * position beside it, and it is the reason a count of answers is not enough: what says a **fix
+ * wave** came back to a comment is a reply landing AFTER the verdict that stands, and a correction
+ * is a second answer that is the verdict itself.
  */
 export interface AssumptionComment {
   /** which channel it sits on: a resolvable thread, or one carrying no resolution at all */
@@ -93,8 +110,16 @@ export interface AssumptionComment {
    * several forks share the hash that names them (`dealt` below says why they are dealt)
    */
   readonly answers: number;
-  /** the verdict one of them named — `accept`, `override`, `escalate` — where one did */
+  /**
+   * the STANDING verdict — `accept`, `improve`, `override`, `escalate` — as the newest answer to
+   * name one worded it, or null where none of them named any
+   */
   readonly verdict: string | null;
+  /**
+   * whether any answer landed after the one that named the standing verdict, which is the mark a
+   * **fix wave** leaves on a comment it worked; false where no answer named a verdict at all
+   */
+  readonly answeredAfterVerdict: boolean;
   /** whether the channel's own resolution state says resolved; false where it has none */
   readonly resolved: boolean;
 }
@@ -226,21 +251,43 @@ function entriesIn(message: string, section: string): number {
 }
 
 /**
- * Every channel this forge carries, read as one list of assumptions and what answered them.
+ * One thread on the channel that carries resolution: its comments in the order they were posted, and
+ * whether it is resolved.
+ */
+interface ReviewThread {
+  readonly resolved: boolean;
+  readonly bodies: readonly string[];
+}
+
+/**
+ * What the comment channels carry, in full, before anything has been read out of them.
  *
  * **Three of them, because three is what the plugin's own agents are told to read.** The review
  * threads carry resolution; the reviews' own summary bodies leave no thread behind; the change
  * request's conversation carries no resolution at all. An `ASSUMPTION` on any of them is an
- * assumption, and a harness that read two would fail a delivery for posting where it was told it
- * may post.
+ * assumption, and a harness that read two would fail a delivery for posting where it was told it may
+ * post. The two with no threading are one pool, because an assumption on either is answered the same
+ * way: by a comment opening `re: ASSUMPTION (<hash>)` wherever it sits.
+ *
+ * **It never leaves this module.** Two things read it — `readAssumptionComments`, which keeps a
+ * count, a word and one opening line, and `writeAdjudication`, which puts the bodies straight on
+ * disk for the **verifier** — and neither hands a body to the outcome the matchers are given, for
+ * the reason `readCommits` gives about a commit message: prose kept in memory only invites an
+ * assertion on prose.
  */
-async function readAssumptionComments(
+interface Channels {
+  readonly threads: readonly ReviewThread[];
+  /** the change request's own conversation and the reviews' summaries, as one pool */
+  readonly unthreaded: readonly string[];
+}
+
+/** Every channel this forge carries, read whole. */
+async function readChannels(
   runDirectory: RunDirectory,
   fullName: string,
   number: number,
-): Promise<AssumptionComment[]> {
+): Promise<Channels> {
   const [owner = "", repo = ""] = fullName.split("/");
-  const comments: AssumptionComment[] = [];
   const graphql = (query: string, filter: string, purpose: string) =>
     gh(runDirectory)(
       [
@@ -267,26 +314,6 @@ async function readAssumptionComments(
       "| {resolved: .isResolved, bodies: [.comments.nodes[].body]}",
     `reading the review threads on change request ${number}`,
   );
-  for (const thread of jsonLines(threads.stdout)) {
-    const bodies = Array.isArray(thread.bodies) ? thread.bodies.map(String) : [];
-    const opening = bodies[0] ?? "";
-    const named = ASSUMPTION.exec(opening);
-    if (named === null) continue;
-    // What answers an assumption is a REPLY, so the comment carrying the assumption is never one:
-    // an entry whose own prose says "we accept that…" would otherwise adjudicate itself.
-    const replies = bodies.slice(1);
-    comments.push({
-      channel: "thread",
-      commit: (named[1] ?? "").toLowerCase(),
-      opening: firstLine(opening),
-      answers: replies.length,
-      verdict: verdictIn(replies),
-      resolved: thread.resolved === true,
-    });
-  }
-
-  // The two channels with no threading are read as one pool: an assumption on either is answered
-  // the same way, by a comment opening `re: ASSUMPTION (<hash>)` wherever it sits.
   const conversation = await gh(runDirectory)(
     ["api", "--paginate", `repos/${fullName}/issues/${number}/comments`, "--jq", ".[] | {body}"],
     `reading the conversation on change request ${number}`,
@@ -296,9 +323,68 @@ async function readAssumptionComments(
     ".data.repository.pullRequest.reviews.nodes[] | {body}",
     `reading the reviews' summaries on change request ${number}`,
   );
-  const unthreaded = [...jsonLines(conversation.stdout), ...jsonLines(summaries.stdout)]
-    .map((entry) => String(entry.body ?? ""))
-    .filter((body) => body.trim() !== "");
+  return {
+    threads: jsonLines(threads.stdout).map((thread) => ({
+      resolved: thread.resolved === true,
+      bodies: Array.isArray(thread.bodies) ? thread.bodies.map(String) : [],
+    })),
+    unthreaded: [...jsonLines(conversation.stdout), ...jsonLines(summaries.stdout)]
+      .map((entry) => String(entry.body ?? ""))
+      .filter((body) => body.trim() !== ""),
+  };
+}
+
+/** Every assumption those channels carry, and what answered each one. */
+async function readAssumptionComments(
+  runDirectory: RunDirectory,
+  fullName: string,
+  number: number,
+): Promise<AssumptionComment[]> {
+  const channels = await readChannels(runDirectory, fullName, number);
+  const comments: AssumptionComment[] = [];
+  for (const thread of channels.threads) {
+    const opening = thread.bodies[0] ?? "";
+    const named = ASSUMPTION.exec(opening);
+    if (named === null) continue;
+    // What answers an assumption is a REPLY, so the comment carrying the assumption is never one:
+    // an entry whose own prose says "we accept that…" would otherwise adjudicate itself.
+    const replies = thread.bodies.slice(1);
+    comments.push({
+      channel: "thread",
+      commit: (named[1] ?? "").toLowerCase(),
+      opening: firstLine(opening),
+      answers: replies.length,
+      ...standingVerdict(replies),
+      resolved: thread.resolved,
+    });
+  }
+
+  const { answersUnder, forksUnder } = sortUnthreaded(channels.unthreaded);
+  for (const body of channels.unthreaded) {
+    const named = ASSUMPTION.exec(body);
+    if (named === null) continue;
+    const commit = (named[1] ?? "").toLowerCase();
+    comments.push({
+      channel: "conversation",
+      commit,
+      opening: firstLine(body),
+      ...dealt(commit, answersUnder, forksUnder),
+      resolved: false,
+    });
+  }
+
+  return comments;
+}
+
+/**
+ * The pool with no threading, sorted: which answers were posted under each commit, and how many
+ * forks that commit's own comments carry. `dealt` below is what turns the two into one fork's share,
+ * and `writeAdjudication` is what reads the answers whole.
+ */
+function sortUnthreaded(unthreaded: readonly string[]): {
+  answersUnder: Map<string, string[]>;
+  forksUnder: Map<string, number>;
+} {
   const answersUnder = new Map<string, string[]>();
   const forksUnder = new Map<string, number>();
   for (const body of unthreaded) {
@@ -313,20 +399,7 @@ async function readAssumptionComments(
     const commit = (fork[1] ?? "").toLowerCase();
     forksUnder.set(commit, (forksUnder.get(commit) ?? 0) + 1);
   }
-  for (const body of unthreaded) {
-    const named = ASSUMPTION.exec(body);
-    if (named === null) continue;
-    const commit = (named[1] ?? "").toLowerCase();
-    comments.push({
-      channel: "conversation",
-      commit,
-      opening: firstLine(body),
-      ...dealt(commit, answersUnder, forksUnder),
-      resolved: false,
-    });
-  }
-
-  return comments;
+  return { answersUnder, forksUnder };
 }
 
 /**
@@ -350,12 +423,12 @@ function dealt(
   commit: string,
   answersUnder: Map<string, string[]>,
   forksUnder: Map<string, number>,
-): { answers: number; verdict: string | null } {
+): { answers: number; verdict: string | null; answeredAfterVerdict: boolean } {
   const left = (forksUnder.get(commit) ?? 1) - 1;
   forksUnder.set(commit, left);
   const queue = answersUnder.get(commit) ?? [];
   const mine = queue.splice(0, left === 0 ? queue.length : 1);
-  return { answers: mine.length, verdict: verdictIn(mine) };
+  return { answers: mine.length, ...standingVerdict(mine) };
 }
 
 /**
@@ -374,13 +447,35 @@ const REVIEW_SUMMARIES_QUERY =
   "repository(owner:$owner,name:$repo){pullRequest(number:$number){" +
   "reviews(first:100, after:$endCursor){pageInfo{hasNextPage endCursor}nodes{body}}}}}";
 
-/** Which verdict one of these answers named, where one named any. Reported, never asserted on. */
-function verdictIn(answers: readonly string[]): string | null {
-  for (const answer of answers) {
-    const verdict = VERDICT.exec(answer);
-    if (verdict !== null) return (verdict[1] ?? "").toLowerCase();
+/**
+ * The **verdict** these answers leave standing, and whether anything answered after it.
+ *
+ * **The newest to name one, not the first.** Later legwork can overturn a verdict already posted —
+ * the correction is a further reply carrying the verdict that now stands, and an `accept` corrected
+ * to an `improve` is the path the adjudication is instructed in — so reading forwards would report
+ * the verdict that was corrected and hide the one that replaced it. The answers arrive in the
+ * channel's own order, a thread's replies and the `re:` comments alike, so the newest is the last of
+ * them to name a verdict at all.
+ *
+ * **`answeredAfterVerdict` is a position rather than a count**, which is what the one matcher that
+ * turns on the word needs of it: an `improve` is work owed, and what says a **fix wave** came back
+ * to it is a reply landing after the verdict — never the comment merely carrying two answers, since
+ * a correction is a second answer that is the verdict itself
+ * (the-adjudication-compares-roads ticket 05).
+ */
+function standingVerdict(answers: readonly string[]): {
+  verdict: string | null;
+  answeredAfterVerdict: boolean;
+} {
+  for (let index = answers.length - 1; index >= 0; index -= 1) {
+    const named = VERDICT.exec(answers[index] ?? "");
+    if (named === null) continue;
+    return {
+      verdict: (named[1] ?? "").toLowerCase(),
+      answeredAfterVerdict: index < answers.length - 1,
+    };
   }
-  return null;
+  return { verdict: null, answeredAfterVerdict: false };
 }
 
 /**
@@ -451,6 +546,162 @@ export async function writeDeliveredDiff(
   );
   await writeFile(destination, diff.stdout, "utf8");
   return destination;
+}
+
+/**
+ * The **adjudication**, written into the run directory beside the diff for the **verifier** to read:
+ * every **assumption comment** on the change request and every reply under it, in full
+ * (the-adjudication-compares-roads ticket 06).
+ *
+ * **In full is the whole of why it exists.** What `readAssumptionComments` above keeps of a reply is
+ * a count and one word, and what it keeps of a comment is an opening line — the right thing for a
+ * matcher, which asserts that a fork carries a verdict and quotes which fork it was, and nowhere
+ * near enough to say whether that verdict was SOUND. Soundness is the question no assertion can
+ * settle, so it is the verifier's, and a truncated reply cannot be judged for it: an `accept` rests
+ * on **grounds** and the roads it says it beat, and an `improve` on the **axis** it names, all of it
+ * prose that only reads as prose.
+ *
+ * **On disk rather than on the outcome**, which is what keeps the seam where it is: `./matchers.ts`
+ * still cannot reach a word of this, so nothing mechanical can start turning on a wording the plugin
+ * never promised. The channels are read again here rather than carried out of `readChangeRequest`
+ * for the same reason — three requests against a forge the run has already finished with, against a
+ * body of prose sitting on an outcome every matcher is handed.
+ *
+ * Read off the FORGE, like the diff beside it, because the replies exist nowhere else: the clone
+ * carries no comment and the run's own report carries counts. The path comes back so a contributor
+ * can read the same file the verifier was given.
+ */
+export async function writeAdjudication(
+  runDirectory: RunDirectory,
+  fullName: string,
+  number: number,
+  destination: string,
+): Promise<string> {
+  const channels = await readChannels(runDirectory, fullName, number);
+  await writeFile(destination, adjudication(fullName, number, adjudicated(channels)), "utf8");
+  return destination;
+}
+
+/** One assumption comment as that file carries it: the comment whole, and every answer under it. */
+interface Adjudicated {
+  readonly channel: "thread" | "conversation";
+  /** the commit whose `Assumptions:` entry it mirrors, which is what the prefix names */
+  readonly commit: string;
+  readonly resolved: boolean;
+  readonly body: string;
+  readonly answers: readonly string[];
+}
+
+/**
+ * Every assumption comment on the channels, paired with the answers posted under it.
+ *
+ * **The answers are not dealt out here, which is the one difference from `dealt` above.** That deal
+ * exists because a matcher counts: an answer naming a commit that recorded two assumptions cannot
+ * say which of the two it closed, and counting it for both would report a fork nobody adjudicated as
+ * adjudicated. This file counts nothing. Its job is to lose no reply, and its reader judges only the
+ * verdicts it can see — that every fork got one is asserted elsewhere and is none of that reader's
+ * business — so an answer under a shared hash is listed under both comments and the file says that
+ * is what it did, rather than assigned to one of them on a rule the channel cannot support.
+ */
+function adjudicated(channels: Channels): Adjudicated[] {
+  const entries: Adjudicated[] = [];
+  for (const thread of channels.threads) {
+    const opening = thread.bodies[0] ?? "";
+    const named = ASSUMPTION.exec(opening);
+    if (named === null) continue;
+    entries.push({
+      channel: "thread",
+      commit: (named[1] ?? "").toLowerCase(),
+      resolved: thread.resolved,
+      body: opening,
+      answers: thread.bodies.slice(1),
+    });
+  }
+  const { answersUnder } = sortUnthreaded(channels.unthreaded);
+  for (const body of channels.unthreaded) {
+    const named = ASSUMPTION.exec(body);
+    if (named === null) continue;
+    const commit = (named[1] ?? "").toLowerCase();
+    entries.push({
+      channel: "conversation",
+      commit,
+      resolved: false,
+      body,
+      answers: answersUnder.get(commit) ?? [],
+    });
+  }
+  return entries;
+}
+
+/** What the file says wherever it carries a comment off the pool with no threading. */
+const UNTHREADED_NOTE =
+  "This channel carries no threading, so what answers a comment on it is a comment opening\n" +
+  "`re: ASSUMPTION (<hash>)`. Those name the commit rather than the fork inside it, so where one\n" +
+  "commit recorded two assumptions, every answer under that commit is listed under both of them.";
+
+/**
+ * The file itself: a heading per comment, the comment whole, then each answer whole and in order.
+ *
+ * It is written for two readers at once, which is the same arrangement the delivered diff has — the
+ * verifier is handed the path, and a contributor reads the same file afterwards to see what the
+ * verdict was formed on. Hence markdown, and hence the counts at the top: a delivery whose commits
+ * recorded no fork leaves a file saying so in a line rather than an empty one saying nothing.
+ */
+function adjudication(fullName: string, number: number, entries: readonly Adjudicated[]): string {
+  const answers = entries.reduce((total, entry) => total + entry.answers.length, 0);
+  const lines = [
+    `# The adjudication on ${fullName} change request #${number}`,
+    "",
+    "Every comment marked `ASSUMPTION` on this change request, and every reply under it, whole and",
+    "in the order the forge has them. Written by the end-to-end harness off the forge once the run",
+    "had finished; nothing here is a summary of anything.",
+    "",
+    `Assumption comments: ${entries.length}. Replies listed under them: ${answers}.`,
+  ];
+  if (entries.length === 0) {
+    lines.push("", "No comment on this change request is marked `ASSUMPTION`.");
+  }
+  entries.forEach((entry, index) => {
+    lines.push(
+      "",
+      `## Assumption ${index + 1} of ${entries.length}`,
+      "",
+      `Mirrored from commit \`${entry.commit}\`, posted on ${where(entry)}.`,
+    );
+    if (entry.channel === "conversation") lines.push("", UNTHREADED_NOTE);
+    lines.push("", quoted(entry.body));
+    if (entry.answers.length === 0) lines.push("", "Nothing is posted under it.");
+    entry.answers.forEach((answer, position) => {
+      lines.push("", `### Reply ${position + 1} of ${entry.answers.length}`, "", quoted(answer));
+    });
+  });
+  return `${lines.join("\n")}\n`;
+}
+
+/** Which channel a comment sits on, and what that channel says about resolution. */
+function where(entry: Adjudicated): string {
+  if (entry.channel !== "thread") {
+    return "the change request's conversation, which carries no resolution state";
+  }
+  return `a review thread, ${entry.resolved ? "resolved" : "unresolved"}`;
+}
+
+/**
+ * One body carried whole: every line of it, prefixed, and nothing dropped.
+ *
+ * The prefix is the file's own and it is there for ambiguity rather than for looks. A comment body
+ * carries whatever the agent wrote — its own headings, its own lists — and dropped in bare it would
+ * leave a reader unable to tell the comment's structure from the file's. A fence would not do it: a
+ * body carrying a fenced block of its own closes the fence early and the rest of the comment stops
+ * being a comment.
+ */
+function quoted(body: string): string {
+  const text = body.replaceAll("\r\n", "\n").trimEnd();
+  if (text.trim() === "") return "> (this comment is empty)";
+  return text
+    .split("\n")
+    .map((line) => (line === "" ? ">" : `> ${line}`))
+    .join("\n");
 }
 
 /** One object per line, which is what `gh --jq` emits and what `--paginate` concatenates. */
