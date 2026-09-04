@@ -11,26 +11,26 @@ this ticket gives the better road somewhere to go, and 02 is what goes looking f
 D15 in `../spec.md`, and by
 [ADR-0019](../../../adrs/0019-a-defensible-assumption-may-be-bettered-without-ratification.md).
 
-- [ ] `improve` is a fourth bullet in the agent's **Verdicts** section, ordered `accept`, `improve`, `override`,
+- [x] `improve` is a fourth bullet in the agent's **Verdicts** section, ordered `accept`, `improve`, `override`,
       `escalate`.
-- [ ] Its warrant is three things — the **axis**, the alternative, and why the alternative is better — and all three, or
+- [x] Its warrant is three things — the **axis**, the alternative, and why the alternative is better — and all three, or
       the verdict is `accept`. That mirrors `override`'s existing three-part requirement rather than inventing a second
       shape.
-- [ ] Where two axes conflict, the reply names both and says which won and why. There is no priority order between the
+- [x] Where two axes conflict, the reply names both and says which won and why. There is no priority order between the
       axes and none is introduced.
-- [ ] The reply carries a **directive** and leaves the comment unresolved, exactly as an `override` does. No new posting
+- [x] The reply carries a **directive** and leaves the comment unresolved, exactly as an `override` does. No new posting
       path and no new mark: the wave's unresolved filter is already what collects it.
-- [ ] On a **channel** with no threading it opens `re: ASSUMPTION (<commit hash>)` like every other verdict, and never
+- [x] On a **channel** with no threading it opens `re: ASSUMPTION (<commit hash>)` like every other verdict, and never
       with the `ASSUMPTION` prefix — a verdict wearing that prefix comes back as a fork nobody made.
-- [ ] The correction rule covers it: an `improve` correcting an earlier `accept` unresolves that comment again
+- [x] The correction rule covers it: an `improve` correcting an earlier `accept` unresolves that comment again
       wherever the channel has resolution state, and the newest verdict reply is still the one that stands.
-- [ ] **Resume** is unchanged, and the prose confirms rather than re-states it: an `improve` reply is a verdict
+- [x] **Resume** is unchanged, and the prose confirms rather than re-states it: an `improve` reply is a verdict
       reply, so an assumption carrying one is already done by the filter that exists.
-- [ ] `escalate` is untouched, and the boundary is stated once: an `improve` is the case where the default *is*
+- [x] `escalate` is untouched, and the boundary is stated once: an `improve` is the case where the default *is*
       defensible, an `escalate` where no defensible default exists.
-- [ ] **Grounds** is untouched. An improvement that can cite a spec line, an ADR, a caller that breaks or a concrete
+- [x] **Grounds** is untouched. An improvement that can cite a spec line, an ADR, a caller that breaks or a concrete
       failure scenario is an `override` and always was; `improve` names an axis instead.
-- [ ] The agent's report counts four verdicts rather than three, and names the `improve`s it directed.
-- [ ] The existing sentence that accepting every one is a fine outcome, as is overriding every one, with no target rate,
+- [x] The agent's report counts four verdicts rather than three, and names the `improve`s it directed.
+- [x] The existing sentence that accepting every one is a fine outcome, as is overriding every one, with no target rate,
       is checked against four verdicts and either still reads true or is amended to cover them.
-- [ ] Register and the file's prevailing column width are matched.
+- [x] Register and the file's prevailing column width are matched.
