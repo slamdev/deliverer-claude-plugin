@@ -78,15 +78,21 @@ A fork the implementing code closed silently and nobody has ratified — the def
 thing missing is a human's agreement. Not a bug, and not a question anyone asked. _Avoid_: guess, decision, TODO, caveat
 
 **Verdict**:
-The adjudication one assumption receives — `accept`, `override` or `escalate` — recorded as a reply on its comment. The
-newest reply on an assumption is the verdict that stands, since later legwork can overturn an earlier one. An assumption
-a **fix wave** recorded has no comment, so it receives none and ships unratified. _Avoid_: ruling, judgement, review
+The adjudication one assumption receives — `accept`, `improve`, `override` or `escalate` — recorded as a reply on its
+comment. `improve` is the one of them that changes code the verdict agrees was already defensible. The newest reply on
+an assumption is the verdict that stands, since later legwork can overturn an earlier one. An assumption a **fix wave**
+recorded has no comment, so it receives none and ships unratified. _Avoid_: ruling, judgement, review
 
 **Grounds**:
 The evidence a verdict, a declined finding or a reopened ADR stands on: a spec line, an ADR, a caller that breaks, a
 concrete failure scenario. For a **defect**, what the observation itself kept — the **trace**, a **dispatch note**, an
 earlier **debrief** of the same **epic**. What makes any of them grounds is that whoever holds the file can find the
 thing cited in it. Never taste. _Avoid_: reason, justification, rationale
+
+**Axis**:
+One dimension a **fork**'s roads are compared on, and what an `improve` **verdict** names where an `override` names
+**grounds**. Only behaviour the spec never named makes one; how expensive the code is to change later is the exception,
+and it only ever breaks a tie between the others. _Avoid_: quality attribute, dimension, characteristic, criterion
 
 **Claim**:
 A statement of fact a document rests on that nobody has checked. Never a finding: the reader's own first-hand look is
@@ -98,7 +104,8 @@ real trade-off. Standing grounds: a verdict or a declined review finding may res
 one reopens it explicitly rather than overriding it in silence. _Avoid_: design doc, decision record, RFC
 
 **Directive**:
-The change an `override` verdict states, for a fix wave to implement as written. _Avoid_: instruction, request, fix
+The change an `override` or an `improve` verdict states, for a fix wave to implement as written. _Avoid_: instruction,
+request, fix
 
 **Escalation**:
 A fork a run refused to close because it is genuinely not the run's to close — a product question, or a policy or
