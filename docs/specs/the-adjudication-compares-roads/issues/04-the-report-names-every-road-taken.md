@@ -10,19 +10,19 @@ the feature off, this line is the only control the design has — if it under-re
 with no trace. The README stops telling users there are three verdicts. Settled as D10, D11, D12, D13 and D17 in
 `../spec.md`.
 
-- [ ] Stage 3's description says the stage compares roads and may direct a change, rather than only replying a verdict.
-- [ ] The report carries four verdict counts.
-- [ ] The report carries one line per implemented proposal — the fork, the road taken, the axis.
-- [ ] That line carries the **fix wave**'s account rather than the adjudication's, because a directive the wave declined
+- [x] Stage 3's description says the stage compares roads and may direct a change, rather than only replying a verdict.
+- [x] The report carries four verdict counts.
+- [x] The report carries one line per implemented proposal — the fork, the road taken, the axis.
+- [x] That line carries the **fix wave**'s account rather than the adjudication's, because a directive the wave declined
       or never reached is not a change to the code.
-- [ ] Where the two accounts disagree, the rule already applied to a **gate** a commit names and a report does not is
+- [x] Where the two accounts disagree, the rule already applied to a **gate** a commit names and a report does not is
       the rule applied here: put the stage back rather than choose between them.
-- [ ] The **orchestrator** forms no view on any of it. It relays counts and lines; a report leaving it unsure is
+- [x] The **orchestrator** forms no view on any of it. It relays counts and lines; a report leaving it unsure is
       answered by putting the stage back, never by reading the comments itself.
-- [ ] Nothing bounds how many proposals a run may implement, and no owner setting is added.
-- [ ] The **round**s are untouched: no effort tier moves, and the deliberate overlap between this stage and a round is
+- [x] Nothing bounds how many proposals a run may implement, and no owner setting is added.
+- [x] The **round**s are untouched: no effort tier moves, and the deliberate overlap between this stage and a round is
       not resolved in either direction.
-- [ ] The README's account of what happens to an assumption names four verdicts and says a better road may be taken
+- [x] The README's account of what happens to an assumption names four verdicts and says a better road may be taken
       without being asked for.
-- [ ] The README's "What still needs a human" list is checked and nothing is added: an `improve` needs no human.
-- [ ] Register and column width matched, in both files.
+- [x] The README's "What still needs a human" list is checked and nothing is added: an `improve` needs no human.
+- [x] Register and column width matched, in both files.
