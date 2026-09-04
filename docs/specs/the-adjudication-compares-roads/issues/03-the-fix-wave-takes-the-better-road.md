@@ -8,17 +8,17 @@ Status: ready-for-agent
 **report** what it implemented. Declining is available and costs **grounds**, so a directive that cannot land has a
 legal move that is neither stalling nor forcing something worse onto the branch. Settled as D9 and D10 in `../spec.md`.
 
-- [ ] `improve` joins the verdicts that decide the wave's work, beside `override`: the reply states the change, and the
+- [x] `improve` joins the verdicts that decide the wave's work, beside `override`: the reply states the change, and the
       wave implements that directive.
-- [ ] An `improve` is work **owed** rather than work done, so a comment carrying one is collected however that verdict
+- [x] An `improve` is work **owed** rather than work done, so a comment carrying one is collected however that verdict
       was replied — the sentence that says this for `override` and `escalate` covers four verdicts.
-- [ ] Implementing it is the default and declining takes grounds, exactly as a **review finding** does. A declined one
+- [x] Implementing it is the default and declining takes grounds, exactly as a **review finding** does. A declined one
       rides the report's existing declined line rather than a new one.
-- [ ] The report names every `improve` it implemented, one line each: the fork, the road taken and the **axis**.
-- [ ] An `improve` may reach the **hand-off** list the way any unresolved comment may, and the report says so when it
+- [x] The report names every `improve` it implemented, one line each: the fork, the road taken and the **axis**.
+- [x] An `improve` may reach the **hand-off** list the way any unresolved comment may, and the report says so when it
       does.
-- [ ] The wave's own commits still record the forks it closed silently and still carry no `Ticket:` line. Implementing a
+- [x] The wave's own commits still record the forks it closed silently and still carry no `Ticket:` line. Implementing a
       directive is executing one, not closing a new fork, so nothing new is mirrored for it.
-- [ ] The agent's own test of doneness reaches an `improve`: it stops when every collected comment has a fix, a reply or
+- [x] The agent's own test of doneness reaches an `improve`: it stops when every collected comment has a fix, a reply or
       a place on the hand-off list, and an `improve` must fall inside that condition rather than beside it.
-- [ ] Register and column width matched.
+- [x] Register and column width matched.
