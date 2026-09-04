@@ -581,8 +581,10 @@ rather than reproduced. Nothing in it is ever removed, passed or failed:
 - `staged-plugin/` and `fixture-repo/` — the copy of the plugin that was installed, and the fixture as it was built
   into a repository before the forge was brought into step with it.
 - `tmp/` and `session/` — the run's own temporary directory, and where a session with no clone runs.
-- the root itself — the **brief** the run wrote, collected out of the shared temporary directory when it finished, and
-  `delivered.diff`, the diff a delivery's change request carried.
+- the root itself — the **brief** the run wrote, collected out of the shared temporary directory when it finished,
+  `delivered.diff`, the diff a delivery's change request carried, and `adjudication.md`, every **assumption comment**
+  on it and every reply under it in full. Those last two are what the **verifier** is given to read, and the second one
+  exists because whether the **verdict**s were sound is the subject no assertion settles.
 
 On the forge, the refine test's **standing repo** stays — it is cloned and never written back to, so it is brought into
 step with the fixture rather than recreated. The build test's **throwaway repo** is deleted when the test passes and
