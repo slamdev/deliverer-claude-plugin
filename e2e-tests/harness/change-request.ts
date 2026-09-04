@@ -402,7 +402,6 @@ function sortUnthreaded(unthreaded: readonly string[]): {
   return { answersUnder, forksUnder };
 }
 
-
 /**
  * The answers one fork gets, where several forks share the hash that names them.
  *
@@ -565,7 +564,7 @@ export async function writeDeliveredDiff(
  * **On disk rather than on the outcome**, which is what keeps the seam where it is: `./matchers.ts`
  * still cannot reach a word of this, so nothing mechanical can start turning on a wording the plugin
  * never promised. The channels are read again here rather than carried out of `readChangeRequest`
- * for the same reason — four requests against a forge the run has already finished with, against a
+ * for the same reason — three requests against a forge the run has already finished with, against a
  * body of prose sitting on an outcome every matcher is handed.
  *
  * Read off the FORGE, like the diff beside it, because the replies exist nowhere else: the clone

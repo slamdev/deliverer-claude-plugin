@@ -329,5 +329,5 @@ whether the answers were used well. _Avoid_: user simulator, stand-in, answerer
 
 **Verifier**:
 The agent that judges what a run delivered, on exactly the questions no assertion can settle — whether a spec coheres,
-whether the tickets cover the user stories, whether the code is plausible. What a test can assert mechanically is never
-its business. _Avoid_: judge, grader, evaluator, reviewer
+whether the tickets cover the user stories, whether the code is plausible, whether the **verdict**s were sound. What a
+test can assert mechanically is never its business. _Avoid_: judge, grader, evaluator, reviewer

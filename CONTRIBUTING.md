@@ -122,7 +122,7 @@ what moved.
 │   │   ├── tickets-writer.md              spec    → one ticket per vertical slice
 │   │   ├── implementer.md                 ticket  → commits on the epic branch
 │   │   ├── change-request-creator.md      branch  → draft change request + ASSUMPTION comments
-│   │   ├── assumption-reviewer.md         assumption → accept / override / escalate
+│   │   ├── assumption-reviewer.md         assumption → accept / improve / override / escalate
 │   │   ├── code-reviewer.md               drives one review round via the MCP server
 │   │   └── comments-addresser.md          unresolved comments → fixes, declines, hand-offs
 │   ├── mcp/                               the plugin's Node code, one package — ships UNBUILT (Node strips
@@ -503,8 +503,9 @@ complete run, only what a human could read afterwards. Three tests, and CI runs 
   **ticket**, and then a **verifier** judges whether what came out is any good.
 - **The build happy path.** `/deliverer:build` against a **throwaway repo** created for the run: all eight stages, two
   real **rounds** through the tools server and both **fix waves**. It asserts a commit naming every ticket, a
-  **verdict** on every **assumption**, and the **change request** **flipped ready** with its **checks** green — then
-  the verifier judges the code behind it against the **epic**.
+  **verdict** on every **assumption**, a fix wave's answer to every `improve` among them, and the **change request**
+  **flipped ready** with its **checks** green — then the verifier judges the code behind it against the **epic**, and
+  whether those verdicts were sound.
 
 **Both paid tests are observed, and each asserts a debrief.** The plugin observes runs by default and the harness
 leaves that default alone, so an **observer** runs beside each of the two and the test asserts what a human would look
