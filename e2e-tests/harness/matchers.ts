@@ -816,6 +816,70 @@ export function assertAssumptionsAdjudicated(outcome: BuildOutcome): void {
 }
 
 /**
+ * Which stem `./change-request.ts` read the fourth **verdict** down to, however the reply inflected
+ * it: `improve`, `improves`, `improved`, `improvement`. The other three are reported and not turned
+ * on, so nothing else here needs one of these.
+ */
+const IMPROVE = /^improve/;
+
+/**
+ * Every **assumption comment** whose standing **verdict** is `improve` ended resolved or carrying a
+ * reply posted after that verdict (the-adjudication-compares-roads ticket 05).
+ *
+ * `improve` is the verdict that agrees the shipped choice was defensible and directs a better road
+ * anyway. So it is the one of the four that leaves work owed: it carries a **directive**, and the
+ * **fix wave** collects it by the unresolved filter it already uses. A change request **flipped
+ * ready** with one still sitting there unanswered is a delivery that shipped a directive nobody
+ * executed — and worse than the invisible `accept` the fourth verdict was added to fix, because the
+ * human is told in the report that their code was redesigned.
+ *
+ * **The bar is answered-AFTER rather than resolved, and that is deliberate.** A wave may put an
+ * improvement on its **hand-off** list the way it may any comment it could not clear, and that list
+ * lives only in the run's report prose — the forge carries nothing that tells a handed-off comment
+ * from an abandoned one. So what is owed is a reply landing after the verdict, which is the mark the
+ * wave leaves on a comment it worked either way, or the resolution the channel offers where the wave
+ * resolved it outright. Holding an `improve` to `resolved` would fail a run that did exactly what it
+ * was told.
+ *
+ * **What it reads is a position and not a count**, off the same seam and no other:
+ * `./change-request.ts` reports the STANDING verdict — the newest answer to name one, since later
+ * legwork can overturn an earlier verdict — and beside it whether anything landed after that reply.
+ * A count of answers would wave through the correction the adjudication is instructed in: an
+ * `accept` corrected to an `improve` is two answers with nothing after the verdict that stands,
+ * which is exactly the delivery this is here to fail.
+ *
+ * **This is the harness's one assertion on a verdict's wording**, which the sibling above declines
+ * to make for the reason it gives — a verdict is stated as its **grounds**, and the word is promised
+ * nowhere. Nothing else on the forge tells an `improve` from an `accept`, so there is no structural
+ * fact to read instead. The exposure is bounded and worth naming: an `accept` whose prose says
+ * "improve" before it says "accept" — which D6's naming of the roads it beat makes likelier than it
+ * was — reads as an `improve` here, and fails only where it ALSO left its comment unresolved with no
+ * further reply, which is an `accept` that did not do what an `accept` does.
+ *
+ * An adjudication that reached no `improve` at all passes this vacuously, and that is the ordinary
+ * outcome rather than a hole in the test: whether this **fixture**'s code offers a better road is
+ * not the plugin's to guarantee, so asserting that one was found would be flaky by construction on
+ * a test costing tens of minutes and real money per run. What this catches is a road the
+ * adjudication itself said was better and nothing went and took.
+ */
+export function assertImprovementsAnswered(outcome: BuildOutcome): void {
+  const request = delivered(outcome, "the improvements its adjudication directed");
+
+  const unanswered = request.assumptionComments.filter(
+    (comment) =>
+      IMPROVE.test(comment.verdict ?? "") && !comment.resolved && !comment.answeredAfterVerdict,
+  );
+  if (unanswered.length > 0) {
+    assert.fail(
+      `${unanswered.length} of ${request.assumptionComments.length} assumption comments on ` +
+        `${request.url} carry an \`improve\` verdict that nothing answered after it, and are ` +
+        `unresolved too, so the better road each one directed was never taken and no wave said why ` +
+        `not:\n  ${unanswered.map((comment) => comment.opening).join("\n  ")}`,
+    );
+  }
+}
+
+/**
  * Two **rounds** completed, which is the bar stage 8 waits on.
  *
  * Read out of the run's own report, because a round leaves no other record: the tools server holds

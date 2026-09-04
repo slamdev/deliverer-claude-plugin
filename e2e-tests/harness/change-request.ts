@@ -44,8 +44,14 @@ const ASSUMPTION = /^[ \t]*ASSUMPTION[ \t]*\(([0-9a-f]{7,40})\)/i;
  */
 const RE_ASSUMPTION = /^[ \t]*re:[ \t]*ASSUMPTION[ \t]*\(([0-9a-f]{7,40})\)/i;
 
-/** The three verdicts, as an adjudication states them — read for the reader, never asserted on. */
-const VERDICT = /\b(accept(?:ed)?|override(?:n|s)?|escalat(?:e|ed|ion))\b/i;
+/**
+ * The four verdicts, as an adjudication states them — read for the reader, and turned on by exactly
+ * one matcher: `improve` is the one of the four that leaves a **fix wave** work owed, so
+ * `assertImprovementsAnswered` finds it here (the-adjudication-compares-roads ticket 05). For the
+ * other three the word stays a reading, because what an adjudication promises is a reply stating
+ * its **grounds** rather than the word.
+ */
+const VERDICT = /\b(accept(?:ed)?|improve(?:s|d|ments?)?|override(?:n|s)?|escalat(?:e|ed|ion))\b/i;
 
 /** One change request, as the forge lists it. */
 export interface ChangeRequestSummary {
@@ -78,8 +84,19 @@ export interface DeliveredCommit {
  * for it would be this harness holding the plugin to a wording nobody promised. What IS promised is
  * structural: a reply on the thread, or — where the channel carries no threading — a comment
  * opening `re: ASSUMPTION (<hash>)`, which the agent's own instructions require so that a verdict
- * says which fork it closed. That is what `answers` counts. The word is kept beside it because a
- * reader wants to see which way the forks went, and a matcher reports it without turning on it.
+ * says which fork it closed. That is what `answers` counts.
+ *
+ * **The word is the reading, and one matcher does now turn on it.** `improve` is the verdict that
+ * agrees the choice was defensible and directs a better road anyway, so it is the one of the four
+ * that leaves a **fix wave** work owed — and nothing else on the forge tells it from an `accept`.
+ * `assertImprovementsAnswered` reads it for exactly that (the-adjudication-compares-roads ticket
+ * 05); every other matcher still reports the word without turning on it. What is read is the
+ * STANDING verdict — the NEWEST answer to name one, because later legwork can overturn a verdict
+ * already posted and the newest reply is the one that stands — so an `accept` a further reply
+ * corrected to an `improve` reads here as the `improve` it now is. `answeredAfterVerdict` is the
+ * position beside it, and it is the reason a count of answers is not enough: what says a **fix
+ * wave** came back to a comment is a reply landing AFTER the verdict that stands, and a correction
+ * is a second answer that is the verdict itself.
  */
 export interface AssumptionComment {
   /** which channel it sits on: a resolvable thread, or one carrying no resolution at all */
@@ -93,8 +110,16 @@ export interface AssumptionComment {
    * several forks share the hash that names them (`dealt` below says why they are dealt)
    */
   readonly answers: number;
-  /** the verdict one of them named — `accept`, `override`, `escalate` — where one did */
+  /**
+   * the STANDING verdict — `accept`, `improve`, `override`, `escalate` — as the newest answer to
+   * name one worded it, or null where none of them named any
+   */
   readonly verdict: string | null;
+  /**
+   * whether any answer landed after the one that named the standing verdict, which is the mark a
+   * **fix wave** leaves on a comment it worked; false where no answer named a verdict at all
+   */
+  readonly answeredAfterVerdict: boolean;
   /** whether the channel's own resolution state says resolved; false where it has none */
   readonly resolved: boolean;
 }
@@ -280,7 +305,7 @@ async function readAssumptionComments(
       commit: (named[1] ?? "").toLowerCase(),
       opening: firstLine(opening),
       answers: replies.length,
-      verdict: verdictIn(replies),
+      ...standingVerdict(replies),
       resolved: thread.resolved === true,
     });
   }
@@ -350,12 +375,12 @@ function dealt(
   commit: string,
   answersUnder: Map<string, string[]>,
   forksUnder: Map<string, number>,
-): { answers: number; verdict: string | null } {
+): { answers: number; verdict: string | null; answeredAfterVerdict: boolean } {
   const left = (forksUnder.get(commit) ?? 1) - 1;
   forksUnder.set(commit, left);
   const queue = answersUnder.get(commit) ?? [];
   const mine = queue.splice(0, left === 0 ? queue.length : 1);
-  return { answers: mine.length, verdict: verdictIn(mine) };
+  return { answers: mine.length, ...standingVerdict(mine) };
 }
 
 /**
@@ -374,13 +399,35 @@ const REVIEW_SUMMARIES_QUERY =
   "repository(owner:$owner,name:$repo){pullRequest(number:$number){" +
   "reviews(first:100, after:$endCursor){pageInfo{hasNextPage endCursor}nodes{body}}}}}";
 
-/** Which verdict one of these answers named, where one named any. Reported, never asserted on. */
-function verdictIn(answers: readonly string[]): string | null {
-  for (const answer of answers) {
-    const verdict = VERDICT.exec(answer);
-    if (verdict !== null) return (verdict[1] ?? "").toLowerCase();
+/**
+ * The **verdict** these answers leave standing, and whether anything answered after it.
+ *
+ * **The newest to name one, not the first.** Later legwork can overturn a verdict already posted —
+ * the correction is a further reply carrying the verdict that now stands, and an `accept` corrected
+ * to an `improve` is the path the adjudication is instructed in — so reading forwards would report
+ * the verdict that was corrected and hide the one that replaced it. The answers arrive in the
+ * channel's own order, a thread's replies and the `re:` comments alike, so the newest is the last of
+ * them to name a verdict at all.
+ *
+ * **`answeredAfterVerdict` is a position rather than a count**, which is what the one matcher that
+ * turns on the word needs of it: an `improve` is work owed, and what says a **fix wave** came back
+ * to it is a reply landing after the verdict — never the comment merely carrying two answers, since
+ * a correction is a second answer that is the verdict itself
+ * (the-adjudication-compares-roads ticket 05).
+ */
+function standingVerdict(answers: readonly string[]): {
+  verdict: string | null;
+  answeredAfterVerdict: boolean;
+} {
+  for (let index = answers.length - 1; index >= 0; index -= 1) {
+    const named = VERDICT.exec(answers[index] ?? "");
+    if (named === null) continue;
+    return {
+      verdict: (named[1] ?? "").toLowerCase(),
+      answeredAfterVerdict: index < answers.length - 1,
+    };
   }
-  return null;
+  return { verdict: null, answeredAfterVerdict: false };
 }
 
 /**
