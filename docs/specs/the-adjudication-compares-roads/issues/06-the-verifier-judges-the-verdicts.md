@@ -9,15 +9,15 @@ whether the code is plausible. That is exactly the question no assertion can set
 and it needs the verdict replies, which the harness keeps today only as an opening line and a count. Settled under
 Testing Decisions in `../spec.md`.
 
-- [ ] The adjudication — each assumption comment and the verdict replies under it, in full — is written into the **run
+- [x] The adjudication — each assumption comment and the verdict replies under it, in full — is written into the **run
       directory** for the verifier to read, the way the delivered diff already is, and the path comes back so a
       contributor can read the same file the verifier was given.
-- [ ] The delivery prompt gains a third subject: were the verdicts sound? An `accept` whose **grounds** do not hold, an
+- [x] The delivery prompt gains a third subject: were the verdicts sound? An `accept` whose **grounds** do not hold, an
       `improve` whose **axis** does not carry it, an `escalate` that had a defensible default — each fails it.
-- [ ] The delivery prompt no longer says "two subjects and no others". The refinement prompt's own two are untouched.
-- [ ] The third subject is given nothing an assertion already settles: that every assumption carries a verdict, and
+- [x] The delivery prompt no longer says "two subjects and no others". The refinement prompt's own two are untouched.
+- [x] The third subject is given nothing an assertion already settles: that every assumption carries a verdict, and
       that a wave answered every `improve`, are facts asserted elsewhere and are none of its business.
-- [ ] The verdict schema still requires grounds per subject and still forbids taste.
-- [ ] The verifier still reads and nothing else, still forms its verdict on `opus`, and still runs against the clone a
+- [x] The verdict schema still requires grounds per subject and still forbids taste.
+- [x] The verifier still reads and nothing else, still forms its verdict on `opus`, and still runs against the clone a
       run has already finished with.
-- [ ] `typecheck` and `lint` pass in the harness package.
+- [x] `typecheck` and `lint` pass in the harness package.
