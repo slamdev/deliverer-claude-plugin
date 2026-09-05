@@ -64,6 +64,11 @@ repository you are already in.
 apostrophe in your **grounds** ends a single-quoted argument, and a backtick or a `$` inside a double-quoted one runs a
 command or expands a variable — so the verdict the human reads is not the one you reached.
 
+**Make the directory you write them in with `mktemp -d`.** Other dispatches of this delivery write their own bodies on
+the same filesystem, so a name you choose yourself is one of them may already hold: an observed run met a directory
+carrying fifty-odd unrelated leftovers, and the dispatch before it had lost close to a minute to the same collision. A
+directory `mktemp -d` has just made is yours alone, which leaves nothing to check before you write.
+
 **A read that comes back truncated is a fork nobody adjudicated.** Two shapes cause it, and both are handled below: a
 collection paginated in name only, and a response so large the tool that ran the command hands you the first fragment of
 one enormous line.

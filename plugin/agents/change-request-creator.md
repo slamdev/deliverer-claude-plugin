@@ -104,6 +104,12 @@ the tool that path. The body is several lines and carries quotes of its own, so 
 the shell that reads it first: a backtick runs, a `$NAME` expands, an apostrophe ends the argument. `<the body file>`
 below is where you wrote it, and the entry the human adjudicates is then the entry the commit recorded.
 
+**Make the directory you write them in with `mktemp -d`.** Several dispatches of one delivery write these files on one
+filesystem, so a name you choose yourself is one another dispatch may already hold: an observed run picked
+`/tmp/assumption-comments/` and lost close to a minute moving nine bodies out of a directory that was not empty, and a
+later dispatch of the same run met fifty-odd leftovers under a name of its own. A directory `mktemp -d` has just made is
+yours alone, which leaves nothing to check before you write and nothing of anyone else's to work around.
+
 **A read that comes back truncated is an assumption you will post a second copy of.** Two shapes cause it, and both are
 handled below: a collection paginated in name only, and a response so large the tool that ran the command hands you the
 first fragment of one enormous line.
