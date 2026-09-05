@@ -113,8 +113,11 @@ cannot close is still an **escalation**.
     reached, so that a run shipping an unimplemented directive fails a test rather than passing one.
 23. As a contributor maintaining the plugin, I want the **verifier** asked whether the verdicts were sound, so that a
     correctly-shaped adjudication of nothing does not pass.
-24. As a contributor maintaining the plugin, I want the cost of the new step measured from a real epic's **debrief**, so
-    that the decision to split the dispatch rests on a figure rather than on a guess.
+24. As a contributor maintaining the plugin, I want the cost of the new step measured from a real epic's **trace**, in
+    the tokens and requests that **trace** records per dispatch, so that the decision to split the dispatch rests on a
+    figure rather than on a guess. It says *trace* and not *debrief* because a debrief prices no dispatch: the host
+    records no money in a session record, so a debrief reports the run's dollars as unknown and carries no per-dispatch
+    breakdown at all. The per-dispatch figures are the trace's, and they are tokens rather than dollars.
 25. As a user reading the README, I want it to name four verdicts, so that the published description of what happens to
     my assumptions is true.
 
@@ -179,10 +182,19 @@ cannot close is still an **escalation**.
 
 - **D14. One dispatch, not two.** Option generation lands inside the existing `assumption-reviewer`, which keeps the
   cross-set view that is its stated reason for existing — the only agent that sees every fork against the finished
-  branch. Splitting is deferred until a real epic's **debrief** shows context or **spend** binding; the split to reach
+  branch. Splitting is deferred until a real epic's **trace** shows context or **spend** binding; the split to reach
   for then is per-assumption notes, the way an **observer** already uses **dispatch note**s, and not a second agent.
   A naive split is additionally blocked: option sets moved as contents break the paths-not-contents rule, and written to
   disk they break the rule that the plugin stores none of this exchange anywhere but the comments.
+
+  **Measured, and the split stays deferred for want of a signal rather than on a small one** (story 24). One observed
+  run of the build fixture put the `assumption-reviewer` dispatch at 11m43s over 7 assumptions — 27 requests, 23,145
+  output tokens, 1.14M cache read, 33 tool calls on `opus`. Two earlier readings of the same fixture, one before this
+  epic and one after, gave 10m51s and 11m26s over 9 assumptions each, on 44 and 31 requests and 22,274 and 24,082 output
+  tokens. **Neither context nor spend is anywhere near binding on any of the three.** What the three together do not
+  support is a trend: the run with the fewest assumptions took the longest, and the request counts move by 30% in the
+  direction opposite to the work, so run-to-run variance is larger than the effect. The two earlier readings have no
+  artefact behind them any more and are recorded as readings rather than as grounds.
 
 - **D15. Resume is untouched.** An `improve` reply is a verdict reply, so an assumption carrying one is already done by
   the existing filter, and one whose directive was never implemented is already collected by the wave's unresolved

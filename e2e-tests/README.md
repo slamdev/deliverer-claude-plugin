@@ -221,6 +221,12 @@ orchestrator's own context $0.54 (9%). The single most expensive agent is the **
 for ten assumption comments — more than any implementer, and more than both fix waves together. By model: opus-5 $4.37
 (72%), sonnet-5 $1.68 (28%).
 
+**That `assumption-reviewer` line is a pre-change baseline**, and nothing has re-priced it since. This delivery's
+adjudication compared no roads: the fourth verdict and the option sets that come with it landed later, under
+`docs/specs/the-adjudication-compares-roads`, so the figure above is what the step cost before it took that on. What
+exists instead is a comparison in **tokens** — D14 of that spec holds it — because no debrief prices a dispatch in
+dollars, and re-pricing this table means reading the session records of a fresh run by hand the way this section did.
+
 ### The refinement — `/deliverer:refine word-wrap`, 20m 07s
 
 | stage | model | $ | req | output | 1h write | cache read |
