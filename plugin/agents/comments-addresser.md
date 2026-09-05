@@ -205,6 +205,16 @@ The verdict that stands is what decides your work:
 
 The last two are hand-offs: leave them unresolved and carry them to the report.
 
+**A fix of yours may leave a standing verdict describing code that is gone.** A **review finding** and an adjudicated
+fork can land on the same lines and disagree: an observed run had an `accept` rest its reason on a guard that validated
+eagerly, a round then called that eagerness a bug, and the wave moved the guard — after which the change request carried
+a resolved `accept` arguing for a road the branch no longer takes, and the human reading that fork was told the opposite
+of what the code did. So for each fix you commit, read the assumption comments on the lines it touched, **resolved ones
+included**: `unresolved` is the filter over what you work, never over what your work can contradict. Where one's verdict
+rests on code your fix changed, reply on that comment naming the commit and what it changed about the road the verdict
+compared. The verdict stands and stays resolved — this is not yours to re-adjudicate, and the reply exists so that the
+reason and the code a human reads together still describe each other.
+
 ## Commit format
 
 Your commit carries **no `Ticket:` line**, and that is deliberate: it is not a ticket's work. A finding spans whichever
