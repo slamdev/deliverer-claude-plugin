@@ -69,18 +69,25 @@ export class ToolError extends Error {
  * the scripted double outruns it by design. It is advice for whoever is polling, published for any
  * caller and not just the shipped one (review-reliability D20).
  *
- * **No interval is hand-maintained against it, and that is the point.** `agents/code-reviewer.md`
- * is told to leave the `poll_after_ms` ITS OWN HANDLE gave it between one call and the next — this
- * figure, read off the payload rather than copied into prose — so there is one number and nothing
- * to keep in step. What that agent is still told nothing about is elapsed time or a deadline: the
- * hint paces a loop, and reasoning about a clock is what D19 removed after a shipped `sleep 15` was
+ * **Nothing shipped reads it, and no interval is hand-maintained against it** (review-reliability
+ * ticket 10). `agents/code-reviewer.md` names no interval at all: it calls the status tool and
+ * repeats, because nothing that agent can do decides when the next call lands, and a figure it held
+ * for no stated reason was one it invented a use for. Three consecutive observed runs bear that out
+ * — each opened both of its rounds with two polls seconds apart and then paced the rest by a
+ * self-chosen backoff of 60 s, 90 s and 120 s, the last of which died on the Bash tool's own
+ * two-minute timeout. Reasoning about a clock is what D19 removed, after a shipped `sleep 15` was
  * observed as a two-minute one, twice.
  *
- * A bare "call and repeat" was the state this replaced, and it is unsafe at the bounds the server
- * now runs: the absolute cap is four hours (`./config.ts`), and a poller calling flat out for four
- * hours fills its own context with status payloads and dies holding the round's prose. 15 s is
- * still the right number on the measurements: a healthy round runs ~122 s, so ~8 polls, where 2 s
- * would have been ~60 — and ~960 at the absolute deadline, against ~7200 at 2 s.
+ * **What bounds the poll loop is the review ending by itself, not this number.** The absolute cap
+ * is four hours (`./config.ts`) and the idle bound ends a wedged round sooner, which is what makes
+ * a loop with no interval safe to state. The honest limit: nothing stops a caller polling flat out
+ * for four hours and filling its own context with status payloads until it dies holding the
+ * round's prose. That is what this advice exists to prevent for a caller that takes it, and taking
+ * it is every caller's own affair — the figure is published for any of them and not for the
+ * shipped one (D20).
+ *
+ * 15 s is still the right number on the measurements: a healthy round runs ~122 s, so ~8 polls,
+ * where 2 s would have been ~60 — and ~960 at the absolute deadline, against ~7200 at 2 s.
  */
 export const POLL_AFTER_MS = 15_000;
 

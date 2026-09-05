@@ -11,36 +11,36 @@ an hour out, and one finished round sat unnoticed for 17 minutes by the one agen
 slept two minutes against a shipped instruction of fifteen seconds, for the second run running. Settled as D19 and D20
 in `../spec.md`.
 
-- [ ] `code-reviewer` no longer sleeps — in **either** place it currently does: step 4's poll loop, and step 3's branch
+- [x] `code-reviewer` no longer sleeps — in **either** place it currently does: step 4's poll loop, and step 3's branch
       for a review already in flight. What replaces both is that it calls `code_review_status` again and repeats, and
       nothing is said about when that next call happens, because nothing the agent can do decides it.
-- [ ] No sentence in it implies that it controls its cadence, or that it can measure elapsed time or a deadline. It is
+- [x] No sentence in it implies that it controls its cadence, or that it can measure elapsed time or a deadline. It is
       not told it has wake-ups either: it has no scheduling facility, and an agent told it has one invents a use for it
       — which is the defect this ticket exists to fix rather than a way to fix it.
-- [ ] Step 3's handle branch keeps only the `review_id`. `poll_after_ms` stops being the agent's to hold: with the
+- [x] Step 3's handle branch keeps only the `review_id`. `poll_after_ms` stops being the agent's to hold: with the
       pacing gone it has no stated use, and a number an agent holds for no stated reason is one it invents a use for.
-- [ ] That nothing arrives unsolicited, and that the status tool is the only thing bearing a result, are unchanged. So
+- [x] That nothing arrives unsolicited, and that the status tool is the only thing bearing a result, are unchanged. So
       is the reassurance that the review reaches a terminal status by itself, bounded by the server's own deadline —
       that is what makes a poll loop with no interval safe to state.
-- [ ] The server keeps publishing `poll_after_ms`, per D20: the hint is advice for any caller and not just the shipped
+- [x] The server keeps publishing `poll_after_ms`, per D20: the hint is advice for any caller and not just the shipped
       one. The comment claiming it is kept in step by hand with a shipped `sleep` is gone, because after this ticket
       there is no such `sleep` for it to be in step with. The measurement behind 15 s — a healthy round runs ~122 s, so
       ~8 polls — survives as the grounds for the number.
-- [ ] `stats.durationMs` leaves the status payload, and both descriptions that lean on it go with it: the `events`
+- [x] `stats.durationMs` leaves the status payload, and both descriptions that lean on it go with it: the `events`
       description stops naming it and rests on `lastEventAt`, and `agentDurationMs`'s stops contrasting against it.
       This costs no diagnostic and contradicts nothing already written — the field's own comment says it "rises either
       way and answers neither", and `lastEventAt`'s says that field and `events` are together what tells a poller
       working from wedged. Two polls with the same `events` and the same `lastEventAt` say nothing has happened since
       the last one, and need no clock to read.
-- [ ] `stats.deadlineSec` stays. Ticket 04 makes its description the only place a caller can learn the idle bound
+- [x] `stats.deadlineSec` stays. Ticket 04 makes its description the only place a caller can learn the idle bound
       exists before a round ends on it, so dropping the key would leave that ticket nothing to write to. The two
       tickets edit different keys of the same `stats` object and land in either order.
-- [ ] The honest limit is stated rather than implied: the payload still carries the deadline, and `startedAt` still
+- [x] The honest limit is stated rather than implied: the payload still carries the deadline, and `startedAt` still
       dates the review's start, so this change removes every instruction to reason about a clock without removing every
       means of building one. What it buys is that nothing tells `code-reviewer` those numbers are its to act on.
-- [ ] What `code-reviewer` reports is otherwise unchanged — the `review_id`, the `status` it ended on, the verbatim
+- [x] What `code-reviewer` reports is otherwise unchanged — the `review_id`, the `status` it ended on, the verbatim
       `summary`, what the round **spent**, and the one-line `reason` on a round that failed or was cancelled.
-- [ ] The review lifecycle is exercised against the **scripted backend** — the payload shape moves, and nothing in CI
+- [x] The review lifecycle is exercised against the **scripted backend** — the payload shape moves, and nothing in CI
       looks at it — and `typecheck` and `lint` pass in both packages. The register and column width of each file are
       matched.
 
@@ -107,3 +107,29 @@ alone because nothing references it and renaming a `ready-for-agent` ticket's pa
 
 **No ADR.** A contract sentence and a payload key are both trivially reversible, and D19 and D20 already hold the
 decision in the one place it lives.
+
+**Implemented 2026-09-05, and three criteria were already satisfied by other work.** What this ticket actually changed
+is `plugin/agents/code-reviewer.md` and one comment in `plugin/mcp/server/lifecycle.ts`. There was no `sleep` left to
+delete: step 4 had become an instruction to leave the `poll_after_ms` the handle gave it between calls, and step 3 to
+call again "paced as step 4 paces its polls". Both are gone, and what stands in their place is the positive statement
+this ticket asked for — call the status tool and repeat — with the reassurance about the server's own deadline left
+where it was.
+
+The three `stats` criteria were overtaken rather than done here: **there is no `stats` object in the payload any more**
+(ADR-0007 removed it, along with `durationMs` and `lastEventAt` as figures), so `durationMs` had already left, the
+descriptions that leaned on it had already been rewritten, and `deadlineSec` survives as prose in the status tool's own
+description rather than as a key. They are ticked because what they asked for holds, not because this change made it so.
+
+**What newly grounds D19, three runs on.** An observed build run of 2026-09-05 opened both of its rounds with two polls
+seconds apart — 3.4s and 8s after a `code_review_start` that had returned `poll_after_ms: 15000`, then 2.9s and 3.3s in
+the second round — and then paced the remainder by a self-chosen backoff of 60s, 90s and 120s, the last of which died on
+the Bash tool's own two-minute timeout. Its **observer** named the premature polls as the run's single **defect**, and
+blamed this file. That is this ticket's premise observed for the third run running: a figure an agent holds for no
+stated use is one it invents a use for, and the invented use grew past a tool bound exactly as the 2026-08-31
+baseline's did.
+
+**What this leaves open, stated rather than resolved.** `lifecycle.ts` warns that a poller calling flat out for the
+absolute four-hour cap fills its own context and dies holding the round's prose; this ticket's own reasoning is that the
+review reaching a terminal status by itself is what makes an interval-free loop safe to state. Those two do not fully
+meet: nothing now tells the shipped agent to pace, and nothing stops it polling flat out either. The comment above
+`POLL_AFTER_MS` says so in as many words rather than letting one side quietly win.

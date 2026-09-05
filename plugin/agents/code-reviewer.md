@@ -45,20 +45,13 @@ under a raised one.
     - **Refused, the id already names a finished review** — a round already ran under that id, and its prose belongs to
       that round rather than this one. Raise `n` and call again: one round, one id.
     - **Refused, a review is already in flight** — one review runs at a time, and it reaches a terminal status by
-      itself. Call again, paced as step 4 paces its polls.
+      itself. Call again, and repeat until one of the other two outcomes is yours.
 4. **Poll to a terminal status.** Call `code_review_status` with your `review_id`, and repeat. You are done when
    `status` reads `completed`, `failed` or `cancelled`. Let the review end by itself: the server's own deadline ends a
    run that hangs, and a cancelled review carries no result at all. Whichever of the three it ends on, that is **your
    round**: one ending `failed` or `cancelled` is reported as the round it was, and starting another under a fresh
    `review_id` is not yours to do — whether the epic spends another round is settled outside this dispatch, and another
    round arrives as another dispatch. Step 3's raise is not this: that one happens before any round of yours has run.
-
-   **Leave the `poll_after_ms` the handle gave you between one call and the next.** It is the server's own figure, read
-   off the handle rather than one you picked or are keeping in your head, which is why nothing here asks you to measure
-   anything at all. A round may run for hours: calling flat out for that long fills this dispatch with status payloads
-   until there is no room left to carry back the prose the round produced — a review that finished, lost on the polling
-   side. The figure is advice and not a deadline, so a call landing later than it costs a late notice and nothing
-   more.
 5. **Report**, as below.
 
 ## What to report
