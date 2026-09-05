@@ -554,12 +554,21 @@ export function renderDebrief(input: DebriefInput): string {
   // reader can open it mid-run — and a set of figures that stops halfway is worth having only if
   // it says it is not the whole run yet. Nothing is printed once the run is over, so a finalised
   // live debrief and a replay of the same records are the same bytes.
+  //
+  // It says HOW LONG because a reader who is not told reads the file too early and concludes the
+  // observer is broken. That happened: a session read a debrief four and six minutes after the
+  // finalise signal, called a healthy run a defect, and wrote the conclusion up. The two runs
+  // measured from signal to final write took 5m26s and ~7m23s, which is what "minutes" is grounded
+  // on — the figure stays out of the prose because the number will move and the magnitude will not.
   if (input.status !== undefined && !input.status.finalised) {
     paragraph(out,
       `**This run is still going, so this debrief is not final.** ${input.status.note} Every ` +
         `figure below is the run as far as it has got, and this file is rewritten as each stage ` +
         `lands. Forwarding it is safe — the bound below holds either way — but a later reading of ` +
-        `the same file will say more.`,
+        `the same file will say more. **The last of those rewrites lands minutes after the run ` +
+        `itself returns**, because the reading that closes a run is one long-context pass over ` +
+        `the whole of it: a file still carrying this paragraph shortly after a run ends is ` +
+        `settling rather than stuck.`,
     );
   }
 
