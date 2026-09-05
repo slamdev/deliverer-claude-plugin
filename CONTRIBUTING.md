@@ -507,6 +507,15 @@ complete run, only what a human could read afterwards. Three tests, and CI runs 
   **flipped ready** with its **checks** green — then the verifier judges the code behind it against the **epic**, and
   whether those verdicts were sound.
 
+**No paid run has yet produced an `improve`, so part of what the build path asserts has never fired.** Both runs since
+the fourth **verdict** shipped came back without one — 6 `accept` and 1 `override` over seven **assumption**s in the
+observed run of 2026-09-05, and 8 and 1 over nine in an earlier reading whose artefacts are gone — each reaching zero
+for stated reasons rather than by ignoring the verdict. That leaves every branch behind the word unexercised: the **fix
+wave** implementing a **directive**, the report's `improve` line, and the failing half of the harness's own assertion
+that each one was answered. The passing half is vacuous by design — a run that honestly found no `improve` must not fail
+— so this is a limit on what a green build path demonstrates rather than a defect in it. Closing it takes a **fixture**
+contrived to force one, which no test has.
+
 **Both paid tests are observed, and each asserts a debrief.** The plugin observes runs by default and the harness
 leaves that default alone, so an **observer** runs beside each of the two and the test asserts what a human would look
 for first: that a **debrief** exists for the run and that its header names it — the right skill, the right **slug**,
