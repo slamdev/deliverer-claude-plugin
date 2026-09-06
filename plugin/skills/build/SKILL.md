@@ -11,7 +11,7 @@ for a human.
 
 Your argument names the epic; when it names none, report that and stop rather than picking one.
 
-Every stage below is one agent dispatch — **one dispatch, one task** (**Progress**) — and the dispatched agent's
+Every stage below is made of agent dispatches — **one stage, one task** (**Progress**) — and each dispatched agent's
 **report** is all you get back: what it names is what you know. Where a report leaves you unsure, put the stage back
 rather than going to look, and the bearings you take from the branch and the change request say which stage is owed, not
 what a finding says. Yours is the work no agent does: read the epic for its tickets, dispatch in order, read each
@@ -147,16 +147,18 @@ request, as **Resume** has it.
 looking — an idle notice for a dispatch you have already accounted for asks nothing of you, so nothing is owed for it. A
 signal that does ask something is not one of those: a **report** to read, a stage that went wrong, a round to put back.
 
-**One dispatch, one task.** Create one per dispatch as the run opens, named from the stage it serves and prefixed with
-the epic's slug so two epics can share a session — `<slug>: open the change request`. A resumed run opens the same set,
-with the dispatches the branch and the change request already account for created `completed`. Mark a task `in_progress`
-as you dispatch it and `completed` once you have read its report. `completed` says the dispatch is over rather than that
-it succeeded, so a round that died carries its outcome in its subject — `<slug>: second round (failed — no review)`. A
-round you spend after one that died is another dispatch, so it gets a task of its own. Continuing an agent is the same
-dispatch rather than a new one, so it gets no task of its own: the task it already has flips back to `in_progress`, and
-`completed` once the report you were owed lands.
+**One stage, one task.** Create one each for stages 1 to 7 as the run opens, since stage 8 is the flip and the report
+itself — named from the stage it serves and prefixed with the epic's slug so two epics can share a session, as
+`<slug>: open the change request`. A resumed run opens the same set, with the stages the branch and the change request
+already account for created `completed`. Mark a task `in_progress` as you enter its stage and `completed` once you have
+read the report that ends it. `completed` says the stage is over rather than that it succeeded, so a round that died
+carries its outcome in its subject — `<slug>: second round (failed — no review)`. Putting a stage back to an agent —
+continued or cold — is the same stage rather than a new one, so it gets no task of its own: the task it already has
+flips back to `in_progress`, and `completed` once the report you were owed lands. **A round is the exception**, because
+a cold `code-reviewer` opens a fresh one (**Rounds**): a round you spend after one that died is another round, and it
+gets a task of its own.
 
-Stage 1 is one task for all its tickets, relabelled as each lands: `<slug>: implement every ticket (4/21)` as the
+Stage 1's one task carries all its tickets, relabelled as each lands: `<slug>: implement every ticket (4/21)` as the
 subject and `Implementing ticket 4/21 — <ticket>` as the `activeForm`, both in the one `TaskUpdate`. The numerator is
 how many tickets have a report in hand. A resumed run has none, so it opens at the tickets the `Ticket:` lines name
 **less the last one**, which **Resume** dispatches again.

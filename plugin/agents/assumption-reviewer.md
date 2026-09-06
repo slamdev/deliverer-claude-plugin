@@ -211,5 +211,5 @@ reaches.
 Whoever reads this has your report and nothing else.
 
 - how many verdicts of each kind you replied with — `accept`, `improve`, `override`, `escalate`
-- every `improve` you directed, one line each — the fork, the change you directed and the axis that carried it
+- every `improve` you directed, one line each — the **fork**, the change you directed and the **axis** that carried it
 - every escalation, one line each — those are the only ones waiting on a human

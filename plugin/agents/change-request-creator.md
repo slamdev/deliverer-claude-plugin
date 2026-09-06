@@ -52,38 +52,6 @@ done on one of them names that hash without being any of their marks.
    exactly one mark.
 6. **Report**, as below.
 
-## Comment format
-
-The comment is the whole **hand-off**: whoever takes the assumption on next has it and nothing else, so carry the
-commit's entry over verbatim, whichever way the comment is anchored.
-
-```
-ASSUMPTION (<commit hash>)
-
-<the entry from that commit's Assumptions: section, verbatim>
-```
-
-**Where it is anchored.** The entry names a `file:` and a `line:`, and those are the anchor the resolvable mechanism
-wants — the comment sits *on* that line rather than mentioning it in prose, which is what puts it where the human is
-reading the code. But that number is the number as the recording commit left it, and every ticket commits to this one
-branch, so a `line: 12` the first ticket recorded is not line 12 on head once a later ticket inserts twenty lines above
-it: that the number still exists on head is not the same as it still being that line.
-
-**Translate it before you use it.** Read the line's text out of the commit the prefix names — `git show <that
-hash>:<the file>` — and find that text in the file as head has it. Exactly one match is the line, wherever it now sits;
-no match, or several, is a translation you cannot make. Then anchor at the first of these that holds:
-
-1. **The translated line on head**, where the change request's diff carries that line. The ordinary case.
-2. **The file, with no line at all**, where the translation held but the diff does not carry the line. An assumption
-   about a caller the branch never touched is an ordinary entry rather than a mistake, and the mechanism has a
-   file-level form for exactly this — a line outside the diff is refused, not placed.
-3. **The commit the prefix already names** — the file and line as that commit left them, or the commit on its own where
-   that is what the mechanism takes — where the line is gone, or the translation could not be made.
-
-Each of the three is an anchor the entry can be held to, which the nearest surviving line is not: that one puts the
-comment somewhere misleading. Where the mechanism distinguishes the two versions of a line, say which one you mean
-rather than leaving it to a default: the version the branch left in place, or the version it deleted.
-
 ## Comment channels
 
 A change request carries its comments on whatever channels the forge gives it, and not every channel can be marked
@@ -141,8 +109,12 @@ gh api --method POST 'repos/{owner}/{repo}/pulls/<number>/comments' -F body=@<th
 ```
 
 `--paginate` on a GraphQL query does nothing unless the query takes `$endCursor` and asks for the `pageInfo` fields
-above: without them the first hundred come back as the whole answer, with no error and nothing to notice. `side` is
-`RIGHT` for a line the branch added or left in place and `LEFT` for one it deleted.
+above: without them the first hundred come back as the whole answer, with no error and nothing to notice. The comments
+nested inside a thread cannot be paginated in the same query, because one query carries one cursor — `first:100` is
+what makes that bound safe, since a **mark** is a thread's oldest comment and never one of its newer ones. The `--jq`
+on the issue comments is not tidying: unfiltered, that channel returns every comment as one line of tens of fields,
+and one line is what cannot be read a piece at a time. `side` is `RIGHT` for a line the branch added or left in place
+and `LEFT` for one it deleted.
 
 **GitLab**, with `glab`. One list holds them all — the change request's discussions — and a `position` is what anchors
 one to a diff line.
@@ -169,6 +141,38 @@ glab api --method POST 'projects/:fullpath/merge_requests/<iid>/discussions' -F 
 A `text` position wants both line numbers on a line the branch left unchanged, `new_line` alone on one it added, and
 `old_line` alone on one it deleted. Give it one number where it needs two and the position matches nothing, which comes
 back as a rejection rather than as a comment somewhere odd.
+
+## Comment format
+
+The comment is the whole **hand-off**: whoever takes the assumption on next has it and nothing else, so carry the
+commit's entry over verbatim, whichever way the comment is anchored.
+
+```
+ASSUMPTION (<commit hash>)
+
+<the entry from that commit's Assumptions: section, verbatim>
+```
+
+**Where it is anchored.** The entry names a `file:` and a `line:`, and those are the anchor the resolvable mechanism
+wants — the comment sits *on* that line rather than mentioning it in prose, which is what puts it where the human is
+reading the code. But that number is the number as the recording commit left it, and every ticket commits to this one
+branch, so a `line: 12` the first ticket recorded is not line 12 on head once a later ticket inserts twenty lines above
+it: that the number still exists on head is not the same as it still being that line.
+
+**Translate it before you use it.** Read the line's text out of the commit the prefix names — `git show <that
+hash>:<the file>` — and find that text in the file as head has it. Exactly one match is the line, wherever it now sits;
+no match, or several, is a translation you cannot make. Then anchor at the first of these that holds:
+
+1. **The translated line on head**, where the change request's diff carries that line. The ordinary case.
+2. **The file, with no line at all**, where the translation held but the diff does not carry the line. An assumption
+   about a caller the branch never touched is an ordinary entry rather than a mistake, and the mechanism has a
+   file-level form for exactly this — a line outside the diff is refused, not placed.
+3. **The commit the prefix already names** — the file and line as that commit left them, or the commit on its own where
+   that is what the mechanism takes — where the line is gone, or the translation could not be made.
+
+Each of the three is an anchor the entry can be held to, which the nearest surviving line is not: that one puts the
+comment somewhere misleading. Where the mechanism distinguishes the two versions of a line, say which one you mean
+rather than leaving it to a default: the version the branch left in place, or the version it deleted.
 
 ## What to report
 
