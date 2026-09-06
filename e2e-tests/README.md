@@ -35,18 +35,25 @@ Four kinds of **spend** sit outside it, and each is outside for its own reason:
   credentials the run does** and its cost reaches the orchestrator's total no more than a round's does. Measured by
   hand against runs of both skills, judging on: a refinement's observation costs **$3.18–$3.48**, of
   which roughly **$0.40** is the per-**dispatch** notes on the cheap tier; a delivery's **about $6.70**, of which
-  **$1.30** is. That is four readings of three runs and nothing more — CONTRIBUTING.md § Replaying a run's records
-  carries what it rests on.
+  **$1.30** is. The observed delivery of 2026-09-06 below came in at a third of that — **$2.21**, being **$0.51** for
+  nine **dispatch note**s on `haiku` and **$1.70** for the one synthesis — and what the gap most likely measures is the
+  harness rather than the observer: the synthesis runs on `code_review_model`, the same option a **round**'s reviewer
+  does, which `REVIEW_OPTIONS` pins to `sonnet` against a shipped default of `opus[1m]`. So an observation read out of a
+  run directory is a harness-configured observation, and whether a user's is nearer $6.70 turns on which model that
+  option named in the run being read. Five readings of four runs and nothing more — CONTRIBUTING.md § Replaying a run's
+  records carries what it rests on.
 
 **So a run driven today spends its observation on top of every figure in this file** — the same shape of gap as the
-review spend above, and on a refinement a larger one. Nothing below is missing it: the two runs of 2026-08-15 predate
-the observer entirely, so their totals are the run alone and stay comparable to each other. What they cannot tell you
-is what the same pair would cost now, which is those totals plus a refinement's or a delivery's observation.
+review spend above, and on a refinement a larger one. The two runs of 2026-08-15 predate the observer entirely, so their
+totals are the run alone and stay comparable to each other; what they cannot tell you is what the same pair would cost
+now, which is those totals plus a refinement's or a delivery's observation. The delivery of 2026-09-06 carries its own
+observation on its own line, so that one is not missing it.
 
-**So the spend ceiling cannot see review spend at all.** On the delivery below that is $0.32 against a $25 ceiling —
-but the harness deliberately configures the cheapest review there is (`REVIEW_OPTIONS` in `harness/install.ts`: `low`
-effort on `sonnet`, against a shipped default of `opus[1m]`), and the plugin's own measurement above is $8.61 for one
-epic's reviews. The number is small here because of how the harness is configured, not because the gap is small.
+**So the spend ceiling cannot see review spend at all.** On the delivery of 2026-08-15 that is $0.32 against a $25
+ceiling, and on the one of 2026-09-06 $0.97 — but the harness deliberately configures the cheapest review there is
+(`REVIEW_OPTIONS` in `harness/install.ts`: `low` effort on `sonnet`, against a shipped default of `opus[1m]`), and the
+plugin's own measurement above is $8.61 for one epic's reviews. The number is small here because of how the harness is
+configured, not because the gap is small.
 
 ### The four things that make the arithmetic wrong if you skip them
 
@@ -78,7 +85,10 @@ exactly, the deduplication rule is right, and if the dollars match to the cent, 
 2026-08-15 both matched exactly — which is also what settled that Sonnet 5 was billed at the standard $3/$15 rather
 than the $2/$10 introductory rate then in force. **Do this first, every time.** Everything below rests on it.
 
-### Prices, as verified on 2026-08-15
+On 2026-09-06 the same check passed on the second of a delivery's two rounds and, on the first, disagreed by 418 output
+tokens for a reason worth knowing before you trust any single round as an oracle — the last section says which.
+
+### Prices, as verified on 2026-08-15 and again on 2026-09-06
 
 | model | input | output | cache write 5m | cache write 1h | cache read |
 |---|---|---|---|---|---|
@@ -221,11 +231,11 @@ orchestrator's own context $0.54 (9%). The single most expensive agent is the **
 for ten assumption comments — more than any implementer, and more than both fix waves together. By model: opus-5 $4.37
 (72%), sonnet-5 $1.68 (28%).
 
-**That `assumption-reviewer` line is a pre-change baseline**, and nothing has re-priced it since. This delivery's
-adjudication compared no roads: the fourth verdict and the option sets that come with it landed later, under
-`docs/specs/the-adjudication-compares-roads`, so the figure above is what the step cost before it took that on. What
-exists instead is a comparison in **tokens** — D14 of that spec holds it — because no debrief prices a dispatch in
-dollars, and re-pricing this table means reading the session records of a fresh run by hand the way this section did.
+**That `assumption-reviewer` line is a pre-change baseline.** This delivery's adjudication compared no roads: the fourth
+verdict and the option sets that come with it landed later, under `docs/specs/the-adjudication-compares-roads`, so the
+figure above is what the step cost before it took that on. **What it costs having taken it on is measured below**, off
+the run of 2026-09-06 and by the same method — $2.44 against this $1.45, and the most expensive stage of a delivery
+rather than merely the most expensive agent.
 
 ### The refinement — `/deliverer:refine word-wrap`, 20m 07s
 
@@ -265,3 +275,88 @@ made a web search.
   noise, most likely SDK-level retries and the same untracked calls as the `ai-title` ones.
 - The responder reconstructs to $0.1607 against $0.18 reported. The record set is complete — six `AskUserQuestion`
   calls, six records, one request each — so the gap is spend that left no usage line; see the `ai-title` note above.
+
+## What the delivery of 2026-09-06 cost
+
+From `build-typescript-library-2026-09-06T08-19-52-7PxWz7`, which passed. It is the first reading of a delivery whose
+**adjudication** compares roads, so it is what re-prices the `assumption-reviewer` line above rather than a second
+reading of the same thing. The oracle was re-run first, as it always should be: round 1's own `spend.costUsd` of
+$0.5260710 reconstructs to $0.526071 on the 2026-08-15 `sonnet-5` table, and every cache write in the whole run is a
+1-hour one, so both halves of that table still hold.
+
+### The delivery — `/deliverer:build column-alignment`, 55m 29s
+
+| stage | model | $ | req | output | 1h write | cache read | wall |
+|---|---|---:|---:|---:|---:|---:|---:|
+| orchestrator (in-session) | opus-5 | 1.8614 | 35 | 12,096 | 81,725 | 1,482,827 | 6m01s |
+| implementer — ticket 01 | opus-5 | 0.7193 | 20 | 8,455 | 29,549 | 424,492 | 3m32s |
+| implementer — ticket 02 | opus-5 | 0.7699 | 18 | 11,665 | 26,634 | 423,514 | 4m02s |
+| implementer — ticket 03 | opus-5 | 0.8869 | 19 | 12,828 | 30,317 | 525,761 | 5m02s |
+| change-request-creator | sonnet-5 | 0.4518 | 15 | 7,449 | 37,622 | 380,879 | 3m49s |
+| assumption-reviewer | opus-5 | **2.4418** | 36 | 36,382 | 65,254 | 1,758,800 | **14m16s** |
+| code-reviewer — round 1 (the poller) | sonnet-5 | 0.3088 | 11 | 1,641 | 38,039 | 186,311 | 3m26s |
+| comments-addresser — fix wave 1 | opus-5 | 0.8375 | 13 | 9,042 | 40,216 | 418,268 | 4m04s |
+| code-reviewer — round 2 (the poller) | sonnet-5 | 0.2212 | 12 | 1,629 | 23,375 | 187,999 | 4m02s |
+| comments-addresser — fix wave 2 | opus-5 | 1.1298 | 20 | 14,851 | 38,870 | 739,345 | 7m15s |
+| **the harness's figure** | | **9.6284** | | | | (reported: $9.75) | **55m 29s** |
+| round 1, the review itself | sonnet-5 | 0.5261 | 8 | 6,657 | 62,126 | 178,040 | 1m55s |
+| round 2, the review itself | sonnet-5 | 0.4404 | 6 | 11,239 | 37,932 | 147,298 | 2m41s |
+| **what the delivery actually cost** | | **10.5949** | | | | | |
+| the verifier, charged separately | opus-5 | 0.8253 | 7 | 13,352 | 42,180 | 139,214 | |
+| the observation, charged separately | sonnet-5, haiku | 2.2133 | 13 | 64,851 | 350,057 | 556,108 | |
+
+The orchestrator's wall column is the run's own time less every dispatch's, since the stages are serial and it holds
+whatever is left; the two rounds' are the reviewer's own, as the **debrief** reports them.
+
+Where it goes: everything after the code was written — adjudicating the **assumption**s, two rounds with their pollers,
+two **fix waves** — is $5.91 (56%); the three **implementers** are $2.38 (22%); the orchestrator's own context $1.86
+(18%); opening the **change request** $0.45 (4%). The single most expensive agent is the **assumption-reviewer at $2.44
+(23%)** for ten assumption comments — more than all three implementers together, and more than both fix waves together.
+It is also the longest stage by a factor of two, at **14m16s of the run's 55m29s**: a quarter of the wall clock in one
+dispatch, and the reason the time ceiling is now the nearer of the two. By model: opus-5 $8.65 (82%), sonnet-5 $1.95
+(18%). Part of what that dispatch spent is legwork `agents/assumption-reviewer.md` leaves to its own judgement — it ran
+a 40,000-case property probe across ten assumptions that all came back `accept`, which the run's own debrief keeps as a
+hunch rather than a defect.
+
+**Against 2026-08-15, two of the lines are not comparable.** The orchestrator's is the first: the harness pins a model
+for its **responder**, its **verifier** and the smoke test's session, and pins none for the run, so a run takes whatever
+the environment it was driven from defaults to — `sonnet-5` that day and `opus-5` this one. Re-priced at sonnet the same
+tokens come to $1.12 against $0.54, so roughly two-thirds of the tripling is the model and one-third a context that did
+grow: 704K cache reads to 1.48M, 16 requests to 35. **Pin the run's model before reading two of these tables against
+each other.** The rounds are the second: the review itself went $0.32 to $0.97 on the same `low`-effort `sonnet`
+configuration, which is a reviewer reading a diff and posting comments, and no spec of the plugin's touched it.
+
+Every other stage keeps the model its own frontmatter declares, so those comparisons are clean: **adjudication $1.45 →
+$2.44** with output 20,248 → 36,382 over 21 requests → 36, **fix wave 1 $0.54 → $0.84**, **fix wave 2 $0.39 → $1.13**,
+the three implementers $1.99 → $2.38, the change request $0.49 → $0.45. The verifier, pinned to `opus` both times, went
+$0.37 → $0.83 — it now reads an `adjudication.md` carrying every road as well as the diff. So the roads are paid for
+more than once: where they are written, again in the **fix wave**s that read the **verdict**s back, and again in the
+verifier at the end. Whether the orchestrator pays a share too is the one thing this pair of readings cannot settle,
+for the model reason above.
+
+### Where the money goes
+
+| token class | delivery |
+|---|---:|
+| cache write (1h, ×2) | $4.32 — 41% |
+| cache read (×0.1) | $3.21 — 30% |
+| output | $3.06 — 29% |
+| fresh input | $0.0020 — 0.0% |
+
+7.50M tokens for $10.59, of which 6.85M are cache reads and 134K is output. The shape is the one both runs of
+2026-08-15 had — the bill is re-priming context rather than writing code — and what moved inside it is output's share,
+29% against 32%, on prose that is half again as long.
+
+### What is not reconciled
+
+- The delivery reconstructs **1.25% under** its reported figure, $9.6284 against $9.75. Same direction as 2026-08-15 and
+  five times the size, and the item below accounts for a twentieth of it.
+- **Round 1 is the one place the oracle disagrees, and it says why.** The tools server reports 6,657 output tokens where
+  the record reconstructs 6,239: one of that round's eight requests wrote two assistant lines and no line bearing a
+  `stop_reason`, so the request's own total never reached the record at all and rule 2 above keeps a 3-token partial as
+  the whole of it. Round 2 matched to the token. The money is $0.0063 and the lesson is larger than the money — **a
+  request whose final line is missing under-counts in silence**, and the server's own `spend` is the only thing in a run
+  directory that catches it.
+- **Not one of this run's 444 assistant lines carries `requestId`.** Every one of them grouped by `message.id` instead,
+  which the script above already falls back to. Rule 2 is the grouping and not the field: check which one your records
+  actually carry before trusting a count of requests.

@@ -507,14 +507,17 @@ complete run, only what a human could read afterwards. Three tests, and CI runs 
   **flipped ready** with its **checks** green — then the verifier judges the code behind it against the **epic**, and
   whether those verdicts were sound.
 
-**No paid run has yet produced an `improve`, so part of what the build path asserts has never fired.** Both runs since
-the fourth **verdict** shipped came back without one — 6 `accept` and 1 `override` over seven **assumption**s in the
-observed run of 2026-09-05, and 8 and 1 over nine in an earlier reading whose artefacts are gone — each reaching zero
-for stated reasons rather than by ignoring the verdict. That leaves every branch behind the word unexercised: the **fix
-wave** implementing a **directive**, the report's `improve` line, and the failing half of the harness's own assertion
-that each one was answered. The passing half is vacuous by design — a run that honestly found no `improve` must not fail
-— so this is a limit on what a green build path demonstrates rather than a defect in it. Closing it takes a **fixture**
-contrived to force one, which no test has.
+**No paid run has yet produced an `improve`, so part of what the build path asserts has never fired.** All three runs
+since the fourth **verdict** shipped came back without one — 10 `accept` and no `override` over ten **assumption**s in
+the observed run of 2026-09-06, 6 and 1 over seven on 2026-09-05, and 8 and 1 over nine in an earlier reading whose
+artefacts are gone — each reaching zero for stated reasons rather than by ignoring the verdict. The last of those is the
+narrowest reading yet: every one of its ten **verdict**s named the roads it beat and the **axis** each lost on, two of
+them said outright that a road differs on no axis and is therefore a shape preference rather than grounds, and still
+nothing was directed. That leaves every branch behind the word unexercised: the **fix wave** implementing a
+**directive**, the report's `improve` line, and the failing half of the harness's own assertion that each one was
+answered. The passing half is vacuous by design — a run that honestly found no `improve` must not fail — so this is a
+limit on what a green build path demonstrates rather than a defect in it. Closing it takes a **fixture** contrived to
+force one, which no test has.
 
 **Both paid tests are observed, and each asserts a debrief.** The plugin observes runs by default and the harness
 leaves that default alone, so an **observer** runs beside each of the two and the test asserts what a human would look
@@ -525,10 +528,16 @@ run uses, its **spend** is in none of the figures below, and `e2e-tests/README.m
 
 **What they take and spend, measured rather than estimated.** The refinement took **21m 52s and $6.36** — the run
 itself 20m 12s and $5.82, the responder $0.16 across six rounds of questions, the verifier $0.39 — and published a spec
-and six tickets. The delivery was measured twice: **23m 12s and $7.40**, then **22m 14s and $6.85**, each flipping its
-change request ready with green checks. Run together, which is what `npm test` does, the whole suite took **23m**, and
-the two runs with their verdicts came to **$13.28**, then **$13.14** — the two long tests overlap, so the suite is the
-slower of them plus a rounding error. The smoke test is seconds and effectively free.
+and six tickets. The delivery, measured on 2026-09-06, took **59m 18s and $10.58** — the run itself 55m 29s and $9.75,
+the verifier $0.83 — and flipped its change request ready with green checks over three tickets, five commits, ten
+**assumption**s and two **rounds**. It was measured twice before that, at **23m 12s and $7.40** and **22m 14s and
+$6.85**, and both of those readings predate the **adjudication** that compares roads: that step is now the longest and
+most expensive of a delivery's eight, and `e2e-tests/README.md` prices the difference per stage. Run together, which is
+what `npm test` does, the whole suite took **23m** and the two runs with their verdicts came to **$13.28**, then
+**$13.14** — the two long tests overlap, so the suite is the slower of them plus a rounding error. That pair predates
+the delivery above too, and nothing has driven the two together since; the arithmetic on the two latest readings puts a
+suite at about an hour and about $17, which is derived rather than measured. The smoke test is seconds and effectively
+free.
 
 Those are the figures the harness reports, which are the **orchestrator** and its **dispatches** and nothing else — a
 delivery's **rounds** and the observation both run as their own processes, and neither's **spend** is in them.
@@ -536,11 +545,13 @@ delivery's **rounds** and the observation both run as their own processes, and n
 observation among the four kinds it names — and gives the method for doing it again from any **run directory**.
 
 **The ceilings.** A run may take **ninety minutes** and spend **twenty-five dollars**: `DEFAULT_CEILINGS` in
-`e2e-tests/harness/ceilings.ts`, overridable per test. Neither has been raised — the longest run measured took 21m 23s
-and the most expensive spent $6.96, so both figures are still the spec's own estimates. Reaching one is reported as a
-ceiling rather than as a failed assertion, so a slow run can be told from a stuck one. What would move them is a bigger
-**fixture**: this one's tickets are three functions with unit tests, and a fixture with a service in it would be felt
-here first.
+`e2e-tests/harness/ceilings.ts`, overridable per test. Neither has been raised, but the time one is no longer far off:
+the longest run measured took **55m 29s** — 62% of the ninety — and the most expensive spent **$9.75**, both of them the
+delivery of 2026-09-06 above. The money ceiling still has the room the spec estimated it would; the clock does not, and
+it is the one a delivery will reach first. Reaching either is reported as a ceiling rather than as a failed assertion,
+so a slow run can be told from a stuck one. What would move them is a bigger **fixture**: this one's tickets are three
+functions with unit tests, and a fixture with a service in it would be felt here first. Wall clock is also the one
+figure here a busy machine inflates — every stage runs in series, so anything else on the box is in it.
 
 **What they need.** The `./claude` container has all of it already, which is where to run them from:
 
