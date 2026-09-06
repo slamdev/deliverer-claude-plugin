@@ -308,6 +308,10 @@ $0.5260710 reconstructs to $0.526071 on the 2026-08-15 `sonnet-5` table, and eve
 The orchestrator's wall column is the run's own time less every dispatch's, since the stages are serial and it holds
 whatever is left; the two rounds' are the reviewer's own, as the **debrief** reports them.
 
+**That `change-request-creator` line prices a model the stage has left.** Its frontmatter moved to `opus` at `medium`
+effort after this run, so this row and the 2026-08-15 one both measure `sonnet-5`, and nothing has re-measured the stage
+since. Re-pricing this row's own tokens on `opus` puts it near $0.75 against the $0.45 it reports.
+
 Where it goes: everything after the code was written — adjudicating the **assumption**s, two rounds with their pollers,
 two **fix waves** — is $5.91 (56%); the three **implementers** are $2.38 (22%); the orchestrator's own context $1.86
 (18%); opening the **change request** $0.45 (4%). The single most expensive agent is the **assumption-reviewer at $2.44
@@ -326,13 +330,15 @@ grow: 704K cache reads to 1.48M, 16 requests to 35. **Pin the run's model before
 each other.** The rounds are the second: the review itself went $0.32 to $0.97 on the same `low`-effort `sonnet`
 configuration, which is a reviewer reading a diff and posting comments, and no spec of the plugin's touched it.
 
-Every other stage keeps the model its own frontmatter declares, so those comparisons are clean: **adjudication $1.45 →
-$2.44** with output 20,248 → 36,382 over 21 requests → 36, **fix wave 1 $0.54 → $0.84**, **fix wave 2 $0.39 → $1.13**,
-the three implementers $1.99 → $2.38, the change request $0.49 → $0.45. The verifier, pinned to `opus` both times, went
-$0.37 → $0.83 — it now reads an `adjudication.md` carrying every road as well as the diff. So the roads are paid for
-more than once: where they are written, again in the **fix wave**s that read the **verdict**s back, and again in the
-verifier at the end. Whether the orchestrator pays a share too is the one thing this pair of readings cannot settle,
-for the model reason above.
+Every other stage kept the model its own frontmatter declared **on both of these dates**, so those comparisons are
+clean: **adjudication $1.45 → $2.44** with output 20,248 → 36,382 over 21 requests → 36, **fix wave 1 $0.54 → $0.84**,
+**fix wave 2 $0.39 → $1.13**, the three implementers $1.99 → $2.38, the change request $0.49 → $0.45.
+`change-request-creator` moved to `opus` at `medium` effort after the later of the two, so both of its rows price a
+model that stage no longer runs on and no figure here has been measured since. The verifier, pinned to `opus` both
+times, went $0.37 → $0.83 — it now reads an `adjudication.md` carrying every road as well as the diff. So the roads are
+paid for more than once: where they are written, again in the **fix wave**s that read the **verdict**s back, and again
+in the verifier at the end. Whether the orchestrator pays a share too is the one thing this pair of readings cannot
+settle, for the model reason above.
 
 ### Where the money goes
 

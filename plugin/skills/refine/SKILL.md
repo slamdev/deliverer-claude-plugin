@@ -62,8 +62,9 @@ re-run.
 3. **Write the spec** — dispatch `spec-writer`. It publishes the spec to the project's issue tracker. Keep the location
    it reports. A **claim** its reading killed took a decision down with it: say what the writer found and put that
    decision back to the human as a **fork** before stage 4 runs, then put the stage back to the writer to fold their
-   answer into the published spec — an answer that reaches stage 4 any other way is one the record does not carry. You
-   are done when the spec's location is in hand and no decision a killed claim took down is still open.
+   answer into the published spec — the answer riding that put-back whether you continue the writer or dispatch a cold
+   one, since an answer that reaches stage 4 any other way is one the record does not carry. You are done when the
+   spec's location is in hand and no decision a killed claim took down is still open.
 4. **Break it into tickets** — dispatch `tickets-writer`. It publishes one ticket per slice, numbered in dependency
    order. Keep the count and the locations it reports.
 5. **Hand the epic over** — report as below, and name the call that delivers it: `/deliverer:build <epic location>`, the
@@ -140,6 +141,6 @@ The human who ran this sat through stage 1, so your report is what came of it ra
 - every fork the grilling left open, one line each — those are the human's to close
 - every glossary entry and ADR the session landed
 - what the writers raised for a human — a seam newly proposed, an ADR the spec contradicts, a **claim** of yours a
-  writer killed or could settle neither way, a user story no ticket covers, a term the glossary does not carry — or
-  that every claim you marked survived the writer's reading
+  writer killed or could settle neither way, a user story no ticket covers, two tickets the set does not build in number
+  order, a term the glossary does not carry — or that every claim you marked survived the writer's reading
 - the call that delivers the epic: `/deliverer:build <epic location>`

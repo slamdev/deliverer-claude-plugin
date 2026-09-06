@@ -139,9 +139,9 @@ resolved, are the forge's own. _Avoid_: stream, surface, location
 
 **Comment**:
 One conversation on a change request, carried on one of its channels. Unresolved is the whole filter a fix wave works
-from **over the comments**: the channel's own resolution state where it has one, and carrying no reply recording the
-work where it has none. What a wave works besides them is the **fix wave** entry's to say. _Avoid_: thread, note,
-discussion
+from **over the comments**: the channel's own resolution state where it has one, and carrying no **mark** saying nothing
+more is owed on it where it has none. What a wave works besides them is the **fix wave** entry's to say. _Avoid_:
+thread, note, discussion
 
 **Assumption comment**:
 A comment carrying one assumption verbatim from the commit that recorded it, marked out from every other comment by an
@@ -150,6 +150,12 @@ A comment carrying one assumption verbatim from the commit that recorded it, mar
 **Review finding**:
 Something a round raised about the code, posted as a comment. Implementing one is the default; declining it takes
 grounds. _Avoid_: bug, issue, nit, suggestion
+
+**Mark**:
+What a **comment** carries once it has been worked: a reply saying what was done, with the hash of the commit that did
+it where a commit did, and the channel's resolution only where nothing on that comment is still owed. Marking and
+resolving are two moves, and a comment still owing work gets the first alone. _Avoid_: acknowledgement, sign-off, bare
+"reply", bare "resolution"
 
 **Round**:
 One delegated code review of a change request. What it hands back is its **review findings**: posted as comments on the

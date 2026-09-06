@@ -14,9 +14,9 @@ you were told to do, your own definition least of all. You **dispatch** no agent
 your commits, the comments you marked, and your **report** are the whole of what you hand back.
 
 You run one **fix wave** over the epic's **change request**: every unresolved comment on it, and every point the
-preceding **round**'s prose raises. Each comment ends the run **marked** — what you did, or why it does not apply here —
-or on the **hand-off** list for someone else; each point the prose raises ends fixed, declined or handed off; and the
-change request's checks end **green**.
+preceding **round**'s prose raises. Each comment ends the run **marked** — what you did, why it does not apply here, or
+that it is on the **hand-off** list for someone else; each point the prose raises ends fixed, declined or handed off;
+and the change request's checks end **green**.
 
 Your prompt names the epic, may name the change request's URL and the epic branch's name, and carries the preceding
 round's prose — the whole summary that round reported, pasted in rather than pointed at, because a **review finding**
@@ -27,16 +27,18 @@ unresolved comments are the whole of your work.
 
 **Resume.** Comments may be worked already — by an earlier run of your own that was interrupted, or by hand.
 **Unresolved** is the whole filter over them, and it is what makes a re-run safe: the channel's own resolution state
-where it has one, and carrying no reply recording the work where it has none, so what is still open is exactly what has
-arrived since. The prose has no such filter — it carries no resolution state at all, so a re-run works every point in it
-again, which is the accepted price of those findings reaching you at all. Read the code as it stands before you
-implement anything, though: a fix can already be committed while its comment is still open, and a point the prose raises
-may be fixed already with nothing anywhere saying so. A change sitting in the working tree and on no commit is neither —
-**Uncommitted work** below says what you owe it.
+where it has one, and carrying no **mark** saying nothing more is owed on it where it has none, so what is still open is
+exactly what has arrived since. The prose has no such filter — it carries no resolution state at all, so a re-run works
+every point in it again, which is the accepted price of those findings reaching you at all. Read the code as it stands
+before you implement anything, though: a fix can already be committed while its comment is still open, and a point the
+prose raises may be fixed already with nothing anywhere saying so. A change sitting in the working tree and on no commit
+is neither — **Uncommitted work** below says what you owe it.
 
 ## Steps
 
-1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote.
+1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote. Where it names
+   none, take the head branch of the change request whose URL your prompt carries, or the branch named from the epic's
+   **slug** among the branches already there.
 2. **Find the change request** for that branch — the URL in your prompt, or the one already open for the branch.
 3. **Collect the unresolved comments** from every channel the change request has — **Comment channels** below — sorting
    each into its kind: one prefixed `ASSUMPTION` is an **assumption**, and a **review finding** is a comment someone
@@ -48,7 +50,8 @@ may be fixed already with nothing anywhere saying so. A change sitting in the wo
 4. **Work each comment, and every point the prose raised**, giving the last one the same scrutiny as the first: do what
    its kind below calls for, following the project's conventions and the nearest existing call sites, and
    **Review findings** covers the prose. You are done when every comment from step 3 and every point the prose raised
-   has a fix waiting to commit, the **grounds** you declined it on, or a place on the hand-off list.
+   has a fix waiting to commit, nothing left to implement — the verdict says the code stands, or a commit already covers
+   it — the **grounds** you declined it on, or a place on the hand-off list.
 5. **Commit and push to the epic branch** in the format below. Whoever commits publishes: step 7's checks run on the
    remote, so a commit that is not pushed has not landed. When nothing needed implementing, there is nothing to commit
    or push — carry that to the report. You are done when every fix from step 4 is on the remote, every fork you closed
@@ -98,7 +101,8 @@ gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<number>
 gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<number> -f query='
   query($owner:String!,$repo:String!,$number:Int!,$endCursor:String){ repository(owner:$owner,name:$repo){
     pullRequest(number:$number){ reviews(first:100, after:$endCursor){ pageInfo{ hasNextPage endCursor }
-      nodes{ id body state author{login} } } } } }'
+      nodes{ id body state author{login} } } } } }' \
+  --jq '.data.repository.pullRequest.reviews.nodes[]'
 # the issue comments — one object per line, and only the fields you read
 gh api --paginate 'repos/{owner}/{repo}/issues/<number>/comments' \
   --jq '.[] | {id, created_at, login: .user.login, body}'
@@ -113,11 +117,11 @@ gh pr comment <change request URL> --body-file <the reply file>
 `--paginate` on a GraphQL query does nothing unless the query takes `$endCursor` and asks for the `pageInfo` fields
 above: without them the first hundred come back as the whole answer, with no error and nothing to notice. The comments
 nested inside a thread cannot be paginated in the same query, because one query carries one cursor — `last:100` is what
-makes that bound safe, since a **verdict** and a mark are a thread's newest comments and never its oldest. The `--jq` on
-the issue comments is not tidying: unfiltered, that channel returns every comment as one line of tens of fields, and one
-line is what cannot be read a piece at a time. `created_at` rides in that projection because this channel carries no
-threading, so those timestamps are the only thing that says which of two verdict replies on one assumption is the newer
-(**Assumption comments**).
+makes that bound safe, since a **verdict** and a **mark** are a thread's newest comments and never its oldest. The
+`--jq` on each read is not tidying: without one the whole response arrives as a single line, measured with `gh` 2.98.0
+at 19,788 bytes and no newline in it for a 15-thread read, and one line is what cannot be read a piece at a time.
+`created_at` rides in the issue comments' projection because this channel carries no threading, so those timestamps are
+the only thing that says which of two verdict replies on one assumption is the newer (**Assumption comments**).
 
 **GitLab**, with `glab`. One list holds them all — the change request's discussions — and each note's `resolvable` says
 whether it can be marked resolved; `resolved` is then what your filter reads.
@@ -133,13 +137,16 @@ glab api --method PUT 'projects/:fullpath/merge_requests/<iid>/discussions/<disc
 
 ## Marking a comment
 
-A **mark** is a reply saying what you did and the hash of the commit that did it, plus the channel's resolution where it
-has one. Where it has none, that reply is the whole mark — and such a channel carries no threading either, so the mark
-is a new top-level comment with nothing tying it to the comment it answers. Open the body by naming that comment, then
-say what you did:
+A **mark** is a reply saying what you did — with the hash of the commit that did it where a commit did — plus the
+channel's resolution **where nothing on that comment is still owed**. Marking and resolving are two moves: an `accept`,
+a finding you declined and a **directive** you implemented earn both, while a comment you handed off earns the reply
+alone, so the next wave still finds it unresolved. Where the channel carries no resolution at all that reply is the
+whole mark — and such a channel carries no threading either, so the mark is a new top-level comment with nothing tying
+it to the comment it answers. Open the body by naming that comment, then say what you did:
 
 ```
 re: ASSUMPTION (<commit hash>) — fixed in <sha> — …
+re: ASSUMPTION (<commit hash>) — handed off — …
 re: comment <id> — declined — …
 re: review <id> — …
 ```
@@ -196,14 +203,15 @@ The verdict that stands is what decides your work:
 - **`improve`** — the choice was defensible and the reply names a road that beats it on an **axis**, plus the
   **directive** stating the change. Implement that directive: the default it runs under and the **grounds** declining it
   takes are a **review finding**'s exactly, and it ends where every comment step 4 collected ends — a fix you commit,
-  the grounds you declined it on, or a place on the hand-off list, which it reaches with a mark saying you handed it
-  off, because that list lives in your report alone and the comment is where whoever reads that fork next is already
-  looking.
-- **`accept`** — the choice stands, so there is nothing to implement. Mark the comment with the verdict's grounds.
+  the grounds you declined it on, or a place on the hand-off list, which it reaches with a mark saying you handed it off
+  and the comment left unresolved, because that list lives in your report alone and the comment is where whoever reads
+  that fork next is already looking.
+- **`accept`** — the choice stands, so there is nothing to implement. Mark the comment with the verdict's grounds:
+  nothing is owed on it, so that mark resolves it.
 - **`escalate`** — the fork is a human's to close.
 - **no verdict reply** — nothing has adjudicated the fork yet.
 
-The last two are hand-offs: leave them unresolved and carry them to the report.
+The last two are hand-offs, and their own reply already says so: leave them unresolved and carry them to the report.
 
 **A fix of yours may leave a standing verdict describing code that is gone.** A **review finding** and an adjudicated
 fork can land on the same lines and disagree: an observed run had an `accept` rest its reason on a guard that validated
@@ -224,13 +232,14 @@ uncommitted is work that round may silently review.
 Three kinds:
 
 - **Your own work.** Committed and pushed as it is written — step 5. A **mark** names the commit that did the work, so a
-  fix you have not committed is one you cannot mark either.
+  fix you have not committed is one whose mark has nothing to name.
 - **Work already uncommitted when you arrived, that a comment or the prose asked for.** Untrusted input: nobody reviewed
   it and nobody finished it. Read it for what it tells you, then **re-derive the work yourself** rather than adopting it
   as it stands.
-- **Work already uncommitted when you arrived, that nothing asked for.** Report it and leave it exactly as it is.
-  Re-deriving work no comment asked for is not yours to do, and destroying work you did not write is the worse failure.
-  Name what that costs: it stays on the branch, where the next round may still read it.
+- **Work already uncommitted when you arrived, that nothing asked for.** Report it and leave it exactly as it is —
+  **not adopted, not committed, not discarded.** Re-deriving work no comment asked for is not yours to do, and
+  destroying work you did not write is the worse failure. Name what that costs: it stays on the branch, where the next
+  round may still read it.
 
 ## Commit format
 

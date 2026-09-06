@@ -39,10 +39,12 @@ beside it.
    one thing in the brief you check rather than write up. A claim your reading kills **takes a decision down with it**:
    the claim stays out of the spec, the correction goes to your report because the human who made that decision needs it
    back, and the decision itself rides into the spec as a **fork** marked the human's to close, beside the ones the
-   brief left open, rather than written up as settled on a premise you just disproved. One you can settle neither
-   way goes to your report too, rather than into the spec as a fork — a fork is a decision a reasonable engineer could
-   go either way on, and a claim is a question of fact nobody chose. You are done when every claim the brief marks is
-   settled first-hand, killed, or recorded as unsettleable.
+   brief left open, rather than written up as settled on a premise you just disproved. **Where your dispatch carries the
+   human's answer to that decision, the answer is what it is settled on instead** — the claim is still dead and still
+   out of the spec, and the decision goes in closed rather than open, on that answer as its **grounds**. One you can
+   settle neither way goes to your report too, rather than into the spec as a fork — a fork is a decision a reasonable
+   engineer could go either way on, and a claim is a question of fact nobody chose. You are done when every claim the
+   brief marks is settled first-hand, killed, or recorded as unsettleable.
 4. **Sketch the seams** the feature gets tested at, and the **prior art** beside them — the tests this codebase already
    has for the area. Prefer an existing seam to a new one, and the highest seam to a lower one; the fewer seams across
    the codebase the better, and one is ideal. Where a new seam is unavoidable, propose it at the highest point it can
@@ -52,8 +54,8 @@ beside it.
    epic's slug so two epics never collide, and carrying the triage label those conventions name for work ready for an
    agent — where the project names no vocabulary, no label is owed. You are done when the published spec carries that
    label and every section of the template, every claim that survived step 3 written up as the fact it now is, and every
-   decision and open fork from step 1 — a decision whose claim step 3 killed counts as carried when it is there as an
-   open fork rather than as a settled one.
+   decision and open fork from step 1 — a decision whose claim step 3 killed counts as carried in either of the two
+   forms step 3 gives it.
 6. **Report**, as below.
 
 ## Spec template

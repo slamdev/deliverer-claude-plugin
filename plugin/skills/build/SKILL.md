@@ -40,6 +40,12 @@ fails to arrive: a second path that runs only once something has already gone wr
 Carry them into your report beside the ones the reports named, and where a report names none while a commit names one,
 **the account nearer the code** is the one to trust — a commit is the record that survives a report not arriving.
 
+**The working tree carries one more.** An `implementer` and a **fix wave** each leave work nobody asked for exactly as
+they found it and name it in their report, because a **round** reads the checkout it runs in and reviews whatever is
+sitting there as the epic's work. Whether that tree is clean is a **mechanical** question, so read it every run rather
+than only when a report mentions it, and carry either account into your report — the same reason the `Gates:` sections
+get read: a path that runs only once something has already gone wrong is the path least likely to work.
+
 **The adjudication and the fix waves leave you no evidence to read.** What they leave behind is a comment's replies, and
 telling a **verdict** that owes a change from a reply recording the change made is a judgement about what those replies
 say — not a mechanical fact, so not yours. A resumed run therefore counts no comments: dispatch `assumption-reviewer`
@@ -97,7 +103,9 @@ a fresh id (**Rounds**).
    without that line is a **fix wave**'s, recording the **forks** that wave closed silently: the mirror passes those
    over and nothing adjudicates them, so no stage is ever owed for them — and a report naming fewer comments than the
    branch's commits recorded is this stage doing its job rather than half-doing it. Keep the URL it reports, and every
-   comment its report names that it could not anchor on the diff.
+   comment its report names as **anchored anywhere but at a translated line on head** — the agent's own wording, and
+   wider than the diff: an assumption about a caller the branch never touched is anchored at the file on purpose, and is
+   one of these.
 3. **Adjudicate the assumptions** — dispatch `assumption-reviewer`. For each `ASSUMPTION` comment it compares the roads
    the **fork** left open and replies one verdict — `accept`, `improve`, `override` or `escalate`. An `improve` is a
    road that beat the one the code took on a named **axis**, so it carries a **directive** stage 5 implements and code
@@ -123,7 +131,9 @@ a fresh id (**Rounds**).
 
 ## Rounds
 
-A round is one `code-reviewer` dispatch, and **two rounds that reached `completed`** is the bar stage 8 waits on.
+A round is one `code-reviewer` dispatch, and **two rounds that reached `completed`** is the bar stage 8 waits on. A
+fresh round comes of a cold dispatch, under a `review_id` no round has used; continuing an agent carries on the id it
+already holds and opens none.
 
 - **`completed`** — one of the two. Its report carries the round's `review_id` and its prose, and that prose is the
   round's whole deliverable: the reviewer is instructed to post its findings as comments on the change request, and a
@@ -135,6 +145,9 @@ A round is one `code-reviewer` dispatch, and **two rounds that reached `complete
 - **A round whose record is gone** — a continued `code-reviewer` reports the id and that the server no longer holds
   it. The round ran; its prose and its **spend** are unrecoverable, so it is not one of the two either, and its place
   in the report is a **hand-off** naming what was lost. It is not a reason to put the stage back under that id.
+- **A dispatch that started no round** — the refusal it met named something only the owner can fix, so it reported those
+  words and started nothing. None of the two, and its place in the report is a **hand-off** carrying the refusal: no
+  round can complete until what it names is fixed.
 - **Rounds leave nothing to count.** A resumed run cannot read off how many already ran, and the count is what the bar
   rests on: flipping ready on one round ships a review nobody did.
 
@@ -177,8 +190,10 @@ Whoever reads this has your report and nothing else.
 - every hand-off, one line each — the escalations and anything else still waiting on a human
 - every finding and every `improve` the fix waves declined, one line each, with its grounds
 - every **gate** left red for work nobody asked for, one line each — from the commits as well as from the reports
-- every assumption comment anchored off the change request's diff, one line each — a fork a human reading the diff never
-  meets, so these lines are where they meet it
+- every assumption comment anchored anywhere but at a translated line on head, one line each — a fork a human reading
+  the diff never meets, so these lines are where they meet it
+- any uncommitted work left on the branch that nothing asked for, one line each — from the tree as well as from the
+  reports, because a round reads the checkout and reviews that work as the epic's
 - whether the checks ended green
 
 **The `improve` lines are the only trace of code the run redesigned.** Nothing ratified those changes before they

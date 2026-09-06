@@ -29,22 +29,29 @@ that round is still yours: go back to polling it at step 4 and start nothing. St
 one dispatch, and whoever counts rounds afterwards believes one ran where two did. Two answers end the round rather than
 inviting a fresh one: a **terminal** `status` is your report, `failed` and `cancelled` as much as `completed`, and an
 **unknown id** — the record lived its time and was evicted — is the round that ran and whose result is gone. Whether the
-epic spends another is settled outside this dispatch, and another round arrives as another dispatch; step 3's **raise**
-is no exception, because it happens before any round of yours has run.
+epic spends another is settled outside this dispatch, and another round arrives as another dispatch. Step 3's **raise**
+is this dispatch's own round looking for an id no round has used. Where an interrupted earlier run of *this* dispatch
+already drove a round to a terminal status, that raise does open a second one: report the id you ended on and that a
+round already finished under a lower id, so whoever counts rounds counts what ran.
 
 ## Steps
 
-1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote. The review runs in
-   this checkout, so the branch you leave it on is a branch a round may read.
+1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote. Where it names
+   none, take the head branch of the change request whose URL your prompt carries, or the branch named from the epic's
+   **slug** among the branches already there. The review runs in this checkout, so the branch you leave it on is a
+   branch a round may read.
 2. **Find the change request** for that branch — the URL in your prompt, or the one already open for the branch.
 3. **Start the review.** Call `mcp__plugin_deliverer_tools__code_review_start` with `change_request_url` (that URL),
    `cwd` (the repository root from step 1) and `review_id` — `<epic>-review-<n>` starting at `n=1`, using only letters,
-   digits, `.` `_` `:` or `-`. Three outcomes:
+   digits, `.` `_` `:` or `-`. Four outcomes:
     - **A handle** — this round is yours. Keep its `review_id`.
     - **Refused, the id already names a finished review** — a round already ran under that id, and its prose belongs to
       that round rather than this one. **Raise** `n` and call again: one round, one id.
     - **Refused, a review is already in flight** — one review runs at a time, and it reaches a terminal status by
-      itself. Call again, and repeat until one of the other two outcomes is yours.
+      itself. Call again, and repeat until one of the other outcomes is yours.
+    - **Refused, and what it names is the owner's to fix** — no backend configured, an **environment file** that cannot
+      be read or that assigns nothing, an effort the server will not take, a `change_request_url` or a `cwd` it rejects.
+      The next call answers the same way, so this is a round that never started: report the refusal verbatim and stop.
 4. **Poll to a terminal status.** Nothing about the review arrives unsolicited, so call
    `mcp__plugin_deliverer_tools__code_review_status` with your `review_id`, and repeat. You are done when `status` reads
    `completed`, `failed` or `cancelled` — whichever of the three it ends on, that is **your round**. Let the review end
@@ -63,6 +70,8 @@ tells this round from the next one. Then, by status:
 - **an unknown `review_id`** — the id, and that a round ran under it whose record is gone: the server keeps a finished
   review addressable for a while and no longer, so this is a round whose prose and **spend** are unrecoverable. Report
   it as that rather than as a round that never happened.
+- **no round started** — the refusal from step 3, verbatim, and that nothing was spent. Whoever reads this cannot reach
+  a completed round until what the refusal names is fixed, so those words are the whole deliverable.
 
 And what the round **spent**, however it ended: **two numbers and no more** — the token counters inside `spend` added
 into one total, which is the figure that depends on no price list, and `spend.costUsd` labelled with the

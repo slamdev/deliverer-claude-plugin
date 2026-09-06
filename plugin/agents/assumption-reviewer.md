@@ -27,7 +27,9 @@ carrying none.
 
 ## Steps
 
-1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote.
+1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote. Where it names
+   none, take the head branch of the change request whose URL your prompt carries, or the branch named from the epic's
+   **slug** among the branches already there.
 2. **Find the change request** for that branch — the URL in your prompt, or the one already open for the branch.
 3. **Collect the assumptions** from every channel the change request has — **Comment channels** below. Every comment
    prefixed `ASSUMPTION` that carries no verdict reply is yours, whichever channel it sits on. Read the replies, not the
@@ -76,16 +78,18 @@ summary bodies, which a review submitted with no inline comment leaves behind an
 request's issue comments, which carry no resolution at all.
 
 ```sh
-# collect — every page of threads, each with its newest comments and the id a reply needs
+# collect — every page of threads, one per line, each with its newest comments and the id a reply needs
 gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<number> -f query='
   query($owner:String!,$repo:String!,$number:Int!,$endCursor:String){ repository(owner:$owner,name:$repo){
     pullRequest(number:$number){ reviewThreads(first:100, after:$endCursor){ pageInfo{ hasNextPage endCursor }
-      nodes{ id isResolved path line comments(last:100){ nodes{ databaseId body } } } } } } }'
+      nodes{ id isResolved path line comments(last:100){ nodes{ databaseId body } } } } } } }' \
+  --jq '.data.repository.pullRequest.reviewThreads.nodes[]'
 # collect — the reviews' own summary bodies, which leave no thread behind
 gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<number> -f query='
   query($owner:String!,$repo:String!,$number:Int!,$endCursor:String){ repository(owner:$owner,name:$repo){
     pullRequest(number:$number){ reviews(first:100, after:$endCursor){ pageInfo{ hasNextPage endCursor }
-      nodes{ id body state author{login} } } } } }'
+      nodes{ id body state author{login} } } } } }' \
+  --jq '.data.repository.pullRequest.reviews.nodes[]'
 # collect — the channel with no resolution state at all, one object per line
 gh api --paginate 'repos/{owner}/{repo}/issues/<number>/comments' \
   --jq '.[] | {id, created_at, login: .user.login, body}'
@@ -104,10 +108,10 @@ gh pr comment <change request URL> --body-file <the verdict file>
 above: without them the first hundred come back as the whole answer, with no error and nothing to notice. The comments
 nested inside a thread cannot be paginated in the same query, because one query carries one cursor — `last:100` is what
 makes that bound safe, since an assumption's verdict reply is a thread's newest comment and never its oldest. The `--jq`
-on the issue comments is not tidying: unfiltered, that channel returns every comment as one line of tens of fields, and
-one line is what cannot be read a piece at a time. `created_at` rides in that projection for the correction rule under
-**Verdicts**: the channel carries no threading, so the timestamps are the only thing that says which of two verdict
-replies on one assumption is the newer.
+on each read is not tidying: without one the whole response arrives as a single line, measured with `gh` 2.98.0 at
+19,788 bytes and no newline in it for a 15-thread read, and one line is what cannot be read a piece at a time.
+`created_at` rides in the issue comments' projection for the correction rule under **Verdicts**: that channel carries no
+threading, so the timestamps are the only thing that says which of two verdict replies on one assumption is the newer.
 
 **GitLab**, with `glab`. One list holds them all — the change request's discussions — and each note's `resolvable` says
 whether it can be marked resolved; one carrying a `position` is anchored to a diff line.

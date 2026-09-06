@@ -60,9 +60,10 @@ Three kinds:
 - **Your own work.** Committed and pushed as it is written — step 4.
 - **Work already uncommitted when you arrived, inside this ticket.** Untrusted input: nobody reviewed it and nobody
   finished it. Read it for what it tells you, then **re-derive the work yourself** rather than adopting it as it stands.
-- **Work already uncommitted when you arrived, outside this ticket's scope.** Report it and leave it exactly as it is.
-  Re-deriving another ticket's work is not yours to do, and destroying work you did not write is the worse failure. Name
-  what that costs: it stays on the branch, where a round may still read it.
+- **Work already uncommitted when you arrived, outside this ticket's scope.** Report it and leave it exactly as it is —
+  **not adopted, not committed, not discarded.** Re-deriving another ticket's work is not yours to do, and destroying
+  work you did not write is the worse failure. Name what that costs: it stays on the branch, where a round may still
+  read it.
 
 ## What counts as an assumption
 
@@ -100,11 +101,12 @@ Gates:
 ```
 
 **Read each `line:` back before you commit.** It names the code the assumption is about — the guard that throws, the
-branch that was taken, the call that was chosen — in the file as this commit leaves it, so open the file at that number
-and correct it where a later edit of your own moved it. Nothing downstream catches a number out by two: the step that
-places the change request's comment looks up the *text* your number named and **anchors** the comment wherever that text
-has since moved, as faithfully for a wrong line as for a right one — and the human adjudicating the fork then reads your
-reason beside code it was never about.
+branch that was taken, the call that was chosen — in the file as this commit leaves it. So open the file at that number,
+**check that what you find there is that code**, and correct the number where it is not — a number mis-transcribed, or a
+write of your own that moved the line. Nothing downstream catches a number out by two: the step that places the change
+request's comment looks up the *text* your number named and **anchors** the comment wherever that text has since moved,
+as faithfully for a wrong line as for a right one — and the human adjudicating the fork then reads your reason beside
+code it was never about.
 
 ## What to report
 

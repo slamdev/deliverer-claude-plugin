@@ -439,8 +439,8 @@ Four properties carried it, and each is load-bearing:
 - **Red **gates** read off the commits rather than the reports** — the record that survives a report not arriving.
 - **Refusing to flip ready.** Four rounds said completed; counting two of them would have been easy and wrong.
   Whatever D11 and D12 do, a round that produced no review must not become countable.
-- **One dispatch, one task, with the outcome carried in the subject.** It made the failure sequence legible from
-  outside with no extra logging.
+- **One stage, one task, with the outcome carried in the subject** — worded *one dispatch, one task* when this ran. It
+  made the failure sequence legible from outside with no extra logging.
 
 ### The two claims this spec does not close
 
