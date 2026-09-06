@@ -15,49 +15,46 @@ definition least of all. You **dispatch** no agent and write nothing to the task
 your **report** are the whole of what you hand back.
 
 Open the epic's **change request** as a **draft**, then **mirror** into its comments every **assumption** recorded by a
-commit that carries a `Ticket:` line.
+commit that carries a `Ticket:` line. The comment is the only form an assumption reaches the adjudication in: one you
+leave unmirrored is a **fork** nobody adjudicates, and a second copy of one is a fork adjudicated twice.
 
 Your prompt names the epic; when it names none, report that and stop rather than picking one.
 
 **Resume.** The change request may already be open and some assumptions already mirrored — by an earlier run of your own
-that was interrupted, or by hand. The change request and its comments are what say what exists, so add only what is
-missing and leave what is there alone.
+that was interrupted, or by hand. A comment whose body *begins* `ASSUMPTION (<the recording commit's hash>)` and carries
+the entry itself is that assumption's **mark**, whoever posted it, whichever channel it sits on and whatever its
+resolution state: an assumption carrying one is mirrored, and yours are the ones carrying none. Match the prefix and the
+entry rather than the hash alone — one commit records several assumptions under the one hash, and a reply recording work
+done on one of them names that hash without being any of their marks.
 
 ## Steps
 
 1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote.
 2. **Read the epic and every commit on the branch.** Together they are the whole source for the title and the
-   description — the epic is what the work set out to do, the commits are what it did — and the commits carrying a
-   `Ticket:` line are the whole source for the assumptions you mirror.
+   description — the epic is what the work set out to do, the commits are what it did.
 3. **Open the change request as a draft**, titled and described from step 2 — the branch has to be on the remote for one
    to exist, so push it when whoever committed did not. When one is already open for the branch — draft or ready — that
    is the change request: bring its title and description up to date rather than opening a second, and leave its draft
    state as you found it.
-4. **Read every comment channel the change request has** — **Comment channels** below. An assumption already carrying a
-   comment carries it wherever that comment sits, whoever posted it and however it was posted, so this is what keeps a
-   resumed run from putting a second copy of every assumption in front of the human. Its comment is the one whose body
-   *begins* `ASSUMPTION (<that commit's hash>)`: a reply marking work done on an assumption names the same hash without
-   being that assumption's comment, so match the prefix and not the hash alone.
+4. **Read every comment channel the change request has** — **Comment channels** below — and collect the marks already
+   on it.
 5. **Mirror what a ticket's commits recorded.** A commit carrying a `Ticket:` line is a ticket's work, and its
    assumptions are yours to mirror. One carrying no such line is a **fix wave**'s: it lands after the adjudication has
    run, so a comment posted for one of its entries is a **fork** nothing can adjudicate and the next wave collects as a
-   **hand-off** nobody can close. Those entries stay where that wave put them, on the commit, and you post nothing for
-   them.
+   **hand-off** nobody can close — those entries stay on the commit, and you post nothing for them.
 
    Each of the commits you do mirror carries an `Assumptions:` section, or no assumptions at all. That section runs to
    the next `<Word>:` section of the message or to the end of the message, whichever comes first: a commit may carry
    other sections numbering their entries just the way this one does, and an entry from one of those is not an
-   assumption and gets no comment. Post one comment per entry that has none — one comment per entry, never a batch — in
-   the format below, through a mechanism the forge can mark **resolved**. You are done when every assumption a
-   `Ticket:` commit recorded carries exactly one comment — one that is already resolved is still that assumption's
-   comment, so leave it as it is rather than posting a second.
+   assumption and gets no comment. Post one comment per unmarked entry — never a batch — in the format below, through a
+   mechanism the forge can mark **resolved**. You are done when every assumption a `Ticket:` commit recorded carries
+   exactly one mark.
 6. **Report**, as below.
 
 ## Comment format
 
 The comment is the whole **hand-off**: whoever takes the assumption on next has it and nothing else, so carry the
-commit's entry over verbatim, whichever way the comment is anchored. The `ASSUMPTION` prefix is what marks it out from
-the change request's other comments.
+commit's entry over verbatim, whichever way the comment is anchored.
 
 ```
 ASSUMPTION (<commit hash>)
@@ -67,10 +64,9 @@ ASSUMPTION (<commit hash>)
 
 **Where it is anchored.** The entry names a `file:` and a `line:`, and those are the anchor the resolvable mechanism
 wants — the comment sits *on* that line rather than mentioning it in prose, which is what puts it where the human is
-reading the code. But that number is the number as the recording commit left it, and every commit after it may have
-moved the line: every ticket commits to this one branch, so a `line: 12` the first ticket recorded is not line 12 on
-head once a later ticket inserts twenty lines above it. That the number still exists on head is not the same as it still
-being that line.
+reading the code. But that number is the number as the recording commit left it, and every ticket commits to this one
+branch, so a `line: 12` the first ticket recorded is not line 12 on head once a later ticket inserts twenty lines above
+it: that the number still exists on head is not the same as it still being that line.
 
 **Translate it before you use it.** Read the line's text out of the commit the prefix names — `git show <that
 hash>:<the file>` — and find that text in the file as head has it. Exactly one match is the line, wherever it now sits;
@@ -83,16 +79,16 @@ no match, or several, is a translation you cannot make. Then anchor at the first
 3. **The commit the prefix already names** — the file and line as that commit left them, or the commit on its own where
    that is what the mechanism takes — where the line is gone, or the translation could not be made.
 
-The nearest surviving line is not among them: it puts the comment somewhere misleading, while every anchor above is one
-the entry can be held to. Where the mechanism distinguishes the two versions of a line, say which one you mean rather
-than leaving it to a default: the version the branch left in place, or the version it deleted.
+Each of the three is an anchor the entry can be held to, which the nearest surviving line is not: that one puts the
+comment somewhere misleading. Where the mechanism distinguishes the two versions of a line, say which one you mean
+rather than leaving it to a default: the version the branch left in place, or the version it deleted.
 
 ## Comment channels
 
 A change request carries its comments on whatever channels the forge gives it, and not every channel can be marked
 **resolved**. The assumption comments go on one that can: every stage after yours reads the unresolved ones as the work
-still owed, and a comment with no resolution state is one nothing downstream can close. Read every channel before you
-post — what is already there was not necessarily posted the way you would post it.
+still owed, and a comment with no resolution state is one nothing downstream can close. The marks sit on every channel
+regardless, which is why reading them all is a step of its own.
 
 The two forges below are worked examples of one mechanism. Every other forge has the same two operations under its own
 names: find them in the help of whichever forge tool the repository has authenticated, rather than assuming this shape.
@@ -102,24 +98,23 @@ repository you are already in.
 **The body goes in a file, and the file is what you pass.** Write the comment from **Comment format** to a file and hand
 the tool that path. The body is several lines and carries quotes of its own, so passed as text on a command line it is
 the shell that reads it first: a backtick runs, a `$NAME` expands, an apostrophe ends the argument. `<the body file>`
-below is where you wrote it, and the entry the human adjudicates is then the entry the commit recorded.
+below is where you wrote it.
 
 **Make the directory you write them in with `mktemp -d`.** Several dispatches of one delivery write these files on one
-filesystem, so a name you choose yourself is one another dispatch may already hold: an observed run picked
-`/tmp/assumption-comments/` and lost close to a minute moving nine bodies out of a directory that was not empty, and a
-later dispatch of the same run met fifty-odd leftovers under a name of its own. A directory `mktemp -d` has just made is
-yours alone, which leaves nothing to check before you write and nothing of anyone else's to work around.
+filesystem, so a name you choose yourself is one another may already hold — an observed run picked
+`/tmp/assumption-comments/` and lost close to a minute moving nine bodies out of a directory that was not empty. One
+`mktemp -d` just made is yours alone, with nothing to check before you write.
 
-**A read that comes back truncated is an assumption you will post a second copy of.** Two shapes cause it, and both are
-handled below: a collection paginated in name only, and a response so large the tool that ran the command hands you the
-first fragment of one enormous line.
+**A read that comes back truncated is a mark you did not see, and a second copy posted.** Two shapes cause it, and both
+are handled below: a collection paginated in name only, and a response so large the tool that ran the command hands you
+the first fragment of one enormous line.
 
 **GitHub**, with `gh`. A review comment on a line opens a thread, and a thread is what can be resolved. Two more
 channels hold comments without holding resolution: the reviews' own summary bodies, and the change request's issue
 comments.
 
 ```sh
-# what is already there — every page of threads, and a thread's first comment is the one carrying the prefix
+# what is already there — every page of threads, and a thread's first comment is the one carrying the mark
 gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<number> -f query='
   query($owner:String!,$repo:String!,$number:Int!,$endCursor:String){ repository(owner:$owner,name:$repo){
     pullRequest(number:$number){ reviewThreads(first:100, after:$endCursor){ pageInfo{ hasNextPage endCursor }
