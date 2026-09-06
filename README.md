@@ -26,11 +26,14 @@ You are needed for the conversation at the start and the merge at the end. Every
 - two rounds of code review, with the findings raised as comments where your forge lets the reviewer raise them, and
   fixed either way
 - every judgement call the tickets' implementation had to make silently, raised as a comment on the change request and
-  adjudicated — accepted with reasons, corrected, or escalated to you; the fixes made after the review record theirs on
-  their own commits instead, where you meet them unratified rather than adjudicated
+  adjudicated against the roads it could have gone down instead — accepted with reasons, improved on, corrected, or
+  escalated to you; improved on means another of those roads held up better under failure, under attack, at the limits
+  or for whoever calls the code, and the run took it without asking you first; the fixes made after the review record
+  theirs on their own commits instead, where you meet them unratified rather than adjudicated
 - green checks, and the change request flipped out of draft (if the checks are red it stays a draft, and the report says
   so)
-- a closing report: how many tickets landed, what the reviews cost, what was escalated, and what was declined and why
+- a closing report: how many tickets landed, what the reviews cost, every road it took without asking, what was
+  escalated, and what was declined and why
 
 ## Requirements
 

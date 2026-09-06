@@ -55,8 +55,9 @@ promise about a test double in the clothes of a promise about reviews, and the t
 documenting their own emptiness to the agent that read them. Both are gone, and the rule loses them as subjects.
 
 The word went with them, for a second reason of its own. A **verdict** in this domain is the adjudication one
-**assumption** receives — accept, override or escalate — and a round has nothing of that kind to hold. Spelling one on
-every **poll** of every round gave the word a second meaning inside the one product that has to keep it to a single one.
+**assumption** receives — accept, improve, override or escalate — and a round has nothing of that kind to hold.
+Spelling one on every **poll** of every round gave the word a second meaning inside the one product that has to keep it
+to a single one.
 
 Nothing verdict-shaped is weakened by their going. What this rule was written against was never a field beside the prose
 but the prose itself reading clean, so a review that did not complete carrying no prose at all is the whole of what

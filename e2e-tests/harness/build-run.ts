@@ -25,6 +25,7 @@ import {
 import {
   listChangeRequests,
   readChangeRequest,
+  writeAdjudication,
   writeDeliveredDiff,
   type ChangeRequest,
   type ChangeRequestSummary,
@@ -57,6 +58,17 @@ const TEST_NAME = "build";
 
 /** What the diff a delivery produced is kept as, in the run directory beside its records. */
 const DIFF_FILE = "delivered.diff";
+
+/**
+ * And what its **adjudication** is kept as, beside the diff: every **assumption comment** and every
+ * reply under it, in full (the-adjudication-compares-roads ticket 06).
+ *
+ * The **verifier**'s third subject is whether those **verdict**s were sound, and neither a count nor
+ * an opening line can answer that — which is the whole of why the file exists rather than the
+ * reading `./change-request.ts` keeps for the matchers. Markdown, because a contributor reads the
+ * same file afterwards.
+ */
+const ADJUDICATION_FILE = "adjudication.md";
 
 /**
  * The scripted review double, and what it would have done had it arrived.
@@ -98,6 +110,12 @@ export interface BuildOutcome {
   readonly spend: Spend;
   /** what the epic branch changed, as the forge has it — the verifier's evidence */
   readonly deliveredDiffPath: string | null;
+  /**
+   * how it adjudicated its assumptions, as the forge has it and in full — the verifier's evidence
+   * for whether those verdicts were sound, and a contributor's for reading the same file it was
+   * given (`./change-request.ts`)
+   */
+  readonly adjudicationPath: string | null;
   /** the test's own signal, so a verdict is stopped with the test rather than after it */
   readonly ceiling: AbortSignal;
   /**
@@ -244,6 +262,14 @@ export function buildRun(fixtureName: string): BuildRunBuilder {
               join(runDirectory.root, DIFF_FILE),
               DEFAULT_BRANCH,
             ),
+        adjudicationPath: changeRequest === null
+          ? null
+          : await writeAdjudication(
+              runDirectory,
+              repo.fullName,
+              changeRequest.number,
+              join(runDirectory.root, ADJUDICATION_FILE),
+            ),
         ceiling: t.signal,
         cleanUp: () => deleteThrowawayRepo(runDirectory, repo),
       };
@@ -260,7 +286,8 @@ export function buildRun(fixtureName: string): BuildRunBuilder {
  */
 export function verify(outcome: BuildOutcome): Promise<Verdict> {
   const delivered = outcome.changeRequest;
-  if (delivered === null || outcome.deliveredDiffPath === null) {
+  const { deliveredDiffPath, adjudicationPath } = outcome;
+  if (delivered === null || deliveredDiffPath === null || adjudicationPath === null) {
     throw new Error(
       `there is no change request to judge, so the matchers should have failed before this. That ` +
         `they did not is the harness failing rather than a finding about the plugin.`,
@@ -269,7 +296,7 @@ export function verify(outcome: BuildOutcome): Promise<Verdict> {
   return verifyDelivery(
     outcome.runDirectory,
     outcome.epic,
-    { branch: delivered.branch, diffPath: outcome.deliveredDiffPath },
+    { branch: delivered.branch, diffPath: deliveredDiffPath, adjudicationPath },
     outcome.ceiling,
   );
 }

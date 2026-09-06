@@ -26,6 +26,7 @@ import {
   assertDebriefWritten,
   assertEveryTicketCommitted,
   assertFlippedReady,
+  assertImprovementsAnswered,
   assertNoScriptedBackend,
   assertRoundsCompleted,
   assertRoundsReportedSpend,
@@ -65,6 +66,9 @@ test("a delivery implements an epic and flips its change request ready", {
   assertChangeRequestOpened(outcome);
   assertEveryTicketCommitted(outcome);
   assertAssumptionsAdjudicated(outcome);
+  // Immediately after it, off the same comments and one bar further on: an assumption the
+  // adjudication said a better road beat has to carry the wave's answer to that directive.
+  assertImprovementsAnswered(outcome);
   assertFlippedReady(outcome);
   assertChecksGreen(outcome);
   // Last of the delivery's own bars, because it is the one read out of prose: a run that failed

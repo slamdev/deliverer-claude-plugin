@@ -103,6 +103,15 @@ Gates:
    outside: <the work it belongs to, which this ticket does not own>
 ```
 
+**Read each `line:` back before you commit.** It names the code that assumption is about — the guard that throws, the
+branch that was taken, the call that was chosen — in the file as this commit leaves it. Open the file at that number and
+check that what you find there is that code, and correct the number where a later edit of your own moved it.
+
+That number travels further than this commit. The change request's comment for this assumption is **anchored** on the
+line it names, so the human adjudicating the fork reads your reason beside whatever sits there. Nothing downstream can
+catch a number that is out by two: the step that places the comment looks up the *text* your number named and follows it
+faithfully to wherever it has since moved, which anchors a wrong line just as reliably as a right one.
+
 ## What to report
 
 Whoever reads this has your report and nothing else.

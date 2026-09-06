@@ -20,7 +20,9 @@ it lives on**; your job is to start that review, **poll** it to a **terminal** s
 Your prompt names the epic, and may name the change request's URL; when it names no epic, report that and stop rather
 than picking one.
 
-Nothing arrives unsolicited. `code_review_status` is the only way to see progress and the only tool that bears a result.
+Nothing arrives unsolicited. `mcp__plugin_deliverer_tools__code_review_status` is the only way to see progress and the
+only tool that bears a result. The two tools' own descriptions call the pair `code_review_start` and
+`code_review_status` — the same two tools with the registration prefix off.
 
 **Resume.** A review may already be running for this round — started by an earlier run of your own that was interrupted,
 or by hand. The `review_id` is what says so: starting again under a **live** id hands back that same review rather than
@@ -38,27 +40,21 @@ under a raised one.
 
 1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote.
 2. **Find the change request** for that branch — the URL in your prompt, or the one already open for the branch.
-3. **Start the review.** Call `code_review_start` with `change_request_url` (that URL), `cwd` (the repository root from
-   step 1) and `review_id` — `<epic>-review-<n>` starting at `n=1`, using only letters, digits, `.` `_` `:` or `-`.
-   Three outcomes:
+3. **Start the review.** Call `mcp__plugin_deliverer_tools__code_review_start` with `change_request_url` (that URL),
+   `cwd` (the repository root from step 1) and `review_id` — `<epic>-review-<n>` starting at `n=1`, using only letters,
+   digits, `.` `_` `:` or `-`. Three outcomes:
     - **A handle** — this round is yours. Keep its `review_id`.
     - **Refused, the id already names a finished review** — a round already ran under that id, and its prose belongs to
       that round rather than this one. Raise `n` and call again: one round, one id.
     - **Refused, a review is already in flight** — one review runs at a time, and it reaches a terminal status by
-      itself. Call again, paced as step 4 paces its polls.
-4. **Poll to a terminal status.** Call `code_review_status` with your `review_id`, and repeat. You are done when
-   `status` reads `completed`, `failed` or `cancelled`. Let the review end by itself: the server's own deadline ends a
-   run that hangs, and a cancelled review carries no result at all. Whichever of the three it ends on, that is **your
-   round**: one ending `failed` or `cancelled` is reported as the round it was, and starting another under a fresh
-   `review_id` is not yours to do — whether the epic spends another round is settled outside this dispatch, and another
-   round arrives as another dispatch. Step 3's raise is not this: that one happens before any round of yours has run.
-
-   **Leave the `poll_after_ms` the handle gave you between one call and the next.** It is the server's own figure, read
-   off the handle rather than one you picked or are keeping in your head, which is why nothing here asks you to measure
-   anything at all. A round may run for hours: calling flat out for that long fills this dispatch with status payloads
-   until there is no room left to carry back the prose the round produced — a review that finished, lost on the polling
-   side. The figure is advice and not a deadline, so a call landing later than it costs a late notice and nothing
-   more.
+      itself. Call again, and repeat until one of the other two outcomes is yours.
+4. **Poll to a terminal status.** Call `mcp__plugin_deliverer_tools__code_review_status` with your `review_id`, and
+   repeat. You are done when `status` reads `completed`, `failed` or `cancelled`. Let the review end by itself: the
+   server's own deadline ends a run that hangs, and a cancelled review carries no result at all. Whichever of the three
+   it ends on, that is **your round**: one ending `failed` or `cancelled` is reported as the round it was, and starting
+   another under a fresh `review_id` is not yours to do — whether the epic spends another round is settled outside this
+   dispatch, and another round arrives as another dispatch. Step 3's raise is not this: that one happens before any
+   round of yours has run.
 5. **Report**, as below.
 
 ## What to report
