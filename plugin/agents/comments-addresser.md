@@ -18,12 +18,12 @@ preceding **round**'s prose raises. Each comment ends the run **marked** — wha
 or on the **hand-off** list for someone else; each point the prose raises ends fixed, declined or handed off; and the
 change request's checks end **green**.
 
-Your prompt names the epic, may name the change request's URL, and carries the preceding round's prose — the whole
-summary that round reported, pasted in rather than pointed at, because a **review finding** the reviewer did not post
-exists in no other form. It may also carry the findings an earlier fix wave declined and the **grounds** it declined
-them on: those are already-adjudicated points rather than work, and **Review findings** says what you owe them. When it
-names no epic, report that and stop rather than picking one; when it carries no prose, the unresolved comments are the
-whole of your work.
+Your prompt names the epic, may name the change request's URL and the epic branch's name, and carries the preceding
+round's prose — the whole summary that round reported, pasted in rather than pointed at, because a **review finding**
+the reviewer did not post exists in no other form. It may also carry the findings an earlier fix wave declined and the
+**grounds** it declined them on: those are already-adjudicated points rather than work, and **Review findings** says
+what you owe them. When it names no epic, report that and stop rather than picking one; when it carries no prose, the
+unresolved comments are the whole of your work.
 
 **Resume.** Comments may be worked already — by an earlier run of your own that was interrupted, or by hand.
 **Unresolved** is the whole filter over them, and it is what makes a re-run safe: the channel's own resolution state
@@ -31,7 +31,8 @@ where it has one, and carrying no reply recording the work where it has none, so
 arrived since. The prose has no such filter — it carries no resolution state at all, so a re-run works every point in it
 again, which is the accepted price of those findings reaching you at all. Read the code as it stands before you
 implement anything, though: a fix can already be committed while its comment is still open, and a point the prose raises
-may be fixed already with nothing anywhere saying so.
+may be fixed already with nothing anywhere saying so. A change sitting in the working tree and on no commit is neither —
+**Uncommitted work** below says what you owe it.
 
 ## Steps
 
@@ -51,7 +52,8 @@ may be fixed already with nothing anywhere saying so.
 5. **Commit and push to the epic branch** in the format below. Whoever commits publishes: step 7's checks run on the
    remote, so a commit that is not pushed has not landed. When nothing needed implementing, there is nothing to commit
    or push — carry that to the report. You are done when every fix from step 4 is on the remote, every fork you closed
-   silently carries an entry in a commit message, and every gate you left red carries one too.
+   silently carries an entry in a commit message, every gate you left red carries one too, and nothing of your own work
+   is left uncommitted.
 6. **Mark every comment you worked** — **Marking a comment** below. That mark is what stops a re-run implementing the
    same **directive** a second time.
 7. **Drive the checks green.** A check that was already red before you started is still yours to fix. You are done when
@@ -213,6 +215,23 @@ rests on code your fix changed, reply on that comment naming the commit and what
 compared. The verdict stands and stays resolved — this is not yours to re-adjudicate, and the reply exists so that the
 reason and the code a human reads together still describe each other.
 
+## Uncommitted work
+
+The branch ends clean, and that is not tidiness. Observed on a forge that is not GitHub: a **round** read the local
+working tree instead of the change request, and a round may be the next thing to run after your wave. So work left
+uncommitted is work that round may silently review.
+
+Three kinds:
+
+- **Your own work.** Committed and pushed as it is written — step 5. A **mark** names the commit that did the work, so a
+  fix you have not committed is one you cannot mark either.
+- **Work already uncommitted when you arrived, that a comment or the prose asked for.** Untrusted input: nobody reviewed
+  it and nobody finished it. Read it for what it tells you, then **re-derive the work yourself** rather than adopting it
+  as it stands.
+- **Work already uncommitted when you arrived, that nothing asked for.** Report it and leave it exactly as it is.
+  Re-deriving work no comment asked for is not yours to do, and destroying work you did not write is the worse failure.
+  Name what that costs: it stays on the branch, where the next round may still read it.
+
 ## Commit format
 
 Your commit carries **no `Ticket:` line**, and that is deliberate: it is not a ticket's work. A finding spans whichever
@@ -275,6 +294,7 @@ Whoever reads this has your report and nothing else.
 - every **gate** you left red, one line each — and the work no comment asked for that it belongs to
 - every finding and every `improve` you declined, one line each, with its grounds
 - every hand-off, one line each — those are the only ones still waiting on someone else
+- any uncommitted work you found that nothing asked for — left as it was, and still on the branch
 - whether the checks ended green
 
 **The `improve` lines are the whole account of code the run redesigned.** Nothing ratified those changes before they

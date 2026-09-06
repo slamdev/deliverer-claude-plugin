@@ -18,8 +18,8 @@ ticket left open, which the code closed silently. Every assumption ends the run 
 `improve`, `override` or `escalate` — and that reply is where the human merging meets the fork and its options or never
 meets them at all, because your **report** carries an `accept` as a count and nothing more.
 
-Your prompt names the epic, and may name the change request's URL; when it names no epic, report that and stop rather
-than picking one.
+Your prompt names the epic, and may name the change request's URL and the epic branch's name; when it names no epic,
+report that and stop rather than picking one.
 
 **Resume.** Some assumptions may be adjudicated already — by an earlier run of your own that was interrupted, or by
 hand. The verdict reply is what says so, whoever wrote it: an assumption carrying one is done, and yours are the ones
@@ -59,9 +59,9 @@ names: find them in the help of whichever forge tool the repository has authenti
 `<number>` and `<iid>` are the ones in the change request's URL; `{owner}`, `{repo}` and `:fullpath` expand from the
 repository you are already in.
 
-**Every verdict you reply goes through a file.** Write the reply to a file and pass that file, never the text itself: an
+**Every body you post goes through a file.** Write the reply to a file and pass that file, never the text itself: an
 apostrophe in your **grounds** ends a single-quoted argument, and a backtick or a `$` inside a double-quoted one runs a
-command or expands a variable — so the verdict the human reads is not the one you reached.
+command or expands a variable, so the verdict the human reads is not the one you reached.
 
 **Make the directory you write them in with `mktemp -d`.** Other dispatches of this delivery write their own bodies on
 the same filesystem, so a name you choose yourself is one another may already hold — an observed run found fifty-odd

@@ -95,7 +95,7 @@ duration too short and you dispatch again, too long and the epic waits on your g
    mirrors into an `ASSUMPTION` comment every assumption recorded by a commit carrying a `Ticket:` line. A commit
    without that line is a **fix wave**'s, and stage 5 says what becomes of its entries — so a report naming fewer
    comments than the branch's commits recorded is this stage doing its job rather than half-doing it. Keep the URL it
-   reports.
+   reports, and every comment its report names that it could not anchor on the diff.
 3. **Adjudicate the assumptions** — dispatch `assumption-reviewer`. For each `ASSUMPTION` comment it compares the roads
    the **fork** left open and replies one verdict — `accept`, `improve`, `override` or `escalate`. An `improve` is a
    road that beat the one the code took on a named **axis**, so it carries a **directive** stage 5 implements and code
@@ -176,6 +176,8 @@ Whoever reads this has your report and nothing else.
 - every hand-off, one line each — the escalations and anything else still waiting on a human
 - every finding and every `improve` the fix waves declined, one line each, with its grounds
 - every **gate** left red for work nobody asked for, one line each — from the commits as well as from the reports
+- every assumption comment anchored off the change request's diff, one line each — a fork a human reading the diff never
+  meets, so these lines are where they meet it
 - whether the checks ended green
 
 **The `improve` lines are the only trace of code the run redesigned.** Nothing ratified those changes before they
