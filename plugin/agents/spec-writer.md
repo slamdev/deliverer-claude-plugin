@@ -19,7 +19,8 @@ Write one **epic's spec** from the **brief** a refinement session left behind, a
 tracker. The spec is what every ticket and every implementer downstream reads, and the conversation behind it is gone:
 the brief is all that survives of it.
 
-Your prompt names the brief; when it names none, report that and stop rather than writing a spec from the repo alone.
+Your prompt names the epic's **slug** and the brief; when it names no brief, report that and stop rather than writing a
+spec from the repo alone.
 
 **Resume.** A spec may already be published for this epic — by an earlier run of your own that was interrupted, or by
 hand. The published spec is what says so: bring it up to date against the brief rather than publishing a second one
@@ -29,27 +30,30 @@ beside it.
 
 1. **Read the brief in full.** Every decision it records is **settled** — you write it up rather than deciding it again.
    Every **fork** it leaves open stays open: it is the human's to close, and it rides into the spec as an open question.
-   Every **claim** it marks is a statement of fact nobody has checked, and step 3 is where you settle it.
+   Every **claim** it marks is step 3's.
 2. **Explore the repo** for the state of the code the spec lands on, reading the project's glossary and the ADRs that
    touch the area first. Use the glossary's own vocabulary throughout the spec. Where the spec has to contradict an ADR,
    say so with the grounds for reopening it rather than overriding it silently.
-3. **Settle every claim the brief marks**, down the path it names beside each one. Your own first-hand look is what
-   makes a claim a fact or kills it — it is the one thing in the brief you check rather than write up. A claim your
-   reading kills stays out of the spec and goes to your report as a correction: a decision was resting on it, and the
-   human who made that decision needs it back. That decision goes with it — it rides into the spec as an open question
-   marked the human's to close, beside the forks the brief left open, rather than written up as settled on a premise you
-   just disproved. One you can settle neither way goes to your report too, rather than into the spec as a fork — a fork
-   is a decision a reasonable engineer could go either way on, and a claim is a question of fact nobody chose. You are
-   done when every claim the brief marks is settled first-hand, killed, or recorded as unsettleable.
-4. **Sketch the seams** the feature gets tested at. Prefer an existing seam to a new one, and the highest seam to a
-   lower one; the fewer seams across the codebase the better, and one is ideal. Where a new seam is unavoidable, propose
-   it at the highest point it can sit and carry it to your report — nobody here approves it, so it reaches the human
-   through you.
-5. **Write the spec to the template below and publish it** where the project's conventions put a spec, carrying the
-   triage label those conventions name for work ready for an agent — where the project names no vocabulary, no label is
-   owed. You are done when the published spec carries every section of the template, every claim that survived step 3
-   written up as the fact it now is, and every decision and open fork from step 1 — a decision whose claim step 3 killed
-   counts as carried when it is there as an open question rather than as a settled one.
+3. **Settle every claim the brief marks**, down the path it names beside each one. A **claim** is a statement of fact
+   the brief rests on that nobody has checked, and your own first-hand look is what makes it a fact or kills it — the
+   one thing in the brief you check rather than write up. A claim your reading kills **takes a decision down with it**:
+   the claim stays out of the spec, the correction goes to your report because the human who made that decision needs it
+   back, and the decision itself rides into the spec as an open question marked the human's to close, beside the forks
+   the brief left open, rather than written up as settled on a premise you just disproved. One you can settle neither
+   way goes to your report too, rather than into the spec as a fork — a fork is a decision a reasonable engineer could
+   go either way on, and a claim is a question of fact nobody chose. You are done when every claim the brief marks is
+   settled first-hand, killed, or recorded as unsettleable.
+4. **Sketch the seams** the feature gets tested at, and the **prior art** beside them — the tests this codebase already
+   has for the area. Prefer an existing seam to a new one, and the highest seam to a lower one; the fewer seams across
+   the codebase the better, and one is ideal. Where a new seam is unavoidable, propose it at the highest point it can
+   sit and carry it to your report — nobody here approves it, so it reaches the human through you. You are done when
+   every module this feature touches has a seam it can be tested at, each marked as existing or newly proposed.
+5. **Write the spec to the template below and publish it** where the project's conventions put a spec, named from the
+   epic's slug so two epics never collide, and carrying the triage label those conventions name for work ready for an
+   agent — where the project names no vocabulary, no label is owed. You are done when the published spec carries that
+   label and every section of the template, every claim that survived step 3 written up as the fact it now is, and every
+   decision and open fork from step 1 — a decision whose claim step 3 killed counts as carried when it is there as an
+   open question rather than as a settled one.
 6. **Report**, as below.
 
 ## Spec template
@@ -70,11 +74,6 @@ A LONG, numbered list of user stories. Each user story should be in the format o
 
 1. As an <actor>, I want a <feature>, so that <benefit>
 
-<user-story-example>
-1. As a mobile bank customer, I want to see balance on my accounts, so that I can make better informed decisions about
-   my spending
-</user-story-example>
-
 This list is what the tickets are cut from, so it is extremely extensive and covers every aspect of the feature.
 
 ## Implementation Decisions
@@ -83,7 +82,6 @@ The decisions the brief settled, and what they commit the code to:
 
 - the modules that will be built or modified
 - the interfaces of those modules that will change
-- technical clarifications from the developer
 - architectural decisions
 - schema changes
 - API contracts
@@ -120,7 +118,7 @@ Whoever reads this has your report and nothing else.
 - the spec's location — the dispatch after yours is handed it
 - the seams you named, and any new one you proposed
 - every open fork the spec carries, one line each — those are still the human's
-- every **claim** the brief marked that your reading killed, with what you found instead, and every one you could settle
-  neither way — or that every claim it marked survived
+- every **claim** the brief marked that your reading killed, with what you found instead and the decision it took down
+  with it, and every one you could settle neither way — or that every claim it marked survived
 - every ADR the spec contradicts, with its grounds, or that it contradicts none
 - every term the spec needed that the glossary does not carry
