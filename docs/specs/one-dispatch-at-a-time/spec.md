@@ -59,7 +59,7 @@ above. That is the price of the run doing the same thing every time, and of the 
    troubleshooting symptom means what it says and does not send me after my own settings.
 4. As a human running a delivery, I want a stage stopped from overlapping another even at the cost of minutes, so that a
    report I am waiting on is never lost to a notification nobody consumed.
-5. As a human running a delivery, I want one task per **dispatch** for the whole run, so that the task list is a window
+5. As a human running a delivery, I want one task per **stage** for the whole run, so that the task list is a window
    on the stages rather than on how they happened to be launched.
 6. As a human reading a run's report, I want everything the report names unchanged by this, so that a run's account of
    its **assumption**s, its rounds and its **spend** reads exactly as it did.
@@ -78,7 +78,7 @@ above. That is the price of the run doing the same thing every time, and of the 
 13. As a delivering orchestrator, I want every reference to a stage number pointing at the right stage after the
     renumbering, so that a bullet does not send me to a stage that no longer does what it says.
 14. As a delivering orchestrator, I want the task-list section to stop naming one stage's two tasks, so that "one
-    dispatch, one task" is the only rule I read about naming them.
+    stage, one task" is the only rule I read about naming them.
 15. As a delivering orchestrator, I want the **bearings** contract untouched, so that a resumed run still dispatches the
     adjudication again rather than counting comments.
 16. As a delivering orchestrator, I want reading the branch's **gate**s to stay something I do every run, so that losing
@@ -151,9 +151,15 @@ above. That is the price of the run doing the same thing every time, and of the 
 - **D8. It states what must be true and names no mechanism.** No tool, no launch mode, no host setting. This is the
   same discipline the plugin applies to forges, and it is what makes the rule survive a host that finishes a dispatch
   some other way.
-- **D9. The task-list sentence naming the paired stage's two tasks is deleted, not rewritten.** `One dispatch, one task`
+- **D9. The task-list sentence naming the paired stage's two tasks is deleted, not rewritten.** `One stage, one task`
   and its worked example already cover naming a task from the stage it serves, and restating it for two stages that are
   now ordinary would leave the reader wondering what is special about them.
+
+  **Amended 2026-09-06.** The rule D9 rests on, and the wording user stories 5 and 14 name, read `One dispatch, one
+  task` when this shipped. It contradicted stage 1, which dispatches one `implementer` per ticket under a single task,
+  so the count moved to the stage: `plugin/skills/build/SKILL.md` now reads `One stage, one task`, with a cold
+  `code-reviewer` opening a fresh **round** as its one stated exception. Nothing else here moves — the sequencing rule,
+  the stage split and the renumbering are as they shipped, and what D9 deleted stayed deleted.
 - **D10. Nothing is added about where the mechanical reading goes.** The skill already says reading the branch's
   `Gates:` sections is done every run rather than only when a report fails to arrive, and it will happen between
   dispatches on its own. The observed run that read them inside the overlap window did so because the window existed,

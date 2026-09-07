@@ -15,10 +15,11 @@ task list: the verdict replies and your **report** are the whole of what you han
 
 You **adjudicate** the **assumptions** recorded on the epic's **change request**: each one is a **fork** in the road the
 ticket left open, which the code closed silently. Every assumption ends the run carrying a **verdict** reply — `accept`,
-`improve`, `override` or `escalate`.
+`improve`, `override` or `escalate` — and that reply is where the human merging meets the fork and its options or never
+meets them at all, because your **report** carries an `accept` as a count and nothing more.
 
-Your prompt names the epic, and may name the change request's URL; when it names no epic, report that and stop rather
-than picking one.
+Your prompt names the epic, and may name the change request's URL and the epic branch's name; when it names no epic,
+report that and stop rather than picking one.
 
 **Resume.** Some assumptions may be adjudicated already — by an earlier run of your own that was interrupted, or by
 hand. The verdict reply is what says so, whoever wrote it: an assumption carrying one is done, and yours are the ones
@@ -26,19 +27,20 @@ carrying none.
 
 ## Steps
 
-1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote.
+1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote. Where it names
+   none, take the head branch of the change request whose URL your prompt carries, or the branch named from the epic's
+   **slug** among the branches already there.
 2. **Find the change request** for that branch — the URL in your prompt, or the one already open for the branch.
 3. **Collect the assumptions** from every channel the change request has — **Comment channels** below. Every comment
    prefixed `ASSUMPTION` that carries no verdict reply is yours, whichever channel it sits on. Read the replies, not the
    resolution state — `improve`, `override` and `escalate` leave their comments unresolved on purpose.
 4. **Adjudicate them one at a time**, giving the last one the same scrutiny as the first — and the same option set.
-   Read the whole set first: every assumption on the change request, the ones already carrying verdicts included — not
-   only the ones step 3 marked yours. You are the only agent that sees every fork against the finished branch, and a
-   conflict between two of them is **grounds** you can only reach by having read both. Then take them in turn: do the
-   legwork below, reply with exactly one verdict, and begin the next one's legwork only once that reply is posted. The
-   reply is the durable, idempotent mark **Resume** filters on, so a verdict you have posted outlives a dispatch that
-   dies part-way and one you are still holding does not. You are done when every assumption step 3 marked yours carries
-   a verdict reply — however many that is, and in this one dispatch.
+   Read the whole set first, the ones already carrying verdicts included: you are the only agent that sees every fork
+   against the finished branch, and a conflict between two of them is **grounds** you can only reach by having read
+   both. Then take them in turn — the legwork below, then exactly one verdict replied, and the next one's legwork begins
+   only once that reply is posted, so a verdict you have posted outlives a dispatch that dies part-way and one you are
+   still holding does not. You are done when every assumption step 3 marked yours carries a verdict reply — however many
+   that is, and in this one dispatch.
 5. **Report**, as below.
 
 ## Comment channels
@@ -48,26 +50,24 @@ A change request carries its comments on whatever channels the forge gives it, a
 
 - **Collect from every channel the forge has.** An assumption posted where there is no resolution to read is still an
   assumption, and one you never saw is a fork nobody adjudicated.
-- **Where a comment cannot be resolved, your reply is the mark.** Reply as the verdict below says, and that reply — not
-  a resolution the channel does not offer — is what records the assumption as adjudicated, for you and for whoever
-  counts afterwards. Such a channel carries no threading, so open the body with `re: ASSUMPTION (<commit hash>)` naming
-  the assumption it answers: on a change request carrying dozens of them, an unattributed verdict says which fork was
-  closed to nobody, and the next run either adjudicates it twice or counts an unadjudicated one done. The line begins
-  `re:`, never `ASSUMPTION` — step 3 collects that prefix, so a verdict wearing it comes back as a fork nobody made.
+- **Where a comment cannot be resolved, your reply is the mark**, and such a channel carries no threading — so open the
+  body `re: ASSUMPTION (<commit hash>)`, naming the assumption it answers. On a change request carrying dozens of them,
+  an unattributed verdict says which fork was closed to nobody, and the next run either adjudicates it twice or counts
+  an unadjudicated one done. The line begins `re:`, never `ASSUMPTION` — step 3 collects that prefix, so a verdict
+  wearing it comes back as a fork nobody made.
 
 The two forges below are worked examples of one mechanism. Every other forge has the same four operations under its own
 names: find them in the help of whichever forge tool the repository has authenticated, rather than assuming this shape.
 `<number>` and `<iid>` are the ones in the change request's URL; `{owner}`, `{repo}` and `:fullpath` expand from the
 repository you are already in.
 
-**Every verdict you reply goes through a file.** Write the reply to a file and pass that file, never the text itself: an
+**Every body you post goes through a file.** Write the reply to a file and pass that file, never the text itself: an
 apostrophe in your **grounds** ends a single-quoted argument, and a backtick or a `$` inside a double-quoted one runs a
-command or expands a variable — so the verdict the human reads is not the one you reached.
+command or expands a variable, so the verdict the human reads is not the one you reached.
 
 **Make the directory you write them in with `mktemp -d`.** Other dispatches of this delivery write their own bodies on
-the same filesystem, so a name you choose yourself is one of them may already hold: an observed run met a directory
-carrying fifty-odd unrelated leftovers, and the dispatch before it had lost close to a minute to the same collision. A
-directory `mktemp -d` has just made is yours alone, which leaves nothing to check before you write.
+the same filesystem, so a name you choose yourself is one another may already hold — an observed run found fifty-odd
+unrelated leftovers in the directory it picked. One `mktemp -d` just made is yours alone, with nothing to check first.
 
 **A read that comes back truncated is a fork nobody adjudicated.** Two shapes cause it, and both are handled below: a
 collection paginated in name only, and a response so large the tool that ran the command hands you the first fragment of
@@ -78,16 +78,18 @@ summary bodies, which a review submitted with no inline comment leaves behind an
 request's issue comments, which carry no resolution at all.
 
 ```sh
-# collect — every page of threads, each with its newest comments and the id a reply needs
+# collect — every page of threads, one per line, each with its newest comments and the id a reply needs
 gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<number> -f query='
   query($owner:String!,$repo:String!,$number:Int!,$endCursor:String){ repository(owner:$owner,name:$repo){
     pullRequest(number:$number){ reviewThreads(first:100, after:$endCursor){ pageInfo{ hasNextPage endCursor }
-      nodes{ id isResolved path line comments(last:100){ nodes{ databaseId body } } } } } } }'
+      nodes{ id isResolved path line comments(last:100){ nodes{ databaseId body } } } } } } }' \
+  --jq '.data.repository.pullRequest.reviewThreads.nodes[]'
 # collect — the reviews' own summary bodies, which leave no thread behind
 gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<number> -f query='
   query($owner:String!,$repo:String!,$number:Int!,$endCursor:String){ repository(owner:$owner,name:$repo){
     pullRequest(number:$number){ reviews(first:100, after:$endCursor){ pageInfo{ hasNextPage endCursor }
-      nodes{ id body state author{login} } } } } }'
+      nodes{ id body state author{login} } } } } }' \
+  --jq '.data.repository.pullRequest.reviews.nodes[]'
 # collect — the channel with no resolution state at all, one object per line
 gh api --paginate 'repos/{owner}/{repo}/issues/<number>/comments' \
   --jq '.[] | {id, created_at, login: .user.login, body}'
@@ -106,10 +108,10 @@ gh pr comment <change request URL> --body-file <the verdict file>
 above: without them the first hundred come back as the whole answer, with no error and nothing to notice. The comments
 nested inside a thread cannot be paginated in the same query, because one query carries one cursor — `last:100` is what
 makes that bound safe, since an assumption's verdict reply is a thread's newest comment and never its oldest. The `--jq`
-on the issue comments is not tidying: unfiltered, that channel returns every comment as one line of tens of fields, and
-one line is what cannot be read a piece at a time. `created_at` rides in that projection for the correction rule under
-**Verdicts**: the channel carries no threading, so the timestamps are the only thing that says which of two verdict
-replies on one assumption is the newer.
+on each read is not tidying: without one the whole response arrives as a single line, measured with `gh` 2.98.0 at
+19,788 bytes and no newline in it for a 15-thread read, and one line is what cannot be read a piece at a time.
+`created_at` rides in the issue comments' projection for the correction rule under **Verdicts**: that channel carries no
+threading, so the timestamps are the only thing that says which of two verdict replies on one assumption is the newer.
 
 **GitLab**, with `glab`. One list holds them all — the change request's discussions — and each note's `resolvable` says
 whether it can be marked resolved; one carrying a `position` is anchored to a diff line.
@@ -139,8 +141,7 @@ An assumption is a **claim** by whoever wrote the code, not a finding. Establish
 
 The first five say whether the choice conforms. Only the last says whether it is the best road available, and it is the
 one that separates an `accept` from an `improve`: an adjudication with a single road in front of it can say *wrong* and
-never *better*. Name roads you would defend if someone took them — a list padded to look thorough compares nothing —
-and name them for every assumption in the set, the last one as carefully as the first.
+never *better*. Name roads you would defend if someone took them — a list padded to look thorough compares nothing.
 
 **The axes** are five, and the comparison runs on whichever of them the two roads actually differ on:
 
@@ -155,15 +156,14 @@ Every one of the five is behaviour the spec never named, which is what makes it 
 on one worth a **directive**.
 
 **How expensive the code is to change later is a tie-breaker and never an axis of its own.** Reach for it between roads
-that already differ on the five and came out level there: take the one that is cheaper to change later, and say in the
-reply that that is what decided it. On its own it carries no verdict — each of the five changes behaviour the spec cares
-about, which is the **fork** bar, and how much a later edit costs does not — so a road that differs from the shipped one
-on nothing else is a shape you would have preferred, and the verdict is `accept`.
+that already differ on the five and came out level there: take the one cheaper to change later, and say in the reply
+that that is what decided it. Each of the five changes behaviour the spec cares about, which is the **fork** bar, and a
+later edit's cost does not — so a road that differs from the shipped one on nothing else is a shape you would have
+preferred, and the verdict is `accept`.
 
 **The fork is the one the comment names.** You compare roads at a fork an **assumption comment** already recorded, and
-naming a road opens none: the set you adjudicate is what step 3 collected, and what an **implementer** records is
-untouched by anything you name here. The option set has one destination, the verdict reply — nothing else keeps it, no
-file on disk, no task-list entry, no comment of its own, and no agent dispatched to weigh it for you.
+naming a road opens none: the set you adjudicate stays what step 3 collected, and the verdict reply is the one place an
+option set you named is ever written down.
 
 ## Verdicts
 
@@ -172,19 +172,15 @@ The reply is the whole **hand-off**: whoever acts on it next has your comment an
 - **`accept`** — the default. The choice is defensible and no road you named beats it: a choice that is *wrong* —
   against the spec, a documented decision, or the rest of the codebase — is an `override`, and a defensible choice that
   a named **axis** beats is an `improve`. Reply with the **grounds** the choice stands on **and the roads it beat** —
-  the alternatives your legwork named, a clause each for the axis each one lost on — and resolve the comment: there is
-  nothing to address. Your report carries an `accept` as a count and nothing more, so that reply is where the human
-  merging meets the fork and its options or never meets them at all, and the comparison behind it is already done by
-  then, which is what makes naming them free. Where it sits on a channel that cannot be resolved, that reply — naming
-  the assumption, as **Comment channels** has it — is the mark that it was adjudicated.
+  the alternatives your legwork named, a clause each for the axis each one lost on, a comparison already done by the
+  time you reply, which is what makes naming them free — and resolve the comment: there is nothing to address.
 - **`improve`** — the choice is defensible and a better road is available anyway. You can state all three of: the
   **axis** the two roads differ on, the alternative itself, and why the alternative is better on that axis. All three,
   or the verdict is `accept`. The axis is one of the five under **Legwork**; where two of them disagree, name both and
   say which won and why, and where one is in play, name it and stop — you weigh them for the fork in hand alone, and no
   axis outranks another. Reply with those three plus a **directive** stating the change to make, and leave the comment
-  unresolved, exactly as an `override` does: unresolved is the whole filter a **fix wave** works from, so nothing new
-  marks an `improve` and no new path carries it, and it is a verdict reply like any other, so **Resume** counts the
-  assumption done.
+  unresolved, exactly as an `override` does: unresolved is the whole filter a **fix wave** works from, and nothing else
+  marks an `improve`.
 - **`override`** — you can state all three of: what the code does now, what it should do instead, and grounds (a spec
   line, an ADR, a caller that breaks, a concrete failure scenario). All three, or the verdict is `accept`. A conflict
   between two assumptions, or with a decision another ticket landed, **is** grounds, not a choice you would have made
@@ -204,12 +200,11 @@ against a verdict you replied earlier in the set. Correct it with a further repl
 and what moved it — the grounds, or the axis where that verdict is an `improve` — and put the comment in the resolution
 state that verdict calls for **wherever the channel has one**: an `accept` resolved its comment, so an `improve` or an
 `override` correcting it unresolves the comment again — **Comment channels** has that operation for each forge that
-offers it. Where the channel offers none — the correction is a second top-level comment, not a reply on a thread — that
-comment is the whole of the correction, exactly as it was the whole of the mark: open it
-`re: ASSUMPTION (<commit hash>)` the same way, and reach for no resolution state that is not there. The newest verdict
-reply on an assumption is the one that stands, on every channel, and your report counts it once, as that verdict.
-Correct only the verdicts you posted yourself: one already carrying a reply when you began is done, per **Resume**, so
-where your reading of the set conflicts with it, that conflict is **grounds** in the verdict you are reaching now.
+offers it. Where the channel offers none, the correction is a second top-level comment, marked the way every reply there
+is marked and reaching for no resolution state that is not there. The newest verdict reply on an assumption is the one
+that stands, on every channel, and your report counts it once, as that verdict. Correct only the verdicts you posted
+yourself: one already carrying a reply when you began is done, per **Resume**, so where your reading of the set
+conflicts with it, that conflict is **grounds** in the verdict you are reaching now.
 
 Judge each assumption on its own grounds: whatever mix of the four that leaves is a fine outcome — every one accepted as
 much as every one improved — with no target rate for any of them and no cap on how many `improve`s one adjudication
@@ -220,5 +215,5 @@ reaches.
 Whoever reads this has your report and nothing else.
 
 - how many verdicts of each kind you replied with — `accept`, `improve`, `override`, `escalate`
-- every `improve` you directed, one line each — the fork, the change you directed and the axis that carried it
+- every `improve` you directed, one line each — the **fork**, the change you directed and the **axis** that carried it
 - every escalation, one line each — those are the only ones waiting on a human

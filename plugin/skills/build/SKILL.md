@@ -11,22 +11,17 @@ for a human.
 
 Your argument names the epic; when it names none, report that and stop rather than picking one.
 
-Every stage below is one agent dispatch — **one dispatch, one task** (**Progress**) — and the dispatched agent's
+Every stage below is made of agent dispatches — **one stage, one task** (**Progress**) — and each dispatched agent's
 **report** is all you get back: what it names is what you know. Where a report leaves you unsure, put the stage back
 rather than going to look, and the bearings you take from the branch and the change request say which stage is owed, not
-what a finding says. **Continue an agent that stopped without a report while it is still addressable** — it still holds
-the epic, the ticket and the codebase it read, so continuing costs one message where a cold dispatch pays for all of
-that reading again; dispatch a cold one once it is not addressable, or once continuing it fails. That message tells it
-what the branch carries, whether it builds and whether the checks are green — the facts you settle for yourself — and,
-where a stage leaves you no evidence to read, only that no report arrived and the work is owed. `code-reviewer` is
-continued like any other agent, and a continue opens no **round**: it carries on polling the `review_id` it already
-holds, and only a cold dispatch opens a fresh round (**Rounds**). A **mechanical question about the tree or the forge**
-is yours to settle — does it build, does this symbol exist, what does the branch carry, are the change request's
-**checks** green — because that asks whether a report's fact is true, not whether its judgement is right. A finding, a
-design, whether the work is good — those are never yours to form a view on. Two edges on it: **read only**, and the only
-things to do with what you find are **put a stage back to an agent — continued or cold — or report it**, never fix.
-Yours is the work no agent does: read the epic for its tickets, dispatch in order, read each report, keep the task list
-current, and flip the change request ready at the end.
+what a finding says. Yours is the work no agent does: read the epic for its tickets, dispatch in order, read each
+report, keep the task list current, and flip the change request ready at the end.
+
+A **mechanical question about the tree or the forge** is yours to settle — does it build, does this symbol exist, what
+does the branch carry, are the change request's **checks** green — because that asks whether a report's fact is true,
+not whether its judgement is right. A finding, a design, whether the work is good — those are never yours to form a view
+on. Two edges on it: **read only**, and the only things to do with what you find are **put a stage back to an agent —
+continued or cold — or report it**, never fix.
 
 **Resume.** This epic may be part-delivered — by an earlier run of your own that was interrupted, or by hand. The epic
 branch and the change request are what say how far it got: the commits carrying a `Ticket:` line name the tickets
@@ -43,7 +38,13 @@ work nobody asked for — outside its ticket where it carries a `Ticket:` line, 
 where it carries none — and reading those off the branch is something you do every run rather than only when a report
 fails to arrive: a second path that runs only once something has already gone wrong is the path least likely to work.
 Carry them into your report beside the ones the reports named, and where a report names none while a commit names one,
-the commit is the account to trust — it is the record that survives a report not arriving.
+**the account nearer the code** is the one to trust — a commit is the record that survives a report not arriving.
+
+**The working tree carries one more.** An `implementer` and a **fix wave** each leave work nobody asked for exactly as
+they found it and name it in their report, because a **round** reads the checkout it runs in and reviews whatever is
+sitting there as the epic's work. Whether that tree is clean is a **mechanical** question, so read it every run rather
+than only when a report mentions it, and carry either account into your report — the same reason the `Gates:` sections
+get read: a path that runs only once something has already gone wrong is the path least likely to work.
 
 **The adjudication and the fix waves leave you no evidence to read.** What they leave behind is a comment's replies, and
 telling a **verdict** that owes a change from a reply recording the change made is a judgement about what those replies
@@ -55,11 +56,10 @@ request ready with an `improve` or an `override` unimplemented and an **escalati
 
 **Two accounts reach you for every improvement, and the fix wave's is the one your report carries.**
 `assumption-reviewer` names every **directive** an `improve` stated and each wave names what it did with them; what
-happened to the code is the wave's to say — the precedence a **gate** a commit names and a report does not already
-takes, where the account nearer the code is the one to trust. Where a wave leaves a directive out altogether, neither
-implemented nor declined nor handed off, no account of the code exists at all and putting the stage back is the whole of
-your move: which report is right turns on what the replies on those comments say, and reading them is the judgement that
-was never yours.
+happened to the code is the wave's to say — **the account nearer the code** again. Where a wave leaves a directive out
+altogether, neither implemented nor declined nor handed off, no account of the code exists at all and putting the stage
+back is the whole of your move: which report is right turns on what the replies on those comments say, and reading them
+is the judgement that was never yours.
 
 **Dispatch.** Every dispatch carries the epic, and — once each exists — the change request's URL and the **epic branch's
 name**, so none of them has to find it again. Neither exists at the first stage-1 dispatch: that implementer creates the
@@ -68,23 +68,30 @@ before it named about the **gates** that bit and what satisfied them, accumulati
 start on work not yet done, so it goes to implementers and nowhere else, and every other agent meets the repo first-hand
 because that is what its own judgement must rest on — with one deliberate exception. Each `comments-addresser` dispatch
 carries the preceding **round**'s prose, verbatim: the whole summary that round's report handed you, pasted in rather
-than pointed at. Where the reviewer posted no comment on a finding, that prose is the only form it exists in, and the
-fix wave is the only agent that can act on it — and the prose reached you in a report rather than on disk, so there is
-no path you could send instead. Carry it as it came, forming no view on what it raises. A round that produced no review
-left no prose, and its wave runs on the comments alone.
+than pointed at. A finding the reviewer never posted exists nowhere but that prose (**Rounds**), the fix wave is the
+only agent that can act on it, and the prose reached you in a report rather than on disk, so there is no path you could
+send instead. Carry it as it came, forming no view on what it raises. A round that produced no review left no prose, and
+its wave runs on the comments alone.
 
 The same exception carries the findings an earlier wave **declined** and the **grounds** it declined them on, verbatim
 from its report, to every wave after it. A finding the reviewer never posted is answered nowhere on the change request,
 so a later round raising the same point again would meet a wave holding nothing — re-deriving grounds that were already
 reached, or reversing them without ever seeing them. Those lines are an account of what has already been adjudicated
-and not a list of points to pass over: pass them on as they came, and form no view on either half.
+rather than a list of points to pass over: pass them on as they came.
 
 **Sequencing.** One dispatch at a time: while a **report** is owed, nothing else goes out — no stage runs beside
 another, and no stage is worth the minutes an overlap saves. A stage you dispatched in this run is unfinished until its
 **report** is in hand, and an acknowledgement is not a report: a dispatch may answer you at once and finish its work in
-the background, and until the report lands that stage has not run. That holds inside stage 1 too, where the next
-implementer starts on the last one's report. Wait for the report itself. A `sleep` or a poll stands in for none — pick a
-duration too short and you dispatch again, too long and the epic waits on your guess.
+the background, and until the report lands that stage has not run. Wait for the report itself. A `sleep` or a poll
+stands in for none — pick a duration too short and you dispatch again, too long and the epic waits on your guess.
+
+**Continue an agent while it is still addressable** — to put its stage back, or when it stopped without a report at all.
+It still holds the epic, the ticket and the codebase it read, so continuing costs one message where a cold dispatch pays
+for all of that reading again. That message carries the **mechanical** facts you settled for yourself and, where a stage
+leaves you no evidence to read, only that no report arrived and the work is owed. Dispatch a cold one once it is not
+addressable, or once continuing it fails. `code-reviewer` is continued like any other agent, and a continue opens no
+**round**: it carries on polling the `review_id` it already holds, while only a cold dispatch opens a fresh round under
+a fresh id (**Rounds**).
 
 ## Stages
 
@@ -93,49 +100,54 @@ duration too short and you dispatch again, too long and the epic waits on your g
    that one ticket besides. You are done when every ticket the epic lists has a report naming its commits.
 2. **Open the change request** — dispatch `change-request-creator`. It opens the change request as a **draft** and
    mirrors into an `ASSUMPTION` comment every assumption recorded by a commit carrying a `Ticket:` line. A commit
-   without that line is a **fix wave**'s, and stage 5 says what becomes of its entries — so a report naming fewer
-   comments than the branch's commits recorded is this stage doing its job rather than half-doing it. Keep the URL it
-   reports.
+   without that line is a **fix wave**'s, recording the **forks** that wave closed silently: the mirror passes those
+   over and nothing adjudicates them, so no stage is ever owed for them — and a report naming fewer comments than the
+   branch's commits recorded is this stage doing its job rather than half-doing it. Keep the URL it reports, and every
+   comment its report names as **anchored anywhere but at a translated line on head** — the agent's own wording, and
+   wider than the diff: an assumption about a caller the branch never touched is anchored at the file on purpose, and is
+   one of these.
 3. **Adjudicate the assumptions** — dispatch `assumption-reviewer`. For each `ASSUMPTION` comment it compares the roads
    the **fork** left open and replies one verdict — `accept`, `improve`, `override` or `escalate`. An `improve` is a
    road that beat the one the code took on a named **axis**, so it carries a **directive** stage 5 implements and code
    no ticket asked for changes on a judgement nobody ratified. Keep the four counts, and every `improve` its report
    names directing.
-4. **First round** — dispatch `code-reviewer`. It drives one **round** and reports its prose. Keep that prose: the
-   review's prompt instructs the reviewer to post its findings as comments on the change request, and where it did not,
-   the prose is the only form they exist in — so stage 5 is dispatched with it.
+4. **First round** — dispatch `code-reviewer`. It drives one **round** and reports its prose. Keep that prose: stage 5
+   is dispatched with all of it (**Dispatch**).
 5. **First fix wave** — dispatch `comments-addresser`, carrying the first round's prose (**Dispatch**). It works every
    unresolved comment and every point that prose raises: implementing the improvements, the overrides and the findings,
    resolving what it implements or declines, and leaving the escalations for a human. Keep the **hand-off** list and the
-   `improve` lines its report carries. Its own commits carry no `Ticket:` line and record the **forks** the wave closed
-   silently: stage 2's mirror passes those over and nothing adjudicates them, so no stage is owed for them.
+   `improve` lines its report carries.
 6. **Second round** — dispatch `code-reviewer` again. It reviews the fix wave's commits, so what the first round missed
    still gets caught.
 7. **Second fix wave** — dispatch `comments-addresser` again, carrying the second round's prose and the findings the
    first wave declined with their grounds (**Dispatch**), for what that round raised.
-8. **Flip it ready** — once two rounds have completed and you have read the change request's **checks** green on the
-   forge, take the change request out of draft and report. The fix wave reports them too, and the two accounts agreeing
-   is the ordinary case; where they disagree, put the stage back rather than choosing between them — a report and the
-   forge disagreeing is exactly what a re-dispatch is for. Escalations and declined findings ride into the report rather
-   than holding the flip: they are what the human review is for. When the checks are not green, leave it a draft and
-   report that instead. When the bar cannot be met — no round completed, or one did and the second cannot — leave it a
-   draft the same way, and report the review stage as a **hand-off** with the reason each round ended on.
+8. **Flip it ready** — once **two rounds have completed** (**Rounds**) and you have read the change request's **checks**
+   green on the forge, take the change request out of draft and report. The fix wave reports them too; where its account
+   and the forge disagree, put the stage back rather than choosing between them. Escalations and declined findings ride
+   into the report rather than holding the flip: they are what the human review is for. When the checks are not green,
+   leave it a draft and report that instead. When the bar cannot be met — no round completed, or one did and the second
+   cannot — leave it a draft the same way, and report the review stage as a **hand-off** with the reason each round
+   ended on.
 
 ## Rounds
 
-A round is one `code-reviewer` dispatch, and **two rounds that reached `completed`** is the bar stage 8 waits on.
+A round is one `code-reviewer` dispatch, and **two rounds that reached `completed`** is the bar stage 8 waits on. A
+fresh round comes of a cold dispatch, under a `review_id` no round has used; continuing an agent carries on the id it
+already holds and opens none.
 
 - **`completed`** — one of the two. Its report carries the round's `review_id` and its prose, and that prose is the
-  round's whole deliverable: the findings it names are comments on the change request where the reviewer posted them and
-  exist nowhere else where it did not, and the fix wave after it is dispatched with all of it either way. Nothing of the
-  round itself lands on the change request — not the prose, and no record that a round ran — so your **report** is where
-  a human meets the review.
+  round's whole deliverable: the reviewer is instructed to post its findings as comments on the change request, and a
+  finding it did not post exists nowhere else. Nothing of the round itself lands on the change request — not the prose,
+  and no record that a round ran — so your **report** is where a human meets the review.
 - **`failed` or `cancelled`** — that round produced no review, so it is not one of the two. Its report carries the
   one-line `reason` it ended on: a `failed` round's reason opens with a code naming the cause, and a `cancelled` round's
-  carries none. A fresh `code-reviewer` dispatch does not carry on that round — it opens a fresh round under a fresh id.
+  carries none.
 - **A round whose record is gone** — a continued `code-reviewer` reports the id and that the server no longer holds
   it. The round ran; its prose and its **spend** are unrecoverable, so it is not one of the two either, and its place
   in the report is a **hand-off** naming what was lost. It is not a reason to put the stage back under that id.
+- **A dispatch that started no round** — the refusal it met named something only the owner can fix, so it reported those
+  words and started nothing. None of the two, and its place in the report is a **hand-off** carrying the refusal: no
+  round can complete until what it names is fixed.
 - **Rounds leave nothing to count.** A resumed run cannot read off how many already ran, and the count is what the bar
   rests on: flipping ready on one round ships a review nobody did.
 
@@ -148,19 +160,21 @@ request, as **Resume** has it.
 looking — an idle notice for a dispatch you have already accounted for asks nothing of you, so nothing is owed for it. A
 signal that does ask something is not one of those: a **report** to read, a stage that went wrong, a round to put back.
 
-**One dispatch, one task.** Create one per dispatch as the run opens, named from the stage it serves and prefixed with
-the epic's slug so two epics can share a session — `<slug>: open the change request`. A resumed run opens the same set,
-with the dispatches the branch and the change request already account for created `completed`. Mark a task `in_progress`
-as you dispatch it and `completed` once you have read its report. `completed` says the dispatch is over rather than that
-it succeeded, so a round that died carries its outcome in its subject — `<slug>: second round (failed — no review)`. A
-round you spend after one that died is another dispatch, so it gets a task of its own. Continuing an agent is the same
-dispatch rather than a new one, so it gets no task of its own: the task it already has flips back to `in_progress`, and
-`completed` once the report you were owed lands.
+**One stage, one task.** Create one each for stages 1 to 7 as the run opens, since stage 8 is the flip and the report
+itself — named from the stage it serves and prefixed with the epic's slug so two epics can share a session, as
+`<slug>: open the change request`. A resumed run opens the same set, with the stages the branch and the change request
+already account for created `completed`. Mark a task `in_progress` as you enter its stage and `completed` once you have
+read the report that ends it. `completed` says the stage is over rather than that it succeeded, so a round that died
+carries its outcome in its subject — `<slug>: second round (failed — no review)`. Putting a stage back to an agent —
+continued or cold — is the same stage rather than a new one, so it gets no task of its own: the task it already has
+flips back to `in_progress`, and `completed` once the report you were owed lands. **A round is the exception**, because
+a cold `code-reviewer` opens a fresh one (**Rounds**): a round you spend after one that died is another round, and it
+gets a task of its own.
 
-Stage 1 is one task for all its tickets, relabelled as each lands: `<slug>: implement every ticket (4/21)` as the
+Stage 1's one task carries all its tickets, relabelled as each lands: `<slug>: implement every ticket (4/21)` as the
 subject and `Implementing ticket 4/21 — <ticket>` as the `activeForm`, both in the one `TaskUpdate`. The numerator is
 how many tickets have a report in hand. A resumed run has none, so it opens at the tickets the `Ticket:` lines name
-**less the last one**, which **Resume** dispatches again — that line names a ticket begun rather than one finished.
+**less the last one**, which **Resume** dispatches again.
 
 ## What to report
 
@@ -176,6 +190,10 @@ Whoever reads this has your report and nothing else.
 - every hand-off, one line each — the escalations and anything else still waiting on a human
 - every finding and every `improve` the fix waves declined, one line each, with its grounds
 - every **gate** left red for work nobody asked for, one line each — from the commits as well as from the reports
+- every assumption comment anchored anywhere but at a translated line on head, one line each — a fork a human reading
+  the diff never meets, so these lines are where they meet it
+- any uncommitted work left on the branch that nothing asked for, one line each — from the tree as well as from the
+  reports, because a round reads the checkout and reviews that work as the epic's
 - whether the checks ended green
 
 **The `improve` lines are the only trace of code the run redesigned.** Nothing ratified those changes before they
