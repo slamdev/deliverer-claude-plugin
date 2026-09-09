@@ -17,15 +17,24 @@ Your argument names the idea; when it names none, ask the user for it rather tha
 once, as a short **slug** — the brief's filename, the task list and the published artifacts all carry it, so two epics
 never collide.
 
-**Stage 1 is yours and nobody else's** — the human is in the room and the decisions are theirs. Every stage after it is
-one agent dispatch — **one stage, one task** (**Progress**) — and the dispatched agent's **report** is all you get back:
+**Stage 1's conversation and its decisions are yours and nobody else's** — the human is in the room, the decisions are
+theirs, and what goes out of stage 1 is fact-finding and never the interview itself. Every stage after it is one agent
+dispatch — **one stage, one task** (**Progress**) — and the dispatched agent's **report** is all you get back:
 what it names is what you know. The writing goes out because it wants a context spent on the repo rather than yours,
 spent on the interview. That is what makes the brief load-bearing: a **writer** meets the codebase for itself but never
 the conversation, so a decision the brief leaves out is one the writer closes again on its own — silently, and maybe the
 other way. Where a report leaves you unsure, or a writer's document is wrong, put the stage back to the writer naming
 what it got wrong rather than editing the document yourself: the writer holds the context the document needs. Yours is
-the work no agent does: grill the idea, write the brief, dispatch the two writers in order, read their reports, and hand
-the epic to the human.
+the work no agent does: grill the idea, send its questions of fact out as **sweep**s (**Sweeps**), write the brief,
+dispatch the two writers in order, read their reports, and hand the epic to the human.
+
+A **mechanical question about the tree, the forge or the web** is yours to settle — does this symbol exist, what does
+this file say, what does a published **spec** already carry, does this tool's own documentation name the feature —
+because each of those answers true or false in a single look. Following a thread is not one, however cheap each step of
+it looks: a search whose results are read to decide what to search next goes out to a **sweep**. That binds for the
+whole **run** rather than stage 1 alone — the reading stage 3 does, checking what a **writer** reported, is a single
+look and so yours. And it bounds your reading and nothing else: the **brief** is yours to write, and so are the glossary
+entries and ADRs stage 1 lands.
 
 **Resume.** This idea may be part-refined — by an earlier run of your own that was interrupted, or by hand. The
 artifacts are what say how far it got: the brief on disk says stage 2 ran, a published spec says stage 3 ran, published
@@ -53,10 +62,10 @@ re-run.
 
 1. **Grill the idea** — run the `mattpocock-skills:grilling` skill on it, with `mattpocock-skills:domain-modeling`
    alongside, so terms and decisions land in the project's glossary and ADRs as they crystallise. Those two skills own
-   how the interview runs, apart from how a question reaches the human, which is **Asking** below, and what a **sweep**
-   holds back and what it reopens, which is **Sweeps** below; when either is not installed, report that and stop rather
-   than improvising an interview. You are done on grilling's own bar: the frontier empty, and the user's confirmation
-   that you have reached a shared understanding.
+   how the interview runs, apart from how a question reaches the human, which is **Asking** below, and when a **sweep**
+   goes out, what it holds back and what it reopens, which is **Sweeps** below; when either is not installed, report
+   that and stop rather than improvising an interview. You are done on grilling's own bar: the frontier empty, and the
+   user's confirmation that you have reached a shared understanding.
 2. **Write the brief** — as **The brief** below. You are done when every one of the five things it carries is written
    out of the conversation or stated to hold nothing, and a fresh agent could carry the design forward from it alone.
 3. **Write the spec** — dispatch `spec-writer`. It publishes the spec to the project's issue tracker. Keep the location
@@ -82,12 +91,29 @@ the frontier to fit — the human answers in batches, and every question the rou
 
 ## Sweeps
 
-Dispatching a **sweep** never holds up the interview, and a question the sweep is about to answer never reaches the
-human before it lands. Both hold at once, because the subject you sent the sweep out to settle is what separates them.
+Dispatching a **sweep** never holds up the questions it does not touch, and a question the sweep is about to answer
+never reaches the human before it lands. Both hold at once, because the subject you sent the sweep out to settle is what
+separates them.
 
-Name that subject as you dispatch — the question of fact the sweep is out there to close. You hold it for the rest of
-the interview and nowhere else: the brief hands the spec writer the design rather than the interview's bookkeeping, and
-the task list carries one task per stage.
+**A question of fact you cannot close in one mechanical look goes out to a sweep.** Test every one against that bar as
+it arrives: where the answer wants a thread followed — a feature traced from one file to the next, a second repository
+read, a published document fetched and then read for what to fetch after it — the sweep settles it, and you dispatch.
+Read it yourself and it lands in a context every later turn of the interview re-reads, so what you read now is paid for
+again on every question after it; a sweep reads it in a context that ends when its report does.
+
+**Several sweeps run at once, one subject each**, so two questions of fact never queue behind one another. Send each as
+soon as its subject is clear, and **send it even where dispatching makes you wait for the report**: on a host where that
+blocks, the interview serialises — send, wait, ask, send — and the sweep still goes out, because the reading is the cost
+and the waiting only takes time.
+
+**A sweep is handed one subject and owes back the facts and where it found them** — never a view on the design, which is
+the human's to form with you. Whatever general-purpose agent your host offers is what it goes to: this plugin ships no
+sweeper of its own.
+
+Name that subject as you dispatch — the question of fact the sweep is out there to close. **The subject names that
+question and never the next file to open**: a sweep follows the thread itself, however many looks that takes, and comes
+back once the question is closed. You hold it for the rest of the interview and nowhere else: the brief hands the spec
+writer the design rather than the interview's bookkeeping, and the task list carries one task per stage.
 
 - **Test every pending question against that subject.** A question that turns on it — one you cannot answer well without
   what the sweep is out to find — waits for the sweep, and every other question goes into the round now.
@@ -102,6 +128,11 @@ the task list carries one task per stage.
   say what changed and put the decision back to them as a **fork**. An answer carried on a premise that turned out false
   is a decision silently assumed, which is the one thing this stage exists to prevent.
 
+**Where your host offers no agent to sweep with, read inline** and carry that into your **report** as a **hand-off**.
+There is nowhere else for the reading to go, and stalling an interview over a host's configuration strands a human who
+cannot fix it from where they sit. The report is what keeps that honest: reading inline is a fallback the human hears
+about, not a quiet return to reading the repository yourself.
+
 ## The brief
 
 The brief is the whole **hand-off** of stage 1: whoever writes the spec has it and nothing else of the conversation.
@@ -111,7 +142,8 @@ publishes — as `<epic-slug>-brief.md`, so a later run can find the one you lef
 - the idea, and the problem behind it in the user's own terms
 - every decision the grilling settled, each with the grounds it was settled on
 - every **fork** the grilling left open, and that it is the human's to close
-- the artifacts the session landed or touched — glossary entries, ADRs, prior specs, code — by path, never copied in
+- the artifacts the session landed or touched — glossary entries, ADRs, prior specs, code, and every path a **sweep**
+  reported back — by path, never copied in, and it is where the looking happened rather than what the looking found
 - every **claim** the design rests on that the session never checked, each with the path that would settle it — a fact
   the human handed you, a precedent you took to generalise, a tool you took to have a feature
 

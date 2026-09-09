@@ -90,53 +90,53 @@ it was doing and dropping what it now says wrongly. Everything else is addition.
 Files: `plugin/skills/refine/SKILL.md`. Decisions D1 to D8 — D5a and D6a to D6c among them — with D9a, D18 and D19, in
 `docs/specs/the-interview-stops-reading/spec.md`.
 
-- [ ] Every snippet being replaced was confirmed present in the current source **before** editing, and any mismatch was
+- [x] Every snippet being replaced was confirmed present in the current source **before** editing, and any mismatch was
       reported rather than guessed around.
-- [ ] The orchestrator settles a mechanical question for itself and sends a thread out to a sweep, with the distinction
+- [x] The orchestrator settles a mechanical question for itself and sends a thread out to a sweep, with the distinction
       stated rather than left to judgement (D1).
-- [ ] **No call count or turn count appears** as the test — a number in prose is advisory, and the observed run issued
+- [x] **No call count or turn count appears** as the test — a number in prose is advisory, and the observed run issued
       single calls carrying six subcommands each (D1).
-- [ ] The rule binds for the whole run, not stage 1 alone, and reading that checks what a writer reported is permitted
+- [x] The rule binds for the whole run, not stage 1 alone, and reading that checks what a writer reported is permitted
       by it (D2).
-- [ ] The rule reaches the tree, the forge and the web alike, on one test (D3).
-- [ ] **One wording per shared rule, bounded**: the bolded **test clause** reads identically to the one landed in
+- [x] The rule reaches the tree, the forge and the web alike, on one test (D3).
+- [x] **One wording per shared rule, bounded**: the bolded **test clause** reads identically to the one landed in
       `plugin/skills/build/SKILL.md` by ticket 01 — copied from that file, not reconstructed. The examples and the
       edges around it are this skill's own (D2).
-- [ ] **The test is stated here in full** — a single look, and a thread is not one — because the glossary entry carrying
+- [x] **The test is stated here in full** — a single look, and a thread is not one — because the glossary entry carrying
       it does not ship (D1, D2).
-- [ ] **"Stage 1 is yours and nobody else's" is narrowed to the conversation and the decisions**, and the enumeration of
+- [x] **"Stage 1 is yours and nobody else's" is narrowed to the conversation and the decisions**, and the enumeration of
       what the orchestrator does — "grill the idea, write the brief, dispatch the two writers" — names the sweeps too,
       so neither reads as saying the interview dispatches nothing (D5a).
-- [ ] **The narrowed sentence carries its own exclusion, in the same sentence**: what goes out is fact-finding and never
+- [x] **The narrowed sentence carries its own exclusion, in the same sentence**: what goes out is fact-finding and never
       the interview, which stays the orchestrator's with the human in the room (D5a). **This is the worse of the two
       dangerous misreadings in this change** — the other is D4's.
-- [ ] Nothing anywhere reads as licence to dispatch an agent to run the grilling, and the existing rule that a missing
+- [x] Nothing anywhere reads as licence to dispatch an agent to run the grilling, and the existing rule that a missing
       interview skill stops the run rather than improvising one is untouched (D5a).
-- [ ] **"Dispatching a sweep never holds up the interview" is narrowed rather than deleted or left verbatim** — it says
+- [x] **"Dispatching a sweep never holds up the interview" is narrowed rather than deleted or left verbatim** — it says
       that a sweep never holds up the questions it does not touch, and this file owns the wall-clock case openly (D6c).
-- [ ] **The brief's artifact list carries the artifacts a sweep named**, stated as where the looking happened rather
+- [x] **The brief's artifact list carries the artifacts a sweep named**, stated as where the looking happened rather
       than what it found, so the next ticket's reading bar does not shrink as the interview stops reading (D9a).
-- [ ] The rule does **not** read as forbidding the **brief**, or the glossary entries and ADRs stage 1 lands — the
+- [x] The rule does **not** read as forbidding the **brief**, or the glossary entries and ADRs stage 1 lands — the
       delivery skill's read-only and never-fix edges are not carried over (D4). **This is the single most dangerous
       misreading in the change.**
-- [ ] The Sweeps section states when to send a sweep out, as a condition the orchestrator tests rather than a permission
+- [x] The Sweeps section states when to send a sweep out, as a condition the orchestrator tests rather than a permission
       (D5).
-- [ ] The section states what a sweep is handed and what it must report back, and names no agent (D6).
-- [ ] **The subject names the thread-closing question of fact, not the next file to open** (D6a).
-- [ ] **Where no sweep can be dispatched, the interview says so and reads inline**, and the run's report carries that as
+- [x] The section states what a sweep is handed and what it must report back, and names no agent (D6).
+- [x] **The subject names the thread-closing question of fact, not the next file to open** (D6a).
+- [x] **Where no sweep can be dispatched, the interview says so and reads inline**, and the run's report carries that as
       a hand-off. It does not stop, and it does not silently ignore the rule (D6b).
-- [ ] More than one sweep may be in flight, one subject each (D7).
-- [ ] **A sweep still goes out where the interview has to wait on it**, and that case is plainly not the read-inline
+- [x] More than one sweep may be in flight, one subject each (D7).
+- [x] **A sweep still goes out where the interview has to wait on it**, and that case is plainly not the read-inline
       one: the reading is what costs and the waiting only costs time (D6c).
-- [ ] **The four existing Sweeps bullets survive** — the subject test, the empty round, the landed sweep releasing its
+- [x] **The four existing Sweeps bullets survive** — the subject test, the empty round, the landed sweep releasing its
       subject, and the contradicted decision reopening as a **fork** — and the new text sits alongside them.
-- [ ] **The existing clause carving out how a question reaches the human survives**, and stage 1 still delegates the
+- [x] **The existing clause carving out how a question reaches the human survives**, and stage 1 still delegates the
       interview in one bullet.
-- [ ] The trigger and the non-blocking property do not read as contradictory: a reader meeting both must not conclude
+- [x] The trigger and the non-blocking property do not read as contradictory: a reader meeting both must not conclude
       the interview stalls.
-- [ ] The sweep's subject is still written to neither the brief nor the task list, and no task is created per sweep.
-- [ ] Interview format and pacing are still delegated to the two interview skills.
-- [ ] Prose is cut only where the new prose makes it redundant; nothing still doing work is removed (D18).
-- [ ] Register holds: load-bearing bold, no hedging, second person, "you are done when…" (D19).
-- [ ] The file's prevailing column width is matched — 120 **characters**, not bytes.
-- [ ] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
+- [x] The sweep's subject is still written to neither the brief nor the task list, and no task is created per sweep.
+- [x] Interview format and pacing are still delegated to the two interview skills.
+- [x] Prose is cut only where the new prose makes it redundant; nothing still doing work is removed (D18).
+- [x] Register holds: load-bearing bold, no hedging, second person, "you are done when…" (D19).
+- [x] The file's prevailing column width is matched — 120 **characters**, not bytes.
+- [x] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
