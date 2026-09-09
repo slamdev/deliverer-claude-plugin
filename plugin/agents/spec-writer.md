@@ -52,8 +52,13 @@ beside it.
 4. **Sketch the seams** the feature gets tested at, and the **prior art** beside them — the tests this codebase already
    has for the area. Prefer an existing seam to a new one, and the highest seam to a lower one; the fewer seams across
    the codebase the better, and one is ideal. Where a new seam is unavoidable, propose it at the highest point it can
-   sit and carry it to your report — nobody here approves it, so it reaches the human through you. You are done when
-   every module this feature touches has a seam it can be tested at, each marked as existing or newly proposed.
+   sit and carry it to your report — nobody here approves it, so it reaches the human through you. **A test's name is
+   not its coverage**: what an existing test covers is what its body asserts, so open the test and read the assertions
+   before you write down what it already holds. Step 2's bar is keyed to modules and reaches no test's body, so this
+   read happens here. Prior art worth naming is named — an implementer needs to know what already exists — and a
+   **claim** about coverage you have not read out of a body is one you leave out. You are done when every module this
+   feature touches has a seam it can be tested at, each marked as existing or newly proposed, and every statement of
+   what an existing test covers was read out of that test's body.
 5. **Write the spec to the template below and publish it** where the project's conventions put a spec, named from the
    epic's slug so two epics never collide, and carrying the triage label those conventions name for work ready for an
    agent — where the project names no vocabulary, no label is owed. You are done when the published spec carries that

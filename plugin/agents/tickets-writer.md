@@ -54,9 +54,15 @@ renumbering the set.
    number, the template's `#` line is the issue's own title, and the platform's own parent, blocking and label
    mechanisms replace the **Spec**, **Blocked by** and **Status** lines where it has them — the **Spec** line only where
    that mechanism can point at the spec itself, since a spec published as a file is not something a parent issue can
-   name. The spec and any parent issue stay exactly as you found them: what you publish is new tickets beside them. You
-   are done when every slice from step 3 carries exactly one published ticket, and every blocking edge names a published
-   one.
+   name. The spec and any parent issue stay exactly as you found them: what you publish is new tickets beside them. The
+   spec's testing decisions arrive as **claim**s, and an acceptance criterion restating one asserts it again with more
+   authority than it was made with: where a criterion says what an existing test already covers, open that test and read
+   its body first, and write what its assertions say rather than what its name suggests. Step 2's bar is keyed to the
+   modules a slice cuts through and reaches no test's body, so this read happens here. Coverage an implementer is told
+   to extend is worth naming — write the coverage you read, and where you have not read it, the criterion states what
+   the slice must make true instead. You are done when every slice from step 3 carries exactly one published ticket,
+   every blocking edge names a published one, and every criterion asserting what an existing test covers was read out of
+   that test's body.
 5. **Report**, as below.
 
 ## Tracer bullets

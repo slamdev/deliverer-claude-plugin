@@ -40,24 +40,24 @@ puts the bar pages away from the moment of restatement.
 Files: `plugin/agents/spec-writer.md`, `plugin/agents/tickets-writer.md`. Decision D23, bounded by D10 and D24, in
 `docs/specs/the-interview-stops-reading/spec.md`.
 
-- [ ] Every snippet being replaced was confirmed present in the current source **before** editing, and any mismatch was
+- [x] Every snippet being replaced was confirmed present in the current source **before** editing, and any mismatch was
       reported rather than guessed around.
-- [ ] The spec writer states that a claim about what an existing test covers is settled by **reading the test body**,
+- [x] The spec writer states that a claim about what an existing test covers is settled by **reading the test body**,
       in the step that sketches the seams and the prior art beside them (D23).
-- [ ] The tickets writer states the same bar for the coverage claims it inherits from the spec, **in the step that
+- [x] The tickets writer states the same bar for the coverage claims it inherits from the spec, **in the step that
       writes the acceptance criteria** — which is the publishing step, where each slice meets the ticket template. Not
       the drafting step, which writes no criteria; not a preamble; not an intake filter (D23).
-- [ ] Both steps were read before the bar was placed, and the placement matches what each step's own text says it does
+- [x] Both steps were read before the bar was placed, and the placement matches what each step's own text says it does
       (D23).
-- [ ] Coverage claims are **not** forbidden — the bar is on their evidence, not on making them (D23).
-- [ ] The bar names what a read settles: what the test asserts, not what its name suggests it asserts.
-- [ ] **The read happens in the step the bar sits in.** Having read the modules a slice cuts through — ticket 03's
+- [x] Coverage claims are **not** forbidden — the bar is on their evidence, not on making them (D23).
+- [x] The bar names what a read settles: what the test asserts, not what its name suggests it asserts.
+- [x] **The read happens in the step the bar sits in.** Having read the modules a slice cuts through — ticket 03's
       step-2 stopping point — does not discharge it, because a test's body is no part of that bar, and nothing here
       reads as contradicting it (D9, D23).
-- [ ] Neither bar weakens paths rather than contents or a writer's first-hand read of the repository (D10).
-- [ ] **No verification pass, no re-check of a landed claim, and no second agent** (D24).
-- [ ] The `model` and `effort` frontmatter of both agents is **unchanged** (D14).
-- [ ] Register holds: load-bearing bold, no hedging, second person, "you are done when…" (D19).
-- [ ] Each file's prevailing column width is matched — 120 **characters**, not bytes.
-- [ ] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
-- [ ] Nothing from the observed repository — its name, paths, domain or the idea it refined — appears in any edit.
+- [x] Neither bar weakens paths rather than contents or a writer's first-hand read of the repository (D10).
+- [x] **No verification pass, no re-check of a landed claim, and no second agent** (D24).
+- [x] The `model` and `effort` frontmatter of both agents is **unchanged** (D14).
+- [x] Register holds: load-bearing bold, no hedging, second person, "you are done when…" (D19).
+- [x] Each file's prevailing column width is matched — 120 **characters**, not bytes.
+- [x] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
+- [x] Nothing from the observed repository — its name, paths, domain or the idea it refined — appears in any edit.
