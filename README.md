@@ -40,7 +40,9 @@ You are needed for the conversation at the start and the merge at the end. Every
 - **Claude Code**, and a Claude subscription or API credentials
 - **two settings in Claude Code itself** — the todo tools on, the experimental agent teams off (see [Claude Code's own
   settings](#claude-codes-own-settings)). Without the first a run has no task list to report its progress on; with the
-  second its stages stop being dispatched one at a time
+  second an epic's stages stop being dispatched one at a time. Fact-finding is the one thing meant to overlap: a
+  refinement's interview sends its questions of fact out to be answered beside the conversation, several at once, and
+  that is by design rather than a setting gone wrong
 - **Node.js** 22.18+ or 23.6+, and **npm**, on your `PATH`
 - a **git repository with a remote**, and the CLI for your forge authenticated (`gh` for GitHub, `glab` for GitLab) —
   the plugin works through change requests, so it has to be able to open and comment on them
@@ -237,21 +239,27 @@ usual case, the observation draws on the same account your run does, so on a sub
 compete for the same rate limit; where it names another identity, that is the one the observation spends on, and the
 debrief says so. There is no back-off. It makes two kinds of call:
 
-- **One per dispatch, on a cheap tier**, the moment that dispatch finishes. A dispatch is one agent your run sent off
-  to do one stage's work; the refinements measured here made three or four of them and the deliveries nine to fifteen.
-  Each of those calls reads that one agent's own record — the part of a run nothing else can see, since a delivery's
-  per-dispatch records outrun any context window — and writes a short note.
+- **One per dispatch, on a cheap tier**, the moment that dispatch finishes. A dispatch is one agent your run sent off:
+  one stage's work, or one question of fact a refinement's interview sent out to be answered — either kind counts, and
+  either kind gets a call. The refinements measured here made three or four dispatches and the deliveries nine to
+  fifteen, none of them fact-finding. Each of those calls reads that one agent's own record — the part of a run nothing
+  else can see, since a delivery's per-dispatch records outrun any context window — and writes a short note.
 - **One at the end, over the whole run**, on a long-context model, which reads the run's shape and all of those notes
   together and writes the defects.
 
 **What that came to when it was measured.** Both kinds of call together, per run: **$3.18 to $3.48 for a refinement**
 and **about $6.70 for a delivery**. Read that as an order of magnitude and not a price list — it is four measurements,
-all of them on one machine, over records of runs already finished: three readings of two refinements, and one of a
-single thirteen-dispatch delivery. Of it, the per-dispatch notes are **about ten cents a dispatch** — $0.39 on a
-four-dispatch refinement and $1.30 on the thirteen-dispatch delivery — and the one reading at the end is the rest of
-it, and the larger half by a distance. So the figure follows **how many dispatches your run made, not how long it
-took**: a ten-hour delivery costs no more to observe than a two-hour one, and observing a whole delivery is a
-dozen-odd cheap calls and one expensive one against the hundreds of model calls the delivery itself makes.
+all of them on one machine, over records of runs already finished: three readings of two refinements, neither of which
+sent any fact-finding out, and one of a single thirteen-dispatch delivery. Of it, the per-dispatch notes are **about ten
+cents a dispatch** — $0.39 on a four-dispatch refinement and $1.30 on the thirteen-dispatch delivery — and the one
+reading at the end is the rest of it, and the larger half by a distance. So the figure follows **how many dispatches
+your run made, not how long it took**: a ten-hour delivery costs no more to observe than a two-hour one, and observing
+a whole delivery is a dozen-odd cheap calls and one expensive one against the hundreds of model calls the delivery
+itself makes.
+
+That cuts the other way as well. A refinement's count now includes the questions of fact its interview sends out — one
+dispatch, and so one cheap call, each — so it is more to observe than the two refinements above were. How much more,
+nobody has measured yet, and how many a refinement sends is that run's own rather than a number promised here.
 
 Your own figures will differ — with the size of your epic, with how many stages a run needed, and with what your
 account is charged. Treat them as an order of magnitude and read your own debrief for what your run actually cost.
@@ -282,7 +290,8 @@ change is high-stakes, turn it up.
 Observation spends models too, on the identity your **environment file** names — see
 [Observation](#observation). Most of it is the one reading at the end of a run: measured all in at $3.18 to $3.48 for a
 refinement and about $6.70 for a delivery, on four readings of three runs, with one cheap-tier call per dispatch beside
-it.
+it. The refinement figure is from runs that sent no questions of fact out; each one a refinement sends is a dispatch
+too, so a refinement now sits above it by however many it sent.
 Turning it off is one setting.
 
 ## Troubleshooting
@@ -306,8 +315,10 @@ why), or nothing could start it at all (the plugin looks incompletely installed 
 `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` (see [Claude Code's own settings](#claude-codes-own-settings)) and start a new
 session.
 
-**Stages run over each other, or a dispatch never reports back** — the experimental agent teams feature is on, and it
-changes how a session's agents are run. Set `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=0` and start a new session.
+**An epic's stages run over each other, or a dispatch never reports back** — the experimental agent teams feature is on,
+and it changes how a session's agents are run. Set `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=0` and start a new session.
+Several agents at once during a `/deliverer:refine` interview is not this: a refinement sends its questions of fact out
+to be answered beside the conversation, on purpose, and no setting of yours is behind it.
 
 **`/deliverer:refine` stops and says a skill is missing** — `mattpocock-skills` is not installed or not enabled. Check
 `/plugin`.

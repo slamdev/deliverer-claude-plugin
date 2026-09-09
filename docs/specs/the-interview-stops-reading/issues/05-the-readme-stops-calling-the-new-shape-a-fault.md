@@ -37,21 +37,21 @@ forbidden from coming back to edit this file.
 Files: `README.md`, and nothing else. Decision D25, with D14 and D19, in
 `docs/specs/the-interview-stops-reading/spec.md`.
 
-- [ ] Every snippet being replaced was confirmed present in the current source **before** editing, and any mismatch was
+- [x] Every snippet being replaced was confirmed present in the current source **before** editing, and any mismatch was
       reported rather than guessed around.
-- [ ] The requirements list no longer implies that a refinement dispatches one agent at a time for the whole of a run,
+- [x] The requirements list no longer implies that a refinement dispatches one agent at a time for the whole of a run,
       and still requires the host setting it requires today, for the reason it requires it (D25).
-- [ ] The troubleshooting entry **distinguishes an epic's stages overlapping from fact-finding beside an interview**, so
+- [x] The troubleshooting entry **distinguishes an epic's stages overlapping from fact-finding beside an interview**, so
       the symptom still names a real fault and no longer names an expected one (D25).
-- [ ] **The delivery half of the promise is untouched** — one stage, one dispatch, reported before the next starts.
-- [ ] The observation section says that a refinement's **dispatch** count now includes its fact-finding, and that what
+- [x] **The delivery half of the promise is untouched** — one stage, one dispatch, reported before the next starts.
+- [x] The observation section says that a refinement's **dispatch** count now includes its fact-finding, and that what
       observing it costs follows that count (D25).
-- [ ] **No new dollar figure is stated, derived or otherwise**, and the figures already there keep the runs they were
+- [x] **No new dollar figure is stated, derived or otherwise**, and the figures already there keep the runs they were
       measured on (D25).
-- [ ] Nothing here promises how many sweeps a refinement makes: the number is a run's own and this epic sets no target.
-- [ ] The `Using it` walkthrough still reads as the same three steps a user takes, and stage 1 is still the one that
+- [x] Nothing here promises how many sweeps a refinement makes: the number is a run's own and this epic sets no target.
+- [x] The `Using it` walkthrough still reads as the same three steps a user takes, and stage 1 is still the one that
       needs them in the room.
-- [ ] No model or effort tier, and no **ceiling**, is mentioned as changing, because none does (D14).
-- [ ] Register holds: this file is written for a human rather than for a model, and its register is preserved (D19).
-- [ ] The file's prevailing column width is matched — 120 **characters**, not bytes.
-- [ ] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
+- [x] No model or effort tier, and no **ceiling**, is mentioned as changing, because none does (D14).
+- [x] Register holds: this file is written for a human rather than for a model, and its register is preserved (D19).
+- [x] The file's prevailing column width is matched — 120 **characters**, not bytes.
+- [x] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
