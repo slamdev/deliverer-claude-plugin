@@ -70,52 +70,52 @@ itself.
 Files: `plugin/agents/spec-writer.md`, `plugin/agents/tickets-writer.md`, and `CONTRIBUTING.md` — **no other agent
 file**. Decisions D9, D9a, D10, D12, D14, D16, D19 and D26 in `docs/specs/the-interview-stops-reading/spec.md`.
 
-- [ ] Every snippet being replaced was confirmed present in the current source **before** editing, and any mismatch was
+- [x] Every snippet being replaced was confirmed present in the current source **before** editing, and any mismatch was
       reported rather than guessed around.
-- [ ] The spec writer's step 2 states its bar **keyed on reading alone**: every path the brief names has been opened,
+- [x] The spec writer's step 2 states its bar **keyed on reading alone**: every path the brief names has been opened,
       along with the ADRs that touch the area, and any module the work turns out to reach beyond them. **It says nothing
       about claims** — step 3 owns those, and the brief already carries the path beside each one, so a claims-shaped bar
       would be true before the step began (D9).
-- [ ] The tickets writer's step 2 states its bar **keyed on reading alone**: every module the spec's implementation
+- [x] The tickets writer's step 2 states its bar **keyed on reading alone**: every module the spec's implementation
       decisions name has been read well enough to size a ticket against it, and any the slices turn out to cut through
       beyond them. **It names no slices and no user stories**, and step 3's existing coverage bar is untouched (D9).
-- [ ] **Each bar keys to what the step was handed rather than to what it decides** — the brief's paths, the spec's named
+- [x] **Each bar keys to what the step was handed rather than to what it decides** — the brief's paths, the spec's named
       modules — and **not** to "every module the document will touch", which the writer defines as it goes (D9).
-- [ ] **Neither bar carries a number**, and each carries the open clause that keeps its floor from becoming a ceiling
+- [x] **Neither bar carries a number**, and each carries the open clause that keeps its floor from becoming a ceiling
       (D9).
-- [ ] **Each file says once that the bar ends its step and not the writer's reading** — a later step that has to open a
+- [x] **Each file says once that the bar ends its step and not the writer's reading** — a later step that has to open a
       file still opens it, which is what keeps this bar and ticket 04's coverage bar from reading as a contradiction
       (D9).
-- [ ] Neither bar weakens paths-rather-than-contents or a writer's first-hand read of the repository, and neither reads
+- [x] Neither bar weakens paths-rather-than-contents or a writer's first-hand read of the repository, and neither reads
       as licence to take something on trust (D10).
-- [ ] **No parallel-lookup line, and nothing about batching, is added to any agent** — not the two writers, not the four
+- [x] **No parallel-lookup line, and nothing about batching, is added to any agent** — not the two writers, not the four
       delivery agents, not `code-reviewer.md`. The only agent files this ticket touches are the two writers, and the
       only thing it adds to them is the step-2 bar (D26).
-- [ ] `change-request-creator.md`'s "never a batch" and `assumption-reviewer.md`'s "one at a time" are **unchanged**,
+- [x] `change-request-creator.md`'s "never a batch" and `assumption-reviewer.md`'s "one at a time" are **unchanged**,
       and neither file is opened for an edit (D26).
-- [ ] The `model` and `effort` frontmatter of every agent is **unchanged** (D14).
-- [ ] `CONTRIBUTING.md` carries a **`Tallying a run`** subsection, straight after `Replaying a run's records`, opening
+- [x] The `model` and `effort` frontmatter of every agent is **unchanged** (D14).
+- [x] `CONTRIBUTING.md` carries a **`Tallying a run`** subsection, straight after `Replaying a run's records`, opening
       by saying plainly that it measures and gates nothing so nobody reads it as a check (D16).
-- [ ] It reports, per agent, model turns, peak context and tokens by kind, over one run (D16).
-- [ ] **It reads the trace `distil.ts` writes**, and reimplements nothing: turns and tokens by kind are the trace's own
+- [x] It reports, per agent, model turns, peak context and tokens by kind, over one run (D16).
+- [x] **It reads the trace `distil.ts` writes**, and reimplements nothing: turns and tokens by kind are the trace's own
       per-dispatch rows, `#<ordinal> <agent>`, which `records.ts` has already deduplicated and already attributed to an
       agent (D16).
-- [ ] **Peak context is the only figure the guide computes**: the largest `in + cache-write + cache-read` among a
+- [x] **Peak context is the only figure the guide computes**: the largest `in + cache-write + cache-read` among a
       dispatch slice's turn lines. The guide says why it needs no dedup — the placeholder problem affects
       `output_tokens` alone, and every record of one response repeats the same input and cache figures (D16).
-- [ ] **No `jq` over raw session records, and no reading of `agent-<id>.meta.json` sidecars** — both are work the trace
+- [x] **No `jq` over raw session records, and no reading of `agent-<id>.meta.json` sidecars** — both are work the trace
       has already done, and a second path through the records is `records.ts` rewritten in shell, waiting to drift from
       the figures the plugin itself reports (D16).
-- [ ] The guide describes the trace's **lines** rather than its legend, which announces `req <id>` where the renderer
+- [x] The guide describes the trace's **lines** rather than its legend, which announces `req <id>` where the renderer
       writes a turn number, its request id and its four token figures. Correcting the legend is a hand-off, not this
       ticket.
-- [ ] **What the observation itself cost is reported beside the run's**, read off the debrief's own header — every sweep
+- [x] **What the observation itself cost is reported beside the run's**, read off the debrief's own header — every sweep
       is another graded dispatch, and that spend sits outside both the **ceiling** and the run's own figures (D16).
-- [ ] **No script is committed** — nothing outside `plugin/` ships and CI checks neither (D16).
-- [ ] **`CONTRIBUTING.md`'s own use of `mechanical` in the *asserted by a test* sense says what it means instead**,
+- [x] **No script is committed** — nothing outside `plugin/` ships and CI checks neither (D16).
+- [x] **`CONTRIBUTING.md`'s own use of `mechanical` in the *asserted by a test* sense says what it means instead**,
       since this ticket edits that file and ticket 01 defines the word (D12). The glossary's own use lands with ticket
       01.
-- [ ] The **spend** reported is labelled with the provider that served it, as the glossary requires.
-- [ ] Register holds: load-bearing bold, no hedging, second person, "you are done when…" (D19).
-- [ ] Each file's prevailing column width is matched — 120 **characters**, not bytes.
-- [ ] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
+- [x] The **spend** reported is labelled with the provider that served it, as the glossary requires.
+- [x] Register holds: load-bearing bold, no hedging, second person, "you are done when…" (D19).
+- [x] Each file's prevailing column width is matched — 120 **characters**, not bytes.
+- [x] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.

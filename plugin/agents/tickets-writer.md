@@ -34,7 +34,11 @@ renumbering the set.
    **assumption**.
 2. **Explore the codebase** for the state of the code the slices cut through, reading the project's glossary and the
    ADRs that touch the area first: ticket titles and bodies use the glossary's vocabulary. Look for **prefactoring**
-   that makes the slices smaller — make the change easy, then make the easy change.
+   that makes the slices smaller — make the change easy, then make the easy change. You are done when every module the
+   spec's implementation decisions name has been read well enough to size a ticket against it, and any module the work
+   turns out to cut through beyond them — **the spec's modules are a floor and never a ceiling**, so one it never names
+   is still read where the work reaches it. **A bar ends its step and never your reading**: a later step that has to
+   open a file still opens it, and what you write about a file is what you read in it.
 3. **Draft the slices** to the rules below, and give each its **blocking edges** — the tickets that must complete before
    it can start, or nothing, which means it can start immediately. Prefactoring goes first, in tickets of its own. You
    are done when every slice answers to every rule below, every user story the spec lists is covered by at least one

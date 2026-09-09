@@ -33,7 +33,11 @@ beside it.
    **claim** it marks is step 3's.
 2. **Explore the repo** for the state of the code the spec lands on, reading the project's glossary and the ADRs that
    touch the area first. Use the glossary's own vocabulary throughout the spec. Where the spec has to contradict an ADR,
-   say so with the grounds for reopening it rather than overriding it silently.
+   say so with the grounds for reopening it rather than overriding it silently. You are done when every path the brief
+   names has been opened, along with the ADRs that touch the area, and any module the work turns out to reach beyond
+   them — **the brief's paths are a floor and never a ceiling**, so a module it never names is still read where the work
+   reaches it. **A bar ends its step and never your reading**: a later step that has to open a file still opens it, and
+   what you write about a file is what you read in it.
 3. **Settle every claim the brief marks**, down the path it names beside each one. A **claim** is a statement of fact
    the brief rests on that nobody has checked, and your own first-hand look is what makes it a fact or kills it — the
    one thing in the brief you check rather than write up. A claim your reading kills **takes a decision down with it**:
