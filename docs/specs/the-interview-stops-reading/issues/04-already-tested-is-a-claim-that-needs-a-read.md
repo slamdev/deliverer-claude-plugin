@@ -1,4 +1,4 @@
-# 05 — "Already tested" is a claim that needs a read
+# 04 — "Already tested" is a claim that needs a read
 
 Status: ready-for-agent
 
@@ -29,9 +29,13 @@ whose job is the seams and the **prior art** beside them — the tests this code
 bar goes there, at the point of authorship. The tickets writer has **no testing step at all**: it reads the spec,
 explores, drafts the slices, publishes. It does not author coverage claims, it *restates* them, turning the spec's
 table into acceptance criteria — and that restatement is the observed failure, where a claim that arrived wrong was
-repeated with more authority than it was made with. So its bar goes in the **drafting** step, on criteria that assert
-what an existing test already covers. Filtering on intake in step 1 was rejected: it puts the bar pages away from the
-moment of restatement.
+repeated with more authority than it was made with.
+
+**So its bar goes in the step that writes those criteria, which is the publishing step and not the drafting one.** Read
+both before choosing: the drafting step drafts slices and their **blocking edges** and says nothing about criteria,
+while the publishing step is where each slice is written to the ticket template that carries them. The bar sits where
+the claim is made or it is decoration. Filtering on intake in step 1 was rejected for the same reason, and more so: it
+puts the bar pages away from the moment of restatement.
 
 Files: `plugin/agents/spec-writer.md`, `plugin/agents/tickets-writer.md`. Decision D23, bounded by D10 and D24, in
 `docs/specs/the-interview-stops-reading/spec.md`.
@@ -41,7 +45,10 @@ Files: `plugin/agents/spec-writer.md`, `plugin/agents/tickets-writer.md`. Decisi
 - [ ] The spec writer states that a claim about what an existing test covers is settled by **reading the test body**,
       in the step that sketches the seams and the prior art beside them (D23).
 - [ ] The tickets writer states the same bar for the coverage claims it inherits from the spec, **in the step that
-      drafts the slices and their criteria** — not as a preamble and not as an intake filter (D23).
+      writes the acceptance criteria** — which is the publishing step, where each slice meets the ticket template. Not
+      the drafting step, which writes no criteria; not a preamble; not an intake filter (D23).
+- [ ] Both steps were read before the bar was placed, and the placement matches what each step's own text says it does
+      (D23).
 - [ ] Coverage claims are **not** forbidden — the bar is on their evidence, not on making them (D23).
 - [ ] The bar names what a read settles: what the test asserts, not what its name suggests it asserts.
 - [ ] **The read happens in the step the bar sits in.** Having read the modules a slice cuts through — ticket 03's

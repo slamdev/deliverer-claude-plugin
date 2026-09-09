@@ -64,6 +64,14 @@ in flight at once, one subject each, so moving the reading out need not buy spen
 makes the interview wait for one regardless, the sweep still goes out, because the reading is what costs and the waiting
 is not.
 
+**And the skill's own opening stops contradicting the rule.** Two sentences in the first three paragraphs say the
+interview dispatches nothing: "Stage 1 is yours and nobody else's", read against "Every stage after it is one agent
+dispatch", and an enumeration of the orchestrator's own work that ends at the two **writer**s. A rule added further down
+the file loses to them — which is the likeliest reason the interview skill's own **imperative** to dispatch a sub-agent
+for a fact produced no **sweep** at all. Both are narrowed, and the narrowed ownership sentence carries its own limit in
+the same breath: the conversation and the decisions are the orchestrator's and never an agent's, and what goes out is
+fact-finding rather than the interview.
+
 **Each writer's exploration gains the done-bar it is missing.** Step 2 of `spec-writer` and of `tickets-writer` is the
 only **exploration** step in either document that states no completion condition, and it is the step that ran longest.
 The bar is coverage-shaped, matching how their neighbouring steps already close.
@@ -73,22 +81,32 @@ report step state none either. The reading step is self-limiting — "read it in
 true of exploration steps and of nothing wider. It is recorded rather than quietly fixed because it is an instance of
 exactly what this change exists to prevent: a claim asserted from a plausible reading rather than from a check.)*
 
-**Six of the seven agents are told to issue independent reads together.** One sentence, six files, and it says what it
-does not reach: two of the six forbid batching what they write.
+**And the README stops calling the new shape a fault.** It makes stages dispatched one at a time a requirement, names
+*stages running over each other* as the symptom of a host setting left wrong, and prices an observation off a
+**dispatch** count measured when a refinement made three or four. After this change a user watches several sweeps run
+inside the interview and pays to have each one graded, so the document they check first is the document that has to say
+so.
 
 And the words are pinned down: **mechanical** is bolded three times in `build/SKILL.md` and stated in ADR 0015 without
 ever being defined, so it enters the glossary; and ADR 0015's "read-only" is amended to say what it is read-only over,
 since a refining orchestrator authors the brief and the glossary entries and ADRs a refinement lands.
 
-**A claim about code carries the ref it was read at, and no agent's context spans two refs.** The observed run read a
-feature branch and wrote `main`'s names over it. Two things let it: `spec-writer` was **dispatched twice** — once with
-the working tree on the branch, once nineteen minutes later on `main` — so one context held two incompatible views of
-the code; and nothing in a refinement's output records which ref its `file:line` claims were read at, so nothing could
-catch the mismatch afterwards. Both are closed here.
-
 **And "already tested" is a claim that needs a read.** Three of the wrong-shape claims assert coverage a test file does
 not have, inferred from its name and never checked against its body. The bar is that a **claim** about what an existing
 test covers is settled by reading the test, or it is not made.
+
+**That is one of the eleven wrong claims' two causes and not both.** The other — a `spec-writer` **dispatched twice**,
+nineteen minutes apart, with the working tree on a different ref each time, so one context held two incompatible views
+of the code and nothing in the output recorded which ref anything was read at — was scoped into this change and then
+scoped back out of it. The evidence for it stays recorded below under *What the run got wrong*; the reasons it is not
+fixed here are in Out of Scope, and the fix is a **hand-off**.
+
+**So three of the eleven are closed here and eight are not**, and the arithmetic is written out because a spec that
+fixes three of eleven must not read as one that fixes eleven. Four are the wrong-location claims the withdrawn decisions
+would have caught. The other four are wrong-shape claims that answer to neither cause — a class described three times as
+something it is not, and its like — and **nothing in this change or in the version of it that carried those decisions
+would have caught those**: they were never in scope, and the bars here sit where a **claim** is made rather than over
+every claim made.
 
 ## User Stories
 
@@ -121,16 +139,16 @@ test covers is settled by reading the test, or it is not made.
     do not queue behind each other.
 15. As a refining orchestrator, I want the target agent left unnamed, so that the rule holds on a host whose agents are
     named differently from the one it was written on.
-16. As a **spec writer**, I want a stated bar for when exploration is done, so that the one step in my instructions
-    without a completion condition stops being the one that runs longest.
-17. As a spec writer, I want that bar keyed to the brief's **claim**s and the modules the spec touches, so that it
-    measures coverage rather than counting calls.
+16. As a **spec writer**, I want a stated bar for when exploration is done, so that the one **exploration** step in my
+    instructions without a completion condition stops being the one that runs longest.
+17. As a spec writer, I want that bar keyed to the paths the **brief** already names and the ADRs that touch the area,
+    so that what ends my exploring is a set I was handed rather than one I define as I go.
 18. As a spec writer, I want to keep meeting the repository first-hand, so that the bar bounds my reading without
     weakening what makes my reading worth anything.
-19. As a **tickets writer**, I want a bar keyed to the spec's **user stories** and the modules the slices cut through,
-    so that it is stated in terms of the inputs I actually hold.
-20. As any dispatched agent, I want to be told to issue independent lookups together, so that lookups that do not
-    depend on each other are not paid for as separate turns over a growing context.
+19. As a **tickets writer**, I want a bar keyed to the modules the **spec**'s implementation decisions name, so that it
+    is stated in terms of the inputs I actually hold — a spec carrying no paths for me to key to.
+20. As either **writer**, I want my bar to keep reading a module it did not name, so that the floor it sets does not
+    become a ceiling.
 21. As a contributor, I want **mechanical** in the glossary, so that a word two skills and an ADR already lean on is
     defined once rather than re-explained per file.
 22. As a contributor, I want ADR 0015 to say what "read-only" is read-only over, so that the next reader does not take
@@ -149,49 +167,60 @@ test covers is settled by reading the test, or it is not made.
     quality trade are never landed as one indistinguishable move.
 29. As a human refining an idea, I want the claims in my **spec** and **ticket**s to be true, so that a cheaper run is
     not one that hands an implementer work built on things that are not there.
-30. As a refining orchestrator, I want the ref every `file:line` claim was read at recorded once, so that a claim
-    outlives the working tree it was read from.
-31. As a refining orchestrator, I want never to resume a **writer** across a changed working tree, so that one agent's
-    context cannot hold two incompatible views of the code.
-32. As a **spec writer**, I want a stated bar for asserting what an existing test covers, so that a class name is not
+30. As a **spec writer**, I want a stated bar for asserting what an existing test covers, so that a class name is not
     mistaken for coverage.
-33. As a **tickets writer**, I want the coverage claims I inherit to carry their evidence, so that an acceptance
+31. As a **tickets writer**, I want the coverage claims I inherit to carry their evidence, so that an acceptance
     criterion never tells an implementer to extend a test that is not there.
-34. As a contributor, I want the eleven wrong claims and their two causes recorded, so that the next reader can check
+32. As a contributor, I want the eleven wrong claims and their two causes recorded, so that the next reader can check
     whether this change would have caught them.
-35. As a human refining an idea, I want fact-finding sent out even where my host makes the interview wait for it, so
+33. As a human refining an idea, I want fact-finding sent out even where my host makes the interview wait for it, so
     that the saving is not abandoned wherever it costs a little patience.
-36. As any dispatched agent, I want the batching instruction to say what it does not reach, so that a rule about reading
-    is never taken as licence to batch what I write.
-37. As a **spec writer**, I want my exploration bar to bound my reading rather than restate a later step's bar, so that
+34. As a **spec writer**, I want my exploration bar to bound my reading rather than restate a later step's bar, so that
     two steps do not close on the same thing.
-38. As a **tickets writer**, I want a bar that ends its own step rather than my reading, so that a later step that has
+35. As a **tickets writer**, I want a bar that ends its own step rather than my reading, so that a later step that has
     to open a test can still open it.
-39. As a contributor, I want the word that names a rote change to keep a word of its own, so that defining one term does
+36. As a contributor, I want the word that names a rote change to keep a word of its own, so that defining one term does
     not quietly empty another definition.
-40. As a contributor, I want what the observation itself cost reported beside the run's, so that **spend** moved out of
+37. As a contributor, I want what the observation itself cost reported beside the run's, so that **spend** moved out of
     band is not read as spend removed.
-41. As a contributor, I want the before-and-after taken and written down rather than intended, so that the bet this
+38. As a contributor, I want the before-and-after taken and written down rather than intended, so that the bet this
     change makes is settled by evidence rather than left to expire.
-42. As a contributor, I want the tally's per-agent figures actually attributed to agents, so that the one number that
+39. As a contributor, I want the tally's per-agent figures actually attributed to agents, so that the one number that
     says whether the interview's context shrank is readable.
+40. As a refining orchestrator, I want the paragraphs that open my instructions not to forbid the fact-finding a later
+    rule requires, so that the cheap path is not overruled by the page before it.
+41. As a refining orchestrator, I want the limit on what I hand out to name the interview itself, so that a permission
+    to send facts out is never read as licence to send the conversation out.
+42. As a human running a refinement, I want to be told that several agents working inside my interview are expected, so
+    that I do not go looking for a host setting that is already right.
+43. As a human running a refinement, I want to be told that what an observation costs follows a **dispatch** count that
+    now includes fact-finding, so that the figure I was given still says something true.
+44. As a **spec writer**, I want the paths a **sweep** looked at recorded in the **brief**, so that my own reading floor
+    does not shrink by exactly as much as the interview's reading did.
+45. As a contributor, I want the number of sweeps a run sent out reported beside the before-and-after figures, so that
+    the one thing this change bets on is measured rather than inferred from the figures around it.
+46. As a contributor, I want it written down that the **observer** does not recognise a sweep as the **run**'s own, so
+    that the instrument this change is judged by is read knowing what it cannot see.
 
 ## Implementation Decisions
 
 ### Modules touched
 
 - **The refinement skill** (`plugin/skills/refine/SKILL.md`) — the mechanical rule, the sweep trigger and contract,
-  sweep concurrency and subject width, the fallback where no sweep can be dispatched, the base ref recorded in the
-  brief, and no writer continued across a moved base ref.
+  sweep concurrency and subject width, and the fallback where no sweep can be dispatched. **Two of its opening
+  sentences** are narrowed, per D5a, and the brief's artifact list carries the paths a sweep named, per D9a.
 - **The delivery skill** (`plugin/skills/build/SKILL.md`) — the shared test clause gains the web, per D3. **Its edges
   are not touched**, per D13.
 - **The spec writer and tickets writer** (`plugin/agents/spec-writer.md`, `plugin/agents/tickets-writer.md`) — a
-  done-bar on step 2 each, the base ref carried into what they publish, and the bar on asserting test coverage.
-- **Six of the seven agents** (`plugin/agents/*.md`, less `code-reviewer`) — the parallel-lookup line, per D11.
-- **The glossary** (`CONTEXT.md`) — a **Mechanical** entry and a **Base ref** entry; the **Orchestrator** entry
-  qualified; the word dropped from **Wide refactor**.
+  done-bar on step 2 each, and the bar on asserting test coverage. **Nothing else in either file**, per D26 — no
+  batching line, and nothing about a ref.
+- **The glossary** (`CONTEXT.md`) — a **Mechanical** entry; the **Orchestrator** entry qualified; the word dropped from
+  **Wide refactor**.
 - **The ADR on the orchestrator's moves** (`docs/adrs/0015-the-orchestrator-forms-no-judgement.md`) — amended.
-- **The contribution guide** (`CONTRIBUTING.md`) — the tally, as its own subsection.
+- **The contribution guide** (`CONTRIBUTING.md`) — the tally, as its own subsection, and its own use of the word the
+  glossary is about to define, per D12.
+- **The user-facing README** (`README.md`) — what a user now sees inside an interview, and what it adds to an
+  observation, per D25.
 - **This spec** (`docs/specs/the-interview-stops-reading/spec.md`) — a dated results section holding the
   before-and-after figures, written by the last slice rather than by an implementer, per D17a.
 
@@ -209,6 +238,15 @@ test covers is settled by reading the test, or it is not made.
   edges — "read only", "never fix" — that D4 rules out for a refining orchestrator. Told to copy it whole, an
   implementer either writes refinement text naming machinery refinement has not got, or diverges and calls the bar met.
   So: the test clause is identical in both skills; the examples and the edges are each skill's own.
+
+  *(Amended 2026-09-09. This called the rule shared while leaving the load-bearing half of D1 — a question that answers
+  **in a single look**, and a thread that is not one — in the refinement skill alone. What `build/SKILL.md` bolds is a
+  noun phrase naming the sources, so copying it verbatim shares the label and not the test. **The test goes into D12's
+  glossary entry**, which is the one document a reader of either skill meets, and the delivery skill keeps its own
+  sentence: a prohibition needs an outlet, and a delivering orchestrator has none — it dispatches only this plugin's own
+  named agents, one at a time, and its edges are read-only and never-fix, so a thread it may not follow would have
+  nowhere to go. `CONTEXT.md` does not ship, so the two skills' shipped prose still differs — deliberately, and for that
+  reason.)*
 - **D3. The rule reaches the tree, the forge and the web alike, in every place it is stated.** One test, applied to any
   source. The observed run's thread-following included two code searches and a change-request read on a second
   repository, and a fetched specification; where the bytes came from does not change whether the interview should be
@@ -237,8 +275,30 @@ test covers is settled by reading the test, or it is not made.
 
 - **D5. The Sweeps section gains the trigger it lacks, stated as a condition.** All four existing bullets govern a
   sweep already in flight. The new one governs sending it: a question of fact the interview cannot settle with one
-  mechanical look goes out. Stated as a condition the orchestrator tests, not a permission it may decline — two
-  existing instructions phrased as permissions produced zero sweeps.
+  mechanical look goes out. Stated as a condition the orchestrator tests rather than a permission it may decline.
+
+  *(Amended 2026-09-09. This closed on "two existing instructions phrased as permissions produced zero sweeps", which is
+  false of the one that matters: the interview skill this stage runs says, in the imperative, "When a frontier question
+  needs a fact from the environment … dispatch a sub-agent to find it; don't ask the user for anything you could look up
+  yourself". It was already an instruction, and it still produced nothing — so softness is not the diagnosis and D5a is.
+  The condition stays, because a condition is the right shape for a rule the orchestrator tests, and not because a
+  permission was the defect. Recorded rather than quietly fixed: it is a claim about another file's register, asserted
+  from what a failed run seemed to imply rather than from reading it.)*
+- **D5a. The two sentences telling the interview to dispatch nothing are narrowed, and the limit rides with them.**
+  `refine/SKILL.md` opens on "**Stage 1 is yours and nobody else's**" immediately beside "Every stage after it is one
+  agent dispatch", and ends its third paragraph on "Yours is the work no agent does: grill the idea, write the brief,
+  dispatch the two writers in order …". Between them they say the interview dispatches nothing and that the two
+  **writer**s are the whole of what this run sends out. Both sit pages above the Sweeps section, and **a rule that
+  contradicts the page above it loses** — which is the mechanism behind the risk D5 is written against, and the evidence
+  for it is that an imperative to sweep already existed upstream and fired nothing. The enumeration gains the sweeps
+  rather than being left to imply a closed list.
+
+  **The narrowed ownership sentence states its own exclusion, in one sentence with the permission.** What stage 1 owns
+  is the conversation and the decisions — never an agent's — and what goes out is fact-finding, never the interview.
+  Split across two sentences or two sections, the permission is one inference from dispatching an agent to conduct the
+  grilling, which is a worse failure than the one this epic exists to fix: the human is in the room for exactly one
+  stage, an agent cannot be in it, and the brief is all that survives of it. **Get this wrong and the change deletes the
+  stage it was written to make cheaper**, which is D4's failure one stage over.
 - **D6. The sweep's contract is stated and its target is not named.** The contract says what a sweep is handed — the
   subject it exists to close — and what it must report back: the facts and where they were found, never a view on the
   design. The agent is deliberately left unnamed, because the plugin ships no sweeper and a host's generic agents are
@@ -265,6 +325,19 @@ test covers is settled by reading the test, or it is not made.
   the reading is what costs, because it lands in a context every later turn re-reads, while the waiting costs only time.
   So the sweep goes out either way, and reading inline stays the answer to the one case it was written for — nowhere to
   send it at all. The wall-clock exposure is recorded rather than resolved: see Further Notes.
+
+  **The section's own opening sentence is narrowed to what it always meant.** "Dispatching a **sweep** never holds up
+  the interview" was written when nothing ever went out, and what it holds is that the questions a sweep does not touch
+  keep moving — which is exactly what the four bullets under it govern. Left verbatim beside this decision, a reader
+  meets it and "send it even where you will wait for it" a few lines apart with nothing on the page to reconcile them.
+  So it says the narrower thing, and this decision owns the clock openly.
+
+  **This revisits the premise of D14 of `docs/specs/one-dispatch-at-a-time/spec.md`**, which left the refinement skill
+  untouched on the grounds that "its sweeps stay non-blocking — a sweep that blocked would stall the interview it exists
+  to keep moving". That decision's deliverable stands untouched: it only ever edited the delivery skill, and one
+  dispatch at a time still binds there. What changes is the reasoning — on a host where a dispatch blocks, a sweep does
+  stall the interview, and it goes out anyway. Named here because a settled decision is reopened explicitly in this
+  repository or not at all.
 - **D7. Several sweeps may be in flight, one subject each.** The section's existing mechanics are already written
   per-subject — a question waits on the subject it turns on, a landed sweep releases that subject and no other — so
   concurrency needs no new rules, only saying that it is allowed. It is also what stops this change buying spend with
@@ -278,11 +351,11 @@ test covers is settled by reading the test, or it is not made.
 
 ### The writers
 
-- **D9. Step 2 of each writer gains a done-bar, and both are keyed on reading alone.** For the spec writer: every module
-  the spec will touch has been read, along with the ADRs that touch the area. For the tickets writer: every module the
-  slices will cut through has been read well enough to size a ticket against it, and nothing on the spec's user-story
-  list points at code the writer has not opened. Both match the shape their neighbouring steps already use, and neither
-  carries a number.
+- **D9. Step 2 of each writer gains a done-bar, keyed on reading alone and on inputs the step cannot move.** For the
+  spec writer: every path the **brief** names has been opened, along with the ADRs that touch the area, and any module
+  the work turns out to reach beyond them. For the tickets writer: every module the **spec**'s implementation decisions
+  name has been read well enough to size a ticket against it, and any the slices turn out to cut through beyond them.
+  Both match the shape their neighbouring steps already use, and neither carries a number.
 
   **A bar ends its step and not the writer's reading**, said once in each file. Both writers have later steps that open
   a file — D23's bar on a coverage claim is one, and it lands in a step after this one — so a bar read as closing the
@@ -302,35 +375,36 @@ test covers is settled by reading the test, or it is not made.
   from step 3's own claims bar. Step 3 keeps sole ownership of claims exactly as step 3 of the tickets writer keeps
   coverage, and both bars now read alike. It is recorded rather than quietly fixed because it is the same failure the
   note above records: a bar asserted from a plausible reading of a file rather than from a check of it.)*
+
+  *(Amended 2026-09-09, a third time, and on the keying rather than the wording. Both bars read "every module the spec
+  **will touch**" and "every module the slices **will cut through**" — sets the writer itself defines as it goes, so
+  each bar was graded by the only party it bounds, and could be called met at any point in either direction. They now
+  key to what the step is handed: the brief is already required to carry the artifacts the session touched **by path**,
+  and a spec's implementation decisions are already required to name "the modules that will be built or modified" —
+  while a spec carries no paths at all, by a standing rule of its own template, so a path-shaped bar was never available
+  one writer over. **The open clause is what stops the floor becoming a ceiling**: a module the work reaches beyond the
+  list is still read. The tickets writer's clause about the user-story list goes with it, being keyed to the one list
+  step 3 already measures coverage against.)*
+- **D9a. The brief's artifact list carries the paths a sweep named.** D9's floor for the spec writer is the brief's list
+  of "the artifacts the session landed or touched … by path", and **this change shrinks that list by construction**: the
+  interview stops opening the code, so what it touched is less, and the writer's floor would fall by exactly what the
+  **sweep**s took over. Nothing new has to be found for it — a sweep's contract already reports where its facts were
+  found, and what it settled already rides in the **grounds** beside the decision it settled, where the contract
+  requires whoever holds the file to be able to find the thing cited. The orchestrator holds those paths already.
+
+  **It is where the looking happened and never what the looking found.** The brief's own prohibition — no section of
+  established facts, however that section is headed — is what makes a **claim** get checked by a writer rather than
+  trusted, and a list of paths sits close enough to it that the difference is stated rather than left to a reader. It is
+  the one clause of that prohibition this change touches, and it extends it rather than softening it.
 - **D10. The bars bound the reading and not the first-hand contract.** A done-bar says when exploring stops, never that
   the writer may take something on trust. Paths rather than contents stands untouched — see D13.
 
 ### Across the plugin
 
-- **D11. One parallel-lookup line, in six agents, identical.** Independent lookups go out together in one turn rather
-  than one per turn. **This departs from D10 of `docs/specs/orchestrator-contracts/spec.md`**, which holds that a spend
-  preference measured on one agent is not extended to agents it was never measured on. The grounds for departing: that
-  decision governed a preference between two dispatch strategies, where getting it wrong on an unmeasured agent changes
-  what the agent does. This is an instruction to batch lookups that do not depend on each other, which carries no
-  tradeoff to get wrong, and the delivery skill's reading-heavy agents are heavier readers than either refinement
-  writer. Three agents were measured; three receive the line unmeasured, knowingly.
-
-  **The line names reads and says what it does not reach, because two of the six forbid batching in almost those
-  words.** `change-request-creator` is told "Post one comment per entry carrying none — **never a batch**", and
-  `assumption-reviewer` "**Adjudicate them one at a time**, giving the last one the same scrutiny as the first". An
-  unqualified "these go out together in one turn" in either file is one inference from batched comments or batched
-  **verdict**s, and the second would take down the per-assumption scrutiny the whole adjudication rests on. So the line
-  names a search, a file and a listing, and closes by saying that what the agent writes is unaffected — a post, a reply,
-  a verdict and a commit each keep the rule they already have. Identical in all six, and the exclusion travels with it
-  into the two files that need it.
-
-  **`code-reviewer` is excluded, and this is where that is recorded.** It runs at `model: sonnet`, `effort: low` and
-  opens no file at all: it calls `code_review_start`, polls `code_review_status` to a **terminal** status, and reports
-  the prose. The grounds for extending the line to unmeasured agents are that the delivery agents are heavy readers,
-  which does not cover one that reads nothing — so the line would be inert there, and it sits badly beside the
-  **Poll** contract ("what is known when it is asked and no more") and the agent's own "One dispatch, one round". The
-  rejected alternative was all seven for grep-checkability. Anyone reaching for symmetry later should read this entry
-  first.
+- **D11. Withdrawn.** This held that one identical parallel-lookup line went into six of the seven agents — independent
+  lookups out together in one turn — with `code-reviewer` excluded for reading nothing. **No agent gains it**, and the
+  grounds are in D26. The number is kept rather than reused so that a reader arriving from a document that cited it
+  finds the withdrawal rather than a different decision.
 - **D12. `mechanical` enters the glossary.** It is bolded three times in `build/SKILL.md` — and used a fourth time there
   unbolded, in "not a mechanical fact, so not yours" — stated in ADR 0015, and defined nowhere. A question about the
   tree, the forge or the web whose answer is true or false rather than good or bad — **and the fact that answers one**,
@@ -338,13 +412,28 @@ test covers is settled by reading the test, or it is not made.
   file modify a question or a fact and none needs rewording. It goes in the glossary's *The run* section beside
   **Orchestrator**, whose behaviour it describes.
 
+  **The entry carries D1's test and not only its label**, per D2's amendment: answerable **in a single look**, and a
+  thread — a search whose results are read to decide what to search next — is not one, however cheap each step of it
+  looks. The glossary is the one document a reader of either skill meets, and ADR 0015 uses the term rather than
+  restating it, so the test reaches the record without a second wording to keep in step.
+
   **The word carries a second sense in bolded prose, and that sense keeps its meaning under another word.**
   `CONTEXT.md`'s **Wide refactor** entry reads "one mechanical change", and `tickets-writer.md` says the same thing in
   the same words — both meaning rote or automatable, which is not this definition. Bold marks a glossary term here, so
-  one word cannot carry both. `tickets-writer.md` drops the word and keeps its examples, which already carry the sense
-  it was doing. **The glossary entry has no examples, so dropping the word alone would leave nothing carrying it**: that
-  entry says "one **rote** change — rename a column, retype a shared symbol — whose blast radius …", taking the word the
-  agent file already uses and the examples with it, so the two places finally read alike.
+  one word cannot carry both. `tickets-writer.md` takes the same word the entry takes and keeps its examples, which
+  already carry the sense it was doing. **The glossary entry has no examples, so dropping the word alone would leave
+  nothing carrying it**: that entry says "one **rote** change — rename a column, retype a shared symbol — whose blast
+  radius …", taking the examples from the agent file, and the agent file says *rote* too, so the two places finally read
+  alike. **Dropping the word from one side and adding a different one to the other would leave them not matching**,
+  which is the whole thing this half of the decision is for.
+
+  **A third use is the glossary's own, and the contribution guide's.** `CONTEXT.md`'s **Verifier** entry closes on "What
+  a test can assert **mechanically** is never its business", and `CONTRIBUTING.md` uses the word the same way — meaning
+  *by a test rather than by a reader*, which is neither this definition nor the rote one. A glossary that defines a word
+  on one line and uses it otherwise a few hundred lines later is the sharpest instance of what this change exists to
+  prevent, so both say what they mean instead. The `end-to-end-tests` spec and this epic's own tickets use it that way
+  too and are left alone: `docs/specs/` records what was decided when, and editing a landed spec's wording to protect a
+  term costs more than the word surviving in it.
 
   **The rote sense also lives in the Node code's comments, roughly twenty times, and stays there.** "the observer's
   mechanical half", "a mechanical bound costs a **defect** the **grounds** it stands on", "the ONE invisible failure
@@ -356,6 +445,11 @@ test covers is settled by reading the test, or it is not made.
   word already carried it. Both halves were read off `tickets-writer.md` and asserted of the glossary and the product:
   the glossary entry carries no examples at all, and the Node comments carry the sense about twenty times. Recorded
   rather than quietly fixed for the same reason as the notes above.)*
+
+  *(Amended again, 2026-09-09, and the inventory was still short. A **third** sense — asserted by a test rather than by
+  a reader — sits in `CONTEXT.md`'s own **Verifier** entry and in `CONTRIBUTING.md`, and the fix above was also going to
+  leave the two rote uses saying different words. Twice now this decision has claimed to have counted a word's uses
+  without counting them, which is the failure the epic is named for, in the decision that defines the word.)*
 - **D13. ADR 0015 is amended, not replaced — and so is the glossary's own entry.** The ADR states that the orchestrator
   "is read-only" without saying what over. The amendment says: read-only over the code being delivered into, while the
   epic's own documents — the brief, and the glossary entries and ADRs a refinement lands — are the orchestrator's to
@@ -389,19 +483,24 @@ test covers is settled by reading the test, or it is not made.
   same input and the same entry point, and it opens by saying plainly that it measures and gates nothing, so nobody
   reads it as a check. Not a script, since nothing outside `plugin/` ships and CI checks neither.
 
-  **It reuses the observer rather than reimplementing it.** `plugin/mcp/observer/distil.ts` already runs by hand with
-  no model and no money and already prints per-turn ids and token figures with a run total, and `records.ts` already
-  resolves the split-record problem. Only **peak context per agent** is new — nothing under `observer/` computes it —
-  and it is `jq` over `input_tokens + cache_read_input_tokens + cache_creation_input_tokens`, maxed. That line cannot
-  drift from the shipped code because it shares no logic with it: the placeholder problem affects `output_tokens` alone,
-  and every record of one response repeats the same input and cache figures, so a peak needs no dedup at all.
+  **It reads the trace the observer already writes, rather than the records underneath it.**
+  `plugin/mcp/observer/distil.ts` runs by hand with no model and no money and writes the run's **trace**, and that file
+  already carries every figure this tally wants but one. Its token section holds a row per **dispatch** labelled
+  `#<ordinal> <agent>`, reading `N req · in … out … cache-write … cache-read …` — model turns and tokens by kind, per
+  agent, already deduplicated by `records.ts` and already attributed to the agent that ran. Its ordered section prefixes
+  every line of a dispatch's slice with `#n` and states each turn's own figures once, on that turn's first line.
 
-  **Per agent takes one more step than the maximum, and the guide states it.** The host names each dispatch's record
-  with an opaque id — `agent-<id>.jsonl` — and the agent it ran is not in the file or its lines: it is in the
-  `agent-<id>.meta.json` sidecar beside it, as `agentType`. So the maximum alone yields a column keyed by ids rather
-  than a per-agent figure, and per-agent is the whole point, being the figure that says whether the interview's context
-  shrank. `plugin/mcp/observer/records.ts` already reads those sidecars and records that it checked every one against
-  the **dispatch** that made it across three runs, so the guide cites it rather than re-deriving the layout.
+  **So the only arithmetic left is the peak**: the largest `in + cache-write + cache-read` among a slice's turn lines.
+  It needs no dedup — the placeholder problem affects `output_tokens` alone, and every record of one response repeats
+  the same input and cache figures — and it needs no second statement of the dedup rule either, because the figures it
+  reads have already had `records.ts`'s rule applied to them.
+
+  *(Amended 2026-09-09. This prescribed `jq` over the raw records for the peak, plus a second step reading each
+  `agent-<id>.meta.json` sidecar for `agentType`, in the same breath as saying the tally reuses the observer rather than
+  reimplementing it. The two pulled opposite ways, and an implementer holding both would have written the shell path.
+  Both halves were asserted of the trace without opening it: it already labels every dispatch with its agent, and
+  already prints `in`, `out`, `cache-write` and `cache-read` per turn — so the sidecar step was work already done, and
+  the raw-record path was a second implementation of `records.ts` waiting to drift from it.)*
 
   **The observation's own cost is reported beside the run's.** The **observer** grades every dispatch, one cheap call
   each, and this change multiplies a refinement's dispatches by however many sweeps its interview sends — so part of
@@ -422,8 +521,8 @@ test covers is settled by reading the test, or it is not made.
   baseline available, and **the only thing that catches this change buying spend with wall clock before a user does**,
   which matters because sweeps add round trips under a ceiling that already exists. The tally is the diagnosis and the
   paid test is the guard; neither replaces the other. A worse figure is a finding to discuss rather than a merge block,
-  since this change also closes eleven false **claim**s on its own account. The "before" must be taken from a clean
-  `main` worktree: the **harness** installs from a **staged copy** of the working tree, so a run started from a
+  since this change also closes three false **claim**s on its own account, per D26. The "before" must be taken from a
+  clean `main` worktree: the **harness** installs from a **staged copy** of the working tree, so a run started from a
   part-edited tree measures a part-edited plugin.
 - **D17a. The measurement is a slice of its own, last, and the evidence is its deliverable.** Every other slice here is
   prose that reviews on its own; nothing in any of them takes a figure, so the epic could be implemented, reviewed and
@@ -444,6 +543,13 @@ test covers is settled by reading the test, or it is not made.
   nothing in this repository can assert, so a second run buys over exactly the evidence that reading less produced a
   worse **spec**. A ceiling reached is a reported outcome and never a failure, as the **Ceiling** entry has it.
 
+  **The number of sweeps each run sent out is reported beside the figures, and it is the only direct test of the bet.**
+  Everything else the slice reports is a consequence — turns, peak context, tokens, **spend**, wall clock — and every
+  one of them moves for reasons that have nothing to do with whether the trigger fired. **Zero sweeps on the "after" run
+  means the change did not happen**, whatever the rest of the table says, and that is the finding rather than a reason
+  to run again. It costs nothing to read: the trace names every **dispatch** with the agent that ran it, in the same
+  file D16's tally is read from.
+
   **Nothing in that slice edits prose to move the number.** The fixture is three functions with unit tests and D17
   already says it will understate; an agent holding a target-shaped figure beside the files that produce it is one step
   from tuning shipped instructions to one run, and that diff would be indistinguishable from this epic's actual work.
@@ -456,46 +562,11 @@ test covers is settled by reading the test, or it is not made.
 
 ### What the run asserted
 
-- **D21. The base ref is recorded once, in the brief, and every writer carries it into what it publishes.** A
-  refinement's output is full of `file:line` claims and states none of the refs they were read at, so a claim cannot be
-  checked once the working tree moves. The rejected alternative was recording a commit per claim: the run's claims came
-  from one ref each time, and a per-claim field is noise that the one case it would catch — a writer reading two refs —
-  is already forbidden by D22.
-
-  **Three placements, each named, because each document has a fixed shape.** In the **brief**, a line *above* the five
-  bullets rather than a sixth bullet: the stage's own bar reads "every one of the **five** things it carries is written
-  out of the conversation or stated to hold nothing", and the ref is a mechanical fact about the environment rather
-  than something the conversation settled, so it does not answer to that bar and must not be counted by it. In the
-  **spec**, a line in *Further Notes*, which already collects exactly this class of document-level fact — every open
-  **fork**, every ADR the spec contradicts. In a **ticket**, a `Base ref:` line beside `Status:`, which stays literal
-  text on every tracker: `Spec`, `Blocked by` and `Status` are replaced by platform mechanisms where a forge has them,
-  and no forge has one for a ref. A ticket needs its own because an implementer reads "this ticket and whatever it
-  points at, and nothing else of the epic", and the coverage claims D23 guards land in its acceptance criteria.
-
-  **The brief's own prohibition has to name the ref line as not one of them.** That section closes "the brief carries
-  what the session decided and what it never checked — and no section of established facts, however that section is
-  headed", which is the contract that makes a **claim** get checked by the **writer** rather than trusted. A stated fact
-  above the bullets meets it head-on: a reader either leaves the ref out, or takes the prohibition as soft and opens the
-  facts section it exists to forbid. So the clause gains the exception rather than the placement dodging it — the base
-  ref line says where the reading happened, not what the reading found. Placement alone was the rejected alternative: it
-  leaves two instructions apparently in conflict with nothing in the file resolving them.
-- **D21a. `Base ref` enters the glossary.** After this change the phrase is a term in four shipping files, and a needed
-  term the glossary does not carry is this repository's signal to add one. What is being defined is not git's "ref" but
-  **the** base ref: one commit per **run**, explicitly never one per **claim**, recorded by the brief and carried by
-  every **writer**. That cardinality was a decision, and the glossary is the only place a rule of that shape survives.
-- **D22. A writer is never continued across a **moved base ref**; it is re-dispatched.** The observed run resumed
-  `spec-writer` nineteen minutes after it finished, on a different ref, and its already-written line numbers went out
-  in the **spec** unchanged while the prose around them was rewritten. A resumed agent cannot be told to distrust its
-  own notes. **Get this wrong and every other guard here is decoration**, because a context holding two refs will
-  produce claims true of neither. The orchestrator reads the ref and compares it against the one the brief records,
-  which is a single look and so **mechanical** under D1.
-
-  *(Amended 2026-09-09. This read "across a changed working tree", which is a different and much wider test. Stage 1
-  runs the domain-modeling skill precisely so glossary entries and ADRs land as decisions crystallise — that dirties
-  the tree without moving the ref, so the literal rule would forbid continuing a writer after nearly every refinement
-  and delete D9 of `docs/specs/orchestrator-contracts/spec.md`, whose continue-over-cold preference was measured at 71%
-  of a cold write. **This is the same failure D4 warns about**: a rule stated without saying what it applies over,
-  silently deleting a stage.)*
+- **D21, D21a and D22. Withdrawn.** Between them these held that the **brief** records the one commit a **run** read the
+  code at, that every **writer** carries it into what it publishes — a line in the spec's *Further Notes*, a `Base ref:`
+  line beside a ticket's `Status:` — that the term entered the glossary, and that a writer is never continued across a
+  moved one. **Nothing records a ref and nothing constrains a continue**, and the grounds are in D26. The numbers are
+  kept rather than reused, as D11's is.
 - **D23. A claim about what an existing test covers is settled by reading the test body.** Three claims asserted
   coverage inferred from a class name — a round-trip test that only looks a resource up, a fallback said to be
   exercised by the one entity that cannot reach it. The bar is a read, not a naming convention, and it binds on both
@@ -507,12 +578,74 @@ test covers is settled by reading the test, or it is not made.
   step at all — it reads the spec, explores, drafts the slices, publishes — and it does not author coverage claims but
   *restates* them, turning the spec's table into acceptance criteria. That restatement is the observed failure: two
   wrong claims arrived as criteria an implementer is told to extend, carrying more authority than they were made with.
-  So its bar goes in the **drafting** step, on criteria that assert what an existing test already covers. The rejected
-  alternative was filtering on intake in step 1, which puts the bar pages away from the moment of restatement.
+  So its bar goes in the step that writes those criteria, on any that assert what an existing test already covers. The
+  rejected alternative was filtering on intake in step 1, which puts the bar pages away from the moment of restatement.
+
+  *(Amended 2026-09-09. This named the **drafting** step, which does not write acceptance criteria: that step drafts the
+  slices and their **blocking edges**, and the criteria arrive one step later, when each slice is published to the
+  ticket template that carries them. The bar was to sit where the claim is made, and it was placed in the step before it
+  — read off the word "drafts" rather than off what the step's own text says it drafts.)*
 - **D24. Nothing re-checks a claim mechanically, and no verification agent ships.** The bar is where the claim is made,
   not a pass over it afterwards. A checking pass would need the ref, the build outputs and a second read of everything
   the writers read — the whole cost this spec exists to remove — and the plugin has no seam to run it in. **The risk is
   recorded rather than resolved:** these are prose bars on prose documents, and nothing in CI can hold them.
+
+### What the user is told
+
+- **D25. The README says what a user will now see inside an interview, and what it adds to an observation.** Two of its
+  statements stop being true, and it is the document a user reads before any other.
+
+  **It makes stages dispatched one at a time a requirement, and names its own violation as a misconfiguration.** The
+  requirements list justifies one host setting with "its stages stop being dispatched one at a time", and the
+  troubleshooting list names **"Stages run over each other, or a dispatch never reports back"** as that setting being
+  on. After this change a refinement runs several **sweep**s beside its interview, which is what that symptom looks like
+  from outside — so both places separate the epic's own stages overlapping, which is still a fault, from fact-finding
+  beside an interview, which is now expected. The delivery half of the promise is untouched and stays true: one stage,
+  one dispatch, reported before the next starts.
+
+  **It prices an observation off a dispatch count.** It states "about ten cents a dispatch", that "the figure follows
+  how many dispatches your run made, not how long it took", and "$3.18 to $3.48 for a refinement" — measured when a
+  refinement made three or four **dispatch**es. The **observer** grades every dispatch, so a refinement that sweeps
+  costs more to observe than that arithmetic implies, on the user's own account and against the same rate limit as the
+  run. **No new figure is stated**: nobody has yet measured a refinement that sweeps, a derived figure is labelled as
+  derived in this repository, and the README already carries the per-dispatch arithmetic — so saying the count now
+  includes fact-finding is the whole of what is owed. D17a's slice gets no licence to come back and edit it either.
+
+### What was scoped out after the fact
+
+- **D26. Two decisions were taken and then withdrawn, and this is where that is recorded.** Both were in this spec when
+  it was published, both had slices cut for them, and both were dropped on the grounds below rather than deleted
+  quietly. D11, D21, D21a and D22 keep their numbers as withdrawal stubs so that a reader arriving from any document
+  that cited one lands on the withdrawal.
+
+  **The parallel-lookup line (D11) is dropped because this spec's own evidence says there is nothing to win.** Recorded
+  two sections down under *Two suspected drivers that are not real*: the agents already compound 69–97% of their shell
+  calls, about half of all turns already issue two lookups together, and 184 shell calls were 124 model turns with
+  exactly one literal duplicate command among them. **Out of Scope already said "there is no headroom"** while the
+  decision spent six files reaching for it, and D11 had to depart from D10 of
+  `docs/specs/orchestrator-contracts/spec.md` to extend an unmeasured preference to three agents nobody had measured.
+  So the upside is inside the noise of the before-and-after in D17a, and the downside is not:
+  `assumption-reviewer`'s "**adjudicate them one at a time**" is what the whole adjudication rests on, and
+  `change-request-creator`'s "**never a batch**" is a contract of its own. The line needed an exclusion clause in both
+  files to be safe — which is a good sign the line does not belong there. **Nothing about batching is instructed
+  anywhere**, and the `code-reviewer` exclusion argument goes with it, there being nothing left to exclude from.
+
+  **The base ref (D21, D21a, D22) is dropped because it is the other half of a different change.** This spec carries two
+  changes wearing one name: one removes reading to cut **spend**, the other adds reading to make **claim**s true. D23
+  keeps the second half, and the ref work is what leaves with it, on two grounds. **First, D22 bought correctness with
+  the very figure D17 measures**: a moved ref forced a cold re-dispatch where a continue was measured at 71% of a cold
+  write, so the one number this epic is judged by would have carried a saving and a new cost with nothing separating
+  them. **Second, this spec's own sentence sorts the two failures** — "a wrong line number is caught on the first
+  checkout; 'this is already tested' is believed". The four wrong-location claims are the self-catching kind; the three
+  coverage claims are the kind that costs a test nobody writes. Keeping the bar on the second and dropping the guard on
+  the first keeps the correctness work aimed at the failure that survives contact with an implementer.
+
+  **What that leaves open is stated rather than implied.** A **writer** can still be continued across a moved ref, so
+  the observed failure can recur exactly as it happened, and no document a refinement publishes records the ref its
+  `file:line` claims were read at. **The four wrong-location claims stay open**, the evidence for them stays under
+  *What the run got wrong* so a later session need not re-derive it, and the fix is a **hand-off** below rather than a
+  gap nobody named. What the drop also removes is a whole slice, three placements in three fixed document shapes, an
+  extension of the brief's prohibition clause, a glossary entry, two template edits and the harness check D21 needed.
 
 ## Testing Decisions
 
@@ -536,13 +669,19 @@ same finding and said so plainly rather than performing a check that exercises n
   concurrency is part of why it does not.
 - The mechanical rule does not read as forbidding the brief, the glossary entries or the ADRs stage 1 and stage 2
   produce. This is the single most dangerous misreading in the change, per D4.
-- One wording per shared rule: the mechanical rule reads identically in both skills.
+- The narrowed ownership sentence still forbids handing the **interview** to an agent, and it says so in the same
+  sentence that permits fact-finding, per D5a. This is the second most dangerous misreading, and the worse failure of
+  the two.
+- One wording per shared rule: the bolded test clause reads identically in both skills, and the test itself — one look,
+  and a thread is not one — is in the glossary entry both skills' readers meet, per D2.
+- Each writer's bar names something the step was handed rather than something the step decides, per D9.
+- The README's new wording does not read as permission for two of an epic's own stages to overlap, per D25.
 - The glossary's own words are used, and the synonyms its `_Avoid_` lists displace are not.
 - The register bar in D19 holds, and each file's prevailing column width is matched.
 
-**The instrument this change adds is a tally, not a test.** A documented command over a run's **session record**s
-reporting, per agent, model turns, peak context and tokens by kind. It measures a run after the fact; it asserts
-nothing and gates nothing.
+**The instrument this change adds is a tally, not a test.** A documented reading of the **trace** the **observer**
+already writes from a run's **session record**s, reporting per agent its model turns, its peak context and its tokens by
+kind. It measures a run after the fact; it asserts nothing and gates nothing.
 
 **One existing paid test is the guard, unchanged.** `e2e-tests/tests/refine-happy-path.test.ts` drives a whole
 refinement against a committed **fixture** and prints its measured wall clock and **spend**; run from a clean `main`
@@ -555,12 +694,10 @@ because an unattended agent working it needs telling which outcomes it may pay t
 failed mechanical assertion, three attempts a figure, every attempt written up — and never a failed **verifier**
 verdict, which is the finding rather than a flake.
 
-**The harness needs no change, and that was checked rather than assumed.** Adding a `Base ref:` line to a ticket and a
-line to the spec's Further Notes touches nothing it reads: `assertSpecPublished` checks the file exists and carries a
-**triage label**, `assertTicketsPublished` checks contiguous two-digit numbering, a blocking-edges line and a label,
-and both parsers are line-anchored multiline patterns (`e2e-tests/harness/epic.ts`). The **verifier** judges coherence
-and coverage only. `assertSessionRecordsKept` takes a *floor*, so the extra **session record**s that sweeps leave
-cannot fail it.
+**The harness needs no change, and that was checked rather than assumed.** After D26 nothing here alters the shape of a
+published document at all — the check that mattered was for the `Base ref:` line D21 would have added to a ticket, and
+that decision is withdrawn. What remains is that sweeps leave extra **session record**s behind, and
+`assertSessionRecordsKept` takes a *floor*, so they cannot fail it. The **verifier** judges coherence and coverage only.
 
 **Nothing exercises the trigger before a user does.** That is the honest state of this change, and it is why D5 is
 phrased as a condition rather than a permission.
@@ -571,9 +708,16 @@ phrased as a condition rather than a permission.
 - **A sweeper agent**, per D15.
 - **Weakening paths rather than contents, or a writer's first-hand read of the repository.** That contract is what
   makes a **claim** get checked, and this change must not turn into "the brief passes findings the writer can trust".
-- **Batching instructions beyond the one line in D11.** The agents already compound 69–97% of their shell calls and
-  already issue two in one turn about half the time. There is no headroom, and an instruction to prefer the dedicated
-  read and search tools over the shell was declined as token-neutral on the read itself.
+- **Batching instructions of any kind**, per D26 — including the one line this spec first carried as D11. The agents
+  already compound 69–97% of their shell calls and already issue two in one turn about half the time. There is no
+  headroom, and an instruction to prefer the dedicated read and search tools over the shell was declined as
+  token-neutral on the read itself. No agent file is edited for it, `code-reviewer` least of all.
+- **The base ref, and a **writer** continued across a moved one**, per D26 — the withdrawn D21, D21a and D22. Nothing a
+  refinement publishes records the ref its `file:line` **claim**s were read at, and nothing stops a writer being
+  continued after the ref moves, which is how four of the observed run's eleven wrong claims happened. The evidence is
+  kept under *What the run got wrong* and the fix is a hand-off; it is left out here so that the correctness work in D23
+  aims only at the failure nobody catches on the first checkout, and so that D17's one figure is not a saving and a new
+  cost added together.
 - **A spend target**, per D17.
 - **Re-pricing the observed run at Bedrock rates.** With no target, the absolute figure decides nothing, and every lever
   here is judged by a before-and-after ratio on one provider. A hand-off.
@@ -582,6 +726,14 @@ phrased as a condition rather than a permission.
   to their own session.
 - **Mechanically re-checking a claim**, per D24. The bars sit where the claim is made; there is no verification pass and
   no verification agent.
+- **Teaching the **observer** to count a sweep as the **run**'s own.** It recognises a **dispatch** to one of the
+  plugin's seven named agents and deliberately trusts no other, which a sweep is; that bounds what its account of a run
+  covers. A hand-off, and TypeScript, which this change is not.
+- **A figure for what sweeps add to an observation**, per D25. The count is reported by D17a's slice; deriving a dollar
+  figure from it before anything has been measured is not.
+- **The trace's own legend**, which describes lines carrying `req <id>` where the renderer emits a turn number, its
+  request id and its four token figures. The tally in D16 describes the lines rather than the legend; correcting the
+  legend is a hand-off.
 - **The three defects the run's own **debrief** already names** — the missing task list, the brief written to the
   workspace rather than the OS temporary directory, and the two-round-trip idea capture. All three land in
   `refine/SKILL.md`, which this change edits anyway; they are left out so the before-and-after measurement attributes
@@ -616,6 +768,24 @@ bound on what a **debrief** may carry holds by instruction alone, with nothing r
 here weakens that bound; it is simply asked to hold over more material than before, and that is recorded rather than
 resolved.
 
+**And the observer does not recognise a sweep as the run's own.** `plugin/mcp/observer/run-facts.ts` decides which
+entries belong to the **run** partly by matching a **dispatch** against the seven agents this plugin ships, and its own
+comment says why: a dispatch of one of those "is the run's and nothing else's, which is what lets [it] trust it where it
+cannot trust a bare `Agent` call". A sweep is exactly that bare call, aimed at whatever agent the host offers. **Nothing
+about this reaches the run** — the observer is read-only over what a run leaves behind and never in touch with it. What
+it can bend is the **account**: where the run is judged to have ended, and which dispatches are attributed to it. That
+matters more here than it would elsewhere, because D17a settles this epic's bet by reading that account. What bounds the
+exposure is that the interview's own turns carry the plugin's attribution regardless, so a sweep is never the only
+signal in its window. Recorded rather than resolved, and a hand-off below.
+
+**And the run can still read two refs.** D26 withdrew the guard, so a **writer** may be continued after the ref under it
+moved, exactly as the observed run's `spec-writer` was — and no document a refinement publishes says which ref anything
+in it was read at, so nothing downstream can catch the mismatch either. This is the one risk here that has already been
+observed happening rather than reasoned about: four of eleven wrong **claim**s, in a published **spec** and three
+**ticket**s. What bounds it is that its failures announce themselves — a line number wrong on the checked-out ref is
+caught the first time anyone opens the file — which is the whole of why D26 kept D23's bar and dropped this one. It is a
+hand-off, and it is the one hand-off here with a run behind it.
+
 ### What the evidence was, and what it was not
 
 Every figure in this spec comes from the host's raw **session record**s for the observed run: one orchestrator record
@@ -634,8 +804,9 @@ wrong were settled while writing this spec:
   one of them carries the true `output_tokens` — the others hold placeholders of 1 to 4. Summing a placeholder-bearing
   record per response gives 100,955 tokens for the run; taking each response's true figure gives 165,111. Output is 13%
   of the spend, not 9%. **Any tally must take the record with the highest `output_tokens` per id**, which is the rule
-  `plugin/mcp/observer/records.ts` implements and reconciled against the tools server's own figure to the token, and why
-  ticket 03 says so.
+  `plugin/mcp/observer/records.ts` implements and reconciled against the tools server's own figure to the token — and
+  which is the reason D16's tally reads the **trace** rather than the records: the trace's figures have already had that
+  rule applied to them, so no by-hand reading can get it wrong or drift from it.
 
   *(Amended 2026-09-09. This read "only the **last** carries the true `output_tokens`" and "any tally must take the last
   record per id" — not the rule the product implements, which keeps the highest per id. The two coincide on these
@@ -670,7 +841,10 @@ reach it, a Lombok `@Value` class described three times as a record.
 **Eleven of the eighty-two reached the deliverables**, not just the reasoning: the published **spec** carries the wrong
 symbol name through its own edit pass, and three **ticket**s carry coverage claims in their acceptance criteria as
 prior art an implementer is told to extend. **A wrong line number is caught on the first checkout; "this is already
-tested" is believed.** That is why D23 is a bar and not a suggestion.
+tested" is believed.** That is why D23 is a bar and not a suggestion — and, per D26, why it is the only bar here: that
+same sentence is what sorted the three coverage claims this change closes from the four wrong-location ones it leaves
+open. **This table is kept whole for the half it no longer answers**, so that whoever picks up the hand-off has the
+evidence without re-deriving it from records that are private and outside version control.
 
 ### Two suspected drivers that are not real
 
@@ -713,6 +887,11 @@ as the only lever the plugin has on them.
 
 ### Hand-offs
 
+- **The base ref, and a **writer** continued across a moved one** — the withdrawn D21, D21a and D22, per D26. It is the
+  one hand-off here with an observed failure behind it rather than a risk: four wrong **claim**s in a published **spec**
+  and three **ticket**s. Whoever takes it has the three placements, the brief's prohibition clause, the glossary
+  cardinality and the harness check already worked out in this spec's history, and should take the measurement in D17a
+  with it, since D22 trades a cold re-dispatch against a continue measured at 71% of a cold write.
 - Reopening effort tiers on the reading-heavy writers, if the measurement in D16 disappoints.
 - Re-pricing the observed run at Bedrock rates.
 - The upstream fix to the interview skill's fact-finding rule, now wanted for the second time.
@@ -721,6 +900,11 @@ as the only lever the plugin has on them.
   to hand, a run will cost itself in its own context, for 16.8% of its own **spend**, and get the answer wrong.
 - The operator-side lever this change cannot reach: the tool schemas and skill listings a session carries into every
   request, which are the larger half of the floor and belong to whoever configures the host.
+- Teaching the **observer** to count a **sweep** as the **run**'s own, so that its account of a refinement covers the
+  dispatches this change adds. `run-facts.ts` trusts the plugin's seven agents by name and no bare dispatch.
+- The **trace**'s legend, which announces `req <id>` lines where the renderer writes a turn number, a request id and
+  four token figures. Harmless until somebody reads the legend instead of the lines, which D16's tally is written not
+  to.
 
 ### Nothing from the observed repository appears here
 

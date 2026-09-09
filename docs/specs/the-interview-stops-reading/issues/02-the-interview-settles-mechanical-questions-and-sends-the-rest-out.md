@@ -18,12 +18,34 @@ change request, and closes on edges — "read only", "never fix" — that a refi
 writes the **brief** and stage 1 lands glossary entries and ADRs. Copy the **bolded test clause verbatim**; write this
 skill's own examples and its own edges around it.
 
+**The test itself is this file's to state in full.** A single look, and a thread — a search whose results are read to
+decide what to search next — is not one. That clause is in the glossary entry ticket 01 lands, and the glossary **does
+not ship**, so a runtime agent meets it only where a skill states it. State it here; `build/SKILL.md` deliberately does
+not carry it, and re-arguing that is no part of this ticket.
+
+**The two sentences that say this interview dispatches nothing are narrowed, and that is the half of this ticket most
+likely to decide whether any of it works.** The file opens on "**Stage 1 is yours and nobody else's**" beside "Every
+stage after it is one agent dispatch", and ends its third paragraph on "Yours is the work no agent does: grill the idea,
+write the brief, dispatch the two writers in order …". Between them they say the interview sends out nothing and that
+the two **writer**s are the whole list. They sit pages above the Sweeps section, so a trigger added down there argues
+with the opening and loses — and the interview skill this stage runs already carries an imperative to dispatch a
+sub-agent for a fact, which produced none. Narrow the ownership sentence to the conversation and the decisions; give the
+enumeration its sweeps.
+
+**The narrowed sentence states its own limit, in the same sentence.** What stage 1 owns is the conversation and the
+decisions, and neither is ever an agent's; what goes out is fact-finding, never the interview. Split the permission from
+the limit and a reader is one inference from dispatching an agent to conduct the grilling — **a worse failure than the
+one this epic exists to fix**, because the human is in the room for exactly one stage, an agent cannot be in it, and the
+brief is all that survives of it.
+
 The other half is the outlet, and the two ship together because the limit without it would leave the interview with
 nowhere to send what it may no longer do itself. The **Sweeps** section gains the one thing it lacks: when to send one
 out. All four of its bullets today govern a sweep already in flight — what it holds back, what it releases, what it
 reopens — and an observed run that was told twice to sweep dispatched none and made 47 shell calls inside an interview
-whose context reached 308K. The trigger is stated as a condition the orchestrator tests, not a permission it may
-decline, because two instructions phrased as permissions already produced nothing.
+whose context reached 308K. State it as a condition the orchestrator tests rather than a permission it may decline.
+**Not because softness was the defect** — the interview skill's own instruction is already imperative, and it fired
+nothing — but because a condition is the shape a rule the orchestrator tests every turn has to have. What was overruling
+it is the opening this ticket narrows.
 
 Beside it goes the sweep's contract: what a sweep is handed — the subject it exists to close — and what it must report
 back, being the facts and where they were found, never a view on the design. The agent it dispatches to stays
@@ -43,11 +65,29 @@ true and never the mechanism, so nothing here can make a dispatch non-blocking; 
 serialises its sweeps. Send it anyway. The reading is what costs, because it lands in a context every later turn
 re-reads, and the waiting costs only time — so reading inline to protect the clock would trade away the whole saving.
 
-**The one dangerous edit in this epic is here.** Stage 1's sentence carries a clause carving out how a question reaches
+**Which means the section's opening sentence is narrowed to what it always meant.** "Dispatching a **sweep** never holds
+up the interview" was written when nothing went out, and what it holds is that the questions a sweep does not touch keep
+moving — which is exactly what its four bullets govern. Left as it stands, a reader meets it and "send it even where you
+will wait" a few lines apart with nothing on the page to reconcile them. Narrow it; do not delete it, and do not touch
+the four bullets under it.
+
+**One more clause, in the brief.** Its artifact list — "the artifacts the session landed or touched … by path" — is what
+the next ticket's reading bar keys to, and **this change shrinks that list by construction**: the interview stops
+opening the code, so what it touched is less. State that the list carries the artifacts a sweep named. Nothing new has
+to be found for it: a sweep already reports where its facts were found. And **it is where the looking happened, never
+what the looking found** — the ban on a section of established facts is what makes a **claim** get checked by a writer
+rather than trusted, so say which of the two this is. That clause is the only part of the ban this epic touches, and it
+extends it rather than softening it.
+
+**The one dangerous edit in this epic is here.** Stage 1's bullet carries a clause carving out how a question reaches
 the human, and the **Sweeps** section's four existing bullets are a prior epic's whole deliverable. Replacing either
 region wholesale silently reverts work that is already landed. New text goes **alongside** what is there.
 
-Files: `plugin/skills/refine/SKILL.md`. Decisions D1–D8, D18 and D19 in
+**Three sentences are the deliberate exceptions to that**, and they are the only ones: the file's ownership sentence,
+the enumeration in its third paragraph, and the Sweeps section's opening line. Each is narrowed in place, keeping what
+it was doing and dropping what it now says wrongly. Everything else is addition.
+
+Files: `plugin/skills/refine/SKILL.md`. Decisions D1 to D8 — D5a and D6a to D6c among them — with D9a, D18 and D19, in
 `docs/specs/the-interview-stops-reading/spec.md`.
 
 - [ ] Every snippet being replaced was confirmed present in the current source **before** editing, and any mismatch was
@@ -62,6 +102,20 @@ Files: `plugin/skills/refine/SKILL.md`. Decisions D1–D8, D18 and D19 in
 - [ ] **One wording per shared rule, bounded**: the bolded **test clause** reads identically to the one landed in
       `plugin/skills/build/SKILL.md` by ticket 01 — copied from that file, not reconstructed. The examples and the
       edges around it are this skill's own (D2).
+- [ ] **The test is stated here in full** — a single look, and a thread is not one — because the glossary entry carrying
+      it does not ship (D1, D2).
+- [ ] **"Stage 1 is yours and nobody else's" is narrowed to the conversation and the decisions**, and the enumeration of
+      what the orchestrator does — "grill the idea, write the brief, dispatch the two writers" — names the sweeps too,
+      so neither reads as saying the interview dispatches nothing (D5a).
+- [ ] **The narrowed sentence carries its own exclusion, in the same sentence**: what goes out is fact-finding and never
+      the interview, which stays the orchestrator's with the human in the room (D5a). **This is the worse of the two
+      dangerous misreadings in this change** — the other is D4's.
+- [ ] Nothing anywhere reads as licence to dispatch an agent to run the grilling, and the existing rule that a missing
+      interview skill stops the run rather than improvising one is untouched (D5a).
+- [ ] **"Dispatching a sweep never holds up the interview" is narrowed rather than deleted or left verbatim** — it says
+      that a sweep never holds up the questions it does not touch, and this file owns the wall-clock case openly (D6c).
+- [ ] **The brief's artifact list carries the artifacts a sweep named**, stated as where the looking happened rather
+      than what it found, so the next ticket's reading bar does not shrink as the interview stops reading (D9a).
 - [ ] The rule does **not** read as forbidding the **brief**, or the glossary entries and ADRs stage 1 lands — the
       delivery skill's read-only and never-fix edges are not carried over (D4). **This is the single most dangerous
       misreading in the change.**

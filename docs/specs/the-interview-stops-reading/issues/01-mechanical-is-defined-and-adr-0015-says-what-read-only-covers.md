@@ -1,4 +1,4 @@
-# 01 — `mechanical` and `base ref` are defined, the clause reaches the web, and ADR 0015 says what read-only covers
+# 01 — `mechanical` is defined, the clause reaches the web, and ADR 0015 says what read-only covers
 
 Status: ready-for-agent
 
@@ -11,10 +11,19 @@ settles for itself. It is already bolded three times in the delivery skill and s
 bold marks a glossary term in this repository, so today it is a dangling one, and the refinement skill is about to make
 it a fourth use in a second skill.
 
-**Base ref** enters it too, for the same reason one ticket later: after this epic the phrase is a term in four shipping
-files. What is being defined is not git's "ref" but **the** base ref — the one commit a **run** read the code at,
-recorded in the **brief** and carried into every document a **writer** publishes, one per run and explicitly never one
-per **claim**. That cardinality was a decision, and the glossary is the only place a rule of that shape survives.
+**The entry carries the test and not only the label.** A mechanical question is answerable **in a single look**, and
+following a thread — a search whose results are read to decide what to search next — is not one, however cheap each step
+of it looks. That clause is the load-bearing half of the rule, and the glossary is where it lives because the glossary
+is the one document a reader of either skill meets. `build/SKILL.md` is **not** given it: a prohibition needs an outlet,
+and a delivering orchestrator has none — it dispatches this plugin's own named agents, one at a time, and its edges are
+read only and never fix. The next ticket states the test in the refinement skill's own prose as well, because that file
+ships and this one does not.
+
+**The word carries two other senses, and both are dealt with here.** One is *rote or automatable* — "one mechanical
+change" in the glossary's **Wide refactor** entry and in `tickets-writer.md`. The other is *asserted by a test rather
+than by a reader* — the glossary's own **Verifier** entry closes on "What a test can assert **mechanically** is never
+its business". A glossary that defines a word on one line and uses it otherwise a few hundred lines later is the
+sharpest instance of what this epic exists to prevent, so neither is left standing beside the new entry.
 
 **The clause gains the web here, in every place it is stated.** The rule reaches the tree, the forge and the web alike
 on one test, and the next ticket's refinement rule copies this clause verbatim — so the delivery skill, ADR 0015 and
@@ -45,7 +54,7 @@ This is **prefactoring** — it lands first so the slice after it is smaller. Ma
 change.
 
 Files: `CONTEXT.md`, `docs/adrs/0015-the-orchestrator-forms-no-judgement.md`, `plugin/skills/build/SKILL.md`,
-`plugin/agents/tickets-writer.md`. Decisions D2, D3, D12, D13, D19 and D21a in
+`plugin/agents/tickets-writer.md`. Decisions D1, D2, D3, D7, D12, D13, D19 and D26 in
 `docs/specs/the-interview-stops-reading/spec.md`.
 
 - [ ] Every snippet being replaced was confirmed present in the current source **before** editing, and any mismatch was
@@ -53,21 +62,29 @@ Files: `CONTEXT.md`, `docs/adrs/0015-the-orchestrator-forms-no-judgement.md`, `p
 - [ ] The glossary carries a **Mechanical** entry: a question about the tree, the forge or the web whose answer is true
       or false rather than good or bad, and the fact that answers one, and the only kind an orchestrator settles for
       itself (D12).
+- [ ] **That entry carries the test.** Answerable in a single look, and a thread — a search whose results are read to
+      decide what to search next — is not one, however cheap each step of it looks (D1, D2).
+- [ ] **`build/SKILL.md` is not given the thread clause**, and the decision that says why is not re-argued here: a
+      delivering orchestrator has nowhere to send a thread (D2).
+- [ ] **ADR 0015 does not restate the test either.** It uses the term the glossary now defines, as the doc stack
+      requires of an ADR, so the test has one wording and not two (D2).
 - [ ] The entry carries an `_Avoid_` list, as every other entry in the glossary does, and sits in the section its
       neighbours' subject matter puts it in — *The run*, beside **Orchestrator**.
 - [ ] The entry is consistent with the term's existing uses in `plugin/skills/build/SKILL.md` and in ADR 0015 —
       confirmed by reading both, not assumed. **That file uses the word four times, three of them bold**; all four
       modify a question or a fact and none needs rewording (D12).
-- [ ] The glossary carries a **Base ref** entry: the one commit a **run** read the code at, recorded in the brief and
-      carried into every document a writer publishes — **one per run and never one per claim**, with that cardinality
-      stated in the entry rather than left to the skill (D21a).
-- [ ] The **Base ref** entry carries an `_Avoid_` list too, and sits in the section its neighbours' subject matter puts
-      it in.
-- [ ] **The word's second sense keeps its meaning under another word.** `plugin/agents/tickets-writer.md` drops
-      "mechanical" from "one mechanical change" and keeps its examples, which already carry the rote sense. The
-      glossary's **Wide refactor** entry has none, so dropping the word there alone would leave nothing carrying it:
-      that entry reads "one **rote** change — rename a column, retype a shared symbol — whose blast radius …", taking
-      both the word and the examples from the agent file so the two finally read alike (D12).
+- [ ] **No `Base ref` entry is added**, and no glossary entry mentions one: that term went with the withdrawn D21a
+      (D26).
+- [ ] **The word's second sense keeps its meaning under another word, and both places use that word.**
+      `plugin/agents/tickets-writer.md` says "one **rote** change" where it said "one mechanical change", keeping its
+      examples. The glossary's **Wide refactor** entry has no examples, so it takes those: "one **rote** change — rename
+      a column, retype a shared symbol — whose blast radius …". **Dropping the word on one side and adding a different
+      one on the other would leave them not matching**, which is the whole point of this criterion (D12).
+- [ ] **The third sense is gone from the glossary as well.** `CONTEXT.md`'s **Verifier** entry says what it means —
+      asserted by a test — rather than leaning on the word the new entry defines. Its own use in `CONTRIBUTING.md` lands
+      with ticket 03, which edits that file anyway (D12).
+- [ ] The glossary's **Sweep** entry states the cardinality the refinement skill is about to rely on: one subject each,
+      and more than one may be in flight (D7).
 - [ ] **No comment under `plugin/mcp/` is touched.** The rote sense appears there roughly twenty times — "the observer's
       mechanical half" and the like — unbolded and in no instruction a model reads, so the one-term rule is not broken
       and rewording them would put a large diff in the only package CI checks for no change in behaviour (D12).
