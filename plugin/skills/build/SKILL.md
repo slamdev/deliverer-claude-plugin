@@ -17,11 +17,11 @@ rather than going to look, and the bearings you take from the branch and the cha
 what a finding says. Yours is the work no agent does: read the epic for its tickets, dispatch in order, read each
 report, keep the task list current, and flip the change request ready at the end.
 
-A **mechanical question about the tree or the forge** is yours to settle — does it build, does this symbol exist, what
-does the branch carry, are the change request's **checks** green — because that asks whether a report's fact is true,
-not whether its judgement is right. A finding, a design, whether the work is good — those are never yours to form a view
-on. Two edges on it: **read only**, and the only things to do with what you find are **put a stage back to an agent —
-continued or cold — or report it**, never fix.
+A **mechanical question about the tree, the forge or the web** is yours to settle — does it build, does this symbol
+exist, what does the branch carry, are the change request's **checks** green — because that asks whether a report's fact
+is true, not whether its judgement is right. A finding, a design, whether the work is good — those are never yours to
+form a view on. Two edges on it: **read only**, and the only things to do with what you find are **put a stage back to
+an agent — continued or cold — or report it**, never fix.
 
 **Resume.** This epic may be part-delivered — by an earlier run of your own that was interrupted, or by hand. The epic
 branch and the change request are what say how far it got: the commits carrying a `Ticket:` line name the tickets

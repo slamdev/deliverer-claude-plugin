@@ -63,7 +63,7 @@ renumbering the set.
 - **One context.** Each slice is sized to fit a single fresh context window — that is exactly what it gets downstream:
   one ticket, one agent, one context.
 
-**A wide refactor is the exception to slicing vertically.** A **wide refactor** is one mechanical change — rename a
+**A wide refactor is the exception to slicing vertically.** A **wide refactor** is one **rote** change — rename a
 column, retype a shared symbol — whose **blast radius** fans across the whole codebase, so a single edit breaks
 thousands of call sites at once and no tracer bullet lands green. Sequence it **expand–contract** instead: one ticket
 expands, adding the new form beside the old so nothing breaks; then one ticket per batch of call sites, batches sized by
