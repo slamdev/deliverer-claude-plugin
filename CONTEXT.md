@@ -50,8 +50,9 @@ A refactor that lands in a ticket of its own, first, to make the slices after it
 make the easy change. _Avoid_: cleanup, refactor ticket
 
 **Wide refactor**:
-One **rote** change — rename a column, retype a shared symbol — whose blast radius — how many call sites a single edit
-breaks at once — crosses the whole codebase, so no tracer bullet can land green. The one exception to vertical slicing.
+One **rote** change, such as renaming a column or retyping a shared symbol, whose blast radius — how many call sites a
+single edit breaks at once — crosses the whole codebase, so no tracer bullet can land green. The one exception to
+vertical slicing.
 _Avoid_: sweeping change, mass rename
 
 **Expand–contract**:

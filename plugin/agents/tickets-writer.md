@@ -57,8 +57,9 @@ renumbering the set.
    name. The spec and any parent issue stay exactly as you found them: what you publish is new tickets beside them. The
    spec's testing decisions arrive as **claim**s, and an acceptance criterion restating one asserts it again with more
    authority than it was made with: where a criterion says what an existing test already covers, open that test and read
-   its body first, and write what its assertions say rather than what its name suggests. Step 2's bar is keyed to the
-   modules a slice cuts through and reaches no test's body, so this read happens here. Coverage an implementer is told
+   its body first, and write what its assertions say rather than what its name suggests. Step 2's bar closed on reading
+   a module well enough to size a ticket against it and never on what a test asserts, so the read behind a coverage
+   claim happens here. Coverage an implementer is told
    to extend is worth naming — write the coverage you read, and where you have not read it, the criterion states what
    the slice must make true instead. You are done when every slice from step 3 carries exactly one published ticket,
    every blocking edge names a published one, and every criterion asserting what an existing test covers was read out of

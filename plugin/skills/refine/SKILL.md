@@ -175,4 +175,6 @@ The human who ran this sat through stage 1, so your report is what came of it ra
 - what the writers raised for a human — a seam newly proposed, an ADR the spec contradicts, a **claim** of yours a
   writer killed or could settle neither way, a user story no ticket covers, two tickets the set does not build in number
   order, a term the glossary does not carry — or that every claim you marked survived the writer's reading
+- every hand-off, one line each — anything still waiting on a human, and a question of fact you had to read inline for
+  want of an agent to sweep with
 - the call that delivers the epic: `/deliverer:build <epic location>`
