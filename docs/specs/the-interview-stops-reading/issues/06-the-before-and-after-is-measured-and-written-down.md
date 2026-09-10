@@ -43,26 +43,26 @@ reopen — model and effort tiers, naming the sweep's target — are hand-offs b
 
 Files: `docs/specs/the-interview-stops-reading/spec.md`, and nothing else. Decisions D16, D17 and D17a in that spec.
 
-- [ ] The "before" figure was taken from a clean checkout of the default branch, and the write-up names the commit.
-- [ ] The "after" figure was taken on the finished branch, with every slice that changes a run landed — 01 to 04,
+- [x] The "before" figure was taken from a clean checkout of the default branch, and the write-up names the commit.
+- [x] The "after" figure was taken on the finished branch, with every slice that changes a run landed — 01 to 04,
       and 05 whether or not it had landed, since it edits no file a run reads.
-- [ ] Both report, per agent, **model turns, peak context and tokens by kind**, read through the guide's own tally over
+- [x] Both report, per agent, **model turns, peak context and tokens by kind**, read through the guide's own tally over
       the **trace** the observer wrote for that run (D16).
-- [ ] **Both report how many sweeps the run sent out**, named as the one direct test of whether the trigger fired — and
+- [x] **Both report how many sweeps the run sent out**, named as the one direct test of whether the trigger fired — and
       a count of zero on the "after" run is written up as the finding rather than repeated (D17a).
-- [ ] Each run's **spend** is reported labelled with the provider that served it, and **what the observation itself
+- [x] Each run's **spend** is reported labelled with the provider that served it, and **what the observation itself
       cost** is reported beside it (D16).
-- [ ] Each run's measured wall clock is reported — sweeps buying spend with wall clock is what only this measurement
+- [x] Each run's measured wall clock is reported — sweeps buying spend with wall clock is what only this measurement
       would catch before a user does.
-- [ ] **Every attempt is written up**, not only the one that passed, with its figures and why it ended (D17a).
-- [ ] **At most three attempts per figure** (D17a).
-- [ ] Only a run that never started or one that failed a mechanical assertion was repeated. **A failed verifier verdict
+- [x] **Every attempt is written up**, not only the one that passed, with its figures and why it ended (D17a).
+- [x] **At most three attempts per figure** (D17a).
+- [x] Only a run that never started or one that failed a mechanical assertion was repeated. **A failed verifier verdict
       ended the slice and was reported as the finding** (D17a).
-- [ ] A **ceiling** reached was reported as a ceiling and never as a failed assertion.
-- [ ] **No file outside the spec was edited** — not the test, not the **harness**, not `README.md`, and none of the
+- [x] A **ceiling** reached was reported as a ceiling and never as a failed assertion.
+- [x] **No file outside the spec was edited** — not the test, not the **harness**, not `README.md`, and none of the
       prose the slices before this one landed (D17a).
-- [ ] The results sit in a **dated section of the spec's Further Notes**, beside the figures it already carries for the
+- [x] The results sit in a **dated section of the spec's Further Notes**, beside the figures it already carries for the
       run that motivated this epic.
-- [ ] The write-up says plainly what the figure does not settle, the fixture's smallness included.
-- [ ] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
-- [ ] Nothing from the observed repository — its name, paths, domain or the idea it refined — appears in any of it.
+- [x] The write-up says plainly what the figure does not settle, the fixture's smallness included.
+- [x] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
+- [x] Nothing from the observed repository — its name, paths, domain or the idea it refined — appears in any of it.

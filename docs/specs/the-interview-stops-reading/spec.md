@@ -885,6 +885,111 @@ system prompt only to load them into the message stream on the first turn, so th
 rewrite. That leaves the expiries as the part this change reaches, and what the interview holds across a human's pause
 as the only lever the plugin has on them.
 
+### The before-and-after, measured 2026-09-09
+
+**One attempt each, and each passed on it.** Neither **run** failed to start, neither failed a mechanical assertion,
+neither reached a **ceiling**, and the **verifier** passed on both — so nothing was repeated, no attempt is unreported
+and the three-attempt bound in D17a was never approached. Both are `node --test tests/refine-happy-path.test.ts` against
+the same **fixture** (`typescript-library` — word-wrapping in a small library), the same **standing repo** at
+`7d99e9ce83d2`, the same **responder** and the same ceilings of ninety minutes and twenty-five dollars.
+
+- **"before"** — a clean `main` worktree at `4234d15`, installed from a **staged copy** of that worktree (`da1fae3c`).
+- **"after"** — this branch with slices 01 to 05 landed, at `742da87`, staged copy `7f8f240`.
+
+**Sweeps: one on the "before" run and one on the "after" run, and that is the headline.** D17a makes the count the only
+direct test of the bet, and on this fixture it does not separate the two runs. The "before" run's first **dispatch** is
+a bare `general-purpose` agent titled *Sweep ANSI wrap style-continuity facts*, whose own prompt opens "You are a
+fact-finding sweep for a design interview"; the "after" run's is the same shape, on SGR state semantics. So the trigger
+fired on the branch — and it had already been firing on `main`, which the observed private run's zero sweeps gave no
+reason to expect. **The change cannot be credited with the sweep this fixture produces**, and nothing here says whether
+the trigger would fire where the upstream **imperative** did not. Both counts are read off the `#` rows of each run's
+**trace**, where a sweep is named with the agent that ran it — and the risk above, that the **observer** does not
+recognise a sweep as the run's own, did not bite on either: the interview's own turns bracket the sweep in both, so both
+accounts carry it.
+
+**Per agent, "before"** — model turns, peak context and tokens by kind:
+
+| agent | model turns | peak context | in | out | cache-write | cache-read |
+|---|---:|---:|---:|---:|---:|---:|
+| the interview | 27 | 108,144 | 54 | 47,360 | 167,071 | 1,747,489 |
+| #1 the sweep (`general-purpose`) | 29 | 67,216 | 58 | 14,871 | 77,956 | 1,152,158 |
+| #2 `deliverer:spec-writer` | 71 | 176,535 | 142 | 117,039 | 331,038 | 6,727,446 |
+| #3 `deliverer:tickets-writer` | 14 | 63,259 | 28 | 18,984 | 58,888 | 564,857 |
+| whole run | 141 | — | 282 | 198,254 | 634,953 | 10,191,950 |
+
+**Per agent, "after"**:
+
+| agent | model turns | peak context | in | out | cache-write | cache-read |
+|---|---:|---:|---:|---:|---:|---:|
+| the interview | 41 | 111,821 | 82 | 52,436 | 191,387 | 3,053,092 |
+| #1 the sweep (`general-purpose`) | 16 | 30,888 | 32 | 13,862 | 43,092 | 317,842 |
+| #2 `deliverer:spec-writer` | 88 | 133,268 | 176 | 73,279 | 376,851 | 7,058,801 |
+| #3 `deliverer:tickets-writer` | 57 | 99,990 | 114 | 51,273 | 179,177 | 3,787,502 |
+| whole run | 202 | — | 404 | 190,850 | 790,507 | 14,217,237 |
+
+**The interview did not shrink, and that is the one number D16 says to read.** Its model turns went 27 → 41, its peak
+context 108,144 → 111,821, its own cache read 1.75M → 3.05M, and the trace's count of tool calls in the run's own
+record 41 → 54. Its share of the run's cache read rose from 17% to 21%. Whatever the sweep took off it, more came back.
+
+**The one figure that moved the way the change intended is the spec writer's.** Its peak context fell 176,535 →
+133,268, a quarter, and its stage's wall clock halved — 42m49s to 20m34s — which is the shape D9's done-bar was
+written for. The sweep also came back cheaper — 29 turns and a 67,216 peak against 16 and 30,888. The tickets writer
+went the other way on every figure, publishing eight **ticket**s where the "before" run published six.
+
+**Spend, both runs served by the same provider**: whatever `ANTHROPIC_BASE_URL` named in the environment the
+**harness** handed each session, which bills through Amazon Bedrock — every one of the 141 and the 202 requests carries
+a Bedrock-shaped message id. The dollar figures are the host's own estimate at first-party rates, so what they support
+is a ratio between two runs on one provider and never a bill.
+
+| | "before" | "after" |
+|---|---:|---:|
+| measured wall clock | 81m 03s | 68m 21s |
+| the run, with the responder in it | $17.51 | $20.29 |
+| of which the responder | $0.23 | $0.26 |
+| the **verdict**, out of band | $0.65 | $0.66 |
+| what the observation cost, out of band | $1.77 | $2.17 |
+| question rounds / questions | 8 / 26 | 9 / 29 |
+| tickets published | 6 | 8 |
+
+**So spend went up 16% while the wall clock came down 16%**, which is the opposite of the trade D17 was watching for.
+The observation went up with it, 23%, on the same three dispatch notes and one synthesis — more material graded rather
+than more gradings. Both figures are read where they are owed: the run's and the wall clock from the **harness**'s own
+measured line, the observation from each **debrief**'s `what this observation cost` header line.
+
+**The extra work does not explain the extra spend.** The "after" run published more — eight tickets against six, 56
+user stories against 45 — but in about the same volume: 1,052 lines of spec, tickets and ADRs against 1,102, and *fewer*
+output tokens (190,850 against 198,254). What grew is turns over context: 202 requests against 141, and 14.22M cache
+read against 10.19M. Spend per request in fact fell, from about $0.12 to about $0.10 (derived), so the change made a
+turn cheaper and the run took 61 more of them.
+
+**Where each figure came from.** The per-agent rows are the trace's `== tokens ==` section, and the peaks were worked
+out by hand from its ordered section, exactly as `CONTRIBUTING.md` § Tallying a run prescribes. Each trace was distilled
+by hand from that run's own **session record** with the guide's command — no model and no money — and came out
+byte-identical to the one the **observer** had already written beside its debrief. Both debriefs read "not yet final"
+when the harness returned and were finalised afterwards, so the observation figures are the finalised ones.
+
+**What these figures do not settle.**
+
+- **The fixture is too small to hold the waste this change removes.** Before its first dispatch the "before" run made
+  five tool calls in its own record and the "after" run eight — against 47 of 62 on the observed run, which is the block
+  this epic was written for. The baseline has no interview-shaped reading to remove, so the ratio measures its absence.
+- **One run each.** Nothing here separates the change from the spread between two runs of the same fixture, which
+  nobody has measured. A 16% move in either direction may be entirely that.
+- **The two runs did not deliver the same amount of work** — eight tickets and 56 stories against six and 45, one ADR
+  against three, nine question rounds against eight. A figure per ticket or per user story would be derived from a
+  sample of one and is not stated.
+- **The wall clock is soft.** Both runs were driven on a loaded machine with other agents working beside them, so the
+  81m and the 68m carry that as well as the plugin.
+- **Nothing here says the **claim**s got truer.** D23's bar is unmeasured: neither run's spec or tickets was audited
+  against the fixture's code the way the observed run's were.
+- **The observer's own account of the "after" run is imperfect** — its debrief header reads **stopped** in the spec
+  stage for a run that finished and whose verdict passed. It bends the account and not the tally; the figures above are
+  read off the trace's rows rather than off that line.
+
+**Nothing in this epic's prose was edited to move any of it**, per D17a. The levers a flat figure reopens stay
+hand-offs: model and effort tiers per D14, and naming the sweep's target per D15 — the second now with a run behind it
+saying the trigger is not the thing that needs naming on a fixture this size.
+
 ### Hand-offs
 
 - **The base ref, and a **writer** continued across a moved one** — the withdrawn D21, D21a and D22, per D26. It is the
