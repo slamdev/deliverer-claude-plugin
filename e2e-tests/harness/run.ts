@@ -193,6 +193,18 @@ export async function driveRun(options: RunOptions): Promise<RunOutcome> {
       // it to.
       permissionMode: "bypassPermissions",
       canUseTool: options.canUseTool,
+      // What a run REASONED, and not only what it did. `display` defaults to `omitted` on the models
+      // these runs use, which writes every thinking block to the **session record** with its text
+      // empty and an encrypted signature in place of it — so a record says which files an agent
+      // opened and never why it opened them. `summarized` is what puts prose there instead, and it
+      // reaches a **dispatch**'s own record as well as the orchestrator's, which is the half that
+      // matters: the writers and a **sweep** are where the reasoning worth reading is. Verified on a
+      // throwaway session that dispatched a sub-agent, both records carrying text and no empty
+      // block. Two things it is not. It is not the raw reasoning — no model exposes that, and a
+      // summary is what the provider returns. And it is not free: the summary is output tokens, so
+      // a figure taken after this line is a little above one taken before it, and the pair recorded
+      // in `docs/specs/the-interview-stops-reading/spec.md` was measured without it.
+      thinking: { type: "adaptive", display: "summarized" },
       // The whole ceiling, because this figure is fixed here and can only ever be about the session:
       // what is spent beside it is not the session's to know, and the watch below is what holds the
       // pair of them to the same ceiling.
