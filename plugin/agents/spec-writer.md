@@ -47,8 +47,21 @@ beside it.
    human's answer to that decision, the answer is what it is settled on instead** — the claim is still dead and still
    out of the spec, and the decision goes in closed rather than open, on that answer as its **grounds**. One you can
    settle neither way goes to your report too, rather than into the spec as a fork — a fork is a decision a reasonable
-   engineer could go either way on, and a claim is a question of fact nobody chose. You are done when every claim the
-   brief marks is settled first-hand, killed, or recorded as unsettleable.
+   engineer could go either way on, and a claim is a question of fact nobody chose. **The brief's settled decisions
+   collide too, and catching that is this step's other half**: a collision is two decisions the brief settled that
+   cannot both hold on an input the spec names. Step 2's reading is what makes one visible — trace a settled decision's
+   consequences into the code you opened, and the decision you hit is the second one — so nothing in the brief marks a
+   collision for you the way it marks a claim, and reading the brief alone never turns one up. It is neither of the two
+   things beside it: a claim is the question of fact just described, and a fork the brief left open is one the human
+   already knows about. A collision is two decisions the brief closed, in conflict, and nothing wider. **A collision is
+   yours to find and never yours to settle**: which of the two decisions stands is the human's, so the collision goes to
+   your report and the decision it reopens rides into the spec as a **fork** marked the human's to close, beside the
+   ones the brief left open and the ones a killed claim reopened — rather than resolved onto whichever road you would
+   have taken, which closes in silence the decision this whole refinement exists to put to the human. Where your
+   dispatch carries the human's answer to it, that answer settles it exactly as it settles a killed claim's decision:
+   the decision goes in closed rather than open, on that answer as its **grounds**. You are done when every claim the
+   brief marks is settled first-hand, killed, or recorded as unsettleable, and every collision your reading turned up is
+   in your report with the fork it became.
 4. **Sketch the seams** the feature gets tested at, and the **prior art** beside them — the tests this codebase already
    has for the area. Prefer an existing seam to a new one, and the highest seam to a lower one; the fewer seams across
    the codebase the better, and one is ideal. Where a new seam is unavoidable, propose it at the highest point it can
@@ -134,6 +147,9 @@ Whoever reads this has your report and nothing else.
 - the spec's location — the dispatch after yours is handed it
 - the seams you named, and any new one you proposed
 - every open fork the spec carries, one line each — those are still the human's
+- every collision your reading found between decisions the brief had already settled, one line each, naming the two
+  decisions and the **fork** it became — a fork on the line above is one the human left open and already knows about,
+  where a collision is news to them: your reading is what took that decision open again
 - every **claim** the brief marked that your reading killed, with what you found instead and the decision it took down
   with it, and every one you could settle neither way — or that every claim it marked survived
 - every ADR the spec contradicts, with its grounds, or that it contradicts none

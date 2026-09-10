@@ -48,27 +48,27 @@ killed, or recorded as unsettleable. The collisions the step found join it; noth
 Files: `plugin/agents/spec-writer.md`, and nothing else. Decisions D5, D6, D7 and D8, with D14, in
 `docs/specs/the-spec-writer-is-primed-once/spec.md`.
 
-- [ ] Every snippet being replaced was confirmed present in the current source **before** editing, and any mismatch was
+- [x] Every snippet being replaced was confirmed present in the current source **before** editing, and any mismatch was
       reported rather than guessed around.
-- [ ] Step 3 checks for **collisions between decisions the brief already settled** — two that cannot both hold on an
+- [x] Step 3 checks for **collisions between decisions the brief already settled** — two that cannot both hold on an
       input the spec names (D5, D6).
-- [ ] The category is stated narrowly enough that a reader cannot mistake it for a claim or for a fork the brief left
+- [x] The category is stated narrowly enough that a reader cannot mistake it for a claim or for a fork the brief left
       open (D6).
-- [ ] A collision rides into the spec as a **fork** marked the human's to close, beside the brief's open forks and any a
+- [x] A collision rides into the spec as a **fork** marked the human's to close, beside the brief's open forks and any a
       killed claim reopened (D7).
-- [ ] **The writer never settles a collision itself**, and the prose says so in the same passage that tells it to look —
+- [x] **The writer never settles a collision itself**, and the prose says so in the same passage that tells it to look —
       the most dangerous misreading in this ticket (D7).
-- [ ] Where the writer's dispatch already carries the human's answer, the decision goes in closed on that answer as its
+- [x] Where the writer's dispatch already carries the human's answer, the decision goes in closed on that answer as its
       **grounds**, in the wording ticket 01 landed and read out of the landed file (D11).
-- [ ] The writer's report carries **its own line** for collisions found, with the fork each became, distinct from the
+- [x] The writer's report carries **its own line** for collisions found, with the fork each became, distinct from the
       open-forks line beside it (D8).
-- [ ] A reader of the report contract cannot merge the two lines and lose which forks the human has already seen (D8).
-- [ ] Step 3's done-bar still closes on every claim being settled first-hand, killed or recorded as unsettleable, and
+- [x] A reader of the report contract cannot merge the two lines and lose which forks the human has already seen (D8).
+- [x] Step 3's done-bar still closes on every claim being settled first-hand, killed or recorded as unsettleable, and
       now also on the collisions the step found.
-- [ ] **No new glossary term is added and `CONTEXT.md` is not edited by this ticket** (D7, D14).
-- [ ] Steps 1, 2 and 4 are untouched, and no new numbered step is added (D5).
-- [ ] Step 5 is not edited by this ticket — the publish gate is ticket 04.
-- [ ] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
-- [ ] Register holds: this file is prose written to be read by a model.
-- [ ] The file's prevailing column width is matched — 120 **characters**, not bytes.
-- [ ] No **effort** tier, model or **ceiling** changes (D15).
+- [x] **No new glossary term is added and `CONTEXT.md` is not edited by this ticket** (D7, D14).
+- [x] Steps 1, 2 and 4 are untouched, and no new numbered step is added (D5).
+- [x] Step 5 is not edited by this ticket — the publish gate is ticket 04.
+- [x] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
+- [x] Register holds: this file is prose written to be read by a model.
+- [x] The file's prevailing column width is matched — 120 **characters**, not bytes.
+- [x] No **effort** tier, model or **ceiling** changes (D15).
