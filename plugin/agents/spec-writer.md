@@ -80,10 +80,18 @@ beside it.
    fork, and not for step 3's case alone. **A fork you hold no grounds for is an open fork**: it rides into the spec
    still open and marked the human's to close, exactly as one the brief left open does. Those two are the only states a
    fork reaches the spec in, so a fork the published document calls settled is one the dispatch after yours reads the
-   grounds of rather than one it discovers nobody closed. You are done when the published spec carries that label and
-   every section of the template, every claim that survived step 3 written up as the fact it now is, every decision and
-   open fork from step 1 — a decision whose claim step 3 killed counts as carried in either of the two forms step 3
-   gives it — and every fork it writes up as closed carrying the grounds that closed it.
+   grounds of rather than one it discovers nobody closed. **Two decisions that cannot both hold on an input the spec
+   names reach it as one open fork, never as two settled decisions.** That is step 3's collision, surfacing as you write
+   rather than as you read — you hold both decisions as you set them down, and what you know at that moment is the whole
+   of what this asks of you. The spec publishes either way, with the fork in it rather than waiting on the answer that
+   closes it. The fork is marked the human's to close and rides in the template's Further Notes beside the ones the
+   brief left open, **naming both roads and the settled decision each road came from**: you hold the context that found
+   the collision and nobody downstream does, so that naming is what makes one answer from the human enough to close it,
+   where a road left unnamed costs them a re-read of the brief or a cold dispatch that pays for the whole write again.
+   You are done when the published spec carries that label and every section of the template, every claim that survived
+   step 3 written up as the fact it now is, every decision and open fork from step 1 — a decision whose claim step 3
+   killed counts as carried in either of the two forms step 3 gives it — every fork it writes up as closed carrying the
+   grounds that closed it, and no two decisions written up as settled that cannot both hold on an input it names.
 6. **Report**, as below.
 
 ## Spec template
@@ -135,8 +143,8 @@ The things this spec does not cover.
 
 Anything else the epic's readers need, including:
 
-- every **fork** still open — the ones the brief left open, and any a killed **claim** reopened — each marked as the
-  human's to close, so no ticket closes it silently
+- every **fork** still open — the ones the brief left open, any a killed **claim** reopened, and any a collision between
+  settled decisions took open again — each marked as the human's to close, so no ticket closes it silently
 - every ADR this spec contradicts, with the grounds for reopening it
 ```
 

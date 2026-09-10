@@ -45,25 +45,25 @@ latter has bought a cost this epic is trying to remove.
 Files: `plugin/agents/spec-writer.md`, and nothing else. Decisions D9 and D10 in
 `docs/specs/the-spec-writer-is-primed-once/spec.md`.
 
-- [ ] Every snippet being replaced was confirmed present in the current source **before** editing, and any mismatch was
+- [x] Every snippet being replaced was confirmed present in the current source **before** editing, and any mismatch was
       reported rather than guessed around.
-- [ ] Step 5's done-bar forbids two decisions that contradict each other on an input the spec names from **both being
+- [x] Step 5's done-bar forbids two decisions that contradict each other on an input the spec names from **both being
       written up as settled** (D9).
-- [ ] The bar **does not block publication**, and no reader can conclude that a collision found here stops the spec
+- [x] The bar **does not block publication**, and no reader can conclude that a collision found here stops the spec
       being published (D9).
-- [ ] A collision caught at this point publishes as an **open fork** marked the human's to close (D9).
-- [ ] The fork names **both roads** and which settled decision each came from, so one answer from the human closes it
+- [x] A collision caught at this point publishes as an **open fork** marked the human's to close (D9).
+- [x] The fork names **both roads** and which settled decision each came from, so one answer from the human closes it
       (D10).
-- [ ] It lands in the template's existing **Further Notes** list of open forks, extended rather than duplicated (D10).
-- [ ] Step 5's existing bar is otherwise intact: the triage label, every section of the template, every surviving claim
+- [x] It lands in the template's existing **Further Notes** list of open forks, extended rather than duplicated (D10).
+- [x] Step 5's existing bar is otherwise intact: the triage label, every section of the template, every surviving claim
       written up as fact, and every decision and open fork from step 1.
-- [ ] **The bar is not an instruction to re-read the published spec hunting for contradictions**, and the prose cannot
+- [x] **The bar is not an instruction to re-read the published spec hunting for contradictions**, and the prose cannot
       be read that way.
-- [ ] The collision category is not redefined here — the landed wording from ticket 03 is used, and the two do not
+- [x] The collision category is not redefined here — the landed wording from ticket 03 is used, and the two do not
       drift.
-- [ ] Steps 1 to 4 and step 6 are untouched by this ticket.
-- [ ] `plugin/skills/refine/SKILL.md` and `CONTEXT.md` are not edited by this ticket.
-- [ ] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
-- [ ] Register holds: this file is prose written to be read by a model.
-- [ ] The file's prevailing column width is matched — 120 **characters**, not bytes.
-- [ ] No **effort** tier, model or **ceiling** changes (D15).
+- [x] Steps 1 to 4 and step 6 are untouched by this ticket.
+- [x] `plugin/skills/refine/SKILL.md` and `CONTEXT.md` are not edited by this ticket.
+- [x] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
+- [x] Register holds: this file is prose written to be read by a model.
+- [x] The file's prevailing column width is matched — 120 **characters**, not bytes.
+- [x] No **effort** tier, model or **ceiling** changes (D15).
