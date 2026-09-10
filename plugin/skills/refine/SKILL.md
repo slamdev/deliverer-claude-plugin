@@ -69,11 +69,15 @@ re-run.
 2. **Write the brief** — as **The brief** below. You are done when every one of the five things it carries is written
    out of the conversation or stated to hold nothing, and a fresh agent could carry the design forward from it alone.
 3. **Write the spec** — dispatch `spec-writer`. It publishes the spec to the project's issue tracker. Keep the location
-   it reports. A **claim** its reading killed took a decision down with it: say what the writer found and put that
-   decision back to the human as a **fork** before stage 4 runs, then put the stage back to the writer to fold their
-   answer into the published spec — the answer riding that put-back whether you continue the writer or dispatch a cold
-   one, since an answer that reaches stage 4 any other way is one the record does not carry. You are done when the
-   spec's location is in hand and no decision a killed claim took down is still open.
+   it reports. Its **report** raises the **fork**s its reading forced — among them the decision a killed **claim** took
+   down with it — and every one is yours to hold: say what the writer found, close them all with the human in one round
+   of questions (**Asking**) before stage 4 runs, and put the stage back once carrying every answer, whether you
+   continue the writer or dispatch a cold one, since an answer that reaches stage 4 any other way is one the record does
+   not carry. **One report, one round, one put-back**: the report bounds the set, being already the only thing a
+   dispatch returns, so the forks it raised are the whole set and you have them the moment it lands. Folding those
+   answers in can raise forks the writer could not have seen before, and the corrected report carries them — that
+   report is the next one, held and closed and folded in the same way, as often as the writing needs. You are done when
+   the spec's location is in hand and no decision a killed claim took down is still open.
 4. **Break it into tickets** — dispatch `tickets-writer`. It publishes one ticket per slice, numbered in dependency
    order. Keep the count and the locations it reports.
 5. **Hand the epic over** — report as below, and name the call that delivers it: `/deliverer:build <epic location>`, the

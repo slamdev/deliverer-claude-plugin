@@ -54,27 +54,27 @@ killed claim took down is still open" is unchanged in substance; only the shape 
 Files: `plugin/skills/refine/SKILL.md`, and nothing else. Decisions D1, D2, D3 and D4 in
 `docs/specs/the-spec-writer-is-primed-once/spec.md`.
 
-- [ ] Every snippet being replaced was confirmed present in the current source **before** editing, and any mismatch was
+- [x] Every snippet being replaced was confirmed present in the current source **before** editing, and any mismatch was
       reported rather than guessed around.
-- [ ] Stage 3 holds every fork a writer's report raised, closes them with the human in one round, and puts the stage
+- [x] Stage 3 holds every fork a writer's report raised, closes them with the human in one round, and puts the stage
       back **once** carrying every answer (D1).
-- [ ] The **report is named as the wave boundary**, and no poll, wait, signal or guess about further forks is introduced
+- [x] The **report is named as the wave boundary**, and no poll, wait, signal or guess about further forks is introduced
       (D1).
-- [ ] The rule reads as **the rule and not an allowance** — plural by default, with no wording that merely permits
+- [x] The rule reads as **the rule and not an allowance** — plural by default, with no wording that merely permits
       batching (D3).
-- [ ] A further wave is explicitly legitimate and uncapped, and a reader cannot conclude that stage 3 gets at most one
+- [x] A further wave is explicitly legitimate and uncapped, and a reader cannot conclude that stage 3 gets at most one
       correction (D2).
-- [ ] The prose does not read as forbidding a late-surfacing fork from reaching the human at all (D2).
-- [ ] The existing **Asking** contract is neither restated nor contradicted, and one wave may span more than one
+- [x] The prose does not read as forbidding a late-surfacing fork from reaching the human at all (D2).
+- [x] The existing **Asking** contract is neither restated nor contradicted, and one wave may span more than one
       `AskUserQuestion` call (D4).
-- [ ] Stage 3's done-bar still requires the spec's location in hand and no decision a killed claim took down left open.
-- [ ] The clause about the answer riding the put-back "whether you continue the writer or dispatch a cold one" survives,
+- [x] Stage 3's done-bar still requires the spec's location in hand and no decision a killed claim took down left open.
+- [x] The clause about the answer riding the put-back "whether you continue the writer or dispatch a cold one" survives,
       because an answer reaching stage 4 any other way is one the record does not carry.
-- [ ] **Nothing in the Sweeps section, the Continue rule or the Sequencing rule is edited**, and no agent-type
+- [x] **Nothing in the Sweeps section, the Continue rule or the Sequencing rule is edited**, and no agent-type
       preference for a **sweep** is introduced (D16).
-- [ ] `plugin/agents/spec-writer.md` is not edited by this ticket.
-- [ ] The glossary's own words are used — fork, claim, report, writer, run — and none of the synonyms its `_Avoid_`
+- [x] `plugin/agents/spec-writer.md` is not edited by this ticket.
+- [x] The glossary's own words are used — fork, claim, report, writer, run — and none of the synonyms its `_Avoid_`
       lists displace.
-- [ ] Register holds: this file is prose written to be read by a model.
-- [ ] The file's prevailing column width is matched — 120 **characters**, not bytes.
-- [ ] No **effort** tier, model or **ceiling** changes (D15).
+- [x] Register holds: this file is prose written to be read by a model.
+- [x] The file's prevailing column width is matched — 120 **characters**, not bytes.
+- [x] No **effort** tier, model or **ceiling** changes (D15).
