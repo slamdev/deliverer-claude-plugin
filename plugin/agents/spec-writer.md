@@ -61,10 +61,16 @@ beside it.
    proposed, and every statement of what an existing test covers was read out of that test's body.
 5. **Write the spec to the template below and publish it** where the project's conventions put a spec, named from the
    epic's slug so two epics never collide, and carrying the triage label those conventions name for work ready for an
-   agent — where the project names no vocabulary, no label is owed. You are done when the published spec carries that
-   label and every section of the template, every claim that survived step 3 written up as the fact it now is, and every
-   decision and open fork from step 1 — a decision whose claim step 3 killed counts as carried in either of the two
-   forms step 3 gives it.
+   agent — where the project names no vocabulary, no label is owed. **Every fork the spec writes up as closed names what
+   closed it** — the human's answer your dispatch carried, the ADR your reading turned up, the caller that leaves one
+   road standing — as that fork's **grounds**, beside the decision it became. That holds wherever you record a closed
+   fork, and not for step 3's case alone. **A fork you hold no grounds for is an open fork**: it rides into the spec
+   still open and marked the human's to close, exactly as one the brief left open does. Those two are the only states a
+   fork reaches the spec in, so a fork the published document calls settled is one the dispatch after yours reads the
+   grounds of rather than one it discovers nobody closed. You are done when the published spec carries that label and
+   every section of the template, every claim that survived step 3 written up as the fact it now is, every decision and
+   open fork from step 1 — a decision whose claim step 3 killed counts as carried in either of the two forms step 3
+   gives it — and every fork it writes up as closed carrying the grounds that closed it.
 6. **Report**, as below.
 
 ## Spec template

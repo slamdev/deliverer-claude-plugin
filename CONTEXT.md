@@ -85,10 +85,10 @@ an assumption is the verdict that stands, since later legwork can overturn an ea
 recorded has no comment, so it receives none and ships unratified. _Avoid_: ruling, judgement, review
 
 **Grounds**:
-The evidence a verdict, a declined finding or a reopened ADR stands on: a spec line, an ADR, a caller that breaks, a
-concrete failure scenario. For a **defect**, what the observation itself kept — the **trace**, a **dispatch note**, an
-earlier **debrief** of the same **epic**. What makes any of them grounds is that whoever holds the file can find the
-thing cited in it. Never taste. _Avoid_: reason, justification, rationale
+The evidence a verdict, a declined finding, a reopened ADR or a closed fork stands on: a spec line, an ADR, a caller
+that breaks, a concrete failure scenario. For a **defect**, what the observation itself kept — the **trace**, a
+**dispatch note**, an earlier **debrief** of the same **epic**. What makes any of them grounds is that whoever holds the
+file can find the thing cited in it. Never taste. _Avoid_: reason, justification, rationale
 
 **Axis**:
 One dimension a **fork**'s roads are compared on, and what an `improve` **verdict** names where an `override` names

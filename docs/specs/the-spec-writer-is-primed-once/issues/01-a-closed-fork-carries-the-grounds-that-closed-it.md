@@ -41,24 +41,24 @@ its own reader; do not make either a pointer to the other.
 Files: `plugin/agents/spec-writer.md` and `CONTEXT.md`. Decisions D11 and D13, with D14, in
 `docs/specs/the-spec-writer-is-primed-once/spec.md`.
 
-- [ ] Every snippet being replaced was confirmed present in the current source **before** editing, and any mismatch was
+- [x] Every snippet being replaced was confirmed present in the current source **before** editing, and any mismatch was
       reported rather than guessed around.
-- [ ] `spec-writer.md` requires that a fork the published spec declares **closed** names the **grounds** it was closed
+- [x] `spec-writer.md` requires that a fork the published spec declares **closed** names the **grounds** it was closed
       on (D11).
-- [ ] The rule reads as covering every closed fork — one the brief left open and a put-back closed, and one a killed
+- [x] The rule reads as covering every closed fork — one the brief left open and a put-back closed, and one a killed
       claim took down and an answer settled — rather than only the case step 3 already names (D11).
-- [ ] **A fork with no grounds is an open fork**, and the prose says so, so no reader concludes that a closed fork may
+- [x] **A fork with no grounds is an open fork**, and the prose says so, so no reader concludes that a closed fork may
       carry a blank where its grounds go (D11).
-- [ ] The requirement lands on what the **published spec** carries, not only on what the **report** names (D11).
-- [ ] `CONTEXT.md`'s **Grounds** entry names a closed fork alongside a verdict, a declined finding and a reopened ADR
+- [x] The requirement lands on what the **published spec** carries, not only on what the **report** names (D11).
+- [x] `CONTEXT.md`'s **Grounds** entry names a closed fork alongside a verdict, a declined finding and a reopened ADR
       (D13).
-- [ ] The **Grounds** entry keeps its closing test and its `_Avoid_` list, and still reads as one entry about evidence
+- [x] The **Grounds** entry keeps its closing test and its `_Avoid_` list, and still reads as one entry about evidence
       (D13).
-- [ ] **`CONTEXT.md`'s Fork entry is untouched**, and no new glossary term is added (D13, D14).
-- [ ] The agent file's prose carries this rule's whole meaning without depending on the glossary, which does not ship.
-- [ ] No **ADR** is written or amended (D14).
-- [ ] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
-- [ ] Register holds: `plugin/agents/spec-writer.md` is prose written to be read by a model, and `CONTEXT.md` is a
+- [x] **`CONTEXT.md`'s Fork entry is untouched**, and no new glossary term is added (D13, D14).
+- [x] The agent file's prose carries this rule's whole meaning without depending on the glossary, which does not ship.
+- [x] No **ADR** is written or amended (D14).
+- [x] The glossary's own words are used, and none of the synonyms its `_Avoid_` lists displace.
+- [x] Register holds: `plugin/agents/spec-writer.md` is prose written to be read by a model, and `CONTEXT.md` is a
       glossary and nothing else — no implementation detail reaches it.
-- [ ] Each file's prevailing column width is matched — 120 **characters**, not bytes.
-- [ ] No **effort** tier, model or **ceiling** changes (D15).
+- [x] Each file's prevailing column width is matched — 120 **characters**, not bytes.
+- [x] No **effort** tier, model or **ceiling** changes (D15).
