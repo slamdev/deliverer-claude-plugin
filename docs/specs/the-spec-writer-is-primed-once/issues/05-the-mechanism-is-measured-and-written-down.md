@@ -55,20 +55,20 @@ Files: this epic's spec, gaining the run's reading; and `e2e-tests/harness/ceili
 Decisions D15 and D17, with the *Testing Decisions* section, in
 `docs/specs/the-spec-writer-is-primed-once/spec.md`.
 
-- [ ] The working tree is clean before the run, because the harness stages it.
-- [ ] `DEFAULT_CEILINGS` is raised locally, the raise is **not committed**, and it is reverted once the run is done.
-- [ ] `e2e-tests/tests/refine-happy-path.test.ts` ran once, and no assertion was added and the test file was not edited.
-- [ ] The trace's `SendMessage` lines are read, and the reading states **whether a put-back carrying several closures
+- [x] The working tree is clean before the run, because the harness stages it.
+- [x] `DEFAULT_CEILINGS` is raised locally, the raise is **not committed**, and it is reverted once the run is done.
+- [x] `e2e-tests/tests/refine-happy-path.test.ts` ran once, and no assertion was added and the test file was not edited.
+- [x] The trace's `SendMessage` lines are read, and the reading states **whether a put-back carrying several closures
       happened where several forks were raised** (D1).
-- [ ] A run that raised no fork is reported as **inconclusive on the mechanism**, and no further run is paid for chasing
+- [x] A run that raised no fork is reported as **inconclusive on the mechanism**, and no further run is paid for chasing
       one.
-- [ ] The spend is reported and **labelled as not a measured saving**, with run-to-run spread named as unmeasured.
-- [ ] The spec writer's turns, peak context and cache read are reported per agent from the trace's own `== tokens ==`
+- [x] The spend is reported and **labelled as not a measured saving**, with run-to-run spread named as unmeasured.
+- [x] The spec writer's turns, peak context and cache read are reported per agent from the trace's own `== tokens ==`
       rows.
-- [ ] Every dollar figure is labelled with the provider that served it, and no figure is presented as a bill.
-- [ ] **No run is repeated to improve a figure**, and a failed **verifier** verdict is reported as a finding rather than
+- [x] Every dollar figure is labelled with the provider that served it, and no figure is presented as a bill.
+- [x] **No run is repeated to improve a figure**, and a failed **verifier** verdict is reported as a finding rather than
       retried.
-- [ ] **No prose in this epic is edited to move a figure** — not the four slices' files, not the spec's decisions, not
+- [x] **No prose in this epic is edited to move a figure** — not the four slices' files, not the spec's decisions, not
       its published measurement (D17).
-- [ ] Nothing from the **fixture**'s own repository, and no **trace** path, appears in what is written down.
-- [ ] The spec's prevailing column width is matched — 120 **characters**, not bytes.
+- [x] Nothing from the **fixture**'s own repository, and no **trace** path, appears in what is written down.
+- [x] The spec's prevailing column width is matched — 120 **characters**, not bytes.

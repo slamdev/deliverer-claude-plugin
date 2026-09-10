@@ -482,6 +482,61 @@ whatever the host offers — which is a second and independent reason the change
 - **The working analysis document at the repository root.** Its figures are carried above and its method is not; it was
   untracked, so disposing of it leaves no diff and belongs to whoever holds it rather than to a ticket, per D18.
 
+### The run that settled the mechanism
+
+One run of `e2e-tests/tests/refine-happy-path.test.ts` against this branch on 2026-09-10, once the four prose slices had
+landed, with the **ceiling**s raised locally and uncommitted to 150m/$50. It passed every mechanical assertion and its
+**verifier** — which found all 51 **user stories** met by at least one of the six **ticket**s — no ceiling reached, one
+attempt. Three **dispatch**es: the **sweep**, the **spec-writer**, the tickets writer.
+
+**One put-back carried several closures, which is the whole of what D1 bet on.** The spec-writer reported two **fork**s,
+and the **orchestrator** answered both in a single put-back — *"Human closed both forks; put spec back"*, opening *"Both
+forks are closed by the human, and the two side questions with them."* Against the measured NEW run's four primings of
+one fork each, that is the batched shape, and the writer was resumed once rather than once per fork. The run's only
+other `SendMessage` went to the sweep, asking after a **report** that had not arrived — the case *Testing Decisions*
+above names as why a put-back count is no sound assertion, turning up on the first run after the rule shipped.
+
+**The figures, and what they are not.** Same **fixture**, same **harness**, one run:
+
+| | NEW (`cb0f8fd`) | this branch |
+|---|---:|---:|
+| wall clock | 97m 56s | **69m 42s** |
+| the run, **responder** included | $36.65 | **$16.16** |
+| the **verdict**, out of band | $0.59 | $0.63 |
+| the observation, out of band | $2.44 | $2.00 |
+| model turns | 275 | 152 |
+| output tokens | 254,749 | 160,966 |
+| cache write | 1,421,680 | 656,809 |
+| cache read | 30,559,654 | **9,286,451** |
+| **ticket**s published | 5 | 6 |
+| **user stories** | 53 | 51 |
+| question rounds / questions | 10 / 22 | 10 / 30 |
+
+And the one stage this epic aimed at:
+
+| | NEW (`cb0f8fd`) | this branch |
+|---|---:|---:|
+| spec-writer turns | 168 | **55** |
+| peak context | 243,036 | **130,711** |
+| cache read | 23.15M | **4.15M** |
+| share of the run's cache read | 76% | 45% |
+
+The per-stage modelled dollar of the table above is not extended here: its derivation is not among what D18 kept, so
+there is no figure to carry on honestly.
+
+**None of that is a measured saving.** Run-to-run spread on this fixture has still never been measured — the hand-off
+named above — so the distance between $36.65 and $16.16 cannot be separated from it, and one run each side states a
+direction at best. Two things qualify this run in particular: the measured pair ran in parallel on one machine and this
+one ran alone, which flatters its wall clock; and its reading raised two forks where the measured run raised four, so
+part of the gap is a brief that collided less rather than a rule that batched more.
+
+**The provider, and what a dollar figure here is.** This run was served through the same internal proxy to **Amazon
+Bedrock** as the two runs above — the **trace**'s own request ids say so — which is what makes the comparison a
+same-provider ratio rather than the far weaker cross-provider kind. The provider comes from the shell a run is started
+in and not from the **environment file**: the harness layers that file above the inherited environment, and a commented
+line overrides nothing. Every dollar figure is the host's own estimate at first-party rates while the calls bill through
+a partner-operated provider, so it supports that ratio and never a bill.
+
 ### Nothing from an observed repository appears here
 
 Every figure above came from the plugin's own **trace**s and the runs' **session record**s, distilled with no model and
