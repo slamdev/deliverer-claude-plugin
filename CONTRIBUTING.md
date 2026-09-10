@@ -416,8 +416,8 @@ against came to about **$9.40**.
   section says how many it had. Nothing prints there where nothing judged: it read nothing because nothing read
   anything.
 
-**Read every debrief for what it must not carry.** ADR-0018 holds that bound by instruction alone — nothing redacts
-mechanically, and no second reader checks the first — so the human replaying is the check. Verifying this epic found
+**Read every debrief for what it must not carry.** ADR-0018 holds that bound by instruction alone — no code redacts
+anything, and no second reader checks the first — so the human replaying is the check. Verifying this epic found
 three real leaks that had reached a debrief and closed each in the instruction: a repository's own directory name
 quoted out of `git status`, the human's word "continue", and a question round's headers carrying a product name and a
 command-line flag. That last one no paid run has exercised since, which makes it the first thing to look for on the
@@ -466,6 +466,68 @@ The eight `DELIVERER_OBSERVER_*` bounds are what make that walk minutes rather t
 is the idle bound's thirty minutes and nothing else: `TICK_MS` (2 s), `REFRESH_MS` (15 s), `IDLE_MS` (30 min),
 `AFTER_FINALISE_MS` (30 min), `PATIENCE_MS` (10 min), `INSTALL_WAIT_MS` (2 min), and the judging half's `NOTE_MS`
 (5 min) and `JUDGE_MS` (30 min).
+
+### Tallying a run
+
+**This measures a run after the fact; it asserts nothing and gates nothing.** There is no script, no assertion and
+nothing here CI or a test could go red on — it is a reading, and what it is for is the question the observer cannot yet
+answer for you: where a **run**'s model turns and its context actually went, per agent, when a change to the machinery
+claims to have moved them.
+
+**It takes the same input and the same entry point as the replay above** — one session record of a run of your own, and
+`CLAUDE_PLUGIN_DATA` — and stops after the **trace**, so it calls no model and spends nothing:
+
+```
+CLAUDE_PLUGIN_DATA=$(mktemp -d) \
+  node plugin/mcp/observer/distil.ts ~/.claude/projects/<munged-cwd>/<session-id>.jsonl
+```
+
+Its first line is the trace's path, and the line under it already gives the run's skill, its **slug**, its wall clock,
+its **dispatch** count and its whole-run tokens. Everything below is read out of that file —
+`DO-NOT-FORWARD-trace.txt`, so read it where it lies and send the **debrief** instead.
+
+**Nothing here re-reads the raw records.** The trace has already deduplicated them — `observer/records.ts` keeps the
+record with the highest `output_tokens` per request id, because one response is written as several entries and only one
+of them carries the true figure — and it has already named each dispatch's agent off the host's own sidecar. So no `jq`
+over the records, and no reading of the `agent-<id>.meta.json` sidecars beside them: a second path through them is
+`records.ts` rewritten in shell, waiting to drift from the figures the plugin itself reports.
+
+**Model turns and tokens by kind are rows, not arithmetic.** The `== tokens, per API request and never per entry ==`
+section carries one per agent:
+
+- `the run's own` — the **orchestrator**, which for a refinement is the interview itself;
+- `#<ordinal> <agent>` — one per dispatch, in the order the run made them, named by the agent that ran it;
+- `whole run` — the two together, which is what to check the rest against.
+
+Each reads `N req · in … out … cache-write … cache-read …`: `N req` is that agent's model turns, and the four figures
+are its tokens by kind. Counting the `#` rows is also how many dispatches the run made, and to which agents.
+
+**Peak context is the one figure you work out yourself** — the largest `in + cache-write + cache-read` of any single
+turn. Take it from the `== the run, in order ==` section, where a turn's figures are stated once, on the first line of
+the turn that produced them (the shape, not a measurement):
+
+```
+[19:02:13.586] tool       Bash grep for the caller turn 41 req_011… · in 4 out 1103 cache-write 21903 cache-read 246515
+  #2 [19:14:07.994] think      claude-opus-5/high turn 12 req_011… · in 3 out 891 cache-write 18220 cache-read 155031
+```
+
+Every line of a dispatch's slice is prefixed `#n`, so the orchestrator's turns are the unprefixed lines and each agent's
+peak is over its own `#n` ones. Later lines of one turn carry `turn <N>` and no figures, which is deliberate rather than
+missing. Two lines not to read as a turn: the one opening a slice, `#n record <path> — N entries · N req · in …`, which
+is that dispatch's totals again, and the section's own legend, which announces `req <id>` where the renderer writes the
+turn number, the request id and the four figures — read the lines rather than the legend.
+
+**The peak needs no deduplication of its own.** The placeholder that makes a naive tally wrong is in `output_tokens`
+alone; every record of one response repeats the same input and cache figures, and what the trace prints has had
+`records.ts`'s rule applied to it already.
+
+**Report what the observation cost beside what the run did.** The **observer** grades every dispatch, so a run that
+dispatches more costs more to observe — **spend** that lands out of band, in neither the run's own figures nor a
+**ceiling**, and a before-and-after that leaves it out flatters itself. It is a read rather than a sum: `debrief.md`'s
+header carries it on its `what this observation cost` line, in dollars the calls themselves reported. The line above it,
+`the run's spend`, is tokens with **unknown** where the money should be — the host records no money anywhere in a
+session record — so any dollar figure you set beside these tokens comes from whatever billed the calls, and is written
+labelled with the provider that served it.
 
 ### Exercising the install by hand
 

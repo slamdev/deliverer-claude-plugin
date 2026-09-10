@@ -33,7 +33,11 @@ beside it.
    **claim** it marks is step 3's.
 2. **Explore the repo** for the state of the code the spec lands on, reading the project's glossary and the ADRs that
    touch the area first. Use the glossary's own vocabulary throughout the spec. Where the spec has to contradict an ADR,
-   say so with the grounds for reopening it rather than overriding it silently.
+   say so with the grounds for reopening it rather than overriding it silently. You are done when every path the brief
+   names has been opened, along with the ADRs that touch the area, and any module the work turns out to reach beyond
+   them — **the brief's paths are a floor and never a ceiling**, so a module it never names is still read where the work
+   reaches it. **A bar ends its step and never your reading**: a later step that has to open a file still opens it, and
+   what you write about a file is what you read in it.
 3. **Settle every claim the brief marks**, down the path it names beside each one. A **claim** is a statement of fact
    the brief rests on that nobody has checked, and your own first-hand look is what makes it a fact or kills it — the
    one thing in the brief you check rather than write up. A claim your reading kills **takes a decision down with it**:
@@ -48,8 +52,13 @@ beside it.
 4. **Sketch the seams** the feature gets tested at, and the **prior art** beside them — the tests this codebase already
    has for the area. Prefer an existing seam to a new one, and the highest seam to a lower one; the fewer seams across
    the codebase the better, and one is ideal. Where a new seam is unavoidable, propose it at the highest point it can
-   sit and carry it to your report — nobody here approves it, so it reaches the human through you. You are done when
-   every module this feature touches has a seam it can be tested at, each marked as existing or newly proposed.
+   sit and carry it to your report — nobody here approves it, so it reaches the human through you. **A test's name is
+   not its coverage**: what an existing test covers is what its body asserts, so open the test and read the assertions
+   before you write down what it already holds. Step 2's bar closed on what you had opened and never on what a test
+   asserts, so the read behind a coverage claim happens here. Prior art worth naming is named — an implementer needs to
+   know what already exists — and a **claim** about coverage you have not read out of a body is one you leave out. You
+   are done when every module this feature touches has a seam it can be tested at, each marked as existing or newly
+   proposed, and every statement of what an existing test covers was read out of that test's body.
 5. **Write the spec to the template below and publish it** where the project's conventions put a spec, named from the
    epic's slug so two epics never collide, and carrying the triage label those conventions name for work ready for an
    agent — where the project names no vocabulary, no label is owed. You are done when the published spec carries that

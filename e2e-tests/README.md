@@ -199,6 +199,22 @@ no usage anywhere. It is the likeliest explanation for the only figure below tha
 rounds reconstruct to $0.1607 against $0.18 reported, and only the responder and verifier sessions carry `ai-title`
 lines.
 
+### What a record says about why
+
+**Every record now carries the reasoning behind it, as a summary.** `harness/run.ts` sets `thinking.display` to
+`summarized`, so a `thinking` block holds prose about how an agent got to what it did next. The default on the models
+these runs use is `omitted`, which writes the block with its **text empty** and an encrypted signature in place of it —
+a record that says which files an agent opened and never why. Every record from a run driven before this was set is
+that shape, and nothing recovers it: the signature is the provider's and no client decrypts it.
+
+**It reaches a dispatched agent's record as well as the orchestrator's**, which is the half worth having — the two
+**writer**s and a **sweep** are where the reasoning is. Verified on a throwaway session that dispatched a sub-agent:
+both records carried prose and neither held an empty block.
+
+Two limits. It is a **summary and never the raw reasoning**, which no model exposes. And it is output tokens, so a
+figure taken with it set sits a little above one taken without — every figure in this file was measured before it, as
+was the before-and-after pair in `docs/specs/the-interview-stops-reading/spec.md`.
+
 ## What the two runs of 2026-08-15 cost
 
 From `build-typescript-library-2026-08-15T17-36-58-LZuUAH` and `refine-typescript-library-2026-08-15T17-36-58-orWyMT`,

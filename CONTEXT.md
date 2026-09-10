@@ -50,9 +50,10 @@ A refactor that lands in a ticket of its own, first, to make the slices after it
 make the easy change. _Avoid_: cleanup, refactor ticket
 
 **Wide refactor**:
-One mechanical change whose blast radius — how many call sites a single edit breaks at once — crosses the whole
-codebase, so no tracer bullet can land green. The one exception to vertical slicing. _Avoid_: sweeping change, mass
-rename
+One **rote** change, such as renaming a column or retyping a shared symbol, whose blast radius — how many call sites a
+single edit breaks at once — crosses the whole codebase, so no tracer bullet can land green. The one exception to
+vertical slicing.
+_Avoid_: sweeping change, mass rename
 
 **Expand–contract**:
 The sequence a wide refactor lands in: add the new form beside the old, migrate the call sites in batches sized by blast
@@ -208,8 +209,15 @@ execution
 
 **Orchestrator**:
 The agent that reads the epic, dispatches every stage and keeps the task list — and never forms a view on a finding, a
-design, or whether the work is good. Read-only: what it does with a stage that went wrong is put it back to an agent —
-continued or cold — or report it, never fix it. _Avoid_: coordinator, driver, manager
+design, or whether the work is good. Read-only over the code being delivered into: what it does with a stage that went
+wrong is put it back to an agent — continued or cold — or report it, never fix it. The epic's own documents are its to
+write: the brief, and the glossary entries and ADRs a refinement lands. _Avoid_: coordinator, driver, manager
+
+**Mechanical**:
+A question about the tree, the forge or the web whose answer is true or false rather than good or bad — does this symbol
+exist, what does this file say, is this published — and the fact that answers one. The only kind an **orchestrator**
+settles for itself, and answerable in a single look: a thread — a search whose results are read to decide what to search
+next — is not one, however cheap each step of it looks. _Avoid_: factual, objective, trivial
 
 **Dispatch**:
 One agent invocation. It carries paths rather than contents, so the agent opens the document for itself and meets the
@@ -234,9 +242,9 @@ The open questions a grilling still has to close. Stage 1 of a refinement is don
 confirms a shared understanding. _Avoid_: backlog, queue, open items
 
 **Sweep**:
-A fact-finding dispatch a grilling makes to settle a question of fact, carrying the subject it was asked to settle. A
-question on the frontier that turns on that subject waits for the sweep; every other question is asked now. _Avoid_:
-sub-agent, exploration, lookup, research
+A fact-finding dispatch a grilling makes to settle a question of fact, carrying the subject it was asked to settle — one
+subject each, and more than one may be in flight at once. A question on the frontier that turns on that subject waits
+for the sweep; every other question is asked now. _Avoid_: sub-agent, exploration, lookup, research
 
 ### Observation
 
@@ -336,4 +344,4 @@ whether the answers were used well. _Avoid_: user simulator, stand-in, answerer
 **Verifier**:
 The agent that judges what a run delivered, on exactly the questions no assertion can settle — whether a spec coheres,
 whether the tickets cover the user stories, whether the code is plausible, whether the **verdict**s were sound. What a
-test can assert mechanically is never its business. _Avoid_: judge, grader, evaluator, reviewer
+test can assert is never its business. _Avoid_: judge, grader, evaluator, reviewer

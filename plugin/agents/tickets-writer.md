@@ -34,7 +34,11 @@ renumbering the set.
    **assumption**.
 2. **Explore the codebase** for the state of the code the slices cut through, reading the project's glossary and the
    ADRs that touch the area first: ticket titles and bodies use the glossary's vocabulary. Look for **prefactoring**
-   that makes the slices smaller — make the change easy, then make the easy change.
+   that makes the slices smaller — make the change easy, then make the easy change. You are done when every module the
+   spec's implementation decisions name has been read well enough to size a ticket against it, and any module the work
+   turns out to cut through beyond them — **the spec's modules are a floor and never a ceiling**, so one it never names
+   is still read where the work reaches it. **A bar ends its step and never your reading**: a later step that has to
+   open a file still opens it, and what you write about a file is what you read in it.
 3. **Draft the slices** to the rules below, and give each its **blocking edges** — the tickets that must complete before
    it can start, or nothing, which means it can start immediately. Prefactoring goes first, in tickets of its own. You
    are done when every slice answers to every rule below, every user story the spec lists is covered by at least one
@@ -50,9 +54,16 @@ renumbering the set.
    number, the template's `#` line is the issue's own title, and the platform's own parent, blocking and label
    mechanisms replace the **Spec**, **Blocked by** and **Status** lines where it has them — the **Spec** line only where
    that mechanism can point at the spec itself, since a spec published as a file is not something a parent issue can
-   name. The spec and any parent issue stay exactly as you found them: what you publish is new tickets beside them. You
-   are done when every slice from step 3 carries exactly one published ticket, and every blocking edge names a published
-   one.
+   name. The spec and any parent issue stay exactly as you found them: what you publish is new tickets beside them. The
+   spec's testing decisions arrive as **claim**s, and an acceptance criterion restating one asserts it again with more
+   authority than it was made with: where a criterion says what an existing test already covers, open that test and read
+   its body first, and write what its assertions say rather than what its name suggests. Step 2's bar closed on reading
+   a module well enough to size a ticket against it and never on what a test asserts, so the read behind a coverage
+   claim happens here. Coverage an implementer is told
+   to extend is worth naming — write the coverage you read, and where you have not read it, the criterion states what
+   the slice must make true instead. You are done when every slice from step 3 carries exactly one published ticket,
+   every blocking edge names a published one, and every criterion asserting what an existing test covers was read out of
+   that test's body.
 5. **Report**, as below.
 
 ## Tracer bullets
@@ -63,7 +74,7 @@ renumbering the set.
 - **One context.** Each slice is sized to fit a single fresh context window — that is exactly what it gets downstream:
   one ticket, one agent, one context.
 
-**A wide refactor is the exception to slicing vertically.** A **wide refactor** is one mechanical change — rename a
+**A wide refactor is the exception to slicing vertically.** A **wide refactor** is one **rote** change — rename a
 column, retype a shared symbol — whose **blast radius** fans across the whole codebase, so a single edit breaks
 thousands of call sites at once and no tracer bullet lands green. Sequence it **expand–contract** instead: one ticket
 expands, adding the new form beside the old so nothing breaks; then one ticket per batch of call sites, batches sized by
