@@ -20,7 +20,9 @@
  * failure: a mention of the plugin is not a run, and eight sessions on the machine this was
  * measured against match the word `deliverer` while being nothing of the kind (see
  * `./records.ts`). An empty trace would be worse than none, because ticket 03's debrief would then
- * be about a session that never ran the plugin.
+ * be about a session that never ran the plugin. **Neither a `Skill` call nor another plugin's
+ * attribution changes that** (the-observation-reports-the-whole-run ticket 02): those bound a run
+ * that has already been found, and `attributionOf` says why they may not be what finds one.
  */
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";

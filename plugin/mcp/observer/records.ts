@@ -139,6 +139,14 @@ export const RUN_SKILLS = ["deliverer:refine", "deliverer:build"] as const;
  * fields are required together and `attributionSkill` must be the plugin's own namespace: a session
  * that ran another plugin's skill beside a deliverer one carries both, entry by entry, and is a run
  * (one refinement on disk carried `mattpocock-skills:grilling` alongside `deliverer:refine`).
+ *
+ * **A `Skill` call is not attribution, and this is not widened to take one**
+ * (the-observation-reports-the-whole-run ticket 02). `./run-facts.ts` counts a `Skill` call the run
+ * made as one of the run's own signals, and that decides where a run already found STOPS — never
+ * whether a session holds one. The two questions are answered in two places on purpose: a session
+ * that invoked some skill of its own, and one whose entries another plugin's skill is attributed
+ * to, are both nothing to do with this plugin, so letting either answer HERE would write a debrief
+ * beside every session on the machine that ever used a skill.
  */
 export function attributionOf(entries: readonly JsonObject[]): readonly string[] {
   const skills: string[] = [];

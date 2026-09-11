@@ -38,6 +38,7 @@ import {
   attributionOf,
   numberField,
   objectField,
+  PLUGIN_NAME,
   requestUsage,
   stringField,
   totalTokens,
@@ -147,6 +148,21 @@ export interface RunFacts {
    * trace, and a debrief naming both would be a document about one run titled after two.
    */
   readonly skills: readonly string[];
+  /**
+   * The third-party skills this run invoked, by name, in first-seen order
+   * (the-observation-reports-the-whole-run ticket 02; D4).
+   *
+   * Kept apart from `skills` above rather than folded into it, and what reads them is the reason:
+   * `runSkills` is what NAMES the run — the debrief's title, the identity file, the one line the
+   * human is shown — and that line opens with the plugin's own skill rather than with somebody
+   * else's plugin. So these are listed BESIDE the skill in the debrief's header, and nowhere else.
+   *
+   * **The names and nothing else** (ADR-0018). What those skills did, read or said travels with
+   * none of them: a skill's name is the plugin's own machinery, since the plugin's own skill text
+   * is what sent the run there, and naming it is what makes 2h48m of a four-hour refinement legible
+   * instead of a gap in the document.
+   */
+  readonly delegatedSkills: readonly string[];
   readonly ending: RunEnding;
   /** the run's own dispatches — never the session's */
   readonly dispatches: readonly TraceDispatch[];
@@ -197,6 +213,12 @@ export interface RunFacts {
  * one record holds two runs those differ — so everything that names the run this observation is
  * ABOUT reads this, and only the trace's own file names the record's list. Empty where neither has
  * anything, which leaves each caller its own fallback: they differ, and none of them is a skill.
+ *
+ * **The third-party skills a run delegated to are `RunFacts.delegatedSkills` and never this**
+ * (the-observation-reports-the-whole-run ticket 02; D4). This line opens the debrief's title, the
+ * identity file's `skill` field and the one line the observer prints when a run ends, and all three
+ * are about a run of THIS plugin: a line beginning with somebody else's plugin would read as a
+ * debrief of their skill.
  */
 export function runSkills(facts: RunFacts, trace: Trace): string {
   return facts.skills.length > 0 ? facts.skills.join(", ") : trace.skills.join(", ");
@@ -226,10 +248,19 @@ export function runFactsOf(input: RunFactsInput): RunFacts {
   let taskUpdates = 0;
   let toolCalls = 0;
   let openedAt: RunFacts["openedAt"];
+  const delegatedSkills: string[] = [];
   for (const entry of window) {
     for (const block of toolUses(entry)) {
       toolCalls += 1;
-      if (!TASK_TOOLS.has(stringField(block, "name") ?? "")) continue;
+      const name = stringField(block, "name") ?? "";
+      // Read off the same calls `isOwnSignal` now bounds the run by, so the header names exactly
+      // the delegations that kept the extent open (the-observation-reports-the-whole-run ticket
+      // 02; D4).
+      const delegated = name === "Skill" ? skillInvokedBy(block) : undefined;
+      if (delegated !== undefined && !delegatedSkills.includes(delegated)) {
+        delegatedSkills.push(delegated);
+      }
+      if (!TASK_TOOLS.has(name)) continue;
       taskUpdates += 1;
       // The FIRST count wins, exactly as the first slug does in `./trace.ts`: what the run opened
       // at is what a later update cannot move (ticket 07).
@@ -243,6 +274,7 @@ export function runFactsOf(input: RunFactsInput): RunFacts {
   return {
     extent,
     skills: attributionOf(window),
+    delegatedSkills,
     ending: endingOf(window),
     dispatches,
     rounds,
@@ -276,6 +308,30 @@ function progressIn(block: JsonObject): RunFacts["openedAt"] {
   return { completed: Number(match[1]), total: Number(match[2]) };
 }
 
+/**
+ * The skill one `Skill` call invoked, as a name and nothing else
+ * (the-observation-reports-the-whole-run ticket 02; D4).
+ *
+ * **Only the name is read, and only where it is name-shaped.** The call's other input is the
+ * argument the run passed the skill, which is the run's own words about somebody's repository and
+ * may not reach a document a human forwards unread (ADR-0018) — so nothing here goes near it, and
+ * a `skill` field carrying anything but a name is dropped rather than printed. Which field the host
+ * puts that name in is a claim like every other shape in these records: `skill` on the version this
+ * was written against, `command` on the ones that named it that. A call whose name matches neither
+ * still bounds the run — `isOwnSignal` needs the tool's own name and no more — and costs the
+ * header a line instead.
+ *
+ * The plugin's own skills are excluded: `runSkills` already names the one the run IS, and D4's
+ * whole point is the two lists being distinct.
+ */
+function skillInvokedBy(block: JsonObject): string | undefined {
+  const input = objectField(block, "input");
+  const named = (stringField(input, "skill") ?? stringField(input, "command") ?? "").trim();
+  if (!/^[A-Za-z0-9][A-Za-z0-9:_./-]{0,63}$/.test(named)) return undefined;
+  if (named === PLUGIN_NAME || named.startsWith(`${PLUGIN_NAME}:`)) return undefined;
+  return named;
+}
+
 /* ─────────────────────────────────────── the extent ─────────────────────────────────────── */
 
 interface RunBounds {
@@ -303,8 +359,10 @@ interface RunBounds {
  *     typed. That is what keeps a finished run's closing **report** inside the run.
  *
  * **Step 1 is where the two strengths of signal matter, and the difference is the whole of the
- * bound.** Deliverer attribution, a call to the plugin's own review tools and a dispatch of one of
- * the plugin's own agents are the run's and nothing else's. `Agent`, `AskUserQuestion`, `TaskCreate`
+ * bound.** Deliverer attribution, a call to the plugin's own review tools, a dispatch of one of the
+ * plugin's own agents and a `Skill` call the run itself made are the run's and nothing else's —
+ * the fourth of them added by the-observation-reports-the-whole-run ticket 02, for the reason
+ * `isOwnSignal` carries. `Agent`, `AskUserQuestion`, `TaskCreate`
  * and `TaskUpdate` are host built-ins that any later work in the same session makes too, so they
  * say a run is proceeding but cannot tell its continuation from somebody else's next afternoon —
  * which is why step 2 trusts them inside a ceiling the run's own signals set, and never to set it.
@@ -437,12 +495,49 @@ const OWN_AGENTS = new Set([
   "tickets-writer",
 ]);
 
-/** Whether one entry carries a signal that is the RUN's rather than the session's. */
+/**
+ * Whether one entry carries a signal that is the RUN's rather than the session's.
+ *
+ * **Four signals, and the fourth is a `Skill` call the run made**
+ * (the-observation-reports-the-whole-run ticket 02; D1). The plugin's own skill text is what sends
+ * a run into a third-party skill — `plugin/skills/refine/SKILL.md` tells stage 1 to invoke
+ * `mattpocock-skills:grilling` and `mattpocock-skills:domain-modeling` — and the host then
+ * re-attributes every entry underneath that skill to THAT plugin. So on the run this was measured
+ * against, deliverer attribution stopped at entry 44, entries 55 to 270 carried
+ * `attributionPlugin: mattpocock-skills`, and the next signal the three below could see was the
+ * `spec-writer` dispatch 2h48m later: the ceiling closed on the idea the human typed at 09:11:29
+ * — which the run's own first question had asked them for — and the extent froze at 1m38s, taking
+ * the dispatch count, the question rounds and 98.4% of the token spend with it. The time a run
+ * spends inside a skill its own instructions named is the plugin's business, so it is in the
+ * extent.
+ *
+ * **Any skill counts, and no list of the ones the plugin's own skills name is kept.** Such a list
+ * would go stale the moment a skill's text changed, in the one direction nobody would notice —
+ * the extent quietly freezing again. What bounds the over-reach instead is the ceiling itself
+ * (D2): a new piece of a human's own work always begins with a turn they typed, and that closes it,
+ * which is why the same measured record leaves the human's own `claude-api` work at 13:20 outside
+ * the run.
+ *
+ * **The one shape that argument does not cover, and it is left standing knowingly:** a human's own
+ * later work in the same session that itself invokes a skill. That call is one of these signals
+ * too, so it moves the last own signal PAST the turn they typed and the ceiling no longer closes
+ * there — walked on a synthetic record of the measured shape, a 4h03m run read 5h20m once the
+ * human's own later work called `Skill`. Nothing here guards it, because in the record the two
+ * shapes are the same shape: the measured run's own delegation also follows a turn the human typed
+ * — the idea its first question asked for — which is exactly why D3 declines an exemption for that
+ * turn. A reading that took a human's own work into the extent is what D10's cross-check is for.
+ *
+ * **None of this is evidence that a session holds a run at all.** Whether one does is
+ * `attributionOf`'s question and stays deliverer attribution's alone: a `Skill` call widens where a
+ * run already found STOPS, and were it ever allowed to answer the other question, every session on
+ * the machine that used any skill would produce a debrief.
+ */
 function isOwnSignal(entry: JsonObject): boolean {
   if (stringField(entry, "attributionPlugin") === "deliverer") return true;
   for (const block of toolUses(entry)) {
     const name = stringField(block, "name") ?? "";
     if (isReviewTool(name)) return true;
+    if (name === "Skill") return true;
     if (name !== "Agent") continue;
     const type = stringField(objectField(block, "input"), "subagent_type") ?? "";
     if (OWN_AGENTS.has(type.startsWith("deliverer:") ? type.slice("deliverer:".length) : type)) {

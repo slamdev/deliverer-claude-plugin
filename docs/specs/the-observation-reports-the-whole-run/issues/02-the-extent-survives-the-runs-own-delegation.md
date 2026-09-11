@@ -29,19 +29,19 @@ human's own `claude-api` work at 13:20 correctly outside the extent, after the p
 the plugin while being nothing of the kind. If third-party attribution or a `Skill` call were ever allowed to answer
 *that* question, every session that used any skill would produce a debrief.
 
-- [ ] `isOwnSignal` accepts a fourth signal: an assistant entry carrying a `tool_use` block named `Skill`.
-- [ ] Any skill counts, not a list of the ones the plugin's own skills name. The comment carries why: a list would go
+- [x] `isOwnSignal` accepts a fourth signal: an assistant entry carrying a `tool_use` block named `Skill`.
+- [x] Any skill counts, not a list of the ones the plugin's own skills name. The comment carries why: a list would go
       stale the moment a skill's text changes, and the ceiling is what bounds over-reach.
-- [ ] Step 1's ceiling rule, step 2 and step 3 are otherwise untouched, and the module's opening comment about the two
+- [x] Step 1's ceiling rule, step 2 and step 3 are otherwise untouched, and the module's opening comment about the two
       strengths of signal still reads true with four in the strong set.
-- [ ] The run-detection gate is untouched: `attributionOf` and `distil.ts`'s no-run answer still turn on deliverer
+- [x] The run-detection gate is untouched: `attributionOf` and `distil.ts`'s no-run answer still turn on deliverer
       attribution alone, and a comment says why this ticket does not widen it.
-- [ ] The debrief names the third-party skills the run invoked, distinct from the plugin's own skill in the header. The
+- [x] The debrief names the third-party skills the run invoked, distinct from the plugin's own skill in the header. The
       skills' names only: nothing of what they did, said or read travels with them, per ADR-0018's bound.
-- [ ] The one-line announcement's existing `runSkills` opening still names the plugin's own skill first, so the line
+- [x] The one-line announcement's existing `runSkills` opening still names the plugin's own skill first, so the line
       does not start with somebody else's plugin.
-- [ ] Comments cite this ticket and the decisions behind it, as everything in `observer/` already does.
-- [ ] **Verified by hand with 01's procedure**: prefixes of the measured record taken during the delegation report the
+- [x] Comments cite this ticket and the decisions behind it, as everything in `observer/` already does.
+- [x] **Verified by hand with 01's procedure**: prefixes of the measured record taken during the delegation report the
       run's real wall clock, its question rounds so far, and — once the dispatch records are present — its dispatches,
       instead of the same frozen 1m38s at every length. A whole-record replay still reports what it reports today.
-- [ ] `(cd plugin/mcp && npm run typecheck && npm run lint)` passes.
+- [x] `(cd plugin/mcp && npm run typecheck && npm run lint)` passes.

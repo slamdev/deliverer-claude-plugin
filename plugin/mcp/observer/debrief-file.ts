@@ -575,6 +575,22 @@ export function renderDebrief(input: DebriefInput): string {
   line(out, "## The run");
   blank(out);
   bullet(out, "skill", `\`${skill}\``);
+  // Beside the plugin's own skill and distinct from it (the-observation-reports-the-whole-run
+  // ticket 02; D4). 2h48m of the four-hour refinement this was measured on ran inside two skills
+  // the plugin's own text told the run to invoke, and a debrief that named neither left the largest
+  // stretch of the run as a gap the reader had to guess at.
+  //
+  // **The names alone** (ADR-0018): a skill's name is the plugin's own machinery — its own
+  // instructions are what sent the run there — and nothing of what those skills did, read or said
+  // travels with it. Printed only where there was one, so a run that delegated to nothing carries
+  // the header it always did rather than a "none" nobody asked after.
+  if (facts.delegatedSkills.length > 0) {
+    bullet(out,
+      "skills it delegated to",
+      facts.delegatedSkills.map((it) => `\`${it}\``).join(", ") +
+        " — invoked by this run, and the names only",
+    );
+  }
   bullet(out,
     "epic slug",
     trace.slugRead
