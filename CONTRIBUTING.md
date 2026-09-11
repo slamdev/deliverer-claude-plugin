@@ -588,9 +588,15 @@ and a dispatch count consistent with the records the **run directory** itself ho
 lives at the replay seam above. The observation is a separate process on the same account and the same credentials the
 run uses, its **spend** is in none of the figures below, and `e2e-tests/README.md` says what it costs.
 
-**What they take and spend, measured rather than estimated.** The refinement took **21m 52s and $6.36** — the run
-itself 20m 12s and $5.82, the responder $0.16 across six rounds of questions, the verifier $0.39 — and published a spec
-and six tickets. The delivery, measured on 2026-09-06, took **59m 18s and $10.58** — the run itself 55m 29s and $9.75,
+**What they take and spend, measured rather than estimated.** The refinement, measured on 2026-09-11 and the first
+reading taken with the model pinned, took **41m 36s and $15.38** — the run itself 41m 36s and $14.49, the responder
+$0.32 across eleven rounds of questions, the verifier $0.57 — and published a spec and eight tickets over sixty-two
+user stories. An earlier reading of the same test put it at **21m 52s and $6.36**, over six rounds and six tickets.
+**Both are the same test against the same fixture, and the gap between them is what a single reading is worth here**:
+seven refinements of this fixture, every one of them on `opus`, spread from **$13.45 to $36.46** on the tokens their
+own records carry, a mean of $20.94 either side of a standard deviation of $7.55. A figure below is one run, so a
+change that moved a refinement by a dollar or two would be invisible in it, and none of them is a saving anybody has
+measured. The delivery, measured on 2026-09-06, took **59m 18s and $10.58** — the run itself 55m 29s and $9.75,
 the verifier $0.83 — and flipped its change request ready with green checks over three tickets, five commits, ten
 **assumption**s and two **rounds**. It was measured twice before that, at **23m 12s and $7.40** and **22m 14s and
 $6.85**, and both of those readings predate the **adjudication** that compares roads: that step is now the longest and
@@ -598,21 +604,29 @@ most expensive of a delivery's eight, and `e2e-tests/README.md` prices the diffe
 what `npm test` does, the whole suite took **23m** and the two runs with their verdicts came to **$13.28**, then
 **$13.14** — the two long tests overlap, so the suite is the slower of them plus a rounding error. That pair predates
 the delivery above too, and nothing has driven the two together since; the arithmetic on the two latest readings puts a
-suite at about an hour and about $17, which is derived rather than measured. The smoke test is seconds and effectively
+suite at about an hour and about $26, which is derived rather than measured. The smoke test is seconds and effectively
 free.
 
 Those are the figures the harness reports, which are the **orchestrator** and its **dispatches** and nothing else — a
-delivery's **rounds** and the observation both run as their own processes, and neither's **spend** is in them.
+delivery's **rounds** and the observation both run as their own processes, and neither's **spend** is in them. **Every
+reading above the refinement's was taken before `run.ts` pinned the model a run runs on**, so each inherited whichever
+model the machine that took it defaulted to. Checked against the records afterwards, every refinement of this fixture
+had in fact run on `opus` — so the spread above is what one fixture does run to run, and not two models being
+compared — but nothing in a run directory said so at the time, which is why the pin is there now.
 `e2e-tests/README.md` breaks a measured pair of runs down per stage, says what the reported figure leaves out — the
 observation among the four kinds it names — and gives the method for doing it again from any **run directory**.
 
 **The ceilings.** A run may take **ninety minutes** and spend **twenty-five dollars**: `DEFAULT_CEILINGS` in
-`e2e-tests/harness/ceilings.ts`, overridable per test. Neither has been raised, but the time one is no longer far off:
-the longest run measured took **55m 29s** — 62% of the ninety — and the most expensive spent **$9.75**, both of them the
-delivery of 2026-09-06 above. The money ceiling still has the room the spec estimated it would; the clock does not, and
-it is the one a delivery will reach first. Reaching either is reported as a ceiling rather than as a failed assertion,
-so a slow run can be told from a stuck one. What would move them is a bigger **fixture**: this one's tickets are three
-functions with unit tests, and a fixture with a service in it would be felt here first. Wall clock is also the one
+`e2e-tests/harness/ceilings.ts`, overridable per test. Neither has been raised, and neither is far off any more: the
+longest run measured took **55m 29s** — 62% of the ninety, the delivery of 2026-09-06 above — and the most expensive
+spent **$14.49**, 58% of the twenty-five, the refinement of 2026-09-11. Both halves of the room the spec estimated are
+now spoken for, and which one a run reaches first is no longer a settled question: the spread above puts a refinement
+of this fixture past **$25** on its own tokens more than once, and a refinement driven against a change that sent more
+than one **sweep** out has stopped short of stage 4 on budget rather than publishing its tickets. Reaching either is
+reported as a ceiling rather than as a failed assertion, so a slow run can be told from a stuck one — but a run that
+stops on spend fails whatever assertion covered the stage it never reached. What would move them is a bigger
+**fixture**: this one's tickets are three functions with unit tests, and a fixture with a service in it would be felt
+here first. Wall clock is also the one
 figure here a busy machine inflates — every stage runs in series, so anything else on the box is in it.
 
 **What they need.** The `./claude` container has all of it already, which is where to run them from:
