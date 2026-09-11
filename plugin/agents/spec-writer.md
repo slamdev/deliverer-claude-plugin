@@ -88,10 +88,15 @@ beside it.
    brief left open, **naming both roads and the settled decision each road came from**: you hold the context that found
    the collision and nobody downstream does, so that naming is what makes one answer from the human enough to close it,
    where a road left unnamed costs them a re-read of the brief or a cold dispatch that pays for the whole write again.
-   You are done when the published spec carries that label and every section of the template, every claim that survived
-   step 3 written up as the fact it now is, every decision and open fork from step 1 — a decision whose claim step 3
-   killed counts as carried in either of the two forms step 3 gives it — every fork it writes up as closed carrying the
-   grounds that closed it, and no two decisions written up as settled that cannot both hold on an input it names.
+   **Write to the project's own conventions as you go — its column, its notation, its numbering — and measure that
+   conformance in one pass over the finished document, after your last edit.** A measurement taken between edits is of
+   a draft the next edit invalidates, so it buys a number you cannot publish on and a document you read back twice
+   more to be sure; the finished document is the only one the reading was ever about. Number the stories once the list
+   is final, and settle a count by the one method that answers it. You are done when the published spec carries that
+   label and every section of the template, every claim that survived step 3 written up as the fact it now is, every
+   decision and open fork from step 1 — a decision whose claim step 3 killed counts as carried in either of the two
+   forms step 3 gives it — every fork it writes up as closed carrying the grounds that closed it, no two decisions
+   written up as settled that cannot both hold on an input it names, and one conformance pass over what you published.
 6. **Report**, as below.
 
 ## Spec template
