@@ -32,6 +32,7 @@
  * read from the records themselves. The trace is still where a maintainer checks any of it: every
  * entry counted here is a line in it, at the timestamp printed beside the figure.
  */
+import { basename } from "node:path";
 import {
   addTokens,
   asObject,
@@ -287,6 +288,12 @@ export function runFactsOf(input: RunFactsInput): RunFacts {
   // Read once: the window is the whole run and a second scan of it buys nothing.
   const plugin = pluginInWindow(window);
 
+  // Last, because both of them compare what is ABOVE against what is on disk: the dispatches this
+  // reading settled on and the extent it chose have to exist before either can be checked
+  // (the-observation-reports-the-whole-run ticket 05; D10 and D11).
+  crossCheckDispatchRecords(input.dispatchRecords, dispatches, entries, bounds, losses);
+  crossCheckAttributionOutside(entries, bounds, losses);
+
   return {
     extent,
     skills: attributionOf(window),
@@ -356,6 +363,15 @@ interface RunBounds {
   readonly lastIndex: number;
   readonly boundedBy: string;
   readonly total: number;
+  /**
+   * Where a second `/deliverer:` command starts a second run, and `undefined` where none does
+   * (the-observation-reports-the-whole-run ticket 05; D10).
+   *
+   * Carried rather than read back off `boundedBy`, because the second cross-check below has to know
+   * that the tail of this record is ANOTHER run's and `boundedBy` is prose that step 3 may have
+   * replaced by then. A line a reader is shown is not a fact another reader may turn on.
+   */
+  readonly secondRunAt: number | undefined;
 }
 
 /**
@@ -479,7 +495,7 @@ function boundsOf(entries: readonly JsonObject[], losses: string[]): RunBounds {
     boundedBy = "the human typed something else next, and what follows is work of their own";
     break;
   }
-  return { command, firstIndex, lastIndex, boundedBy, total: entries.length };
+  return { command, firstIndex, lastIndex, boundedBy, total: entries.length, secondRunAt: second };
 }
 
 /** The plugin's own commands, as the host writes one into the prompt that ran it. */
@@ -654,6 +670,193 @@ function agentCallsIn(entries: readonly JsonObject[]): Set<string> {
     }
   }
   return ids;
+}
+
+/* ─────────────────────────── the reading's own cross-checks ─────────────────────────── */
+
+/**
+ * Two comparisons of what this reading says against what is on disk beside it
+ * (the-observation-reports-the-whole-run ticket 05; D10 and D11).
+ *
+ * **What they are for, in the shape of the reading that would have been caught.** One
+ * `/deliverer:refine` run of 3h50m, two **dispatch**es and eight question **round**s was reported by
+ * its **debrief** as `1m38s · 0 dispatches · 1 question round`, and it read its own figures back as
+ * ordinary: *"no review round was started, which is what a refinement looks like"*. While it said
+ * that, `agent-*.jsonl` records with `.meta.json` sidecars naming `deliverer:spec-writer` and
+ * `deliverer:tickets-writer` were sitting in the very directory `./records.ts` reads, and 226 entries
+ * carrying the run's own attribution were sitting outside the **extent** it had chosen. Neither fact
+ * costs a model call to notice, and nothing was looking at either.
+ *
+ * **They are losses and never a defect** (D11). A **defect** is one thing the run cost its human;
+ * these are faults in the READING, so they belong where an observation already records what it lost
+ * — which is where a reader weighing a figure already looks. And never a **hunch** either: a hunch
+ * is what nothing kept can ground, and each of these carries the file name or the entry count that
+ * grounds it.
+ *
+ * **Neither may claim that what it found is the run's**, because in both cases it honestly may not
+ * be:
+ *
+ *  - a human dispatches agents of their own in the same session, and the host puts those records in
+ *    the same `subagents/` directory — so a file this cannot place is a file it cannot place;
+ *  - a record holding two runs is bounded at the second `/deliverer:` command on purpose, and the
+ *    entries past it carry the run's own attribution while being correctly outside THIS debrief's
+ *    extent. `boundsOf` already records that as a loss of its own, and the second check is silent
+ *    there rather than repeating a rule working as designed as a fault.
+ *
+ * **Both run wherever a reading does.** They are here, in the pure pass every **replay** and every
+ * live **observer** rewrite goes through, so the facts-only path gets them too and for nothing — an
+ * observation that nothing judged is exactly the one whose reading nobody checked.
+ *
+ * **One shape neither of them reaches, measured and reported rather than guessed at.** Ticket 02
+ * left a human's own later work standing where that work itself invokes a skill: the `Skill` call is
+ * one of the run's own signals, so it moves the last own signal past the turn the human typed and
+ * step 1's ceiling no longer closes there — a 4h03m run read 5h20m on the record ticket 02 walked,
+ * with the human's own `claude-api` work INSIDE the extent. D10's two checks both look the other way:
+ * the second counts entries the extent left OUT, and a swallowed stretch is the opposite of that,
+ * while the first looks for a record nothing places, and an agent the human dispatched inside a
+ * widened extent is placed — as one of the run's, which is the error itself. Walked on a synthetic
+ * record of that shape: 0 entries outside the extent, the human's own dispatch counted as the run's
+ * third, and not one loss between the two checks. Catching it would take a rule about entries INSIDE
+ * the extent, which is the exemption D3 declined; the honest state of it is that D10 does not cover
+ * it and this comment is where a reader finds that out.
+ */
+
+/**
+ * Check one: dispatch record files beside the run's own record that its account places nowhere.
+ *
+ * **What "places" means here, and the one case deliberately left out.** A record this reading
+ * attributed to the run is placed — it is in the dispatch count, in the tally and in the trace. A
+ * record that NO `Agent` call anywhere claims is also placed: `dispatchesInRun` keeps it rather than
+ * lose a whole stage, and `./trace.ts` already writes the loss saying it was traced last rather than
+ * in its place. Saying that again here would be a second line about a file the reader has already
+ * been told about, and it would be untrue as well — the reading does account for that one.
+ *
+ * What is left is the case the measured debrief was in: a file whose `Agent` call this reading put
+ * OUTSIDE the run, so no figure above counts it. `dispatchesInRun`'s own loss names that dispatch by
+ * ordinal and agent type; this one names the FILE, off the directory rather than off the record,
+ * which is the comparison D10 asks for and the one that still holds where the two disagree about how
+ * many files are even there.
+ *
+ * **A second run's own dispatch records are not reported either** (D10, as the second check reads
+ * it). Where the ceiling closed on a second `/deliverer:` command, the records that command's run
+ * left are in this same directory and this reading places them outside the run — deliberately, and
+ * `boundsOf`'s loss already says that everything from that command on, its dispatches among them, is
+ * outside this extent. A refinement followed by a delivery in one session is the ordinary shape of
+ * that, and a delivery dispatches thirteen times.
+ *
+ * **The agent type travels only where it is one of the plugin's own** (ADR-0018). A file this cannot
+ * place is as likely to be an agent the human wrote as one of ours, and a user-defined agent's type
+ * is a name out of their own domain — the one thing a document that is safe to forward unread may
+ * not carry. Naming it where it IS one of ours is also the more useful half: that is the file most
+ * likely to be a stage of this run.
+ */
+function crossCheckDispatchRecords(
+  records: readonly DispatchRecord[],
+  dispatches: readonly TraceDispatch[],
+  entries: readonly JsonObject[],
+  bounds: RunBounds,
+  losses: string[],
+): void {
+  // The `Agent` calls the SECOND run made, where there is one — read through the same reader
+  // `dispatchesInRun` picks the run's own dispatches with, so the two can never disagree about what
+  // an `Agent` call is.
+  const secondRun =
+    bounds.secondRunAt === undefined
+      ? new Set<string>()
+      : agentCallsIn(entries.slice(bounds.secondRunAt));
+  const placed = new Set<string>();
+  for (const dispatch of dispatches) {
+    // Both, because a dispatch reaches its record two ways: its sidecar's `toolUseId` linked it, or
+    // its tool result named the agent id where no sidecar did.
+    if (dispatch.agentId !== undefined) placed.add(dispatch.agentId);
+    if (dispatch.recordPath !== undefined) placed.add(dispatch.recordPath);
+  }
+  const unplaced = records.filter((record) => {
+    if (placed.has(record.agentId) || placed.has(record.file.path)) return false;
+    const claimedBy = record.sidecar?.toolUseId;
+    return claimedBy === undefined || !secondRun.has(claimedBy);
+  });
+  if (unplaced.length === 0) return;
+  const named = unplaced.map(
+    (record) => `\`${basename(record.file.path)}\` (${sidecarClause(record)})`,
+  );
+  const one = unplaced.length === 1;
+  losses.push(
+    `${plural(unplaced.length, "dispatch record file sits", "dispatch record files sit")} in the ` +
+      `directory beside this run's own record that nothing in this debrief's account of the run ` +
+      `places: ${named.join(", ")} — this reading cannot place ${one ? "it" : "them"} and does not ` +
+      `claim ${one ? "it is" : "they are"} the run's, since a human dispatches agents of their own ` +
+      `in the same session and the host puts those records in this same directory; where one of ` +
+      `them was a stage of this run, the dispatch count above is short by that much`,
+  );
+}
+
+/** What the sidecar beside an unplaceable record says, as far as this document may carry it. */
+function sidecarClause(record: DispatchRecord): string {
+  const named = record.sidecar?.agentType;
+  if (named === undefined) return "no sidecar beside it names an agent";
+  const bare = named.startsWith(`${PLUGIN_NAME}:`) ? named.slice(PLUGIN_NAME.length + 1) : named;
+  return OWN_AGENTS.has(bare)
+    ? `its sidecar names \`${named}\`, one of this plugin's own agents`
+    : "its sidecar names an agent that is not one of this plugin's own";
+}
+
+/**
+ * Check two: entries carrying the run's own attribution that the extent leaves out.
+ *
+ * **The reading it would have caught is the frozen extent.** The measured refinement's own
+ * attribution ran to entry 44 while its extent stopped at the idea the human typed at 09:11:29 —
+ * 1m38s of a 3h50m run — and every figure in that debrief was of the extent, so each of them was
+ * missing whatever those entries carried. The extent was reported as the run, and a short run and a
+ * truncated reading of a long one read identically. Ticket 02 fixed the cause; this is what says so
+ * if it ever comes back, at the cost of one pass over entries the reading has already read.
+ *
+ * **Attribution, and never `isOwnSignal`.** A `Skill` call is one of the run's own signals and is
+ * emphatically not evidence that an entry is the run's — a human's own later work makes those too,
+ * which `isOwnSignal`'s own last paragraph is about — so counting them here would report a human's
+ * afternoon as the run's lost entries. Deliverer attribution is the one signal that is the run's and
+ * nobody else's.
+ *
+ * **Silent where a second `/deliverer:` command closed the ceiling** (D10). Those entries are the
+ * SECOND run's: they carry this plugin's attribution, they are correctly outside this debrief's
+ * extent, and `boundsOf` has already recorded that the record holds more than one run. Without this
+ * every two-run record would carry a line saying the reading went wrong where it did exactly what it
+ * was built to do — walked, and the measured shape of it is three entries reported as lost.
+ */
+function crossCheckAttributionOutside(
+  entries: readonly JsonObject[],
+  bounds: RunBounds,
+  losses: string[],
+): void {
+  let before = 0;
+  let after = 0;
+  for (const [index, entry] of entries.entries()) {
+    if (index >= bounds.firstIndex && index <= bounds.lastIndex) continue;
+    if (bounds.secondRunAt !== undefined && index >= bounds.secondRunAt) continue;
+    if (stringField(entry, "attributionPlugin") !== PLUGIN_NAME) continue;
+    if (index < bounds.firstIndex) before += 1;
+    else after += 1;
+  }
+  const outside = before + after;
+  if (outside === 0) return;
+  losses.push(
+    `${plural(outside, "entry", "entries")} of this session's record ` +
+      `${outside === 1 ? "carries" : "carry"} this plugin's own attribution and ` +
+      `${outside === 1 ? "lies" : "lie"} outside the extent this reading chose — ${before} before ` +
+      `it and ${after} after it, against an extent of entries ${bounds.firstIndex + 1}–` +
+      `${bounds.lastIndex + 1} of ${bounds.total} — so the extent stops short of the run somewhere: ` +
+      `every figure in this debrief is of the extent, and each of them is missing whatever those ` +
+      `entries carry` +
+      (bounds.secondRunAt === undefined
+        ? ""
+        : `. Entries from the second \`/deliverer:\` command on are not counted here: they are that ` +
+          `run's, correctly outside this one, and the loss above says so`),
+  );
+}
+
+/** "1 entry", "13 entries" — never a figure with a slash in it, in a document a human forwards. */
+function plural(count: number, one: string, many: string): string {
+  return `${count} ${count === 1 ? one : many}`;
 }
 
 /* ──────────────────────────────────────── the rounds ──────────────────────────────────────── */

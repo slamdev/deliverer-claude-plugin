@@ -26,20 +26,20 @@ files or the entries are the run's:
   A file this check cannot place is a file it cannot place; that is worth telling a reader and is not evidence of a lost
   dispatch.
 
-- [ ] Check one: dispatch record files in the directory the reading reads that the reading's own account of the run
+- [x] Check one: dispatch record files in the directory the reading reads that the reading's own account of the run
       mentions nowhere. It counts them and names them, and says it cannot place them rather than claiming they are the
       run's.
-- [ ] Check two: entries carrying the run's own attribution that fall outside the extent the reading chose. It reports
+- [x] Check two: entries carrying the run's own attribution that fall outside the extent the reading chose. It reports
       the count and where they sit relative to the extent.
-- [ ] Check two does not fire on an extent whose ceiling was closed by a second `/deliverer:` command, because that case
+- [x] Check two does not fire on an extent whose ceiling was closed by a second `/deliverer:` command, because that case
       already has its own loss and is not a fault.
-- [ ] Both are written as losses in the debrief, in the section that exists, and neither becomes a defect or a
+- [x] Both are written as losses in the debrief, in the section that exists, and neither becomes a defect or a
       **hunch**.
-- [ ] Both run on the facts-only path too — an observation that nothing judged is exactly the one whose reading nobody
+- [x] Both run on the facts-only path too — an observation that nothing judged is exactly the one whose reading nobody
       checked — and neither makes a model call.
-- [ ] Both run in **replay** as well as in the live observer, since it is one code path.
-- [ ] Comments cite this ticket and name the reading that would have been caught.
-- [ ] **Verified by hand with 01's procedure**: a prefix truncated before a dispatch landed, with that dispatch's record
+- [x] Both run in **replay** as well as in the live observer, since it is one code path.
+- [x] Comments cite this ticket and name the reading that would have been caught.
+- [x] **Verified by hand with 01's procedure**: a prefix truncated before a dispatch landed, with that dispatch's record
       present on disk, reports the file it cannot place; a whole-record replay of a clean run reports neither check; and
       a record holding two runs still reports the second-run loss and not a spurious one.
-- [ ] `(cd plugin/mcp && npm run typecheck && npm run lint)` passes.
+- [x] `(cd plugin/mcp && npm run typecheck && npm run lint)` passes.
