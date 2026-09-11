@@ -492,24 +492,32 @@ loop's. Walk these after any change to either, each with what it should do:
 - **a run resumed by prose in a fresh session** — an observer starts on attribution instead, off the plugin's own
   stamp in the session's record;
 - **a run that finished while its session stays open** — nothing is finalised and nothing is announced: the debrief
-  goes on being rewritten, and the line waits for one of the two below. What a run's records say about how it ended is
-  a reading rather than a signal — nothing about a task list forbids a run passing through "every stage completed, last
-  word prose" between two stages — so the observer has two finalisers, the session's end and the idle bound, and no
-  third;
+  goes on being rewritten, and the line waits for one of the finalisers below. What a run's records say about how it
+  ended is a reading rather than a signal — nothing about a task list forbids a run passing through "every stage
+  completed, last word prose" between two stages — so the observer has three finalisers, the session's end, the idle
+  bound and the ceiling on one **waiting** run's wait, and no fourth;
 - **a session ended mid-run** — `SessionEnd` signals and never finalises anything itself; the observer picks the
   signal up on its next tick and finalises the debrief;
 - **a terminal killed**, with no `SessionEnd` to be had — the idle bound finalises it, and the line naming the debrief
   waits for the next prompt of any session;
+- **a question on screen and nobody answering** — a run **waiting** is not that killed terminal, and the two are the
+  same silence on disk, so the idle bound does not fire while the run's own last act is an unanswered
+  `AskUserQuestion`: the debrief keeps being rewritten, nothing is announced, and answering carries the run and its
+  debrief on. Walk it by cutting a record to a prefix that ends on the question and appending the answer under the
+  watcher;
+- **a terminal killed with a question on screen** — the wait's own ceiling finalises it, twelve hours after the
+  question was asked rather than after the watcher started, with a marker saying so rather than claiming silence, and
+  then the watcher stops by itself;
 - **a record that stops being readable after a debrief was written** — move or `chmod` it and leave it that way. The
   patience bounds the wait: the observer announces the debrief already on disk and stops, rather than ticking for the
   rest of the machine's uptime over a record that is never coming back;
 - **observation switched off** (`CLAUDE_PLUGIN_OPTION_OBSERVE_RUNS=false`) — nothing starts at all: no process, no
   trace and no debrief.
 
-**The eight `DELIVERER_OBSERVER_*` bounds are what make that walk minutes rather than half-hours** — the killed
-terminal is the idle bound's thirty minutes and nothing else. `observer.ts` documents each beside the constant that
-reads it; they are named together here because a lifecycle state is otherwise reachable only by waiting for it, and the
-five clocks of the loop are the ones a walk turns down:
+**The nine `DELIVERER_OBSERVER_*` bounds are what make that walk minutes rather than half-hours** — the killed
+terminal is the idle bound's thirty minutes and nothing else, and the terminal killed on a question is twelve hours.
+`observer.ts` documents each beside the constant that reads it; they are named together here because a lifecycle state
+is otherwise reachable only by waiting for it, and the six clocks of the loop are the ones a walk turns down:
 
 - `DELIVERER_OBSERVER_TICK_MS` (2 s) — how often the records' own footprint is looked at, so it is the floor under
   every state below it;
@@ -517,6 +525,9 @@ five clocks of the loop are the ones a walk turns down:
   stage landing jumps it;
 - `DELIVERER_OBSERVER_IDLE_MS` (30 min) — how long everything has to be silent before the debrief is finalised on the
   observer's own reading, which is the killed terminal's finalise and the one a thinking human must not be given;
+- `DELIVERER_OBSERVER_WAITING_MS` (12 h) — how long a **waiting** run may sit on one unanswered question before the
+  idle bound above is allowed to fire after all, measured from when that question was asked rather than from the
+  watcher's own start, so a record whose question is already old is already partway through it;
 - `DELIVERER_OBSERVER_AFTER_FINALISE_MS` (30 min) — how long the watcher keeps going after a finalise nothing
   signalled, which is the whole of the window a resumed run has to get its label back in;
 - `DELIVERER_OBSERVER_PATIENCE_MS` (10 min) — how long a record gets to show a run in it at all, and how long one that

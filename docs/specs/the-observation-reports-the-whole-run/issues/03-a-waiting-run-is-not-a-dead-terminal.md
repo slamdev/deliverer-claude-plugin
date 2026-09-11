@@ -29,23 +29,23 @@ fires for the whole of a wait, and a restart could only ever have picked the run
 by its tool-use id and matches answers by `tool_use_id`. A question with no matching answer, and the timestamp it was
 asked at, is a small addition there — not a new pass over the record.
 
-- [ ] `RunFacts` carries whether the run is waiting on a question and when that question was asked, read where the
+- [x] `RunFacts` carries whether the run is waiting on a question and when that question was asked, read where the
       answers are already matched. No second scan of the record.
-- [ ] `observer.ts` does not finalise on the idle bound while that is true.
-- [ ] A ceiling of twelve hours, measured from when the question was asked, finalises on exactly the guess the idle
+- [x] `observer.ts` does not finalise on the idle bound while that is true.
+- [x] A ceiling of twelve hours, measured from when the question was asked, finalises on exactly the guess the idle
       bound makes today and lets the loop exit as it does now. Its constant carries why twelve and not thirty hours: the
       tick comment's own longest delivery on record is thirty hours, so a ceiling on the watcher's *lifetime* would kill
       a live run, and this one cannot because a run that keeps writing is not waiting.
-- [ ] The finalise reason distinguishes the third finaliser from the two that exist, so a marker and an announcement do
+- [x] The finalise reason distinguishes the third finaliser from the two that exist, so a marker and an announcement do
       not claim silence where the answer was a wait that ran out.
-- [ ] The new bound is overridable from the environment through the same `bound()` helper, for the reason that function
+- [x] The new bound is overridable from the environment through the same `bound()` helper, for the reason that function
       already documents.
-- [ ] `AFTER_FINALISE_MS`, `RUN_PATIENCE_MS`, the refresh throttle, the settling tick and D23's reversal are unchanged,
+- [x] `AFTER_FINALISE_MS`, `RUN_PATIENCE_MS`, the refresh throttle, the settling tick and D23's reversal are unchanged,
       and a comment records that the reversal starts working again as a consequence of 02 rather than of anything here.
-- [ ] Nothing is announced while a run is waiting: an unfinalised debrief still prints nothing at the stop, exactly as
+- [x] Nothing is announced while a run is waiting: an unfinalised debrief still prints nothing at the stop, exactly as
       today.
-- [ ] **Verified by hand with 01's procedure**, bounds turned down: a prefix ending on an unanswered question does not
+- [x] **Verified by hand with 01's procedure**, bounds turned down: a prefix ending on an unanswered question does not
       finalise however long it is left; the same record with the answer appended carries on and finalises at the end; a
       prefix left past the ceiling finalises with the new reason and the watcher exits; and a killed watcher leaves
       nothing behind that a later run trips over.
-- [ ] `(cd plugin/mcp && npm run typecheck && npm run lint)` passes.
+- [x] `(cd plugin/mcp && npm run typecheck && npm run lint)` passes.

@@ -135,6 +135,22 @@ export interface HumanTime {
   /** time the run sat idle before each of those turns */
   readonly idleWaitMs: number;
   readonly totalWaitMs: number;
+  /**
+   * When the question this run is **waiting** on was asked, and `undefined` where it is not waiting
+   * (the-observation-reports-the-whole-run ticket 03; D5).
+   *
+   * **Waiting is the run's own last act being a question nobody has answered**, and it is
+   * categorically different from a terminal that was killed even though the two are the same thing
+   * on disk: nothing is written anywhere while a run waits. The pending question is therefore the
+   * only thing that tells them apart, which is why `./observer.ts` reads this rather than the
+   * silence — the largest wait measured is 1h56m against an idle bound of half an hour.
+   *
+   * **One field for both halves of it, and the timestamp is the half that has to be there.** The
+   * ceiling D6 puts on one wait is measured from when the question was asked, so a pending question
+   * carrying no timestamp is a wait nothing could ever measure out — and this says "not waiting"
+   * there rather than suspending the one bound that stops a watcher whose terminal really is gone.
+   */
+  readonly waitingSince: string | undefined;
 }
 
 export interface RunFacts {
@@ -931,6 +947,14 @@ function lastWordOf(window: readonly JsonObject[]): "prose" | "mid-flight" {
 
 /* ─────────────────────────────────── the human's own time ─────────────────────────────────── */
 
+/** One `AskUserQuestion` and where it sits, for the waiting test below (ticket 03; D5). */
+interface PendingQuestion {
+  readonly id: string;
+  readonly at: string | undefined;
+  /** into the run's own window, so "the run wrote nothing after it" is a walk of the tail alone */
+  readonly index: number;
+}
+
 /**
  * How many question rounds the run put to the human and how long it waited on them.
  *
@@ -938,6 +962,12 @@ function lastWordOf(window: readonly JsonObject[]): "prose" | "mid-flight" {
  * sitting idle until the human typed of their own accord. The second is the larger by far — one
  * delivery on disk waited 2h06m for the word "continue" — so a figure counting only the first
  * would report the time the plugin took from its human as nearly none.
+ *
+ * **It also reads whether the run is WAITING** (the-observation-reports-the-whole-run ticket 03;
+ * D5): the questions are already kept by tool-use id here and the answers already matched against
+ * them by `tool_use_id`, so the one still open is a name and a comparison in the pass that exists —
+ * never a second reading of the record. What comes out of it is `waitingSince` above, which is a
+ * timestamp and nothing else.
  *
  * Shape only. No subject, no header, no word of a question or an answer travels out of here:
  * ADR-0018's bound, and user story 8.
@@ -950,6 +980,8 @@ function humanTimeOf(window: readonly JsonObject[]): HumanTime {
   let typedTurns = 0;
   let idleWaitMs = 0;
   let previousAt: string | undefined;
+  /** the last `AskUserQuestion` of the run with no answer beside it yet (ticket 03; D5) */
+  let pending: PendingQuestion | undefined;
 
   for (const [index, entry] of window.entries()) {
     const at = stringField(entry, "timestamp");
@@ -960,13 +992,20 @@ function humanTimeOf(window: readonly JsonObject[]): HumanTime {
       const questions = Array.isArray(asking) ? asking.length : 0;
       questionsAsked += questions;
       const id = stringField(block, "id");
-      if (id !== undefined) asked.set(id, { at, questions });
+      if (id === undefined) continue;
+      asked.set(id, { at, questions });
+      // Only the last question asked can be the run's own last act, so a later round replaces an
+      // earlier one here rather than queuing behind it (ticket 03; D5).
+      pending = { id, at, index };
     }
     for (const block of contentBlocks(objectField(entry, "message"))) {
       const id = stringField(block, "tool_use_id");
       const question = id === undefined ? undefined : asked.get(id);
       if (question === undefined) continue;
       answerWaitMs += Math.max(0, elapsed(question.at, at) ?? 0);
+      // The same match, read for the run's state as well as for its arithmetic: a question that has
+      // its answer is not one the run is waiting on (ticket 03; D5).
+      if (id === pending?.id) pending = undefined;
     }
     if (index > 0 && typedText(entry) !== undefined) {
       typedTurns += 1;
@@ -984,7 +1023,33 @@ function humanTimeOf(window: readonly JsonObject[]): HumanTime {
     typedTurns,
     idleWaitMs,
     totalWaitMs: answerWaitMs + idleWaitMs,
+    waitingSince:
+      pending !== undefined && isTheRunsLastAct(window, pending.index) ? pending.at : undefined,
   };
+}
+
+/**
+ * Whether the run wrote nothing after this entry, which is what makes an unanswered question the
+ * run's own last act (ticket 03; D5).
+ *
+ * A `queue-operation` does not count, for the reason the two other readers of one here already give:
+ * it is stamped when the HUMAN typed, so a prompt queued while a question is on screen is not the
+ * run writing anything. Everything else does, and that strictness is the safe direction — a question
+ * the run went PAST, one the human escaped out of and typed over, leaves the idle bound exactly as
+ * it is today rather than suspending it on a wait that ended.
+ *
+ * **One shape reads as waiting and is really over, knowingly:** the human typed over a question and
+ * the record ends there, so step 1's ceiling closes on the question itself and it is the last entry
+ * of the window. Walked, and what it costs is the label arriving at the wait's ceiling instead of at
+ * the idle bound on a run that had already stopped — no content, since the debrief goes on being
+ * rewritten throughout and finalises at the end either way. Telling that shape from a wait would
+ * take the very exemption D3 declined.
+ */
+function isTheRunsLastAct(window: readonly JsonObject[], index: number): boolean {
+  for (let after = index + 1; after < window.length; after += 1) {
+    if (stringField(window[after] ?? {}, "type") !== "queue-operation") return false;
+  }
+  return true;
 }
 
 /* ────────────────────────────────────── shared reading ────────────────────────────────────── */
