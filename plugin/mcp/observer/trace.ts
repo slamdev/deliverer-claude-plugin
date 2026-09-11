@@ -46,6 +46,7 @@ import {
   type RecordFile,
   type TokenTotals,
 } from "./records.ts";
+import { pricingOf, type Pricing } from "./rates.ts";
 
 /* ───────────────────────────────────────── the cap ───────────────────────────────────────── */
 
@@ -173,6 +174,18 @@ export interface TraceDispatch {
   readonly toolCalls: number | undefined;
   readonly entryCount: number;
   readonly tokens: TokenTotals;
+  /**
+   * The same tokens in dollars, at `./rates.ts`'s rates
+   * (the-observation-reports-the-whole-run ticket 06; D18).
+   *
+   * **Carried here because this is where the per-request usage already is.** A rate is the request's
+   * own — one run's orchestrator and its dispatches need not have been served by the same model — so
+   * pricing needs each request and not this dispatch's totals, and `./run-facts.ts` would otherwise
+   * have to read every per-dispatch record a second time to get them back. Nothing in the trace's own
+   * file prints it: D18 adds no per-dispatch dollar breakdown, and what reads this is the one figure
+   * the debrief states for the whole run.
+   */
+  readonly spend: Pricing;
   /** the dispatch's **report** — the only thing a dispatch returns — capped like every excerpt */
   readonly report: string;
   /**
@@ -310,6 +323,20 @@ export interface DistilInput {
  */
 export function lineCount(count: number): string {
   return count === 1 ? "1 line" : `${count} lines`;
+}
+
+/**
+ * `1 entry` / `13 entries`, for any pair of words — never `1 entry/entries`, and never a figure with
+ * a slash in it, in a document a human forwards unread.
+ *
+ * Here rather than in the two modules that write those documents, which each had a copy of it
+ * (the-observation-reports-the-whole-run tickets 05 and 06 landed the second): both already read
+ * this module for `formatDuration` and `lineCount` above, so the prose helpers are one set in the
+ * place the import direction already ran. Two copies of a rule about how a number reads is exactly
+ * the thing that drifts unnoticed, because either copy on its own looks right.
+ */
+export function plural(count: number, one: string, many: string): string {
+  return `${count} ${count === 1 ? one : many}`;
 }
 
 export function buildTrace(input: DistilInput): Trace {
@@ -827,6 +854,10 @@ function buildDispatch(input: DispatchInput): TraceDispatch {
   const reportedDuration = numberField(outcome, "totalDurationMs");
 
   const entries = input.record?.file.entries ?? [];
+  // Grouped once and read twice, as tokens and as dollars (ticket 06; D18): a second
+  // `requestUsage` pass over a dispatch record — 11 MB across 16 files on the largest delivery
+  // measured — would buy nothing but the same map again.
+  const usages = requestUsage(entries);
   const { lines, lastSaid } = dispatchLines(entries, input.cap, input.elision);
 
   if (input.record === undefined) {
@@ -869,7 +900,8 @@ function buildDispatch(input: DispatchInput): TraceDispatch {
     background,
     toolCalls: numberField(outcome, "totalToolUseCount"),
     entryCount: entries.length,
-    tokens: totalTokens(requestUsage(entries).values()),
+    tokens: totalTokens(usages.values()),
+    spend: pricingOf(usages.values()),
     // Capped ONCE, here. Capping the closing line's excerpt again would cut an already-cut string
     // and report a second elision on top of the first — a figure about the trace rather than about
     // the run.

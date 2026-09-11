@@ -68,7 +68,26 @@ export type DebriefOutcome =
    *  failure */
   | { readonly kind: "no-run"; readonly reason: string }
   /** the caller's `writeWhen` held this reading back, so nothing was put on disk */
-  | { readonly kind: "held"; readonly trace: Trace; readonly reason: string }
+  | {
+      readonly kind: "held";
+      readonly trace: Trace;
+      /**
+       * What this reading read, even though none of it reached disk
+       * (the-observation-reports-the-whole-run ticket 03; D5).
+       *
+       * **A reading held back is still a reading**, and the live **observer** decides the run's
+       * lifecycle on one: `./observer.ts` suspends the idle bound while the run is **waiting**, and
+       * the only place a pending question exists is here. Answering `held` with the trace alone made
+       * that state unreachable for exactly the run that has not named its **epic** yet — a
+       * refinement's whole grilling phase, which is where every long wait is.
+       *
+       * `undefined` only where the facts themselves could not be built: nothing was going on disk
+       * either way, so a second read of the record that fails leaves this a courtesy the caller does
+       * without rather than a failure it has to handle.
+       */
+      readonly facts?: RunFacts;
+      readonly reason: string;
+    }
   /** nothing could be read, or there is nowhere to write */
   | { readonly kind: "refused"; readonly reason: string };
 
@@ -109,53 +128,101 @@ export interface DebriefOptions {
 /**
  * One run's records in, one debrief out.
  *
- * The trace is written first and by the same code `./distil.ts` runs, so what a debrief rests on
+ * The trace is distilled first and by the same code `./distil.ts` runs, so what a debrief rests on
  * is the distillation a contributor can produce by hand rather than a second one — and the debrief
  * lands in the same per-run directory, beside it.
+ *
+ * **The two documents move into place together** (the-observation-reports-the-whole-run ticket 04;
+ * D9). The trace is staged under a name of its own and renamed into place only once the debrief and
+ * its **identity file** are written, because everything between the two is a window a death can fall
+ * into and the window was minutes wide: the judging below is a whole-run synthesis on a long-context
+ * model. Before this, a process that stopped in there left a newer trace beside an older debrief —
+ * measured, on the run this epic was written from: a trace ending 11:23:52, a debrief whose own
+ * **hunch** said the trace it read "run[s] to `[09:24:42]`", and an identity file still saying
+ * `finalised: yes`. Now the pair appears together or the previous consistent pair stays.
+ *
+ * **The path both documents carry is the trace's final one throughout** — `staged.path` is where the
+ * rename puts it, never the staging name, which `./trace-file.ts` alone ever sees. A staged name in
+ * the debrief would point a maintainer at a file that never exists, which is worse than the
+ * inconsistency this closes.
  *
  * **Records that produce no trace produce no debrief**, and the caller is told why. An empty
  * debrief about a session that never ran the plugin would be worse than none.
  */
 export async function debriefRun(options: DebriefOptions): Promise<DebriefOutcome> {
   const distilled = await distil(options);
+  if (distilled.kind === "held") {
+    // Held back means nothing goes on disk — the gate is exactly as ticket 04 left it, staged trace
+    // and all — and NOT that the reading is thrown away (ticket 03; D5). The live observer takes the
+    // waiting-versus-dead decision off these facts, and a run that has not named its epic yet is the
+    // one whose every reading arrives here. Its failure is not the caller's problem: there was
+    // nothing on disk to be inconsistent with, and `./observer.ts` treats absent facts as "nothing
+    // to suspend the idle bound with", which is the lifecycle it shipped.
+    //
+    // **What it costs is the second read below, on ticks that were already due**: a held reading now
+    // costs what a written one does apart from the write, and the observer's own throttle is what
+    // bounds how often either happens. The alternative was the loop asking a second time for what
+    // this pass had already worked out, which is a second reading of the whole record set to learn
+    // one timestamp.
+    return { ...distilled, facts: await factsOf(options, distilled.trace).catch(() => undefined) };
+  }
   if (distilled.kind !== "traced") return distilled;
+  const { staged } = distilled;
 
-  // Read a second time, deliberately. A **trace** is bounded by nothing while a debrief's every
-  // figure is bounded by the run, and the excerpt cap is what makes the second read necessary: a
-  // round's poll payload and the skill preamble naming the plugin's commit are both longer than a
-  // large run's cap, so neither survives into the trace. Reading a file twice is cheaper than a
-  // distillation that has to keep two shapes.
+  try {
+    const facts = await factsOf(options, distilled.trace);
+    const commit = await resolvePluginCommit({
+      inRecords: facts.commitInRecords,
+      dataDirectory: options.dataDirectory,
+    });
+    const source = options.judging ?? NOTHING_JUDGED;
+    const judging =
+      typeof source === "function" ? await source({ trace: distilled.trace, facts }) : source;
+    const written = await (options.write ?? writeDebrief)(options.dataDirectory, {
+      trace: distilled.trace,
+      facts,
+      commit,
+      judging,
+      tracePath: staged.path,
+      status: options.status,
+      observationLosses: options.observationLosses,
+    });
+    // The debrief and its identity file are on disk, so the trace may be. Last, and only here: the
+    // writers above are the ones that put a pair together — `writeDebrief` removes its own debrief
+    // where the identity file could not follow it — so nothing before this line is a pair yet.
+    await staged.place();
+    return {
+      kind: "written",
+      trace: distilled.trace,
+      facts,
+      tracePath: staged.path,
+      written,
+      judging,
+    };
+  } catch (error) {
+    // Whatever went wrong between the two writes, the pair already on disk is untouched and this
+    // reading leaves nothing of its own behind — including the staged trace (ticket 04; D9).
+    await staged.discard();
+    throw error;
+  }
+}
+
+/**
+ * One reading's facts, off the records the trace was built from.
+ *
+ * **The record is read a second time, deliberately.** A **trace** is bounded by nothing while a
+ * debrief's every figure is bounded by the run, and the excerpt cap is what makes the second read
+ * necessary: a **round**'s poll payload and the skill preamble naming the plugin's commit are both
+ * longer than a large run's cap, so neither survives into the trace. Reading a file twice is cheaper
+ * than a distillation that has to keep two shapes.
+ *
+ * One function for both paths, because a reading held off disk answers with the same facts a written
+ * one does (ticket 03; D5) and two ways of building them would let the two disagree about the run.
+ */
+async function factsOf(options: DebriefOptions, trace: Trace): Promise<RunFacts> {
   const record = await readRecordFile(options.recordPath);
   const dispatched = await readDispatchRecords(options.recordPath);
-  const facts = runFactsOf({
-    record,
-    dispatchRecords: dispatched.records,
-    trace: distilled.trace,
-  });
-  const commit = await resolvePluginCommit({
-    inRecords: facts.commitInRecords,
-    dataDirectory: options.dataDirectory,
-  });
-  const source = options.judging ?? NOTHING_JUDGED;
-  const judging =
-    typeof source === "function" ? await source({ trace: distilled.trace, facts }) : source;
-  const written = await (options.write ?? writeDebrief)(options.dataDirectory, {
-    trace: distilled.trace,
-    facts,
-    commit,
-    judging,
-    tracePath: distilled.path,
-    status: options.status,
-    observationLosses: options.observationLosses,
-  });
-  return {
-    kind: "written",
-    trace: distilled.trace,
-    facts,
-    tracePath: distilled.path,
-    written,
-    judging,
-  };
+  return runFactsOf({ record, dispatchRecords: dispatched.records, trace });
 }
 
 /** What the judging half did, for the line the command prints. */
@@ -217,12 +284,21 @@ function judgingLine(outcome: Extract<DebriefOutcome, { kind: "written" }>): str
   );
 }
 
-/** One line summarising what was written, for whoever asked for it. */
+/**
+ * One line summarising what was written, for whoever asked for it.
+ *
+ * It carries the run's own dollars for the same reason the announcement does (ticket 06; D16), and
+ * for one more: this is the line a contributor checking the pricing by hand reads the figure off,
+ * against their own count from the same record's `usage` fields.
+ */
 export function summariseDebrief(outcome: Extract<DebriefOutcome, { kind: "written" }>): string {
   const { facts, trace } = outcome;
+  const spend = facts.spend.usd;
   return (
     `${runSkills(facts, trace) || "unknown skill"} · slug ${trace.slug} · ` +
-    `${formatDuration(facts.extent.durationMs)} · ${facts.dispatches.length} dispatches · ` +
+    `${formatDuration(facts.extent.durationMs)} · ` +
+    `${spend === undefined ? "spend unknown" : `about $${spend.toFixed(2)}`} · ` +
+    `${facts.dispatches.length} dispatches · ` +
     `${facts.rounds.length} rounds ` +
     `(${facts.rounds.map((it) => it.status ?? "unreported").join(", ") || "none"})\n` +
     `  ${facts.ending.kind} · ${facts.human.questionRounds} question rounds · ` +

@@ -332,6 +332,49 @@ Three exit codes, and a first line that names what was written: `0` with the deb
 judging half did and where the trace and the **identity file** went; `2` with why this record holds no run (a session
 that merely names the plugin is not one, and several on any machine do), `1` with what could not be read.
 
+**A prefix of a record is a reading taken mid-run, and it is the only cheap way to see one.** A whole record already
+carries the run's ending, so replaying one shows the reading that works and none of the readings that go wrong: the
+**extent** the observer settled on while the run was still delegating, the finalise it made while a human was still
+thinking about a question, and any cross-check that fires on a reading disagreeing with what is on disk are all states
+the observer was in *during* the run. Keeping the first N entries of a copy reproduces exactly what it saw at entry N,
+and it costs what the form above costs — no model, no forge, nothing spent.
+
+```
+record=~/.claude/projects/<munged-cwd>/<session-id>.jsonl   # a run of your own
+entries=268                                                 # where to cut it
+id=$(basename "$record" .jsonl) && copy=$(mktemp -d)
+head -n "$entries" "$record" > "$copy/$id.jsonl"
+mkdir -p "$copy/$id" && cp -r "$(dirname "$record")/$id/subagents" "$copy/$id/"
+CLAUDE_PLUGIN_DATA=$(mktemp -d) node plugin/mcp/observer/debrief.ts "$copy/$id.jsonl"
+```
+
+One entry is one line, so `head` cuts at an entry boundary — this is not the corrupted record the cases below end with,
+which stops mid-line and has to say what it lost.
+
+**The host's layout is what the copy has to preserve, and it is the one thing a copy gets wrong.**
+`plugin/mcp/observer/records.ts` finds a **dispatch**'s own record by path and by nothing else: the copy has to be named
+`<session-id>.jsonl` with a `<session-id>/subagents/` directory beside it holding each `agent-<id>.jsonl` and its
+`agent-<id>.meta.json` sidecar, which is what the `basename`, the `mkdir` and the `cp` above are between them for. A
+prefix dropped somewhere flat has no dispatches at all, and that reads as a defect in the reading rather than as a
+broken copy.
+
+**Leaving the `cp` line out asks for a reading from before any stage landed** — a legitimate thing to want, and one to
+ask for deliberately rather than by accident. A dispatch's record is a whole file that a prefix of the session's record
+does not cut, so a copy keeping the directory keeps every stage the run ever ran, however early the cut: cut a
+refinement before its first dispatch and the debrief still counts that dispatch, takes its wall clock off the dispatch
+record's own entries, and writes the loss saying no `Agent` call in the prefix claims it. Both are real shapes — that
+one is a reading disagreeing with what is on disk, and the flat copy is the run as it stood before it delegated
+anything — and which of the two you get is what the `cp` line decides.
+
+**Determinism survives all of it**, because a prefix is a record like any other: replay one twice into one
+`CLAUDE_PLUGIN_DATA` and `debrief-2.md` is byte for byte identical to `debrief.md`, exactly as it is for a whole record.
+
+**No run's records are checked into this repository, and none is going to be.** Every record this procedure wants is a
+run of somebody's own, and it carries the repository it ran in, the absolute paths on that machine, the username inside
+each of them and every word the human typed — which is what makes a **trace** refuse forwarding in the first place. So
+there is no fixture here: what you replay is a run of your own, or a synthetic record you wrote for the shape you are
+walking, and the copies either one leaves behind belong in a `mktemp -d` rather than in the tree.
+
 **With `--judge`, the same command runs the judging half**, which nothing else exercises: one cheap-tier call per
 **dispatch** as each is read from the inside, and one long-context synthesis over the whole run — thirteen-plus calls
 for a delivery. What it answers is the only question worth asking of that half: whether the observer finds what you
@@ -448,24 +491,53 @@ loop's. Walk these after any change to either, each with what it should do:
 - **a run resumed by prose in a fresh session** — an observer starts on attribution instead, off the plugin's own
   stamp in the session's record;
 - **a run that finished while its session stays open** — nothing is finalised and nothing is announced: the debrief
-  goes on being rewritten, and the line waits for one of the two below. What a run's records say about how it ended is
-  a reading rather than a signal — nothing about a task list forbids a run passing through "every stage completed, last
-  word prose" between two stages — so the observer has two finalisers, the session's end and the idle bound, and no
-  third;
+  goes on being rewritten, and the line waits for one of the finalisers below. What a run's records say about how it
+  ended is a reading rather than a signal — nothing about a task list forbids a run passing through "every stage
+  completed, last word prose" between two stages — so the observer has three finalisers, the session's end, the idle
+  bound and the ceiling on one **waiting** run's wait, and no fourth;
 - **a session ended mid-run** — `SessionEnd` signals and never finalises anything itself; the observer picks the
   signal up on its next tick and finalises the debrief;
 - **a terminal killed**, with no `SessionEnd` to be had — the idle bound finalises it, and the line naming the debrief
   waits for the next prompt of any session;
+- **a question on screen and nobody answering** — a run **waiting** is not that killed terminal, and the two are the
+  same silence on disk, so the idle bound does not fire while the run's own last act is an unanswered
+  `AskUserQuestion`: the debrief keeps being rewritten, nothing is announced, and answering carries the run and its
+  debrief on. Walk it by cutting a record to a prefix that ends on the question and appending the answer under the
+  watcher;
+- **a terminal killed with a question on screen** — the wait's own ceiling finalises it, twelve hours after the
+  question was asked rather than after the watcher started, with a marker saying so rather than claiming silence, and
+  then the watcher stops by itself;
 - **a record that stops being readable after a debrief was written** — move or `chmod` it and leave it that way. The
   patience bounds the wait: the observer announces the debrief already on disk and stops, rather than ticking for the
   rest of the machine's uptime over a record that is never coming back;
 - **observation switched off** (`CLAUDE_PLUGIN_OPTION_OBSERVE_RUNS=false`) — nothing starts at all: no process, no
   trace and no debrief.
 
-The eight `DELIVERER_OBSERVER_*` bounds are what make that walk minutes rather than half-hours — the killed terminal
-is the idle bound's thirty minutes and nothing else: `TICK_MS` (2 s), `REFRESH_MS` (15 s), `IDLE_MS` (30 min),
-`AFTER_FINALISE_MS` (30 min), `PATIENCE_MS` (10 min), `INSTALL_WAIT_MS` (2 min), and the judging half's `NOTE_MS`
-(5 min) and `JUDGE_MS` (30 min).
+**The nine `DELIVERER_OBSERVER_*` bounds are what make that walk minutes rather than half-hours** — the killed
+terminal is the idle bound's thirty minutes and nothing else, and the terminal killed on a question is twelve hours.
+`observer.ts` documents each beside the constant that reads it; they are named together here because a lifecycle state
+is otherwise reachable only by waiting for it, and the six clocks of the loop are the ones a walk turns down:
+
+- `DELIVERER_OBSERVER_TICK_MS` (2 s) — how often the records' own footprint is looked at, so it is the floor under
+  every state below it;
+- `DELIVERER_OBSERVER_REFRESH_MS` (15 s) — the throttle between two rewrites while the run is merely proceeding; a
+  stage landing jumps it;
+- `DELIVERER_OBSERVER_IDLE_MS` (30 min) — how long everything has to be silent before the debrief is finalised on the
+  observer's own reading, which is the killed terminal's finalise and the one a thinking human must not be given;
+- `DELIVERER_OBSERVER_WAITING_MS` (12 h) — how long a **waiting** run may sit on one unanswered question before the
+  idle bound above is allowed to fire after all, measured from when that question was asked rather than from the
+  watcher's own start, so a record whose question is already old is already partway through it;
+- `DELIVERER_OBSERVER_AFTER_FINALISE_MS` (30 min) — how long the watcher keeps going after a finalise nothing
+  signalled, which is the whole of the window a resumed run has to get its label back in;
+- `DELIVERER_OBSERVER_PATIENCE_MS` (10 min) — how long a record gets to show a run in it at all, and how long one that
+  stopped being readable gets to come back;
+- `DELIVERER_OBSERVER_INSTALL_WAIT_MS` (2 min) — how long `observe.mjs` waits for the install to put the observer on
+  disk before there is nothing to start;
+- the judging half's `DELIVERER_OBSERVER_NOTE_MS` (5 min) and `DELIVERER_OBSERVER_JUDGE_MS` (30 min) — one **dispatch
+  note**'s deadline and the synthesis's, which nothing but a `--judge` replay or a judging observer ever reaches.
+
+Unset and set-but-empty both mean no override, told apart from a real `0` — which is honoured and fires that bound at
+once. Anything that is not a finite number at or above zero falls back to the default rather than failing.
 
 ### Tallying a run
 
@@ -524,10 +596,26 @@ alone; every record of one response repeats the same input and cache figures, an
 **Report what the observation cost beside what the run did.** The **observer** grades every dispatch, so a run that
 dispatches more costs more to observe — **spend** that lands out of band, in neither the run's own figures nor a
 **ceiling**, and a before-and-after that leaves it out flatters itself. It is a read rather than a sum: `debrief.md`'s
-header carries it on its `what this observation cost` line, in dollars the calls themselves reported. The line above it,
-`the run's spend`, is tokens with **unknown** where the money should be — the host records no money anywhere in a
-session record — so any dollar figure you set beside these tokens comes from whatever billed the calls, and is written
-labelled with the provider that served it.
+header carries it on its `what this observation cost` line, in the dollars the calls themselves reported where they
+reported any, and priced from the table below where they did not — the line says which of the two it is.
+
+**Both dollar figures in a debrief are read rather than worked out, and the run's own is an estimate.** The host records
+no money anywhere in a session record, only per-request tokens, so `the run's spend` line is those tokens priced by
+`plugin/mcp/observer/rates.ts` — a dated table in the plugin's own code, reaching no network, so replaying a record
+reproduces the figure. The line states its own basis: the table's date, the models it priced, the message id prefix the
+requests carry, and any request it could not price at all. **The rates in that table are not written from memory.** They
+come from the `claude-api` skill's own model table, which is where a contributor updates them from — and the date beside
+them is that source's, not the day the file was edited. First-party rates only: a run whose message ids carry a partner
+prefix such as `msg_bdrk_` is priced at first-party rates anyway, and the debrief says both facts, so a difference
+against that platform's own bill has its explanation in the document.
+
+**The pricing is the one thing here with an exactly right answer, so check it against a hand count.** Replay a record,
+add up its `usage` fields yourself — `input_tokens` and `output_tokens` at the model's rates, `cache_read_input_tokens`
+at 0.1× input except on the one row `rates.ts` overrides, which its own comment names, and `usage.cache_creation`'s
+`ephemeral_5m_input_tokens` at 1.25× input and `ephemeral_1h_input_tokens` at 2× — and the debrief's figure matches to
+the cent or the table is wrong. The replay command prints it on its own
+first summary line, so a mismatch needs no reading of the file. A model the table has no rate for is the other half to
+walk: it prices nothing, is named in `What this observation lost`, and never reads as a cheap run.
 
 ### Exercising the install by hand
 
@@ -588,9 +676,15 @@ and a dispatch count consistent with the records the **run directory** itself ho
 lives at the replay seam above. The observation is a separate process on the same account and the same credentials the
 run uses, its **spend** is in none of the figures below, and `e2e-tests/README.md` says what it costs.
 
-**What they take and spend, measured rather than estimated.** The refinement took **21m 52s and $6.36** — the run
-itself 20m 12s and $5.82, the responder $0.16 across six rounds of questions, the verifier $0.39 — and published a spec
-and six tickets. The delivery, measured on 2026-09-06, took **59m 18s and $10.58** — the run itself 55m 29s and $9.75,
+**What they take and spend, measured rather than estimated.** The refinement, measured on 2026-09-11 and the first
+reading taken with the model pinned, took **41m 36s and $15.38** — the run itself 41m 36s and $14.49, the responder
+$0.32 across eleven rounds of questions, the verifier $0.57 — and published a spec and eight tickets over sixty-two
+user stories. An earlier reading of the same test put it at **21m 52s and $6.36**, over six rounds and six tickets.
+**Both are the same test against the same fixture, and the gap between them is what a single reading is worth here**:
+seven refinements of this fixture, every one of them on `opus`, spread from **$13.45 to $36.46** on the tokens their
+own records carry, a mean of $20.94 either side of a standard deviation of $7.55. A figure below is one run, so a
+change that moved a refinement by a dollar or two would be invisible in it, and none of them is a saving anybody has
+measured. The delivery, measured on 2026-09-06, took **59m 18s and $10.58** — the run itself 55m 29s and $9.75,
 the verifier $0.83 — and flipped its change request ready with green checks over three tickets, five commits, ten
 **assumption**s and two **rounds**. It was measured twice before that, at **23m 12s and $7.40** and **22m 14s and
 $6.85**, and both of those readings predate the **adjudication** that compares roads: that step is now the longest and
@@ -598,21 +692,29 @@ most expensive of a delivery's eight, and `e2e-tests/README.md` prices the diffe
 what `npm test` does, the whole suite took **23m** and the two runs with their verdicts came to **$13.28**, then
 **$13.14** — the two long tests overlap, so the suite is the slower of them plus a rounding error. That pair predates
 the delivery above too, and nothing has driven the two together since; the arithmetic on the two latest readings puts a
-suite at about an hour and about $17, which is derived rather than measured. The smoke test is seconds and effectively
+suite at about an hour and about $26, which is derived rather than measured. The smoke test is seconds and effectively
 free.
 
 Those are the figures the harness reports, which are the **orchestrator** and its **dispatches** and nothing else — a
-delivery's **rounds** and the observation both run as their own processes, and neither's **spend** is in them.
+delivery's **rounds** and the observation both run as their own processes, and neither's **spend** is in them. **Every
+reading above the refinement's was taken before `run.ts` pinned the model a run runs on**, so each inherited whichever
+model the machine that took it defaulted to. Checked against the records afterwards, every refinement of this fixture
+had in fact run on `opus` — so the spread above is what one fixture does run to run, and not two models being
+compared — but nothing in a run directory said so at the time, which is why the pin is there now.
 `e2e-tests/README.md` breaks a measured pair of runs down per stage, says what the reported figure leaves out — the
 observation among the four kinds it names — and gives the method for doing it again from any **run directory**.
 
 **The ceilings.** A run may take **ninety minutes** and spend **twenty-five dollars**: `DEFAULT_CEILINGS` in
-`e2e-tests/harness/ceilings.ts`, overridable per test. Neither has been raised, but the time one is no longer far off:
-the longest run measured took **55m 29s** — 62% of the ninety — and the most expensive spent **$9.75**, both of them the
-delivery of 2026-09-06 above. The money ceiling still has the room the spec estimated it would; the clock does not, and
-it is the one a delivery will reach first. Reaching either is reported as a ceiling rather than as a failed assertion,
-so a slow run can be told from a stuck one. What would move them is a bigger **fixture**: this one's tickets are three
-functions with unit tests, and a fixture with a service in it would be felt here first. Wall clock is also the one
+`e2e-tests/harness/ceilings.ts`, overridable per test. Neither has been raised, and neither is far off any more: the
+longest run measured took **55m 29s** — 62% of the ninety, the delivery of 2026-09-06 above — and the most expensive
+spent **$14.49**, 58% of the twenty-five, the refinement of 2026-09-11. Both halves of the room the spec estimated are
+now spoken for, and which one a run reaches first is no longer a settled question: the spread above puts a refinement
+of this fixture past **$25** on its own tokens more than once, and a refinement driven against a change that sent more
+than one **sweep** out has stopped short of stage 4 on budget rather than publishing its tickets. Reaching either is
+reported as a ceiling rather than as a failed assertion, so a slow run can be told from a stuck one — but a run that
+stops on spend fails whatever assertion covered the stage it never reached. What would move them is a bigger
+**fixture**: this one's tickets are three functions with unit tests, and a fixture with a service in it would be felt
+here first. Wall clock is also the one
 figure here a busy machine inflates — every stage runs in series, so anything else on the box is in it.
 
 **What they need.** The `./claude` container has all of it already, which is where to run them from:

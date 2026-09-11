@@ -85,10 +85,10 @@ an assumption is the verdict that stands, since later legwork can overturn an ea
 recorded has no comment, so it receives none and ships unratified. _Avoid_: ruling, judgement, review
 
 **Grounds**:
-The evidence a verdict, a declined finding or a reopened ADR stands on: a spec line, an ADR, a caller that breaks, a
-concrete failure scenario. For a **defect**, what the observation itself kept — the **trace**, a **dispatch note**, an
-earlier **debrief** of the same **epic**. What makes any of them grounds is that whoever holds the file can find the
-thing cited in it. Never taste. _Avoid_: reason, justification, rationale
+The evidence a verdict, a declined finding, a reopened ADR or a closed fork stands on: a spec line, an ADR, a caller
+that breaks, a concrete failure scenario. For a **defect**, what the observation itself kept — the **trace**, a
+**dispatch note**, an earlier **debrief** of the same **epic**. What makes any of them grounds is that whoever holds the
+file can find the thing cited in it. Never taste. _Avoid_: reason, justification, rationale
 
 **Axis**:
 One dimension a **fork**'s roads are compared on, and what an `improve` **verdict** names where an `override` names
@@ -253,6 +253,19 @@ The host's own account of one session, written as it happens, with one beside it
 **dispatch**ed. Each entry carries the plugin and skill that produced it, its timings and its tokens — which is what
 lets a **run** be found in a record the plugin never marked. The format is the host's, so it is read as a **claim** and
 never as a contract. _Avoid_: transcript, log, history, session file
+
+**Extent**:
+Which part of a **session record** is one **run**: where it starts, where it stops, and what bounded it there. A record
+can hold work before a run, after it and between two of them, so every figure in a **debrief** is of the extent and
+never of the record. Bounded by the run's own signals — its attribution, its **dispatch**es of the plugin's own agents,
+its calls to the plugin's own tools, and the skills it invoked — and never by a host built-in the human's own later work
+makes too. _Avoid_: window, span, range, bounds, scope
+
+**Waiting**:
+A **run** whose own last act is a question it put to its human, unanswered. Nothing is written anywhere while it waits,
+which is exactly what a killed terminal looks like — so an **observer** tells the two apart by the pending question and
+never by the silence, and never finalises a **debrief** on one. Hours of a refinement are spent here, and they are the
+run's own time rather than a fault in it. _Avoid_: idle, stalled, hung, blocked, dead, quiet
 
 **Observer**:
 The process that watches one **run** as it happens and writes its **debrief** — started by the plugin's own hook, and

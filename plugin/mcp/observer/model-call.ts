@@ -18,8 +18,9 @@
  * this file rather than imported from `../server/agent-backend.ts`, and why `./records.ts`
  * re-implements `e2e-tests`' token rule.
  */
-import { NO_TOKENS, addTokens } from "./records.ts";
-import type { ObservationCost } from "./debrief-file.ts";
+import { NO_TOKENS, addTokens, type RequestUsage } from "./records.ts";
+import { pricingOf } from "./rates.ts";
+import type { CostBasis, ObservationCost } from "./debrief-file.ts";
 
 /* ────────────────────────────────────── the SDK ────────────────────────────────────── */
 
@@ -224,8 +225,13 @@ function summed(perModel: Record<string, unknown>, field: string): number | unde
  * Read the way a **round**'s spend already is: the per-model usage whenever the message carries
  * any, and the aggregate counters otherwise, with the source chosen ONCE per message rather than
  * once per counter — mixing the two scopes into one row is a measured failure the review already
- * met. The dollar figure is the SDK's own, and it is the one real money figure a debrief holds:
- * ticket 03 found none for the run itself, because the host records no money anywhere.
+ * met.
+ *
+ * **The dollar figure is the SDK's own where it reported one, and this plugin's own rate table where
+ * it did not** (the-observation-reports-the-whole-run ticket 06; D17). Measured beats computed and
+ * computed beats unknown, and the debrief says which of the two it got: the host still records no
+ * money in a session record, so the run's own spend is priced from that same table, and holding the
+ * observation to a lower standard than the run it reports on is the thing this closes.
  *
  * `modelCalls` is one because this reads ONE call. An observation makes up to fourteen of them, and
  * summing them is `addCosts` below (run-observation ticket 06).
@@ -243,6 +249,12 @@ export function costFromResult(message: QueryMessage, assistantTurns: number): O
   // confident zeros. Inside a shape that IS there, an absent field rides as 0, exactly as
   // `./records.ts` treats an absent counter on a request that happened.
   const nothingMeasured = !fromPerModel && aggregate === undefined;
+  const reported = measured(asNumber(message.total_cost_usd));
+  // The table's answer, computed only where the SDK gave none: measured beats computed (D17). It
+  // needs the model, which the per-model usage is the only carrier of — a result with the aggregate
+  // counters alone names none, so that one stays unknown rather than being priced at a rate nothing
+  // in it chose.
+  const priced = reported !== undefined ? undefined : pricingOf(usagesOf(perModel)).usd;
   return {
     modelCalls: 1,
     tokens: nothingMeasured
@@ -257,8 +269,44 @@ export function costFromResult(message: QueryMessage, assistantTurns: number): O
           cacheWriteTokens: counter("cacheCreationInputTokens", "cache_creation_input_tokens"),
           cacheReadTokens: counter("cacheReadInputTokens", "cache_read_input_tokens"),
         },
-    costUsd: measured(asNumber(message.total_cost_usd)),
+    costUsd: reported ?? priced,
+    costBasis: reported !== undefined ? "measured" : priced === undefined ? "none" : "priced",
   };
+}
+
+/**
+ * One `modelUsage` entry per model, in the shape `./rates.ts` prices a request in (ticket 06; D17).
+ *
+ * **Per model, because the rate is the model's.** One call's usage map holds an entry for each model
+ * that served any part of it — the synthesis delegates to none, but a result is free to report
+ * several — and a total priced at one of their rates would be a figure about a model rather than
+ * about the call.
+ *
+ * **The cache write rides at the five-minute TTL**, exactly as `./records.ts` does for a record
+ * carrying no split: `modelUsage` reports one flat `cacheCreationInputTokens` and five minutes is the
+ * host's own default, so this is the same claim made in the same direction rather than a second rule.
+ */
+function usagesOf(perModel: Record<string, unknown>): readonly RequestUsage[] {
+  const usages: RequestUsage[] = [];
+  for (const [model, value] of Object.entries(perModel)) {
+    const usage = asRecord(value) ?? {};
+    const write = asNumber(usage["cacheCreationInputTokens"]) ?? 0;
+    usages.push({
+      requestId: model,
+      model,
+      effort: undefined,
+      // Nothing here carries one: a message id belongs to a request in a session record, and this is
+      // the SDK's own summary of a call the observation made itself.
+      messageId: undefined,
+      inputTokens: asNumber(usage["inputTokens"]) ?? 0,
+      outputTokens: asNumber(usage["outputTokens"]) ?? 0,
+      cacheWriteTokens: write,
+      cacheWrite5mTokens: write,
+      cacheWrite1hTokens: 0,
+      cacheReadTokens: asNumber(usage["cacheReadInputTokens"]) ?? 0,
+    });
+  }
+  return usages;
 }
 
 /**
@@ -287,7 +335,21 @@ export function addCosts(left: ObservationCost, right: ObservationCost): Observa
           : left.costUsd === undefined && right.costUsd === undefined
             ? undefined
             : (left.costUsd ?? 0) + (right.costUsd ?? 0),
+    costBasis: addBases(left, right),
   };
+}
+
+/**
+ * How two sides' bases combine (ticket 06; D17).
+ *
+ * A side that made no call has no basis to contribute, exactly as it contributes no dollars — and one
+ * measured side beside one priced side is `both`, which is the honest word for the sum: part of it
+ * billed at that figure and part of it is this plugin's arithmetic.
+ */
+function addBases(left: ObservationCost, right: ObservationCost): CostBasis {
+  if (left.modelCalls === 0 || left.costBasis === "none") return right.costBasis;
+  if (right.modelCalls === 0 || right.costBasis === "none") return left.costBasis;
+  return left.costBasis === right.costBasis ? left.costBasis : "both";
 }
 
 /** Which model actually served the call, off the per-model usage the result carries. */
@@ -302,7 +364,15 @@ export const NOTHING_MEASURED: ObservationCost = {
   modelCalls: 1,
   tokens: NO_TOKENS,
   costUsd: undefined,
+  // Nor priced: a call that never reached a result reported no tokens either, and there is nothing
+  // for the table to be applied to (ticket 06; D17).
+  costBasis: "none",
 };
 
 /** What a call that was never made cost: nothing, measured. */
-export const NOTHING_SPENT: ObservationCost = { modelCalls: 0, tokens: NO_TOKENS, costUsd: 0 };
+export const NOTHING_SPENT: ObservationCost = {
+  modelCalls: 0,
+  tokens: NO_TOKENS,
+  costUsd: 0,
+  costBasis: "none",
+};

@@ -20,20 +20,30 @@
  * failure: a mention of the plugin is not a run, and eight sessions on the machine this was
  * measured against match the word `deliverer` while being nothing of the kind (see
  * `./records.ts`). An empty trace would be worse than none, because ticket 03's debrief would then
- * be about a session that never ran the plugin.
+ * be about a session that never ran the plugin. **Neither a `Skill` call nor another plugin's
+ * attribution changes that** (the-observation-reports-the-whole-run ticket 02): those bound a run
+ * that has already been found, and `attributionOf` says why they may not be what finds one.
  */
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { attributionOf, readDispatchRecords, readRecordFile } from "./records.ts";
 import { buildTrace, formatDuration, lineCount, tokenDetail, type Trace } from "./trace.ts";
-import { writeTrace } from "./trace-file.ts";
+import { stageTrace, type StagedTrace } from "./trace-file.ts";
 
 /** The host names the plugin's persistent directory here, and nothing else may. */
 export const DATA_DIRECTORY_ENV = "CLAUDE_PLUGIN_DATA";
 
 export type Distillation =
-  /** a run was found and its trace is on disk */
-  | { readonly kind: "traced"; readonly trace: Trace; readonly path: string }
+  /**
+   * A run was found and its trace is on disk under a staging name, for the caller to place beside
+   * its **debrief** or to discard (the-observation-reports-the-whole-run ticket 04; D9).
+   *
+   * **The trace is not at `staged.path` until something places it**, and that is what makes the two
+   * documents one unit: `./debrief.ts` places it only once the debrief has been written, so a death
+   * during judging leaves the previous consistent pair rather than a fresh trace beside a stale
+   * debrief. A caller with no debrief to write — this file's own command — places it at once.
+   */
+  | { readonly kind: "traced"; readonly trace: Trace; readonly staged: StagedTrace }
   /** a run was found and `writeWhen` said not yet, so nothing was put on disk */
   | { readonly kind: "held"; readonly trace: Trace; readonly reason: string }
   /** the record was read and holds no deliverer run — an answer, not a failure */
@@ -108,7 +118,10 @@ export async function distil(options: DistilOptions): Promise<Distillation> {
       reason: `the caller held this trace back rather than writing it under "${trace.slug}"`,
     };
   }
-  return { kind: "traced", trace, path: await writeTrace(options.dataDirectory, trace) };
+  // Staged rather than written into place, and the caller decides when the pair exists (ticket 04;
+  // D9). The gate above still runs first: a trace held back leaves nothing on disk at all, not even
+  // a staged one.
+  return { kind: "traced", trace, staged: await stageTrace(options.dataDirectory, trace) };
 }
 
 /**
@@ -174,8 +187,13 @@ async function main(argv: readonly string[]): Promise<number> {
     process.stderr.write(`deliverer observer: ${result.reason}\n`);
     return 1;
   }
-  const bytes = Buffer.byteLength(await readBack(result.path), "utf8");
-  process.stdout.write(`${result.path}\n  ${summarise(result.trace, bytes)}\n`);
+  // Placed here and not in `distil()`, because this command is the one caller with no **debrief** to
+  // pair the trace with: it stops after the trace, so the trace on its own IS the whole result and
+  // there is no second write for a death to fall between (ticket 04; D9).
+  await result.staged.place();
+  const path = result.staged.path;
+  const bytes = Buffer.byteLength(await readBack(path), "utf8");
+  process.stdout.write(`${path}\n  ${summarise(result.trace, bytes)}\n`);
   return 0;
 }
 
