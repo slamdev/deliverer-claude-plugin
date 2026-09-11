@@ -360,12 +360,11 @@ broken copy.
 
 **Leaving the `cp` line out asks for a reading from before any stage landed** — a legitimate thing to want, and one to
 ask for deliberately rather than by accident. A dispatch's record is a whole file that a prefix of the session's record
-does not cut, so a copy keeping the directory keeps every stage the run ever ran, however early the cut. On the record
-this procedure was written against, a 268-entry prefix copied flat reads `1m38s · 0 dispatches · 1 question round`,
-while the same prefix with the directory beside it reads `3h46m · 2 dispatches` against that same one question round —
-the wall clock coming off the dispatch records' own entries while the extent stays where it froze. Both are real
-shapes: the second is what a reading that disagrees with the disk looks like, and the first is the run before it
-delegated anything.
+does not cut, so a copy keeping the directory keeps every stage the run ever ran, however early the cut: cut a
+refinement before its first dispatch and the debrief still counts that dispatch, takes its wall clock off the dispatch
+record's own entries, and writes the loss saying no `Agent` call in the prefix claims it. Both are real shapes — that
+one is a reading disagreeing with what is on disk, and the flat copy is the run as it stood before it delegated
+anything — and which of the two you get is what the `cp` line decides.
 
 **Determinism survives all of it**, because a prefix is a record like any other: replay one twice into one
 `CLAUDE_PLUGIN_DATA` and `debrief-2.md` is byte for byte identical to `debrief.md`, exactly as it is for a whole record.
@@ -612,8 +611,9 @@ against that platform's own bill has its explanation in the document.
 
 **The pricing is the one thing here with an exactly right answer, so check it against a hand count.** Replay a record,
 add up its `usage` fields yourself — `input_tokens` and `output_tokens` at the model's rates, `cache_read_input_tokens`
-at 0.1× input, and `usage.cache_creation`'s `ephemeral_5m_input_tokens` at 1.25× input and `ephemeral_1h_input_tokens`
-at 2× — and the debrief's figure matches to the cent or the table is wrong. The replay command prints it on its own
+at 0.1× input except on the one row `rates.ts` overrides, which its own comment names, and `usage.cache_creation`'s
+`ephemeral_5m_input_tokens` at 1.25× input and `ephemeral_1h_input_tokens` at 2× — and the debrief's figure matches to
+the cent or the table is wrong. The replay command prints it on its own
 first summary line, so a mismatch needs no reading of the file. A model the table has no rate for is the other half to
 walk: it prices nothing, is named in `What this observation lost`, and never reads as a cheap run.
 
