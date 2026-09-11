@@ -308,9 +308,43 @@ export function ratesClause(models: readonly string[]): string {
       models.length === 0 ? "which named no model here" : `at the rates for ${named}`
     }, as of ${RATES_AS_OF} from ${RATES_SOURCE}: cache writes at ` +
     `${CACHE_WRITE_5M_MULTIPLIER}× input on the five-minute TTL and ${CACHE_WRITE_1H_MULTIPLIER}× ` +
-    `on the one-hour one, and reads at ${CACHE_READ_MULTIPLIER}×. The table ships in the plugin and ` +
+    `on the one-hour one, and ${cacheReadClause(models)}. The table ships in the plugin and ` +
     `reaches no network, so this figure is reproducible from the records on disk.`
   );
+}
+
+/**
+ * What cache reads were priced at, for the models this figure covers — and never the flat rule where
+ * the arithmetic did not use it (the-observation-reports-the-whole-run ticket 06; D14).
+ *
+ * **This clause exists to be checkable, so it has to be what `priceOf` did.** D14's 0.1× is the
+ * general rule and `RATES`'s Fable 5.1 row overrides it at 0.025×, so a sentence that always said
+ * 0.1× misstated the dominant term of a long agentic run — where cache reads are the bulk of the
+ * tokens — by four times, on the one model the table prices them differently for. Story 10 is the
+ * stated basis, and a basis a reader cannot reproduce by hand is worse than no basis at all.
+ *
+ * **Grouped by the multiplier and not by the model**, because one figure may cover several: a run
+ * whose orchestrator and **dispatch**es were served by different models prices each request at its
+ * own row, and the reader needs to know which of the rates applied to which. Where they all take one
+ * rate — every run measured so far — it reads exactly as it did before, with no model named.
+ */
+function cacheReadClause(models: readonly string[]): string {
+  const byMultiplier = new Map<number, string[]>();
+  for (const model of models) {
+    // Through `rateFor`, so a dated id groups with the alias it prices at rather than falling to the
+    // general rule the way a lookup in `RATES` alone would.
+    const multiplier = rateFor(model)?.cacheReadMultiplier ?? CACHE_READ_MULTIPLIER;
+    const held = byMultiplier.get(multiplier);
+    if (held === undefined) byMultiplier.set(multiplier, [model]);
+    else held.push(model);
+  }
+  const applied = [...byMultiplier.keys()];
+  // Nothing priced states the rule, which is all there is to state: no request took any rate at all.
+  if (applied.length <= 1) return `reads at ${applied[0] ?? CACHE_READ_MULTIPLIER}×`;
+  const groups = [...byMultiplier].map(
+    ([multiplier, named]) => `${multiplier}× for ${named.map((it) => `\`${it}\``).join(", ")}`,
+  );
+  return `reads at ${groups.join(" and ")}`;
 }
 
 /** What the table could not price, in the reader's words, and `""` where it priced everything. */

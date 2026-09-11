@@ -27,7 +27,7 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { NO_TOKENS, type TokenTotals } from "./records.ts";
-import { formatDuration, tokenDetail, type Trace, type TraceDispatch } from "./trace.ts";
+import { formatDuration, plural, tokenDetail, type Trace, type TraceDispatch } from "./trace.ts";
 import { observationDirectory, writeFileAtomically } from "./trace-file.ts";
 import { runSkills, type RunFacts, type RunRound } from "./run-facts.ts";
 // The table's own wording, which the run's spend line and the observation's own cost line both rest
@@ -927,11 +927,6 @@ function waitLine(facts: RunFacts): string {
     `answers to those rounds, and ${formatDuration(idleWaitMs)} of it idle before the ` +
     `${plural(typedTurns, "turn", "turns")} the human typed unprompted`
   );
-}
-
-/** "1 entry", "13 entries" — never "1 entry/entries", which reads as a figure nobody checked. */
-function plural(count: number, one: string, many: string): string {
-  return `${count} ${count === 1 ? one : many}`;
 }
 
 /**

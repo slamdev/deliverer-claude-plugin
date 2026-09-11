@@ -325,6 +325,20 @@ export function lineCount(count: number): string {
   return count === 1 ? "1 line" : `${count} lines`;
 }
 
+/**
+ * `1 entry` / `13 entries`, for any pair of words — never `1 entry/entries`, and never a figure with
+ * a slash in it, in a document a human forwards unread.
+ *
+ * Here rather than in the two modules that write those documents, which each had a copy of it
+ * (the-observation-reports-the-whole-run tickets 05 and 06 landed the second): both already read
+ * this module for `formatDuration` and `lineCount` above, so the prose helpers are one set in the
+ * place the import direction already ran. Two copies of a rule about how a number reads is exactly
+ * the thing that drifts unnoticed, because either copy on its own looks right.
+ */
+export function plural(count: number, one: string, many: string): string {
+  return `${count} ${count === 1 ? one : many}`;
+}
+
 export function buildTrace(input: DistilInput): Trace {
   const own = input.record.entries;
   const dispatchEntryCount = input.dispatchRecords.reduce(

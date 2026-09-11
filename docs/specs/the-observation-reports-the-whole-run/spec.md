@@ -199,12 +199,27 @@ does.
 - **D2. That alone unfreezes the extent, and the ceiling rule does not move.** Step 1 closes on the first turn the human
   typed *after* the run's last own signal; with the `Skill` calls counted, the last own signal becomes the
   `tickets-writer` dispatch, the idea typed at 09:11:29 sits before it, and the ceiling lands correctly at 13:13:42. The
-  "next afternoon" protection that step 1 exists for is therefore intact: a new piece of a human's own work always
-  begins with a turn they typed, and that still closes the ceiling.
+  "next afternoon" protection that step 1 exists for holds wherever a human's own later work is prose and tools — it
+  begins with a turn they typed, and that still closes the ceiling — **and it does not hold where that work itself
+  invokes a skill.** Any `Skill` call is one of the run's own signals now, the human's own is one too, and it moves the
+  last own signal *past* the turn they typed: step 1 then finds no typed turn to close on and the extent runs to the
+  last host built-in that later work made. Walked on a record of the measured shape: a 4h03m run reads 5h20m, with the
+  human's own `claude-api` work — the skill it invoked and the `TaskCreate` under it — inside the extent and its tokens
+  priced into the run's spend. That residual is recorded beside the rule it comes from, in `isOwnSignal`'s own comment
+  (`run-facts.ts`), and D3 is why nothing here guards it: in the record the two shapes are one shape, since the run's
+  own delegation also follows a turn the human typed.
 - **D3. A typed turn that answers what the run asked for is NOT given an exemption.** It was considered and is not being
-  built: the shape it covers — the run asking for input and the human typing it before the run makes any signal of its
-  own — appears in no record we have, and D10's cross-check reports it if it ever bites. A rule this fuzzy is not worth
-  writing against a case nobody has seen.
+  built, and the grounds are that no record we hold demands it: the shape it covers — the run asking for input and the
+  human typing it before the run makes any signal of its own — appears in none of them. **What is not grounds for it is
+  a cross-check.** D10's two both look outward — entries the extent left *out*, and dispatch record files the reading's
+  account places *nowhere* — and neither reports this. Walked on a record of exactly this shape, where the run asks, the
+  human types the answer as prose and the run then carries on for half an hour under a third party's attribution alone:
+  the extent reads 4m00s of a 35m run, five entries lie outside it, and not one loss comes from either check — because
+  those entries carry the third party's attribution and check two reads this plugin's own. D2's residual is invisible to
+  both from the other direction, a swallowed stretch being the opposite of what either looks for, and the same walk
+  reports nothing there either. A rule this fuzzy is still not worth writing against a case nobody has seen; what is
+  corrected here is only the claim that something would notice. Both checks say as much where they are written
+  (`run-facts.ts`).
 - **D4. Third-party skills the run invoked are named in the debrief, separately from the plugin's own skill.** The
   header still says which of the plugin's skills ran; the skills it delegated to are listed beside it. Naming them is
   what makes 2h48m of a four-hour refinement legible, and it does not widen ADR-0018's bound: a skill's name is the

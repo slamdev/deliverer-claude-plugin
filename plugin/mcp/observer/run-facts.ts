@@ -54,6 +54,7 @@ import {
   contentBlocks,
   elapsed,
   isReviewTool,
+  plural,
   TASK_TOOLS,
   type Trace,
   type TraceDispatch,
@@ -905,11 +906,6 @@ function crossCheckAttributionOutside(
         : `. Entries from the second \`/deliverer:\` command on are not counted here: they are that ` +
           `run's, correctly outside this one, and the loss above says so`),
   );
-}
-
-/** "1 entry", "13 entries" — never a figure with a slash in it, in a document a human forwards. */
-function plural(count: number, one: string, many: string): string {
-  return `${count} ${count === 1 ? one : many}`;
 }
 
 /* ──────────────────────────────────────── the rounds ──────────────────────────────────────── */

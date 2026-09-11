@@ -39,7 +39,9 @@ files or the entries are the run's:
       checked — and neither makes a model call.
 - [x] Both run in **replay** as well as in the live observer, since it is one code path.
 - [x] Comments cite this ticket and name the reading that would have been caught.
-- [x] **Verified by hand with 01's procedure**: a prefix truncated before a dispatch landed, with that dispatch's record
-      present on disk, reports the file it cannot place; a whole-record replay of a clean run reports neither check; and
-      a record holding two runs still reports the second-run loss and not a spurious one.
+- [x] **Verified by hand with 01's procedure**: an agent the human dispatched of their own after the run, its record in
+      the same `subagents/` directory, reports the file it cannot place — a prefix truncated before one of the run's own
+      dispatches is silent here by design, since that record IS placed and counted and `trace.ts`'s own loss is what
+      names it; a whole-record replay of a clean run reports neither check; and a record holding two runs still reports
+      the second-run loss and not a spurious one.
 - [x] `(cd plugin/mcp && npm run typecheck && npm run lint)` passes.

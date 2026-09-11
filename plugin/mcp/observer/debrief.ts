@@ -68,7 +68,26 @@ export type DebriefOutcome =
    *  failure */
   | { readonly kind: "no-run"; readonly reason: string }
   /** the caller's `writeWhen` held this reading back, so nothing was put on disk */
-  | { readonly kind: "held"; readonly trace: Trace; readonly reason: string }
+  | {
+      readonly kind: "held";
+      readonly trace: Trace;
+      /**
+       * What this reading read, even though none of it reached disk
+       * (the-observation-reports-the-whole-run ticket 03; D5).
+       *
+       * **A reading held back is still a reading**, and the live **observer** decides the run's
+       * lifecycle on one: `./observer.ts` suspends the idle bound while the run is **waiting**, and
+       * the only place a pending question exists is here. Answering `held` with the trace alone made
+       * that state unreachable for exactly the run that has not named its **epic** yet — a
+       * refinement's whole grilling phase, which is where every long wait is.
+       *
+       * `undefined` only where the facts themselves could not be built: nothing was going on disk
+       * either way, so a second read of the record that fails leaves this a courtesy the caller does
+       * without rather than a failure it has to handle.
+       */
+      readonly facts?: RunFacts;
+      readonly reason: string;
+    }
   /** nothing could be read, or there is nowhere to write */
   | { readonly kind: "refused"; readonly reason: string };
 
@@ -132,22 +151,26 @@ export interface DebriefOptions {
  */
 export async function debriefRun(options: DebriefOptions): Promise<DebriefOutcome> {
   const distilled = await distil(options);
+  if (distilled.kind === "held") {
+    // Held back means nothing goes on disk — the gate is exactly as ticket 04 left it, staged trace
+    // and all — and NOT that the reading is thrown away (ticket 03; D5). The live observer takes the
+    // waiting-versus-dead decision off these facts, and a run that has not named its epic yet is the
+    // one whose every reading arrives here. Its failure is not the caller's problem: there was
+    // nothing on disk to be inconsistent with, and `./observer.ts` treats absent facts as "nothing
+    // to suspend the idle bound with", which is the lifecycle it shipped.
+    //
+    // **What it costs is the second read below, on ticks that were already due**: a held reading now
+    // costs what a written one does apart from the write, and the observer's own throttle is what
+    // bounds how often either happens. The alternative was the loop asking a second time for what
+    // this pass had already worked out, which is a second reading of the whole record set to learn
+    // one timestamp.
+    return { ...distilled, facts: await factsOf(options, distilled.trace).catch(() => undefined) };
+  }
   if (distilled.kind !== "traced") return distilled;
   const { staged } = distilled;
 
   try {
-    // Read a second time, deliberately. A **trace** is bounded by nothing while a debrief's every
-    // figure is bounded by the run, and the excerpt cap is what makes the second read necessary: a
-    // round's poll payload and the skill preamble naming the plugin's commit are both longer than a
-    // large run's cap, so neither survives into the trace. Reading a file twice is cheaper than a
-    // distillation that has to keep two shapes.
-    const record = await readRecordFile(options.recordPath);
-    const dispatched = await readDispatchRecords(options.recordPath);
-    const facts = runFactsOf({
-      record,
-      dispatchRecords: dispatched.records,
-      trace: distilled.trace,
-    });
+    const facts = await factsOf(options, distilled.trace);
     const commit = await resolvePluginCommit({
       inRecords: facts.commitInRecords,
       dataDirectory: options.dataDirectory,
@@ -182,6 +205,24 @@ export async function debriefRun(options: DebriefOptions): Promise<DebriefOutcom
     await staged.discard();
     throw error;
   }
+}
+
+/**
+ * One reading's facts, off the records the trace was built from.
+ *
+ * **The record is read a second time, deliberately.** A **trace** is bounded by nothing while a
+ * debrief's every figure is bounded by the run, and the excerpt cap is what makes the second read
+ * necessary: a **round**'s poll payload and the skill preamble naming the plugin's commit are both
+ * longer than a large run's cap, so neither survives into the trace. Reading a file twice is cheaper
+ * than a distillation that has to keep two shapes.
+ *
+ * One function for both paths, because a reading held off disk answers with the same facts a written
+ * one does (ticket 03; D5) and two ways of building them would let the two disagree about the run.
+ */
+async function factsOf(options: DebriefOptions, trace: Trace): Promise<RunFacts> {
+  const record = await readRecordFile(options.recordPath);
+  const dispatched = await readDispatchRecords(options.recordPath);
+  return runFactsOf({ record, dispatchRecords: dispatched.records, trace });
 }
 
 /** What the judging half did, for the line the command prints. */
