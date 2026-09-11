@@ -243,12 +243,21 @@ function judgingLine(outcome: Extract<DebriefOutcome, { kind: "written" }>): str
   );
 }
 
-/** One line summarising what was written, for whoever asked for it. */
+/**
+ * One line summarising what was written, for whoever asked for it.
+ *
+ * It carries the run's own dollars for the same reason the announcement does (ticket 06; D16), and
+ * for one more: this is the line a contributor checking the pricing by hand reads the figure off,
+ * against their own count from the same record's `usage` fields.
+ */
 export function summariseDebrief(outcome: Extract<DebriefOutcome, { kind: "written" }>): string {
   const { facts, trace } = outcome;
+  const spend = facts.spend.usd;
   return (
     `${runSkills(facts, trace) || "unknown skill"} · slug ${trace.slug} · ` +
-    `${formatDuration(facts.extent.durationMs)} · ${facts.dispatches.length} dispatches · ` +
+    `${formatDuration(facts.extent.durationMs)} · ` +
+    `${spend === undefined ? "spend unknown" : `about $${spend.toFixed(2)}`} · ` +
+    `${facts.dispatches.length} dispatches · ` +
     `${facts.rounds.length} rounds ` +
     `(${facts.rounds.map((it) => it.status ?? "unreported").join(", ") || "none"})\n` +
     `  ${facts.ending.kind} · ${facts.human.questionRounds} question rounds · ` +

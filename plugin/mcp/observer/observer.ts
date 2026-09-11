@@ -578,12 +578,22 @@ function waitingSince(
 
 /* ────────────────────────────────── what the human is told ────────────────────────────── */
 
-/** One line naming the run and how it went, printed above the path in both of D25's lines. */
+/**
+ * One line naming the run and how it went, printed above the path in both of D25's lines.
+ *
+ * **It carries what the run cost in dollars** (the-observation-reports-the-whole-run ticket 06; D16).
+ * That is the question that made anybody open a debrief at all, and this line is what a human meets
+ * first — so it is answered before they do. An estimate, and the debrief's spend line is where its
+ * basis is; unknown where nothing could be priced, which is never a zero.
+ */
 function headlineOf(outcome: Extract<DebriefOutcome, { kind: "written" }>): string {
   const { facts, trace } = outcome;
+  const spend = facts.spend.usd;
   return (
     `${runSkills(facts, trace) || "a deliverer run"} · epic ${trace.slug} · ` +
-    `${formatDuration(facts.extent.durationMs)} · ${facts.dispatches.length} dispatches · ` +
+    `${formatDuration(facts.extent.durationMs)} · ` +
+    `${spend === undefined ? "spend unknown" : `about $${spend.toFixed(2)}`} · ` +
+    `${facts.dispatches.length} dispatches · ` +
     `${facts.rounds.length} rounds · ${facts.ending.kind} · ` +
     `${facts.human.questionRounds} question rounds put to you and ` +
     `${formatDuration(facts.human.totalWaitMs)} of the run spent waiting on you.`

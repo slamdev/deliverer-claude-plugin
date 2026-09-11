@@ -597,10 +597,25 @@ alone; every record of one response repeats the same input and cache figures, an
 **Report what the observation cost beside what the run did.** The **observer** grades every dispatch, so a run that
 dispatches more costs more to observe — **spend** that lands out of band, in neither the run's own figures nor a
 **ceiling**, and a before-and-after that leaves it out flatters itself. It is a read rather than a sum: `debrief.md`'s
-header carries it on its `what this observation cost` line, in dollars the calls themselves reported. The line above it,
-`the run's spend`, is tokens with **unknown** where the money should be — the host records no money anywhere in a
-session record — so any dollar figure you set beside these tokens comes from whatever billed the calls, and is written
-labelled with the provider that served it.
+header carries it on its `what this observation cost` line, in the dollars the calls themselves reported where they
+reported any, and priced from the table below where they did not — the line says which of the two it is.
+
+**Both dollar figures in a debrief are read rather than worked out, and the run's own is an estimate.** The host records
+no money anywhere in a session record, only per-request tokens, so `the run's spend` line is those tokens priced by
+`plugin/mcp/observer/rates.ts` — a dated table in the plugin's own code, reaching no network, so replaying a record
+reproduces the figure. The line states its own basis: the table's date, the models it priced, the message id prefix the
+requests carry, and any request it could not price at all. **The rates in that table are not written from memory.** They
+come from the `claude-api` skill's own model table, which is where a contributor updates them from — and the date beside
+them is that source's, not the day the file was edited. First-party rates only: a run whose message ids carry a partner
+prefix such as `msg_bdrk_` is priced at first-party rates anyway, and the debrief says both facts, so a difference
+against that platform's own bill has its explanation in the document.
+
+**The pricing is the one thing here with an exactly right answer, so check it against a hand count.** Replay a record,
+add up its `usage` fields yourself — `input_tokens` and `output_tokens` at the model's rates, `cache_read_input_tokens`
+at 0.1× input, and `usage.cache_creation`'s `ephemeral_5m_input_tokens` at 1.25× input and `ephemeral_1h_input_tokens`
+at 2× — and the debrief's figure matches to the cent or the table is wrong. The replay command prints it on its own
+first summary line, so a mismatch needs no reading of the file. A model the table has no rate for is the other half to
+walk: it prices nothing, is named in `What this observation lost`, and never reads as a cheap run.
 
 ### Exercising the install by hand
 

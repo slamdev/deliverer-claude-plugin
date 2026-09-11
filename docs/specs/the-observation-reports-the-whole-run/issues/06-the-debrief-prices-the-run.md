@@ -32,24 +32,24 @@ document.
 below is what it gave for the model the measured run used, and the same source is what a later contributor updates the
 table from.
 
-- [ ] A rate table in the plugin's own Node code: per model id, input and output per million tokens, beside a single
+- [x] A rate table in the plugin's own Node code: per model id, input and output per million tokens, beside a single
       "rates as of" date the debrief prints. No network, so an observation stays reproducible from a record on disk.
-- [ ] Cache is priced per TTL from `usage.cache_creation`: a write is 1.25× input at the five-minute TTL and 2× at the
+- [x] Cache is priced per TTL from `usage.cache_creation`: a write is 1.25× input at the five-minute TTL and 2× at the
       one-hour one, and a read is 0.1× input.
-- [ ] The spend line carries the figure and its basis: the rate table's date, the model it priced, and the message id
+- [x] The spend line carries the figure and its basis: the rate table's date, the model it priced, and the message id
       prefix the run's requests carry with the fact that rates are first-party regardless.
-- [ ] A model id the table does not know prices nothing, is named in the debrief, and writes a loss. Unknown stays the
+- [x] A model id the table does not know prices nothing, is named in the debrief, and writes a loss. Unknown stays the
       honest answer for a figure nobody could compute, and never zero.
-- [ ] The one-line announcement carries the figure, so the question a human would have opened the debrief for is
+- [x] The one-line announcement carries the figure, so the question a human would have opened the debrief for is
       answered before they do.
-- [ ] The observation's own cost prefers the SDK's measured figure where it exists and falls back to the same table
+- [x] The observation's own cost prefers the SDK's measured figure where it exists and falls back to the same table
       where it does not, saying which of the two it used.
-- [ ] The existing token split — the whole run, and the **orchestrator**'s own turns within it — is what gets priced. No
+- [x] The existing token split — the whole run, and the **orchestrator**'s own turns within it — is what gets priced. No
       third breakdown and no per-model split.
-- [ ] The wording that says the host records no money anywhere in a session record is corrected rather than left
+- [x] The wording that says the host records no money anywhere in a session record is corrected rather than left
       standing beside a figure that contradicts it.
-- [ ] Comments cite this ticket, and the rate constants carry the date and the source they came from.
-- [ ] **Verified by hand**: one record, one figure computed by hand from its `usage` fields, one figure from the debrief
+- [x] Comments cite this ticket, and the rate constants carry the date and the source they came from.
+- [x] **Verified by hand**: one record, one figure computed by hand from its `usage` fields, one figure from the debrief
       — they match, or the table is wrong. This is the only check in the epic with an exactly right answer. A record
       whose model the table does not know reads as a named gap rather than as a cheap run.
-- [ ] `(cd plugin/mcp && npm run typecheck && npm run lint)` passes.
+- [x] `(cd plugin/mcp && npm run typecheck && npm run lint)` passes.

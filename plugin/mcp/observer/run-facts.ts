@@ -49,6 +49,7 @@ import {
   type TokenTotals,
 } from "./records.ts";
 import { pluginDirectoryInText, type PluginDirectory } from "./plugin-commit.ts";
+import { addPricing, pricingOf, RATES_AS_OF, RATES_SOURCE, type Pricing } from "./rates.ts";
 import {
   contentBlocks,
   elapsed,
@@ -187,6 +188,20 @@ export interface RunFacts {
   /** the whole run's tokens: the orchestrator's own and every dispatch's */
   readonly tokens: TokenTotals;
   readonly ownTokens: TokenTotals;
+  /**
+   * The same two figures in dollars, priced by `./rates.ts`
+   * (the-observation-reports-the-whole-run ticket 06; D12 through D18).
+   *
+   * **The existing split is what gets priced and nothing else** (D18): the whole run, and the
+   * orchestrator's own turns within it. No third breakdown and no per-model split — the models that
+   * were priced are named beside the figure, which is what lets a reader weigh it, and dividing the
+   * dollars among them is a document nobody asked for.
+   *
+   * `Pricing.usd` is `undefined` where nothing could be priced, which is unknown and never zero, and
+   * `unknownModels` is what a model this table has no rate for costs the figure.
+   */
+  readonly spend: Pricing;
+  readonly ownSpend: Pricing;
   readonly human: HumanTime;
   readonly taskUpdates: number;
   readonly toolCalls: number;
@@ -259,7 +274,14 @@ export function runFactsOf(input: RunFactsInput): RunFacts {
   const dispatches = dispatchesInRun(entries, window, input.trace, losses);
   const extent = extentOf(bounds, window, dispatches, losses);
 
-  const ownTokens = totalTokens(requestUsage(window).values());
+  // Grouped once and read twice, as tokens and as dollars (ticket 06; D18). Every dispatch's own
+  // dollars were priced where its requests already were, in `./trace.ts`, so nothing here reads a
+  // per-dispatch record a second time to get them.
+  const ownUsage = requestUsage(window);
+  const ownTokens = totalTokens(ownUsage.values());
+  const ownSpend = pricingOf(ownUsage.values());
+  const spend = dispatches.reduce((total, it) => addPricing(total, it.spend), ownSpend);
+  unpricedLoss(spend, losses);
   const rounds = roundsOf(window, dispatches, input.dispatchRecords, losses);
 
   let taskUpdates = 0;
@@ -303,6 +325,8 @@ export function runFactsOf(input: RunFactsInput): RunFacts {
     rounds,
     tokens: dispatches.reduce((total, it) => addTokens(total, it.tokens), ownTokens),
     ownTokens,
+    spend,
+    ownSpend,
     human: humanTimeOf(window),
     taskUpdates,
     toolCalls,
@@ -314,6 +338,35 @@ export function runFactsOf(input: RunFactsInput): RunFacts {
     repository: window.map((entry) => stringField(entry, "cwd")).find((it) => it !== undefined),
     losses,
   };
+}
+
+/**
+ * A model this plugin's rate table has no rate for, recorded as a loss
+ * (the-observation-reports-the-whole-run ticket 06; D15).
+ *
+ * **Unknown is the honest answer for a figure nobody could compute, and never zero** — the rule
+ * `CONTEXT.md`'s **Spend** already states. So a model id the table has never heard of prices nothing,
+ * is named, and says here that the run's dollar figure is short by whatever those requests cost. It
+ * is a loss and not a **defect**: nothing about it is something the run cost its human, and it is the
+ * reading — this table's own age — that fell short. That is what the losses section is for, and it is
+ * where a reader weighing a figure already looks.
+ *
+ * Named alongside the date, because the date is the actionable half: a table five months stale and a
+ * run on a model released last week are the same line, and the reader can tell which they have.
+ */
+function unpricedLoss(spend: Pricing, losses: string[]): void {
+  if (spend.unpricedRequests === 0) return;
+  const named = spend.unknownModels.map((it) => `\`${it}\``).join(", ");
+  const one = spend.unpricedRequests === 1;
+  losses.push(
+    `${plural(spend.unpricedRequests, "API request", "API requests")} of this run ` +
+      `${one ? "names" : "name"} ` +
+      `${spend.unknownModels.length === 1 ? "a model" : "models"} this plugin's rate ` +
+      `table has no rate for — ${named} — so ${one ? "it is" : "they are"} priced at nothing and ` +
+      `left out of the run's dollar figure, which is short by whatever ${one ? "it" : "they"} ` +
+      `cost. The table is dated ${RATES_AS_OF} and comes from ${RATES_SOURCE}: a model released ` +
+      `after that date, or one that source prices nowhere, is what this means`,
+  );
 }
 
 /**

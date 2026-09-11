@@ -166,9 +166,30 @@ export interface RequestUsage {
   readonly requestId: string;
   readonly model: string | undefined;
   readonly effort: string | undefined;
+  /**
+   * The id the provider gave this request's message, for its PREFIX alone
+   * (the-observation-reports-the-whole-run ticket 06; D13).
+   *
+   * A record's only vendor signal: `msg_bdrk_*` is Amazon Bedrock's shape and `msg_*` the
+   * first-party one, and a run priced at first-party rates has to be able to say which of the two it
+   * was. `./rates.ts` reads the prefix and nothing else of it.
+   */
+  readonly messageId: string | undefined;
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cacheWriteTokens: number;
+  /**
+   * The same writes split by the TTL they were written at, which is what prices them (ticket 06;
+   * D14).
+   *
+   * A write costs 1.25× input at the five-minute TTL and 2× at the one-hour one, so the flat total
+   * above cannot price one: `cacheWriteTokens` is what every figure ABOUT tokens reports and these
+   * two are what the arithmetic uses. A record carrying no split at all puts its whole total in the
+   * five-minute half — that is the host's own default TTL and what every write in the run this was
+   * measured against used — so the sum of the two is always the flat total and never more.
+   */
+  readonly cacheWrite5mTokens: number;
+  readonly cacheWrite1hTokens: number;
   readonly cacheReadTokens: number;
 }
 
@@ -210,19 +231,26 @@ export function requestUsage(entries: readonly JsonObject[]): Map<string, Reques
     const requestId = stringField(entry, "requestId") ?? stringField(message, "id");
     if (requestId === undefined) continue;
     const cacheCreation = objectField(usage, "cache_creation");
+    // `cache_creation` splits the write by lifetime; the flat field is the same total and is what a
+    // record without the split carries. Their SUM is never taken — that would double it. Read once
+    // here, because the split is now what prices the writes and the total is what reports them
+    // (the-observation-reports-the-whole-run ticket 06; D14).
+    const split = cacheCreation !== undefined;
+    const flatWrite = numberField(usage, "cache_creation_input_tokens") ?? 0;
+    const write5m = split
+      ? (numberField(cacheCreation, "ephemeral_5m_input_tokens") ?? 0)
+      : flatWrite;
+    const write1h = split ? (numberField(cacheCreation, "ephemeral_1h_input_tokens") ?? 0) : 0;
     const candidate: RequestUsage = {
       requestId,
       model: stringField(message, "model"),
       effort: stringField(entry, "effort"),
+      messageId: stringField(message, "id"),
       inputTokens: numberField(usage, "input_tokens") ?? 0,
       outputTokens: numberField(usage, "output_tokens") ?? 0,
-      // `cache_creation` splits the write by lifetime; the flat field is the same total and is what
-      // a record without the split carries. Their SUM is never taken — that would double it.
-      cacheWriteTokens:
-        cacheCreation === undefined
-          ? (numberField(usage, "cache_creation_input_tokens") ?? 0)
-          : (numberField(cacheCreation, "ephemeral_5m_input_tokens") ?? 0) +
-            (numberField(cacheCreation, "ephemeral_1h_input_tokens") ?? 0),
+      cacheWriteTokens: write5m + write1h,
+      cacheWrite5mTokens: write5m,
+      cacheWrite1hTokens: write1h,
       cacheReadTokens: numberField(usage, "cache_read_input_tokens") ?? 0,
     };
     const held = byRequest.get(requestId);

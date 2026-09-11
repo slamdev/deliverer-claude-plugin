@@ -30,6 +30,10 @@ import { NO_TOKENS, type TokenTotals } from "./records.ts";
 import { formatDuration, tokenDetail, type Trace, type TraceDispatch } from "./trace.ts";
 import { observationDirectory, writeFileAtomically } from "./trace-file.ts";
 import { runSkills, type RunFacts, type RunRound } from "./run-facts.ts";
+// The table's own wording, which the run's spend line and the observation's own cost line both rest
+// on: `./rates.ts` holds the rates, the date they were read and how they are stated, so this document
+// carries one account of them rather than two (the-observation-reports-the-whole-run ticket 06; D12).
+import { ratesClause, unpricedClause, vendorClause } from "./rates.ts";
 // The option's own KEY, which is the most this document may say about the owner's **environment
 // file** (D12): the file's path is never in here, and `ModelEnvironment.path` is read by nothing
 // below. `./model-env.ts` imports nothing of this file, so naming it here closes no circle.
@@ -65,7 +69,21 @@ export interface ObservationCost {
   readonly tokens: TokenTotals;
   /** dollars where something priced them; `undefined` is unknown, and unknown is never zero */
   readonly costUsd: number | undefined;
+  /**
+   * Which of the two the dollars above came from
+   * (the-observation-reports-the-whole-run ticket 06; D17).
+   *
+   * **Measured beats computed; computed beats unknown** — and the reader is told which they have,
+   * because they are different claims. The SDK's own `total_cost_usd` is what actually billed; the
+   * table is `./rates.ts` applied to the same tokens, which is exactly what the run's own spend is
+   * priced by and carries the same approximation. `both` is a set of calls where some reported a
+   * figure and the rest were priced, which is one observation's fourteen calls at their worst.
+   */
+  readonly costBasis: CostBasis;
 }
+
+/** See `ObservationCost.costBasis`. `none` is a figure nobody has: no call, or nothing to price. */
+export type CostBasis = "measured" | "priced" | "both" | "none";
 
 /**
  * Which installed tree the synthesis read the plugin's own text out of (run-observation ticket 05).
@@ -248,7 +266,7 @@ export const NOTHING_JUDGES_YET: Extract<Judging, { kind: "none" }> = {
     "This run is still being watched, and the one synthesis per run reads the whole run at once — " +
     "so it has not run yet. This debrief carries its header and its figures, and it is rewritten " +
     "with what the synthesis found once the run stops.",
-  cost: { modelCalls: 0, tokens: NO_TOKENS, costUsd: 0 },
+  cost: { modelCalls: 0, tokens: NO_TOKENS, costUsd: 0, costBasis: "none" },
 };
 
 /** The facts-only path: replay with no model in play, and its own cost measured at nothing. */
@@ -258,7 +276,7 @@ export const NOTHING_JUDGED: Judging = {
     "No judging ran, so this debrief carries its header and its facts and looks for nothing. It " +
     "was produced by replay — the observer's mechanical half, pointed at a finished run's " +
     "records — which calls no model at all.",
-  cost: { modelCalls: 0, tokens: NO_TOKENS, costUsd: 0 },
+  cost: { modelCalls: 0, tokens: NO_TOKENS, costUsd: 0, costBasis: "none" },
 };
 
 /* ────────────────────────────────── where the files go ────────────────────────────────── */
@@ -991,37 +1009,61 @@ function roundLine(round: RunRound): string {
 }
 
 /**
- * The run's own spend: tokens, and dollars that nothing measured.
+ * The run's own spend: tokens, and the dollars this plugin prices them at
+ * (the-observation-reports-the-whole-run ticket 06; D12 through D18).
  *
- * **The host records no money at all** — no cost, dollar or price field exists anywhere in a
- * session record, only per-request tokens — so the dollar half reads unknown, which is what the
- * glossary requires of a figure nobody measured and is never zero. The rounds' dollars above are
- * real, and the two are never added: one total would present a measured amount as covering the
- * unmeasured part.
+ * **The host still records no money** — no cost, dollar or price field exists anywhere in a session
+ * record, only per-request tokens — and what changed is the conclusion drawn from that. This line
+ * used to read *"nothing here prices these tokens"*, and a debrief could therefore price its own
+ * observation at $1.22 while reporting the four-hour run it observed as unknown. Now the tokens are
+ * priced from `./rates.ts`, a dated table in the plugin's own code, and every figure a reader needs
+ * to weigh that against an exact one travels with it: the table's date and source, the models it
+ * priced, the message id prefix those requests carry, and anything it could not price.
+ *
+ * **Unknown survives where nothing could be priced at all** (D15), because that is what
+ * `CONTEXT.md`'s **spend** requires of a figure nobody could compute — never a zero, and never a
+ * cheap-looking run standing in for a model this table has never heard of.
+ *
+ * The rounds' dollars above are the tools server's own measurement of a **round**, and the two are
+ * still never added: this figure is of the run's own API requests, a round's is of a reviewer that
+ * ran out of band, and one total would present them as one thing.
  */
 function spendLine(facts: RunFacts): string {
+  const { spend, ownSpend } = facts;
+  const dollars =
+    spend.usd === undefined
+      ? `**In dollars: unknown.** Nothing in this run could be priced — unknown is the honest ` +
+        `answer for a figure nobody could compute, and it is not zero.`
+      : `**In dollars: $${spend.usd.toFixed(2)}**, of which the orchestrator's own turns are ` +
+        `${ownSpend.usd === undefined ? "unknown" : `$${ownSpend.usd.toFixed(2)}`}. Estimated ` +
+        `rather than measured: the host records no money anywhere in a session record, only these ` +
+        `tokens. ${ratesClause(spend.models)} ${vendorClause(spend.idPrefixes)}`;
   return (
     `${tokenDetail(facts.tokens) || "no tokens recorded"} — the whole run: the orchestrator's own ` +
     `turns (${tokenDetail(facts.ownTokens) || "none"}) and every dispatch's together, counted per ` +
-    `API request and never per entry. **In dollars: unknown.** The host records no money anywhere ` +
-    `in a session record, so nothing here prices these tokens; unknown is the honest answer and it ` +
-    `is not zero.` +
+    `API request and never per entry. ${dollars}${unpricedClause(spend)}` +
     (facts.rounds.length === 0
       ? ""
-      : ` The rounds above carry dollars of their own, measured by the tools server, and the two ` +
-        `are deliberately never added — one total would present what was measured as covering ` +
-        `what was not.`)
+      : ` The rounds above carry dollars of their own, measured by the tools server rather than ` +
+        `priced here, and the two are deliberately never added — one total would present a ` +
+        `reviewer that ran out of band as part of what the run's own requests cost.`)
   );
 }
 
 /**
- * What the observation itself cost, which is the one dollar figure in this document that is real.
+ * What the observation itself cost, and which of the two figures behind it this one is.
  *
- * The run's own spend above is tokens with `unknown` where the money should be, because the host
- * records none. This half is measured: the judging's result message carries the same per-model
- * usage a **round**'s spend is read off, summed per API request, and the SDK's own dollar figure
- * beside it. So the two halves of the header's spend say different things on purpose, and neither
- * is added to the other.
+ * **Measured where the SDK reported a figure, and priced from the same table as the run's own spend
+ * where it did not** (the-observation-reports-the-whole-run ticket 06; D17). Measured beats computed
+ * and computed beats unknown, and the line says which it got, because they are different claims: the
+ * SDK's own `total_cost_usd` is what actually billed, and the table's answer carries the same
+ * approximation the spend line above states in full. What this line used to say was that this was
+ * "the one dollar figure in this document that is real" and that the run's own was unknown for want of
+ * anything recording money — the run's is now priced, so the difference between the two is how the
+ * dollars were arrived at rather than whether there are any.
+ *
+ * Neither is ever added to the run's own: this is what watching the run cost, out of band and quite
+ * possibly on another account.
  *
  * **And it says WHOSE money it was** (one-environment-file ticket 02; D12). The observation used to
  * run on whatever the session it was started beside authenticates with, so "the same account the run
@@ -1047,7 +1089,37 @@ function costLine(judging: Judging): string {
     `${tokenDetail(cost.tokens) || "no tokens reported"}, ${dollars}. Counted per API request off ` +
     `the per-model usage each call itself reported, the way a round's spend above is, and summed ` +
     `across every one of them; a counter nobody measured reads unknown and never zero. ` +
-    `${whoPaid(judging)}`
+    `${basisClause(cost.costBasis)} ${whoPaid(judging)}`
+  );
+}
+
+/**
+ * Which of the two figures the dollars above are (ticket 06; D17).
+ *
+ * The rate table's own date, source and multipliers are stated once, on the run's spend line, and
+ * this points at that rather than repeating it: one table, one account of it, and a document carrying
+ * two would let them drift.
+ */
+function basisClause(basis: CostBasis): string {
+  if (basis === "measured") {
+    return "The dollars are the SDK's own figure for these calls, which is what billed.";
+  }
+  if (basis === "priced") {
+    return (
+      "These calls reported no dollar figure of their own, so the dollars are these tokens priced " +
+      "at the same dated table the run's spend above is — measured where there is a measurement, " +
+      "computed where there is not, and never left unknown while the tokens are in hand."
+    );
+  }
+  if (basis === "both") {
+    return (
+      "Part of that is the SDK's own figure for the calls that reported one, and the rest is the " +
+      "remaining calls' tokens priced at the same dated table the run's spend above is."
+    );
+  }
+  return (
+    "Nothing reported a dollar figure and nothing here could price these tokens either, so the " +
+    "money reads unknown rather than zero."
   );
 }
 
