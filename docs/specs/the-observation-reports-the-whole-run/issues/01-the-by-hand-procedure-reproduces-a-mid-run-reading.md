@@ -22,19 +22,19 @@ found by path — `<dir>/<session-id>/subagents/*.jsonl` with their `.meta.json`
 somewhere flat has no dispatches at all, and a contributor reads that as a defect in the reading rather than as their
 own copy being wrong.
 
-- [ ] `CONTRIBUTING.md` § Replaying a run's records gains the truncation form: copy the record, keep the first N
+- [x] `CONTRIBUTING.md` § Replaying a run's records gains the truncation form: copy the record, keep the first N
       entries, and replay the copy. One command a contributor can paste.
-- [ ] It says what the copy has to preserve — the record named `<session-id>.jsonl` with a `<session-id>/subagents/`
+- [x] It says what the copy has to preserve — the record named `<session-id>.jsonl` with a `<session-id>/subagents/`
       directory beside it holding each `agent-*.jsonl` and its `.meta.json` — and that a copy without that directory is
       a reading from before any stage landed, which is a legitimate thing to want and must be asked for deliberately.
-- [ ] It says what the form is *for*: a reading taken mid-run is where the **extent**, the finalise and the cross-checks
+- [x] It says what the form is *for*: a reading taken mid-run is where the **extent**, the finalise and the cross-checks
       can be seen at all, and a whole-record replay cannot show any of them.
-- [ ] It names the environment variables that make the observer's clocks walkable — the tick, the throttle, the idle
+- [x] It names the environment variables that make the observer's clocks walkable — the tick, the throttle, the idle
       bound, the after-finalise window and the patience — in one place, as `observer.ts` already documents them
       individually, so a lifecycle state is reachable in seconds rather than in half an hour.
-- [ ] It says plainly that no run's records are checked into this repository and why: they carry the repository, the
+- [x] It says plainly that no run's records are checked into this repository and why: they carry the repository, the
       absolute paths, the username and every word of the human's own prose, which is what makes a **trace**
       do-not-forward in the first place.
-- [ ] The free form's determinism claim is not weakened: the same prefix gives the same debrief byte for byte, and the
+- [x] The free form's determinism claim is not weakened: the same prefix gives the same debrief byte for byte, and the
       section still says so.
-- [ ] Markdown wraps at 120 columns and the section's existing register is matched.
+- [x] Markdown wraps at 120 columns and the section's existing register is matched.

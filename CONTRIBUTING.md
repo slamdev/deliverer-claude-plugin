@@ -332,6 +332,50 @@ Three exit codes, and a first line that names what was written: `0` with the deb
 judging half did and where the trace and the **identity file** went; `2` with why this record holds no run (a session
 that merely names the plugin is not one, and several on any machine do), `1` with what could not be read.
 
+**A prefix of a record is a reading taken mid-run, and it is the only cheap way to see one.** A whole record already
+carries the run's ending, so replaying one shows the reading that works and none of the readings that go wrong: the
+**extent** the observer settled on while the run was still delegating, the finalise it made while a human was still
+thinking about a question, and any cross-check that fires on a reading disagreeing with what is on disk are all states
+the observer was in *during* the run. Keeping the first N entries of a copy reproduces exactly what it saw at entry N,
+and it costs what the form above costs — no model, no forge, nothing spent.
+
+```
+record=~/.claude/projects/<munged-cwd>/<session-id>.jsonl   # a run of your own
+entries=268                                                 # where to cut it
+id=$(basename "$record" .jsonl) && copy=$(mktemp -d)
+head -n "$entries" "$record" > "$copy/$id.jsonl"
+mkdir -p "$copy/$id" && cp -r "$(dirname "$record")/$id/subagents" "$copy/$id/"
+CLAUDE_PLUGIN_DATA=$(mktemp -d) node plugin/mcp/observer/debrief.ts "$copy/$id.jsonl"
+```
+
+One entry is one line, so `head` cuts at an entry boundary — this is not the corrupted record the cases below end with,
+which stops mid-line and has to say what it lost.
+
+**The host's layout is what the copy has to preserve, and it is the one thing a copy gets wrong.**
+`plugin/mcp/observer/records.ts` finds a **dispatch**'s own record by path and by nothing else: the copy has to be named
+`<session-id>.jsonl` with a `<session-id>/subagents/` directory beside it holding each `agent-<id>.jsonl` and its
+`agent-<id>.meta.json` sidecar, which is what the `basename`, the `mkdir` and the `cp` above are between them for. A
+prefix dropped somewhere flat has no dispatches at all, and that reads as a defect in the reading rather than as a
+broken copy.
+
+**Leaving the `cp` line out asks for a reading from before any stage landed** — a legitimate thing to want, and one to
+ask for deliberately rather than by accident. A dispatch's record is a whole file that a prefix of the session's record
+does not cut, so a copy keeping the directory keeps every stage the run ever ran, however early the cut. On the record
+this procedure was written against, a 268-entry prefix copied flat reads `1m38s · 0 dispatches · 1 question round`,
+while the same prefix with the directory beside it reads `3h46m · 2 dispatches` against that same one question round —
+the wall clock coming off the dispatch records' own entries while the extent stays where it froze. Both are real
+shapes: the second is what a reading that disagrees with the disk looks like, and the first is the run before it
+delegated anything.
+
+**Determinism survives all of it**, because a prefix is a record like any other: replay one twice into one
+`CLAUDE_PLUGIN_DATA` and `debrief-2.md` is byte for byte identical to `debrief.md`, exactly as it is for a whole record.
+
+**No run's records are checked into this repository, and none is going to be.** Every record this procedure wants is a
+run of somebody's own, and it carries the repository it ran in, the absolute paths on that machine, the username inside
+each of them and every word the human typed — which is what makes a **trace** refuse forwarding in the first place. So
+there is no fixture here: what you replay is a run of your own, or a synthetic record you wrote for the shape you are
+walking, and the copies either one leaves behind belong in a `mktemp -d` rather than in the tree.
+
 **With `--judge`, the same command runs the judging half**, which nothing else exercises: one cheap-tier call per
 **dispatch** as each is read from the inside, and one long-context synthesis over the whole run — thirteen-plus calls
 for a delivery. What it answers is the only question worth asking of that half: whether the observer finds what you
@@ -462,10 +506,28 @@ loop's. Walk these after any change to either, each with what it should do:
 - **observation switched off** (`CLAUDE_PLUGIN_OPTION_OBSERVE_RUNS=false`) — nothing starts at all: no process, no
   trace and no debrief.
 
-The eight `DELIVERER_OBSERVER_*` bounds are what make that walk minutes rather than half-hours — the killed terminal
-is the idle bound's thirty minutes and nothing else: `TICK_MS` (2 s), `REFRESH_MS` (15 s), `IDLE_MS` (30 min),
-`AFTER_FINALISE_MS` (30 min), `PATIENCE_MS` (10 min), `INSTALL_WAIT_MS` (2 min), and the judging half's `NOTE_MS`
-(5 min) and `JUDGE_MS` (30 min).
+**The eight `DELIVERER_OBSERVER_*` bounds are what make that walk minutes rather than half-hours** — the killed
+terminal is the idle bound's thirty minutes and nothing else. `observer.ts` documents each beside the constant that
+reads it; they are named together here because a lifecycle state is otherwise reachable only by waiting for it, and the
+five clocks of the loop are the ones a walk turns down:
+
+- `DELIVERER_OBSERVER_TICK_MS` (2 s) — how often the records' own footprint is looked at, so it is the floor under
+  every state below it;
+- `DELIVERER_OBSERVER_REFRESH_MS` (15 s) — the throttle between two rewrites while the run is merely proceeding; a
+  stage landing jumps it;
+- `DELIVERER_OBSERVER_IDLE_MS` (30 min) — how long everything has to be silent before the debrief is finalised on the
+  observer's own reading, which is the killed terminal's finalise and the one a thinking human must not be given;
+- `DELIVERER_OBSERVER_AFTER_FINALISE_MS` (30 min) — how long the watcher keeps going after a finalise nothing
+  signalled, which is the whole of the window a resumed run has to get its label back in;
+- `DELIVERER_OBSERVER_PATIENCE_MS` (10 min) — how long a record gets to show a run in it at all, and how long one that
+  stopped being readable gets to come back;
+- `DELIVERER_OBSERVER_INSTALL_WAIT_MS` (2 min) — how long `observe.mjs` waits for the install to put the observer on
+  disk before there is nothing to start;
+- the judging half's `DELIVERER_OBSERVER_NOTE_MS` (5 min) and `DELIVERER_OBSERVER_JUDGE_MS` (30 min) — one **dispatch
+  note**'s deadline and the synthesis's, which nothing but a `--judge` replay or a judging observer ever reaches.
+
+Unset and set-but-empty both mean no override, told apart from a real `0` — which is honoured and fires that bound at
+once. Anything that is not a finite number at or above zero falls back to the default rather than failing.
 
 ### Tallying a run
 
