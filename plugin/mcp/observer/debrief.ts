@@ -109,9 +109,23 @@ export interface DebriefOptions {
 /**
  * One run's records in, one debrief out.
  *
- * The trace is written first and by the same code `./distil.ts` runs, so what a debrief rests on
+ * The trace is distilled first and by the same code `./distil.ts` runs, so what a debrief rests on
  * is the distillation a contributor can produce by hand rather than a second one — and the debrief
  * lands in the same per-run directory, beside it.
+ *
+ * **The two documents move into place together** (the-observation-reports-the-whole-run ticket 04;
+ * D9). The trace is staged under a name of its own and renamed into place only once the debrief and
+ * its **identity file** are written, because everything between the two is a window a death can fall
+ * into and the window was minutes wide: the judging below is a whole-run synthesis on a long-context
+ * model. Before this, a process that stopped in there left a newer trace beside an older debrief —
+ * measured, on the run this epic was written from: a trace ending 11:23:52, a debrief whose own
+ * **hunch** said the trace it read "run[s] to `[09:24:42]`", and an identity file still saying
+ * `finalised: yes`. Now the pair appears together or the previous consistent pair stays.
+ *
+ * **The path both documents carry is the trace's final one throughout** — `staged.path` is where the
+ * rename puts it, never the staging name, which `./trace-file.ts` alone ever sees. A staged name in
+ * the debrief would point a maintainer at a file that never exists, which is worse than the
+ * inconsistency this closes.
  *
  * **Records that produce no trace produce no debrief**, and the caller is told why. An empty
  * debrief about a session that never ran the plugin would be worse than none.
@@ -119,43 +133,55 @@ export interface DebriefOptions {
 export async function debriefRun(options: DebriefOptions): Promise<DebriefOutcome> {
   const distilled = await distil(options);
   if (distilled.kind !== "traced") return distilled;
+  const { staged } = distilled;
 
-  // Read a second time, deliberately. A **trace** is bounded by nothing while a debrief's every
-  // figure is bounded by the run, and the excerpt cap is what makes the second read necessary: a
-  // round's poll payload and the skill preamble naming the plugin's commit are both longer than a
-  // large run's cap, so neither survives into the trace. Reading a file twice is cheaper than a
-  // distillation that has to keep two shapes.
-  const record = await readRecordFile(options.recordPath);
-  const dispatched = await readDispatchRecords(options.recordPath);
-  const facts = runFactsOf({
-    record,
-    dispatchRecords: dispatched.records,
-    trace: distilled.trace,
-  });
-  const commit = await resolvePluginCommit({
-    inRecords: facts.commitInRecords,
-    dataDirectory: options.dataDirectory,
-  });
-  const source = options.judging ?? NOTHING_JUDGED;
-  const judging =
-    typeof source === "function" ? await source({ trace: distilled.trace, facts }) : source;
-  const written = await (options.write ?? writeDebrief)(options.dataDirectory, {
-    trace: distilled.trace,
-    facts,
-    commit,
-    judging,
-    tracePath: distilled.path,
-    status: options.status,
-    observationLosses: options.observationLosses,
-  });
-  return {
-    kind: "written",
-    trace: distilled.trace,
-    facts,
-    tracePath: distilled.path,
-    written,
-    judging,
-  };
+  try {
+    // Read a second time, deliberately. A **trace** is bounded by nothing while a debrief's every
+    // figure is bounded by the run, and the excerpt cap is what makes the second read necessary: a
+    // round's poll payload and the skill preamble naming the plugin's commit are both longer than a
+    // large run's cap, so neither survives into the trace. Reading a file twice is cheaper than a
+    // distillation that has to keep two shapes.
+    const record = await readRecordFile(options.recordPath);
+    const dispatched = await readDispatchRecords(options.recordPath);
+    const facts = runFactsOf({
+      record,
+      dispatchRecords: dispatched.records,
+      trace: distilled.trace,
+    });
+    const commit = await resolvePluginCommit({
+      inRecords: facts.commitInRecords,
+      dataDirectory: options.dataDirectory,
+    });
+    const source = options.judging ?? NOTHING_JUDGED;
+    const judging =
+      typeof source === "function" ? await source({ trace: distilled.trace, facts }) : source;
+    const written = await (options.write ?? writeDebrief)(options.dataDirectory, {
+      trace: distilled.trace,
+      facts,
+      commit,
+      judging,
+      tracePath: staged.path,
+      status: options.status,
+      observationLosses: options.observationLosses,
+    });
+    // The debrief and its identity file are on disk, so the trace may be. Last, and only here: the
+    // writers above are the ones that put a pair together — `writeDebrief` removes its own debrief
+    // where the identity file could not follow it — so nothing before this line is a pair yet.
+    await staged.place();
+    return {
+      kind: "written",
+      trace: distilled.trace,
+      facts,
+      tracePath: staged.path,
+      written,
+      judging,
+    };
+  } catch (error) {
+    // Whatever went wrong between the two writes, the pair already on disk is untouched and this
+    // reading leaves nothing of its own behind — including the staged trace (ticket 04; D9).
+    await staged.discard();
+    throw error;
+  }
 }
 
 /** What the judging half did, for the line the command prints. */

@@ -25,17 +25,17 @@ reader at a file that does not exist. The rename target is what both documents m
 **Rewriting the debrief on every trace write was considered and rejected**, in the spec: a facts-only rewrite would
 overwrite a judged debrief with an unjudged one, which loses content rather than a label.
 
-- [ ] The trace is written to a staging name in its own directory and renamed into place after the debrief write
+- [x] The trace is written to a staging name in its own directory and renamed into place after the debrief write
       succeeds.
-- [ ] Both documents carry the trace's final path, never the staged one.
-- [ ] A failure between the two leaves the previous pair on disk untouched, and leaves no staged file behind.
-- [ ] The identity file continues to be written in the same breath as the debrief, so it cannot outlive it either.
-- [ ] The live **observer**'s repeated rewrites still work: the file is staged and renamed on every reading, as the
+- [x] Both documents carry the trace's final path, never the staged one.
+- [x] A failure between the two leaves the previous pair on disk untouched, and leaves no staged file behind.
+- [x] The identity file continues to be written in the same breath as the debrief, so it cannot outlive it either.
+- [x] The live **observer**'s repeated rewrites still work: the file is staged and renamed on every reading, as the
       debrief already is, and the `writeWhen` gate that holds an unnamed **epic**'s observation off disk is unchanged.
-- [ ] **Replay** still prints the trace's final path on stdout, and the free form is still byte-for-byte deterministic
+- [x] **Replay** still prints the trace's final path on stdout, and the free form is still byte-for-byte deterministic
       on the same record.
-- [ ] Comments cite this ticket and say what the window was.
-- [ ] **Verified by hand with 01's procedure**: a replay produces a matching pair; a replay interrupted between the two
+- [x] Comments cite this ticket and say what the window was.
+- [x] **Verified by hand with 01's procedure**: a replay produces a matching pair; a replay interrupted between the two
       writes leaves the earlier pair intact and no stray file; and a judged replay names the same path in the debrief
       that the trace is written to.
-- [ ] `(cd plugin/mcp && npm run typecheck && npm run lint)` passes.
+- [x] `(cd plugin/mcp && npm run typecheck && npm run lint)` passes.

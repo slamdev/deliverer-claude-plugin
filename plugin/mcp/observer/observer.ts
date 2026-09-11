@@ -506,6 +506,13 @@ async function read(
     dataDirectory: options.dataDirectory,
     // The live writer: one debrief per run, kept current and staged-and-renamed every time. A
     // replay of this same run afterwards still writes BESIDE it (D19).
+    //
+    // **Every reading rewrites the pair and not one half of it**
+    // (the-observation-reports-the-whole-run ticket 04; D9): `./debrief.ts` stages this reading's
+    // trace and renames it into place once this writer has returned, so the trace beside the debrief
+    // is always the trace that debrief was written from — including on the reading that runs the one
+    // synthesis, which is the minutes-long window the ticket exists for. The `writeWhen` gate below
+    // is what keeps an unnamed epic's reading off disk entirely, staged trace and all.
     write: refreshDebrief,
     observationLosses: options.startupLosses,
     status: {
