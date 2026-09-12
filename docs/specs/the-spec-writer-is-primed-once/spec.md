@@ -537,6 +537,50 @@ in and not from the **environment file**: the harness layers that file above the
 line overrides nothing. Every dollar figure is the host's own estimate at first-party rates while the calls bill through
 a partner-operated provider, so it supports that ratio and never a bill.
 
+### The fork that recommends a road, read on a bench
+
+This branch carries one change no ticket above asked for. `plugin/agents/spec-writer.md` had a contradiction that
+predates the epic — step 3 says a collision between two settled decisions is never the writer's to settle, while the
+**Forks** section let the writer close *any* fork on grounds it found itself — and it was fixed directly rather than
+ticketed. What counts as **grounds** now turns on where the fork came from, and the writer's own reading rides *inside*
+an open fork as a recommended road instead of closing it. Two questions were left open about that fix: whether a fork
+arriving with a road recommended closes in one **round** and removes the second put-back wave, and what it costs.
+
+**Both were read on 2026-09-12 with `e2e-tests/bench/`**, which drives stage 3 alone: two arms, the branch's file and
+the file as it stood immediately before the change, everything else identical — the same **brief** stage 3 was
+dispatched with, the same clone, the same seat answering out of the **fixture**'s own brief.
+
+| | with the fix | immediately before it |
+|---|---:|---:|
+| the dispatch | $4.02, 60 turns | $4.17, 59 turns |
+| the one put-back after it | $7.95, 36 turns | $7.99, 23 turns |
+| **fork**s the first **report** raised | 2 | 4 |
+| forks the second report raised | 0 | 0 |
+| of all those forks, carrying a recommended road | **2** | **0** |
+| recommendations the seat took | **2** | — |
+| published **spec** | 50,572 bytes, 68 **user stories** | 46,524 bytes, 58 |
+| the arm | $12.02 | $12.23 |
+
+**The wave question is answered, and the answer is no: there was no second wave to remove.** Both arms closed after one
+put-back, each second report raising no fork at all — read by the same seat afterwards, because a $12 ceiling had
+stopped each arm before it asked. The run this bench replays took two waves and neither arm did, but the arms differ
+from that run in more than the fix, so nothing here says what removed the second one.
+
+**What the fix changed is the shape of the round, not its count.** Every fork the current file raised named the road the
+writer would take and what it found; the file before it named none on any of its four. The seat took all of them. That
+is the channel working — a writer's judgement reaching the human without closing their decision — and it is not a
+saving.
+
+**The 15% the fix was thought to cost is not reproduced.** An earlier reading put the new file 15% above the old on one
+dispatch; here it came in 3.6% below on the dispatch and 1.6% below across the stage. Neither settles it: that rig's
+own repeat of one arm differed by 8%, and these are one arm each.
+
+**What these figures are not.** Both arms reached a $12 ceiling after their second wave landed, so the arm totals are
+two arms reaching $12 rather than two stage costs; what compares is the per-wave rows. An arm runs the writer as a
+top-level session and is inflated against a real **dispatch** by roughly 30%, so it compares with another arm and with
+nothing else. And these two were served **first-party**, where every run in the sections above went through a proxy to
+**Amazon Bedrock** — their own request ids say so both times — so no figure here divides into a figure there.
+
 ### Nothing from an observed repository appears here
 
 Every figure above came from the plugin's own **trace**s and the runs' **session record**s, distilled with no model and
