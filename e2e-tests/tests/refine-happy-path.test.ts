@@ -27,13 +27,29 @@ import {
 import { refineRun, verify } from "../harness/refine-run.ts";
 
 /**
- * This test runs at the epic's own ceilings, and names them once.
+ * This test runs at the epic's ceilings with one raised, and names them once.
  *
  * A test wanting others changes this line and nothing else: the same ceilings reach the runner's
  * timeout and the run itself, which is what stops a raised ceiling being killed by a timeout that
  * did not hear about it.
+ *
+ * **The spend ceiling is this test's own, because the evidence for it is this test's own.** Seven
+ * refinements of this **fixture**, every one on `opus`, spread from $13.45 to $36.46 on the tokens
+ * their own records carry — a mean of $20.94 either side of a standard deviation of $7.55
+ * (CONTRIBUTING.md § The end-to-end tests). The default's $25 sits between the mean and one
+ * deviation above it, so a refinement that runs normally and dear stops on budget and fails
+ * whatever assertion covered the stage it never reached — which reports a **run**'s own spread as
+ * though it were a finding about the plugin. $40 clears every reading ever taken of this fixture
+ * and leaves the ceiling doing the job it exists for: stopping a wedged run, not an expensive one.
+ *
+ * **The default stays where it is**, and a delivery keeps it: the priciest ever measured spent
+ * $10.58 against that $25, so the room a refinement needs is room a delivery has never asked for
+ * and should not be given silently.
+ *
+ * The wall clock is untouched. Nothing has come near ninety minutes — the longest run measured took
+ * 55m 29s — and the two ceilings answer different questions.
  */
-const CEILINGS = DEFAULT_CEILINGS;
+const CEILINGS = { ...DEFAULT_CEILINGS, spendUsd: 40 };
 
 /** The two writers refinement dispatches, which is the floor under what its records must hold. */
 const DISPATCHED_WRITERS = 2;

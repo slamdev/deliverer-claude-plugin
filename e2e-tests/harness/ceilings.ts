@@ -16,6 +16,12 @@
  * sits above the ceiling, and a raised ceiling under an unraised timeout would be killed by the
  * runner before it could report anything.
  *
+ * **One test does override, so the figures below are not what every test runs at.** The refine
+ * happy path takes $40 rather than $25, because seven refinements of its **fixture** spread from
+ * $13.45 to $36.46 and a ceiling inside a run's own spread stops runs that are merely expensive.
+ * That reasoning is at the override rather than here, beside the evidence it rests on
+ * (`tests/refine-happy-path.test.ts`).
+ *
  * **How the wall clock sits against the tools server's own bounds**, since a **round** is the one
  * thing inside a run that has a bound of its own (`plugin/mcp/server/config.ts`). The server bounds
  * a review twice: half an hour with no event, which is what ordinarily ends a wedged round, and

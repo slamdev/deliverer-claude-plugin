@@ -705,17 +705,24 @@ compared — but nothing in a run directory said so at the time, which is why th
 observation among the four kinds it names — and gives the method for doing it again from any **run directory**.
 
 **The ceilings.** A run may take **ninety minutes** and spend **twenty-five dollars**: `DEFAULT_CEILINGS` in
-`e2e-tests/harness/ceilings.ts`, overridable per test. Neither has been raised, and neither is far off any more: the
-longest run measured took **55m 29s** — 62% of the ninety, the delivery of 2026-09-06 above — and the most expensive
-spent **$14.49**, 58% of the twenty-five, the refinement of 2026-09-11. Both halves of the room the spec estimated are
-now spoken for, and which one a run reaches first is no longer a settled question: the spread above puts a refinement
-of this fixture past **$25** on its own tokens more than once, and a refinement driven against a change that sent more
-than one **sweep** out has stopped short of stage 4 on budget rather than publishing its tickets. Reaching either is
-reported as a ceiling rather than as a failed assertion, so a slow run can be told from a stuck one — but a run that
-stops on spend fails whatever assertion covered the stage it never reached. What would move them is a bigger
-**fixture**: this one's tickets are three functions with unit tests, and a fixture with a service in it would be felt
-here first. Wall clock is also the one
-figure here a busy machine inflates — every stage runs in series, so anything else on the box is in it.
+`e2e-tests/harness/ceilings.ts`, overridable per test. The wall clock has never been raised and is not close — the
+longest run measured took **55m 29s**, 62% of the ninety, the delivery of 2026-09-06 above.
+
+**The spend ceiling has been raised, for the refine happy path alone, to $40.** The default's twenty-five sits between
+the mean of this fixture's seven refinements and one standard deviation above it, which puts it inside the spread the
+test's own **run**s already have: a refinement of this fixture has passed $25 on its own tokens more than once, and one
+driven against a change that sent more than one **sweep** out stopped short of stage 4 on budget rather than publishing
+its tickets. A ceiling there does not stop a wedged run; it stops a run that is merely expensive, and then fails
+whatever assertion covered the stage it never reached — reporting a run's own spread as though it were a finding about
+the plugin. $40 clears every reading ever taken of this fixture. The reasoning sits beside the override in
+`e2e-tests/tests/refine-happy-path.test.ts`, with the evidence it rests on.
+
+**A delivery keeps the default**, deliberately: the priciest ever measured spent **$9.75**, 39% of the twenty-five, so
+the room a refinement needs is room a delivery has never asked for and should not be handed silently. Reaching either
+ceiling is reported as a ceiling rather than as a failed assertion, so a slow run can be told from a stuck one. What
+would move them again is a bigger **fixture**: this one's tickets are three functions with unit tests, and a fixture
+with a service in it would be felt here first. Wall clock is also the one figure here a busy machine inflates — every
+stage runs in series, so anything else on the box is in it.
 
 **What they need.** The `./claude` container has all of it already, which is where to run them from:
 
