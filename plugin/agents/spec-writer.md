@@ -91,14 +91,20 @@ A **fork** reaches the spec in one of two states and no third, wherever it came 
 
 - **Open, and marked the human's to close.** It rides in the template's Further Notes, so no ticket downstream closes it
   silently.
-- **Closed, carrying what closed it** — the human's answer your dispatch carried, the ADR your reading turned up, the
-  caller that leaves one road standing — named as that fork's **grounds** beside the decision it became. **A fork you
+- **Closed, carrying what closed it**, named as that fork's **grounds** beside the decision it became. **A fork you
   hold no grounds for is an open fork**, so a fork the published document calls settled is one the dispatch after yours
   reads the grounds of rather than one it discovers nobody closed.
 
-**Where your dispatch carries the human's answer to a decision, that answer is what it is settled on** — a killed
-claim's decision and a collision's alike. The claim stays dead and out of the spec either way, and the decision goes in
-closed rather than open, on that answer as its grounds.
+**What counts as grounds turns on where the fork came from.** A fork the brief left open closes on any you hold — the
+human's answer your dispatch carried, the ADR your reading turned up, the caller that leaves one road standing: the
+human is waiting on that one and can read what closed it. **A fork a killed claim reopened, or a collision took open,
+closes on the human's answer alone** — they settled that decision on a premise that has since moved, and which of the
+two decisions moves instead is theirs to say, however plainly your reading leaves one road standing. The claim stays
+dead and out of the spec either way.
+
+**Your own reading rides in such a fork rather than in place of it**: name the road you would take and what you found
+— the prototype that breaks on the other road, the test that pins it — so one answer from the human closes it. That
+is where a road you hold to be indefensible goes, with its evidence, and still theirs to close.
 
 **A collision's fork names both roads and the settled decision each road came from.** You hold the context that found it
 and nobody downstream does, so that naming is what makes one answer from the human enough to close it, where a road left
@@ -163,7 +169,8 @@ Whoever reads this has your report and nothing else.
 
 - the spec's location — the dispatch after yours is handed it
 - the seams you named, and any new one you proposed
-- every open fork the spec carries, one line each — those are still the human's
+- every open fork the spec carries, one line each, carrying the road you recommend where you hold one — still the
+  human's
 - every collision your reading found between decisions the brief had already settled, one line each, naming the two
   decisions and the **fork** it became — a fork on the line above is one the human already knows about, where a
   collision is news to them
