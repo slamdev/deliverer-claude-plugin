@@ -581,6 +581,54 @@ top-level session and is inflated against a real **dispatch** by roughly 30%, so
 nothing else. And these two were served **first-party**, where every run in the sections above went through a proxy to
 **Amazon Bedrock** — their own request ids say so both times — so no figure here divides into a figure there.
 
+### Both fixes read in a run, and the stage they moved is not the one that grew
+
+The two **plugin/** changes above were read on a **bench** and in the **session record**s of a **refinement** of the
+**fixture** driven on 2026-09-12, against the refinement of 2026-09-11 that this epic's measurement rests on. One run
+either side, so every dollar below is a direction and never a finding — and the **run** under test also carried a Claude
+Code the older one did not, `2.1.220` to `2.1.269`, which is a confound on every figure here and on none of the
+mechanisms.
+
+**The recommending fork works in the wild, 3-for-3.** The **spec-writer**'s first **report** raised three **fork**s, all
+of them news — the **brief** left none open — and each named the road it would take and what it found: the prototype
+that broke on the other road, the measured before-and-after. The **orchestrator** put all three to the human and came
+back with `Road B, your recommendation`, `Road A, your recommendation` and `Road B as you refined it`. The run of
+2026-09-11 raised one fork, named both roads and recommended neither, and its **round** cost an extra exchange
+establishing which the writer preferred. The bench above read this at 2-for-2 on a replayed stage; a run is the first
+time the channel has been seen carrying a fork the writer found itself, in front of a human who had not been primed.
+
+**One put-back wave, as before.** One `SendMessage` in each run's orchestrator record, one continuation of the writer
+behind it, and no second wave in either. The wave count is what the bench already said the fix does not move.
+
+**The claim-path rule landed in the brief and did not stop the prototype.** Eight of the new brief's eleven **claim**s
+name a path a look closes — read that file, one grep, open the workflow — and two more say outright that nothing in the
+repository settles them and to carry them as accepted risk, which is the rule's other half doing its job. Three still
+say to make the change and run `npm test`, and the **writer** did exactly that: it copied the clone to `/tmp/wrap-probe`
+and built `wrap.ts` and a tokeniser there before a line of the spec existed. **What the rule bought is not a writer that
+builds less but a writer that builds once.** Its stage came in at $4.18 against $4.42 for the run of 2026-09-11, whose
+brief already named cheap paths and which built no `wrap` at all, and against $8.47 for the run the rule was written
+against; stage 3 ran 13m59s against 16m55s; and the prototype stayed in a throwaway copy where 2026-09-11's writer wrote
+scratch modules into the clone's own `src/` and removed them afterwards.
+
+**Every stage this branch touched got cheaper, and the run still cost $10 more.**
+
+| | 2026-09-11 | 2026-09-12 |
+|---|---:|---:|
+| **orchestrator** | $3.69, 30 requests | $3.45, 35 |
+| **sweep**s | $4.16, one | **$15.68, four** |
+| **spec-writer** | $4.42, 34 requests | $4.18, 48 |
+| **tickets-writer** | $1.94, 23 requests | $1.44, 17 |
+| the run's own tokens | $14.20 | $24.75 |
+| published **spec** | 39,923 bytes, 62 **user stories**, 8 **ticket**s | 41,187 bytes, 47, 5 |
+
+**The whole increase is in the sweeps, and the plugin owns none of it.** The orchestrator dispatched one, exactly as the
+skill asks; that sweep dispatched a second, and the second dispatched two more. The deepest pair ran three levels below
+the run and one of them — a reading of six terminal emulators' source for what SGR 58 and 59 mean — spent $6.85 on its
+own, more than the spec-writer, and came back with facts the brief then recorded as **claim**s nothing could settle. The
+skill hands a sweep a subject and lets it follow the thread itself; this plugin ships no sweeper, so what happens below
+that dispatch is the host's general-purpose agent and not a lever any file here holds. **It is the largest single item
+in a refinement's spend and no ticket in this epic reaches it.**
+
 ### Nothing from an observed repository appears here
 
 Every figure above came from the plugin's own **trace**s and the runs' **session record**s, distilled with no model and

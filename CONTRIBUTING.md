@@ -677,15 +677,22 @@ and a dispatch count consistent with the records the **run directory** itself ho
 lives at the replay seam above. The observation is a separate process on the same account and the same credentials the
 run uses, its **spend** is in none of the figures below, and `e2e-tests/README.md` says what it costs.
 
-**What they take and spend, measured rather than estimated.** The refinement, measured on 2026-09-11 and the first
-reading taken with the model pinned, took **41m 36s and $15.38** — the run itself 41m 36s and $14.49, the responder
-$0.32 across eleven rounds of questions, the verifier $0.57 — and published a spec and eight tickets over sixty-two
-user stories. An earlier reading of the same test put it at **21m 52s and $6.36**, over six rounds and six tickets.
-**Both are the same test against the same fixture, and the gap between them is what a single reading is worth here**:
+**What they take and spend, measured rather than estimated.** The refinement, measured on 2026-09-12 and the latest
+reading, took **41m 19s and $26.99** — the run itself 41m 19s and $26.32, the responder $0.16 across seven rounds of
+questions, the verifier $0.51 — and published a spec and five tickets over forty-seven user stories. It was measured on
+2026-09-11, the first reading taken with the model pinned, at **41m 36s and $15.38** — the run itself 41m 36s and
+$14.49, the responder $0.32 across eleven rounds, the verifier $0.57 — over eight tickets and sixty-two user stories,
+and an earlier reading of the same test put it at **21m 52s and $6.36**, over six rounds and six tickets. **All three
+are the same test against the same fixture, and the gap between them is what a single reading is worth here**:
 seven refinements of this fixture, every one of them on `opus`, spread from **$13.45 to $36.46** on the tokens their
-own records carry, a mean of $20.94 either side of a standard deviation of $7.55. A figure below is one run, so a
-change that moved a refinement by a dollar or two would be invisible in it, and none of them is a saving anybody has
-measured. The delivery, measured on 2026-09-06, took **59m 18s and $10.58** — the run itself 55m 29s and $9.75,
+own records carry, a mean of $20.94 either side of a standard deviation of $7.55 — and the 2026-09-12 reading, at
+$24.75 on its own tokens, sits inside that spread rather than extending it. A figure below is one run, so a change that
+moved a refinement by a dollar or two would be invisible in it, and none of them is a saving anybody has measured.
+**Where a refinement's money actually goes is not a stage this repository can edit**: the 2026-09-12 reading spent
+$15.68 of its $24.75 on **sweep**s, four of them, because the one the **orchestrator** dispatched sent one of its own
+and that one sent two more. This plugin ships no sweeper and hands a sweep whatever general-purpose agent the host
+offers, so everything below that first dispatch is the host's and no file here reaches it. The delivery, measured on
+2026-09-06, took **59m 18s and $10.58** — the run itself 55m 29s and $9.75,
 the verifier $0.83 — and flipped its change request ready with green checks over three tickets, five commits, ten
 **assumption**s and two **rounds**. It was measured twice before that, at **23m 12s and $7.40** and **22m 14s and
 $6.85**, and both of those readings predate the **adjudication** that compares roads: that step is now the longest and
