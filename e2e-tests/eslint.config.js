@@ -18,7 +18,7 @@ import tseslint from "typescript-eslint";
 export default tseslint.config(
   js.configs.recommended,
   {
-    files: ["harness/**/*.ts", "tests/**/*.ts"],
+    files: ["harness/**/*.ts", "tests/**/*.ts", "bench/**/*.ts"],
     extends: [tseslint.configs.recommended],
   },
   {

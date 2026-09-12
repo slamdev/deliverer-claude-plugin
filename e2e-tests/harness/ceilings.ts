@@ -90,15 +90,44 @@ export function holdSpendCeiling(spend: Spend, elapsedMs: number, detail: string
 }
 
 /**
- * What the harness's own two agents may spend on one turn each.
+ * What the harness's own agents may spend on one turn each.
  *
  * Not a run's ceiling and not overridable: these are guards on an agent that has started reasoning
  * about the epic instead of answering from a brief, or writing a review instead of returning a
- * verdict. A turn costs a fraction of either in practice. They live here rather than beside their
- * agents so that every figure the harness spends against is in one file.
+ * verdict. A turn costs a fraction of any of them in practice. They live here rather than beside
+ * their agents so that every figure the harness spends against is in one file.
+ *
+ * The third is the **bench**'s seat (`./put-back.ts`), which answers one **writer** **report**'s
+ * **fork**s. It reads more than a **responder**'s round does — a whole report on top of the
+ * fixture's brief — and writes an answer with its **grounds** for each fork, so it gets the same
+ * dollar rather than a fraction of one.
  */
 export const RESPONDER_ROUND_CEILING_USD = 1;
 export const VERIFIER_CEILING_USD = 5;
+export const PUT_BACK_ROUND_CEILING_USD = 1;
+
+/**
+ * What one **bench** arm may take and cost: the **writer** and every **put-back** wave in it, and
+ * the seat that answered them (`./writer-bench.ts`).
+ *
+ * **Measured rather than estimated, and deliberately loose.** Four readings of a writer's dispatch
+ * ALONE, with no put-back after it, spent $4.41 to $5.78 in this arrangement — and the arrangement
+ * inflates: an arm runs the writer as a top-level session with the `claude_code` preset, a larger
+ * base context than a **dispatch**ed subagent's, so the arm that cost $4.41 was reproducing a real
+ * first pass that cost $3.39. The put-backs then roughly double it: the measured run's spec-writer
+ * took $8.47 across one dispatch and two waves, of which the first was $4.42.
+ *
+ * So $12 clears an arm that behaves, and stops one that does not. A comparison of two arms is
+ * therefore about $20 in practice and $24 at the ceiling, which is the figure to hold in mind before
+ * starting one.
+ *
+ * The wall clock is an hour because an arm is a single stage rather than a whole run, and the
+ * longest reading taken of one was 27 minutes.
+ */
+export const WRITER_BENCH_CEILINGS: Ceilings = {
+  wallClockMs: 60 * 60 * 1000,
+  spendUsd: 12,
+};
 
 /**
  * What a test gives the runner on top of the run's own ceiling: the install, the standing repo and
