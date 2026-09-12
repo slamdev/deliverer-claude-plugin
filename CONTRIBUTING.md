@@ -178,7 +178,8 @@ what moved.
 │   ├── README.md                          what a run costs per stage, and how to work that out from its records
 │   ├── harness/                           the run directory, the staged copy, the builder and the matchers
 │   ├── fixtures/typescript-library/       the repository a run is driven against, its brief and its epic
-│   └── tests/                             three tests; CI never runs them, two spend real money
+│   ├── tests/                             three tests; CI never runs them, two spend real money
+│   └── bench/                             one writer's stage, driven alone — an instrument, not a test
 ├── hacks/claude.dockerfile              the pinned image
 ├── claude                               the wrapper
 ├── .claude/settings.json                model opus[1m], effort xhigh, enabled plugins, bypassPermissions
@@ -781,6 +782,45 @@ rather than reproduced. Nothing in it is ever removed, passed or failed:
 On the forge, the refine test's **standing repo** stays — it is cloned and never written back to, so it is brought into
 step with the fixture rather than recreated. The build test's **throwaway repo** is deleted when the test passes and
 left standing, with its branch and change request, when it fails: the change request is the evidence.
+
+### The bench — one writer's stage, driven alone
+
+`e2e-tests/bench/` is an **instrument** and not a test. It asserts nothing, CI never sees it, and `npm test` does not
+run it: it spends real money and reports figures, and what they mean is yours to decide.
+
+**What it is for.** A refinement of the fixture spreads $13.45 to $36.46 across seven readings, so a change to a
+**writer** that moves it by a dollar or two cannot be seen in one run — and nobody takes six readings at $20 to see it.
+The bench drives **stage 3 alone**: one **spec-writer** **dispatch** and the **put-back** waves after it, from the
+**brief** that dispatch was actually handed, for about $5 an arm.
+
+```
+cd e2e-tests
+node bench/spec-writer.ts current=plugin/agents/spec-writer.md \
+                         before=fe8f052:plugin/agents/spec-writer.md
+```
+
+One arm per argument, `<name>=<agent file>`. A file named `<rev>:<path>` is read out of git rather than off disk, so an
+arm can measure an agent as it **was** without a stale copy of it living in the tree. `--waves` bounds the put-backs,
+`--ceiling` the dollars per arm, `--fixture` picks another fixture, and `--together` overlaps the arms. Each arm leaves
+a **run directory** of its own holding `reading.json`, one `wave-N.md` per segment carrying what the writer was asked
+and what it reported, and — in the first arm's — a `bench-report.md` comparing them all.
+
+**Four things about a figure it gives you**, and the first is the one that bites:
+
+- **An arm is comparable with another arm and with nothing else.** Its absolute figures are inflated by roughly 30%:
+  a dispatch inside a run is a subagent, while an arm runs the writer as a top-level session under the `claude_code`
+  preset, which is a larger base context. Measured — the arm reproducing a first pass that cost $3.39 came in at $4.41.
+- **Its wall clock means nothing under `--together`**, because arms driven at once against one account inflate each
+  other.
+- **The human's seat is one agent where a run has two.** A run's **orchestrator** turns a report's **fork**s into
+  questions and the **responder** answers them; `harness/put-back.ts` does both in one turn, on `sonnet`.
+- **The inputs are the ones the dispatch was handed, not the ones the run left behind.** A refinement edits its own
+  brief after the first report — 18,655 characters became 23,595 in the measured run — so reading the file off the end
+  of a run hands the writer the answers to the forks it is supposed to raise.
+  `fixtures/typescript-library/stage-3/provenance.md` carries that table and says how each input was reconstructed.
+
+A fixture the bench can drive carries a `stage-3/` directory; one that does not is unaffected, which is the same
+bargain a fixture strikes for everything else.
 
 ## Shipping
 

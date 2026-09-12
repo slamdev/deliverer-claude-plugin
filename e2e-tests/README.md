@@ -8,6 +8,12 @@ This file is the other half — **how to read what a run cost out of the records
 number per run and that number is not the whole bill, so working out where the money went means going to the session
 records by hand. It took a session to do the first time. It should take minutes now.
 
+**Where a figure here cannot settle a question, the bench can.** Everything below is a whole run, and a run of the
+refine test spreads $13.45 to $36.46 against a mean of $20.94 — so no reading here settles whether a change to a
+**writer** made it cheaper. `bench/` drives one **spec-writer** stage alone for about $5 and reports its own figures
+from the SDK rather than from the records, which is a different instrument answering a different question:
+CONTRIBUTING.md § The bench says what an arm's figures are worth, and `harness/writer-bench.ts` says why.
+
 ## What one run costs, and how to work it out again
 
 ### What the harness's own figure is
