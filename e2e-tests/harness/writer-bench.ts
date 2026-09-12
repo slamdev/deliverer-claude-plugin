@@ -3,9 +3,17 @@
  *
  * **Why it exists.** A refinement of this **fixture** costs about $20 and spreads $13.45 to $36.46
  * across seven readings, so a change that moved a **writer** by a dollar is invisible in one — and
- * nobody is going to take six readings at $20 to see it. Stage 3 alone is about $5, and two arms of
- * it differing in one file are comparable with each other. That is the whole trade this module
- * makes: it buys a reading you can afford by giving up a figure you can quote.
+ * nobody is going to take six readings at $20 to see it. An arm is one stage and two arms of it
+ * differing in one file are comparable with each other. That is the whole trade this module makes:
+ * it buys a reading you can afford by giving up a figure you can quote.
+ *
+ * **What it is cheap at is the DISPATCH, and that is worth knowing before starting one.** The
+ * dispatch alone is about $5 (`--waves 0`), where the refinement around it is $20. A put-back wave
+ * is about twice that again — measured at $4.02 for the dispatch and $7.95 for the wave after it —
+ * so an arm driven until its writer stops raising **fork**s is not much cheaper than the whole run.
+ * `./ceilings.ts` carries the figures. The saving is real where what is being compared is what a
+ * writer's FIRST report raises; where the question is about the waves, the bench buys control
+ * rather than economy.
  *
  * **An arm's absolute figures are inflated and must never be compared against a run's.** A dispatch
  * inside a run is a subagent, carrying the orchestrator's context and the host's subagent

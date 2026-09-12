@@ -791,7 +791,13 @@ run it: it spends real money and reports figures, and what they mean is yours to
 **What it is for.** A refinement of the fixture spreads $13.45 to $36.46 across seven readings, so a change to a
 **writer** that moves it by a dollar or two cannot be seen in one run — and nobody takes six readings at $20 to see it.
 The bench drives **stage 3 alone**: one **spec-writer** **dispatch** and the **put-back** waves after it, from the
-**brief** that dispatch was actually handed, for about $5 an arm.
+**brief** that dispatch was actually handed.
+
+**What it is cheap at is the dispatch.** `--waves 0` drives it alone for about $5 against the refinement's $20, which
+is the whole reading where what is being compared is what a writer's **first report** raises. A put-back wave costs
+about twice the dispatch — measured at $4.02 for the dispatch and $7.95 for the wave after it — so an arm driven until
+its writer stops raising **fork**s is not much cheaper than the run around it. There the bench buys control rather than
+economy: the same brief, the same clone and the same seat every time, and one file different between two arms.
 
 ```
 cd e2e-tests
