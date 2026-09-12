@@ -145,13 +145,24 @@ publishes — as `<epic-slug>-brief.md`, so a later run can find the one you lef
 - every **fork** the grilling left open, and that it is the human's to close
 - the artifacts the session landed or touched — glossary entries, ADRs, prior specs, code, and every path a **sweep**
   reported back — by path, never copied in, and it is where the looking happened rather than what the looking found
-- every **claim** the design rests on that the session never checked, each with the path that would settle it — a fact
-  the human handed you, a precedent you took to generalise, a tool you took to have a feature
+- every **claim** the design rests on that the session never checked, each with the **cheapest** path that would settle
+  it — a fact the human handed you, a precedent you took to generalise, a tool you took to have a feature
 
 Those are written as claims and never as findings: the writer's own first-hand look is what turns one into a fact or
 kills it, and a claim dressed as a fact is the one nobody thinks to check. So the brief carries what the session decided
 and what it never checked — and no section of established facts, however that section is headed. What a **sweep**
 settled rides in the **grounds** beside the decision it settled, where the contract already carries evidence.
+
+**Cheapest is counted in the writer's reading, not in your typing.** A claim about what a file says is settled by
+opening that file, what a test covers by reading its body, what a tool does by running that tool once. A path that says
+to settle it by doing the work sends the **writer** off to build the thing and run the suite before a line of the spec
+exists — and a stage that prototypes its way to an answer one look would have given pays for the prototype and again
+for every later turn that re-reads it. So write the path down at the price it really costs: name the file, the body or
+the command where one of those closes the claim.
+
+**A claim only a prototype settles gets that path and says so.** Where building it is genuinely the only thing that
+would settle one — an extraction nobody has attempted, an output nothing has compared — a writer sent to prototype
+knowingly is worth what it spends, and the claim it comes back with is one the brief could never have closed.
 
 Redact secrets and personal data: the brief outlives the session, on a disk nobody is watching.
 
