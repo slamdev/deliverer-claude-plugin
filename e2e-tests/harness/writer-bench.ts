@@ -123,6 +123,14 @@ export interface Reading {
   /** how many of the forks put back carried a road the report recommended, and how many took it */
   readonly recommendedRoads: number;
   readonly recommendationsTaken: number;
+  /**
+   * Whether the stage CLOSED: the last report raised no fork and nothing stopped the arm.
+   *
+   * The one thing a reader must not have to infer. An arm stopped with forks outstanding and an
+   * arm whose writer finally raised none both end, and only the first of them says nothing about
+   * how many waves this writer's reports cost.
+   */
+  readonly stageClosed: boolean;
   /** what stopped the arm short, or null where the stage closed on its own */
   readonly stoppedBy: string | null;
   /** the tail of the host's stderr */
@@ -165,6 +173,7 @@ export async function driveArm(request: ArmRequest): Promise<Reading> {
     userStories: published.userStories,
     recommendedRoads: forks.filter((fork) => fork.recommended !== "").length,
     recommendationsTaken: forks.filter((fork) => fork.tookRecommendation).length,
+    stageClosed: driven.stoppedBy === null && (driven.waves.at(-1)?.forks.length ?? 1) === 0,
     stoppedBy: driven.stoppedBy,
     stderr: driven.stderr,
   };
@@ -290,7 +299,12 @@ async function drive(
       });
       seatTotal += next.seatUsd;
       if (next.specLocation !== "") specLocation = next.specLocation;
-      waves[wave.index] = { ...wave, forks: next.forks, seatUsd: next.seatUsd };
+      const measured = { ...wave, forks: next.forks, seatUsd: next.seatUsd };
+      waves[wave.index] = measured;
+      // Written as it lands rather than at the end: an arm runs for twenty minutes a wave, and a
+      // contributor watching one wants to read the report the money just bought without waiting
+      // for the arm to finish — or, where it never does, at all.
+      await writeWave(runDirectory, measured);
       prompt = next.putBack ?? prompt;
       hand(next.putBack);
     }
@@ -315,11 +329,18 @@ interface NextTurn {
 }
 
 /**
- * The human's seat, consulted — unless something has already decided this is the last wave.
+ * The human's seat, consulted on every report there is one to read.
  *
- * Every reason to stop is checked BEFORE the seat is asked, because asking costs money and a wave
- * that will not be driven does not need answers. A report that raised no fork is the one ending
- * that is not a stop at all: it is the stage closing, which is what the bench is measuring.
+ * **A ceiling stops the next WAVE and never the reading**, which is the whole lesson of the first
+ * comparison this bench drove. Its arm reached $12 after one put-back, the bound fired, and the
+ * seat was never asked — so the wave the money bought was recorded as raising no **fork**, which
+ * is what "the stage closed" looks like and what "nobody looked" looks like, and the reading could
+ * not tell them apart. The seat is under half a percent of a wave's cost and the fork count is the
+ * measurement, so it is always paid for. What a reached ceiling buys is never handing the writer
+ * the put-back, which is where the dollars actually are.
+ *
+ * A report that raised no fork is then the one ending that is not a stop at all: it is the stage
+ * closing, which is the thing the bench exists to see.
  */
 async function nextTurn(
   runDirectory: RunDirectory,
@@ -339,15 +360,6 @@ async function nextTurn(
     state.stop(`wave ${wave.index} ended as ${wave.subtype} rather than reporting`);
     return none;
   }
-  if (wave.index + 1 > request.maxWaves) {
-    state.stop(`the bound of ${request.maxWaves} put-back wave(s) was reached`);
-    return none;
-  }
-  const spent = state.spentByWriter + state.spentBySeat;
-  if (spent > request.ceilings.spendUsd) {
-    state.stop(`the spend ceiling of $${request.ceilings.spendUsd} was reached`);
-    return none;
-  }
 
   let seat;
   try {
@@ -358,8 +370,19 @@ async function nextTurn(
     state.stop(`the human's seat could not answer wave ${wave.index}: ${String(error)}`);
     return none;
   }
-  if (seat.forks.length === 0) {
-    return { putBack: null, forks: [], seatUsd: seat.costUsd, specLocation: seat.specLocation };
+  const read = { forks: seat.forks, seatUsd: seat.costUsd, specLocation: seat.specLocation };
+  if (seat.forks.length === 0) return { putBack: null, ...read };
+
+  // Read, and then not driven: the reading carries what this report raised, and the arm stops
+  // before the put-back that would have cost what a wave costs.
+  if (wave.index + 1 > request.maxWaves) {
+    state.stop(`the bound of ${request.maxWaves} put-back wave(s) was reached`);
+    return { putBack: null, ...read };
+  }
+  const spent = state.spentByWriter + state.spentBySeat + seat.costUsd;
+  if (spent > request.ceilings.spendUsd) {
+    state.stop(`the spend ceiling of $${request.ceilings.spendUsd} was reached`);
+    return { putBack: null, ...read };
   }
   const location = seat.specLocation === "" ? state.specLocation : seat.specLocation;
   return {
@@ -523,48 +546,49 @@ function userStories(spec: string): number {
 }
 
 /**
- * The reading, and every wave's prompt and report, written into the arm's own directory.
+ * The reading: the numbers, written once the arm is over.
  *
- * The reading is the numbers and the prose is what explains them — which forks the writer raised,
- * which road it recommended, what the human said back. A comparison read off the numbers alone is
- * one nobody can check, so both are left where the arm is.
+ * The prose that explains them is beside it, one file per wave, put there as each wave landed. A
+ * comparison read off the numbers alone is one nobody can check.
  */
 async function writeReading(runDirectory: RunDirectory, reading: Reading): Promise<void> {
   await writeFile(join(runDirectory.root, "reading.json"), `${JSON.stringify(reading, null, 2)}\n`);
-  for (const wave of reading.waves) {
-    const what = wave.index === 0 ? "the dispatch" : `put-back ${wave.index}`;
-    await writeFile(
-      join(runDirectory.root, `wave-${wave.index}.md`),
-      [
-        `# Wave ${wave.index} — ${what}`,
-        ``,
-        `${wave.subtype}, ${wave.numTurns} turns, $${wave.costUsd.toFixed(4)}, ` +
-          `${minutes(wave.durationMs)}`,
-        ``,
-        `## What the writer was asked`,
-        ``,
-        wave.prompt.trim(),
-        ``,
-        `## What it reported`,
-        ``,
-        wave.report.trim(),
-        ``,
-        `## What the human's seat answered ($${wave.seatUsd.toFixed(4)})`,
-        ``,
-        wave.forks.length === 0
-          ? "No fork. Nothing was put back."
-          : wave.forks
-              .map(
-                (fork) =>
-                  `- **${fork.fork}** — ${fork.answer}\n  - grounds: ${fork.grounds}\n  - the ` +
-                  `report recommended: ${fork.recommended === "" ? "nothing" : fork.recommended}` +
-                  `${fork.tookRecommendation ? " (taken)" : ""}`,
-              )
-              .join("\n"),
-        ``,
-      ].join("\n"),
-    );
-  }
+}
+
+/** One wave: what the writer was asked, what it reported, and what the human's seat said back. */
+async function writeWave(runDirectory: RunDirectory, wave: Wave): Promise<void> {
+  const what = wave.index === 0 ? "the dispatch" : `put-back ${wave.index}`;
+  await writeFile(
+    join(runDirectory.root, `wave-${wave.index}.md`),
+    [
+      `# Wave ${wave.index} — ${what}`,
+      ``,
+      `${wave.subtype}, ${wave.numTurns} turns, $${wave.costUsd.toFixed(4)}, ` +
+        `${minutes(wave.durationMs)}`,
+      ``,
+      `## What the writer was asked`,
+      ``,
+      wave.prompt.trim(),
+      ``,
+      `## What it reported`,
+      ``,
+      wave.report.trim(),
+      ``,
+      `## What the human's seat answered ($${wave.seatUsd.toFixed(4)})`,
+      ``,
+      wave.forks.length === 0
+        ? "No fork. The stage closed here."
+        : wave.forks
+            .map(
+              (fork) =>
+                `- **${fork.fork}** — ${fork.answer}\n  - grounds: ${fork.grounds}\n  - the ` +
+                `report recommended: ${fork.recommended === "" ? "nothing" : fork.recommended}` +
+                `${fork.tookRecommendation ? " (taken)" : ""}`,
+            )
+            .join("\n"),
+      ``,
+    ].join("\n"),
+  );
 }
 
 /** An arm stopped by a ceiling, in the wording every other ceiling in this harness uses. */

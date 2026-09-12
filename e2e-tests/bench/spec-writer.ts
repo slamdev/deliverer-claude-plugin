@@ -139,6 +139,7 @@ function table(all: readonly Reading[]): string {
     ["wall clock", (r) => minutes(r.wallClockMs)],
     ["spec.md bytes", (r) => String(r.specBytes)],
     ["user stories", (r) => String(r.userStories)],
+    ["the stage closed", (r) => (r.stageClosed ? "yes" : "no")],
     ["stopped by", (r) => r.stoppedBy ?? "—"],
   ];
   const width = 22;

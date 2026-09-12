@@ -110,23 +110,27 @@ export const PUT_BACK_ROUND_CEILING_USD = 1;
  * What one **bench** arm may take and cost: the **writer** and every **put-back** wave in it, and
  * the seat that answered them (`./writer-bench.ts`).
  *
- * **Measured rather than estimated, and deliberately loose.** Four readings of a writer's dispatch
- * ALONE, with no put-back after it, spent $4.41 to $5.78 in this arrangement — and the arrangement
- * inflates: an arm runs the writer as a top-level session with the `claude_code` preset, a larger
- * base context than a **dispatch**ed subagent's, so the arm that cost $4.41 was reproducing a real
- * first pass that cost $3.39. The put-backs then roughly double it: the measured run's spec-writer
- * took $8.47 across one dispatch and two waves, of which the first was $4.42.
+ * **A put-back wave costs about twice the dispatch, which is the figure everything here turns on.**
+ * Measured on 2026-09-12, the first comparison this bench drove: the dispatch $4.02 over 60 turns,
+ * and the one put-back after it $7.95 over 36. Four earlier readings of a dispatch ALONE had spent
+ * $4.41 to $5.78, so it was the wave and not the dispatch that was mispriced — and $12 stopped that
+ * arm with the second put-back unbought.
  *
- * So $12 clears an arm that behaves, and stops one that does not. A comparison of two arms is
- * therefore about $20 in practice and $24 at the ceiling, which is the figure to hold in mind before
- * starting one.
+ * So $25: a dispatch and two waves at the measured shape, which is what the run this bench
+ * reproduces actually took. A comparison of two arms is therefore about $35 in practice and $50 at
+ * the ceiling, which is the figure to hold in mind before starting one. **The bench is a fifth of a
+ * run per WAVE rather than per arm**, and an arm driven to where its writer stops raising forks is
+ * not much cheaper than the refinement around it.
  *
- * The wall clock is an hour because an arm is a single stage rather than a whole run, and the
- * longest reading taken of one was 27 minutes.
+ * Both figures are worth overriding down. `--waves 0` drives the dispatch alone for about $5, which
+ * is the whole reading where what is being compared is what a writer's FIRST report raises.
+ *
+ * The wall clock is two hours because an arm is a whole stage rather than a single dispatch: the
+ * one measured took 21 minutes to reach its second wave and was stopped before its third.
  */
 export const WRITER_BENCH_CEILINGS: Ceilings = {
-  wallClockMs: 60 * 60 * 1000,
-  spendUsd: 12,
+  wallClockMs: 2 * 60 * 60 * 1000,
+  spendUsd: 25,
 };
 
 /**
