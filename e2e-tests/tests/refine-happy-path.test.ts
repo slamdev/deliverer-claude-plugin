@@ -46,6 +46,16 @@ import { refineRun, verify } from "../harness/refine-run.ts";
  * $10.58 against that $25, so the room a refinement needs is room a delivery has never asked for
  * and should not be given silently.
  *
+ * **What the raise gives up, stated rather than left to be found.** A ticket of
+ * `docs/specs/the-spec-writer-is-primed-once/` argued the other way — raise a ceiling locally for
+ * one run and revert it, because "committing one would let the ceiling drift up behind a
+ * regression, which is the thing it exists to catch". That is exactly what this costs: a
+ * regression that took a refinement from $21 to $38 would now finish rather than stop. The trade
+ * is deliberate, and the figure has somewhere else to be read — the diagnostic below prints what
+ * every run spent against the ceiling in force, passed or failed, so a run drifting up is visible
+ * in the output of the test that ran it rather than only in the run that finally hit the ceiling.
+ * What is no longer automatic is that anybody is made to look.
+ *
  * The wall clock is untouched. Nothing has come near ninety minutes — the longest run measured took
  * 55m 29s — and the two ceilings answer different questions.
  */
