@@ -391,13 +391,13 @@ settle, for the model reason above.
 
 ## Reading many run directories at once, and the trap in doing it
 
-Seventeen **run directory**s of the refine test were still on disk on 2026-09-12, and the script above reads all of
+Nineteen **run directory**s of the refine test were still on disk on 2026-09-13, and the script above reads all of
 them for nothing. Doing that is worth it, and pooling the answer is not — **which is the trap, and it is the first
 thing to know before you write a median down.**
 
 **Every run staged a different plugin.** The **harness** installs from a **staged copy** of the working tree, so a run
-covers what was in front of whoever drove it. Hash the three files a refinement's behaviour lives in and the seventeen
-runs fall into **twelve distinct setups**:
+covers what was in front of whoever drove it. Hash the three files a refinement's behaviour lives in and the nineteen
+runs fall into **thirteen distinct setups**:
 
 ```
 for R in /tmp/deliverer-e2e/refine-typescript-library-*/; do
@@ -407,15 +407,23 @@ for R in /tmp/deliverer-e2e/refine-typescript-library-*/; do
 done
 ```
 
-Four of the twelve setups ran more than once; eight ran exactly once. So a median over all of them measures **a week of
-churn in this repository** and not the cost of any plugin anybody can install. Group first, then read — and expect most
-groups to hold one run and settle nothing.
+Five of the thirteen setups ran more than once; eight ran exactly once. So a median over all of them measures **a week
+of churn in this repository** and not the cost of any plugin anybody can install. Group first, then read — and expect
+most groups to hold one run and settle nothing.
 
 ### What the repeated setups say
 
+**The baseline pair** (`3e5a5a0`/`31f5942`/`cb97e56`), driven back to back on 2026-09-13 against one working tree —
+`V7q47f` at $9.64 and `lyFnVF` at $11.79 on their own tokens, one flat **sweep** each at $1.60 and $1.95, 17% of the
+run in both, 5 and 7 **ticket**s. **This is the group a future change is measured against**, because it is the only one
+driven deliberately as a pair rather than assembled out of whatever was on disk. Read it knowing both runs sat in the
+cheap regime: the twelve complete runs here that never nested spread $7.81 to $23.39, so a $2.15 gap is what two
+non-nesting runs do and not a sign that anything has steadied.
+
 **Two runs of the same setup, a day and a half apart** (`3aa2abd`/`797a553`/`48a8896`) — `011M3h` at $14.20 and
-`9mNNti` at $11.81, each with one **sweep**, 8 and 7 **ticket**s. That pair is the only clean reading here of what one
-setup costs twice, and it is ±$1.20 around $13.
+`9mNNti` at $11.81, each with one **sweep**, 8 and 7 **ticket**s — ±$1.20 around $13. It was the only clean reading of
+what one setup costs twice until the baseline pair above was driven, and the two agree on the shape: hold the plugin
+still, sweep once, and a refinement lands within a couple of dollars of itself.
 
 **Three runs of one setup, and they spread 3×** (`4d9bef8`/`4e0dd7b`/`48a8896`):
 
@@ -438,8 +446,8 @@ plugin eight hours earlier for $7.81.
 
 ### The one thing that does survive the pooling
 
-**The spec-writer is the largest single item in twelve of the thirteen complete runs** — and because those thirteen
-ran twelve different setups, that is robustness rather than an artefact. It held for every setup on disk except the two
-where the sweeps nested three deep and the writer happened to come in cheap. **That is the stage to attack, and
+**The spec-writer is the largest single item in fourteen of the fifteen complete runs** — and because those fifteen
+ran thirteen different setups, that is robustness rather than an artefact. It held for every setup on disk except the
+two where the sweeps nested three deep and the writer happened to come in cheap. **That is the stage to attack, and
 `bench/` is the instrument for it**; the money it costs in any one setup has to be read in that setup, not off a median
 here.

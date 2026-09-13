@@ -677,24 +677,42 @@ and a dispatch count consistent with the records the **run directory** itself ho
 lives at the replay seam above. The observation is a separate process on the same account and the same credentials the
 run uses, its **spend** is in none of the figures below, and `e2e-tests/README.md` says what it costs.
 
-**What they take and spend, measured rather than estimated.** The refinement, measured on 2026-09-12 and the latest
-reading, took **41m 19s and $26.99** — the run itself 41m 19s and $26.32, the responder $0.16 across seven rounds of
-questions, the verifier $0.51 — and published a spec and five tickets over forty-seven user stories. It was measured on
-2026-09-11, the first reading taken with the model pinned, at **41m 36s and $15.38** — the run itself 41m 36s and
-$14.49, the responder $0.32 across eleven rounds, the verifier $0.57 — over eight tickets and sixty-two user stories,
-and an earlier reading of the same test put it at **21m 52s and $6.36**, over six rounds and six tickets. **All three
-are the same test against the same fixture, and the gap between them is what a single reading is worth here**:
-seven refinements of this fixture, every one of them on `opus`, spread from **$13.45 to $36.46** on the tokens their
-own records carry, a mean of $20.94 either side of a standard deviation of $7.55 — and the 2026-09-12 reading, at
-$24.75 on its own tokens, sits inside that spread rather than extending it. A figure below is one run, so a change that
-moved a refinement by a dollar or two would be invisible in it, and none of them is a saving anybody has measured.
-**A pile of old run directories is not a series, and the seventeen on disk on 2026-09-12 staged twelve different
+**What they take and spend, measured rather than estimated.** The refinement's **baseline is the pair driven on
+2026-09-13**, back to back against one working tree and therefore against one plugin — the setup whose three files hash
+`3e5a5a0`/`31f5942`/`cb97e56`:
+
+| | `V7q47f` | `lyFnVF` |
+|---|---:|---:|
+| wall clock | 26m 29s | 35m 57s |
+| the run, **responder** included | $9.80 | $12.40 |
+| of which the responder | $0.16, 8 rounds | $0.18, 9 rounds |
+| the **verifier**, on top | $0.61 | $0.60 |
+| the run on its own tokens | $9.64 | $11.79 |
+| **sweep**s | 1, flat, $1.60 (17%) | 1, flat, $1.95 (17%) |
+| **ticket**s over user stories | 5 over 49 | 7 over 48 |
+
+**Measure a future change against that pair and against nothing else here** — and first check your own run staged the
+same three hashes, because if it did not, you are reading a week of churn rather than your change. Both passed every
+mechanical assertion and their verifier, no **ceiling** reached. **What the pair does not license**: both dispatched a
+single sweep and neither nested, which is the cheap regime, so the pair bounds a refinement that sweeps once and says
+nothing about one that fans out — the twelve complete runs on disk that never nested still spread $7.81 to $23.39
+between them, so two runs landing $2.15 apart is ordinary rather than evidence of anything tightening.
+
+Earlier readings, kept because they are what the spread above is made of and not because anything should be compared to
+them: **41m 19s and $26.99** on 2026-09-12, over five tickets and forty-seven stories; **41m 36s and $15.38** on
+2026-09-11, the first reading taken with the model pinned, over eight tickets and sixty-two; and **21m 52s and $6.36**
+earlier still, over six rounds and six tickets. **All of them are the same test against the same fixture, and the gap
+between them is what a single ungrouped reading is worth here**: the fifteen complete refinements of this fixture on
+disk, every one on `opus`, spread from **$7.81 to $24.75** on the tokens their own records carry, and an earlier
+reading taken against a different price table recorded $36.46. A lone figure is one run, so a change that moved a
+refinement by a dollar or two would be invisible in it, and none of them is a saving anybody has measured.
+**A pile of old run directories is not a series, and the nineteen on disk on 2026-09-13 staged thirteen different
 plugins between them** — the harness installs from a **staged copy** of the working tree, so each run covers whatever
-was in front of whoever drove it. What survives grouping them: the **spec-writer** is the largest single item in twelve
-of the thirteen complete runs, across twelve setups, which is the stage to attack and the stage `bench/` prices. And
-three runs of one identical setup spread $7.81 to $24.11 on whether their **sweep**s nested — so a sweep's cost is the
-host's general-purpose agent and not a lever any file here holds. `e2e-tests/README.md` § Reading many run directories
-at once has both readings and the trap under them. The delivery, measured on
+was in front of whoever drove it. What survives grouping them: the **spec-writer** is the largest single item in
+fourteen of the fifteen complete runs, across thirteen setups, which is the stage to attack and the stage `bench/`
+prices. And three runs of one identical setup spread $7.81 to $24.11 on whether their sweeps nested — so a sweep's cost
+is the host's general-purpose agent and not a lever any file here holds. `e2e-tests/README.md` § Reading many run
+directories at once has every group and the trap under them. The delivery, measured on
 2026-09-06, took **59m 18s and $10.58** — the run itself 55m 29s and $9.75,
 the verifier $0.83 — and flipped its change request ready with green checks over three tickets, five commits, ten
 **assumption**s and two **rounds**. It was measured twice before that, at **23m 12s and $7.40** and **22m 14s and
@@ -719,13 +737,13 @@ observation among the four kinds it names — and gives the method for doing it 
 `e2e-tests/harness/ceilings.ts`, overridable per test. The wall clock has never been raised and is not close — the
 longest run measured took **55m 29s**, 62% of the ninety, the delivery of 2026-09-06 above.
 
-**The spend ceiling has been raised, for the refine happy path alone, to $40.** The default's twenty-five sits between
-the mean of this fixture's seven refinements and one standard deviation above it, which puts it inside the spread the
-test's own **run**s already have: a refinement of this fixture has passed $25 on its own tokens more than once, and one
-driven against a change that sent more than one **sweep** out stopped short of stage 4 on budget rather than publishing
-its tickets. A ceiling there does not stop a wedged run; it stops a run that is merely expensive, and then fails
-whatever assertion covered the stage it never reached — reporting a run's own spread as though it were a finding about
-the plugin. $40 clears every reading ever taken of this fixture. The reasoning sits beside the override in
+**The spend ceiling has been raised, for the refine happy path alone, to $40.** The default's twenty-five sat between
+the mean of the refinements measured when it was raised and one standard deviation above it, which puts it inside the
+spread the test's own **run**s already have: a refinement of this fixture has passed $25 on its own tokens more than
+once, and one driven against a change that sent more than one **sweep** out stopped short of stage 4 on budget rather
+than publishing its tickets. A ceiling there does not stop a wedged run; it stops a run that is merely expensive, and
+then fails whatever assertion covered the stage it never reached — reporting a run's own spread as though it were a
+finding about the plugin. $40 clears every reading ever taken of this fixture. The reasoning sits beside the override in
 `e2e-tests/tests/refine-happy-path.test.ts`, with the evidence it rests on.
 
 **A delivery keeps the default**, deliberately: the priciest ever measured spent **$9.75**, 39% of the twenty-five, so
@@ -788,6 +806,12 @@ rather than reproduced. Nothing in it is ever removed, passed or failed:
   `delivered.diff`, the diff a delivery's change request carried, and `adjudication.md`, every **assumption comment**
   on it and every reply under it in full. Those last two are what the **verifier** is given to read, and the second one
   exists because whether the **verdict**s were sound is the subject no assertion settles.
+  **The brief is not reliably at the root**, and a reading that needs it should look in `tmp/` before concluding the run
+  wrote none: `harness/brief.ts` sweeps `os.tmpdir()` and `/tmp`, which is where an **orchestrator** usually resolves
+  "the temporary directory of the user's OS" to, but of the pair driven on 2026-09-13 the first wrote its brief to the
+  shared `/tmp` and was collected while the second wrote it to the run's own `TMPDIR` — `tmp/<slug>-brief.md`, a
+  directory that sweep does not look in — and was silently not collected. Nothing is lost either way and no assertion
+  covers it, so the only symptom is the missing diagnostic line.
 
 On the forge, the refine test's **standing repo** stays — it is cloned and never written back to, so it is brought into
 step with the fixture rather than recreated. The build test's **throwaway repo** is deleted when the test passes and

@@ -630,10 +630,10 @@ that dispatch is the host's general-purpose agent and not a lever any file here 
 
 **That is this run and not this test, and no text of ours decides the nesting.** Three runs of one identical plugin —
 the same `refine/SKILL.md`, the same two **writer**s — spread $7.81 to $24.11, and the whole of that gap is whether
-their **sweep**s nested: $0.26 against $10.13 and $16.09. Held still, the text decided nothing. Across the thirteen
-complete runs on disk, over twelve different setups, the **spec-writer** is still the largest single item in twelve, so
-**the stage this epic attacks is the right stage** and the sweeps are not its subject. `e2e-tests/README.md` § Reading
-many run directories at once carries both readings.
+their **sweep**s nested: $0.26 against $10.13 and $16.09. Held still, the text decided nothing. Across the fifteen
+complete runs on disk, over thirteen different setups, the **spec-writer** is still the largest single item in
+fourteen, so **the stage this epic attacks is the right stage** and the sweeps are not its subject.
+`e2e-tests/README.md` § Reading many run directories at once carries every group.
 
 **What the transcripts did settle is a defect worth one rule, and it landed here rather than as a ticket.** Across the
 four runs whose sweeps nested, a sweep's own background **dispatch** came back to it twice in eleven, where the
@@ -643,6 +643,19 @@ its own grandchild had settled with citations two minutes earlier — while that
 orchestrator instead, after the sweep had already closed.
 `refine/SKILL.md` § Sweeps now has the orchestrator say as it dispatches that the looking is first-hand. It answers a
 failure the records show rather than the money, which no run either side of it could read.
+
+**Two runs drove that rule, and they read half of it.** The pair of 2026-09-13 staged one plugin differing from the run
+above in `refine/SKILL.md` alone. **The rule reached the dispatch in both**, in prose the orchestrator wrote afresh each
+time — *"do not hand any part of this subject on to another agent"* in the first, and in the second *"Do the looking
+FIRST-HAND … if it feels broad, split it yourself and do both halves"* — where none of the four dispatches in the run
+above said anything at all about who does the looking. The second run is the better reading of the two: its subject ran
+to four numbered parts spanning spec text, a terminal's behaviour and five packages' source, and the sweep closed all of
+it itself in 8m 07s for $1.95, batching its own fetches, with no mention of handing any part on anywhere in its record.
+**What the pair cannot say is whether the rule prevents nesting.** Both runs dispatched a single sweep, and nesting has
+only ever happened where three or more went out — four of four runs at that width nested, and none of the thirteen at
+two or fewer did, eight of those predating the rule. So `spawnDepth` reads 1 here exactly as it read 1 before the rule
+existed, and the wide case stays untested until a **brief** happens to raise three subjects worth sweeping, which
+nothing in this repository decides.
 
 ### Nothing from an observed repository appears here
 
