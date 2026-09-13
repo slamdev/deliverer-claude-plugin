@@ -806,12 +806,11 @@ rather than reproduced. Nothing in it is ever removed, passed or failed:
   `delivered.diff`, the diff a delivery's change request carried, and `adjudication.md`, every **assumption comment**
   on it and every reply under it in full. Those last two are what the **verifier** is given to read, and the second one
   exists because whether the **verdict**s were sound is the subject no assertion settles.
-  **The brief is not reliably at the root**, and a reading that needs it should look in `tmp/` before concluding the run
-  wrote none: `harness/brief.ts` sweeps `os.tmpdir()` and `/tmp`, which is where an **orchestrator** usually resolves
-  "the temporary directory of the user's OS" to, but of the pair driven on 2026-09-13 the first wrote its brief to the
-  shared `/tmp` and was collected while the second wrote it to the run's own `TMPDIR` — `tmp/<slug>-brief.md`, a
-  directory that sweep does not look in — and was silently not collected. Nothing is lost either way and no assertion
-  covers it, so the only symptom is the missing diagnostic line.
+  **Where the brief was written is the orchestrator's choice, so all three temporary directories are swept**:
+  `harness/brief.ts` collects out of `os.tmpdir()`, `/tmp` and the run's own `TMPDIR`. Of the pair driven on
+  2026-09-13 the first wrote its brief to the shared `/tmp` and the second to `tmp/<slug>-brief.md`, which the sweep
+  did not look in until it was taught to — that one was silently not collected, and nothing was lost by it. No
+  assertion covers the collection either way, so the diagnostic naming what was collected is the only sign it happened.
 
 On the forge, the refine test's **standing repo** stays — it is cloned and never written back to, so it is brought into
 step with the fixture rather than recreated. The build test's **throwaway repo** is deleted when the test passes and
