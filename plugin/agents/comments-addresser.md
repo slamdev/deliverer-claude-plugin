@@ -223,6 +223,16 @@ rests on code your fix changed, reply on that comment naming the commit and what
 compared. The verdict stands and stays resolved — this is not yours to re-adjudicate, and the reply exists so that the
 reason and the code a human reads together still describe each other.
 
+**A round may contradict a directive, and the directive's own reason settles it.** That is the verdict your fix
+outdated; this is the other order — a **review finding** says the change an `improve` or an `override` directed is
+itself wrong. Test the reason that directive stated. Where it holds, the directive stands and that reason is the
+**grounds** you decline the finding on. Where the test says otherwise, implement the finding, and reply on the
+assumption comment naming the commit, the line of the directive it reversed and what the test showed. An observed run
+met this on a `switch`'s `default:` arm an `override` had directed be kept "so the union stays exhaustive for the type
+checker": the next round called the arm dead code, and the type checker agreed with the round — without the arm a
+fourth member of the union fails the build, with it that member compiles clean. The verdict stays resolved either way:
+reversing a directive a test has beaten is yours, and re-adjudicating the **fork** under it is not.
+
 ## Uncommitted work
 
 The branch ends clean, and that is not tidiness. Observed on a forge that is not GitHub: a **round** read the local

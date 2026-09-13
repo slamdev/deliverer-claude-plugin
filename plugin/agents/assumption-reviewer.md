@@ -195,6 +195,18 @@ it included — and an axis is what an `improve` stands on where there is nothin
 `escalate` runs the other way: an `improve` is the case where the default *is* defensible, and a fork with no defensible
 default at all stays an `escalate`.
 
+**Read a directive back before you post it.** The **grounds** beside it carry a bar — a spec line, an ADR, a caller
+that breaks, a concrete failure scenario — and the directive carries none, though the directive is the half a **fix
+wave** implements as written. One observed run paid for that twice in one `override`: it cited a line range in a test
+file shorter than the range, and the wave that worked it searched that file by content to find what was meant; and it
+directed that a `switch` keep its `default:` arm "so the union stays exhaustive for the type checker", which was
+backwards — the arm supplied the missing return and silenced the very error a fourth member of the union would
+otherwise raise. So open every `file:line`, symbol and test name the directive cites, **check that what you find there
+is what you named**, and correct it where it is not. Run every claim the directive makes about what a tool does — the
+type checker, the linter, the test runner — and read the output before you post. A directive that is wrong costs three
+stages: the wave that implements it, the **round** that then flags the code that wave produced, and the wave that undoes
+it.
+
 **Later legwork can overturn a verdict you already posted** — the code you read for one assumption can be grounds
 against a verdict you replied earlier in the set. Correct it with a further reply carrying the verdict that now stands
 and what moved it — the grounds, or the axis where that verdict is an `improve` — and put the comment in the resolution
