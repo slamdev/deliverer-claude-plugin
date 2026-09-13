@@ -628,12 +628,12 @@ own, more than the spec-writer, and came back with facts the brief then recorded
 skill hands a sweep a subject and lets it follow the thread itself; this plugin ships no sweeper, so what happens below
 that dispatch is the host's general-purpose agent and not a lever any file here holds.
 
-**That is this run and not this test.** Thirteen complete refinements of the fixture were read off disk afterwards, and
-the **spec-writer** is the largest single item in twelve of them; **sweep**s take 13% of a run at the median. What this
-run has in common with the two other nested ones is the nesting, which costs six times a flat sweep and has stopped a
-run on its **ceiling** once. `e2e-tests/README.md` § Where a refinement's money goes carries that reading. **So the
-stage this epic attacks is still the right stage**, and the sweeps are a separate question no ticket here should
-swallow.
+**That is this run and not this test, and the nesting is nobody's to edit.** Three runs of one identical plugin — the
+same `refine/SKILL.md`, the same two **writer**s — spread $7.81 to $24.11, and the whole of that gap is whether their
+**sweep**s nested: $0.26 against $10.13 and $16.09. Held still, the text decides nothing here. Across the thirteen
+complete runs on disk, over twelve different setups, the **spec-writer** is still the largest single item in twelve.
+`e2e-tests/README.md` § Reading many run directories at once carries both. **So the stage this epic attacks is the
+right stage**, and the sweeps are a question no ticket here should swallow.
 
 ### Nothing from an observed repository appears here
 
