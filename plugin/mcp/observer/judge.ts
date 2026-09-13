@@ -716,8 +716,8 @@ async function treeToJudge(
       line:
         `\`${now}\` — **not the tree this run ran.** ` +
         (named === undefined
-          ? `This run's records name no plugin directory, which is what a run resumed by prose ` +
-            `rather than by a \`/deliverer:\` command leaves. `
+          ? `This run's records name no plugin directory — which happens to a run typed as a ` +
+            `\`/deliverer:\` command as well as to one resumed by prose (\`./plugin-commit.ts\`). `
           : `The tree they name, \`${named}\`, is no longer on that machine — a plugin update ` +
             `replaces it. `) +
         `What was read instead is the plugin installed there at the moment this debrief was ` +

@@ -12,10 +12,17 @@
  *    deliverer/cbb4838aa016/skills/refine` — and that directory's NAME is the commit. All eight
  *    runs on the machine this was written against carry it, refinements and deliveries alike. User
  *    story 20 asks for the commit the run USED, and this is the only route that answers it.
- *  - **The plugin installed now**, and the fallback D16 described. A run resumed by prose has no
- *    skill preamble, so its records name no directory; the host's own install bookkeeping still
- *    says what is installed on this machine at the moment of reading. That is a different fact and
- *    the debrief says so rather than passing it off as the first.
+ *  - **The plugin installed now**, and the fallback D16 described. Where the records name no
+ *    directory, the host's own install bookkeeping still says what is installed on this machine at
+ *    the moment of reading. That is a different fact and the debrief says so rather than passing it
+ *    off as the first.
+ *
+ *    **Why they name none is not something either route can tell, so neither line claims a cause.**
+ *    A run resumed by prose has no skill preamble and was the case D16 reasoned about — but a run
+ *    TYPED as a `/deliverer:` command reaches this fallback too: measured on the two end-to-end
+ *    runs of 2026-09-13, whose first entry carries `<command-name>/deliverer:refine</command-name>`
+ *    and whose records name no plugin directory anywhere. Naming prose as the reason there made the
+ *    debrief contradict its own extent, which had bounded those runs from that very command.
  *
  * **Nothing here runs `git`.** The installed plugin is not a checkout — it is a directory named by
  * a commit, with the full sha beside it in the host's bookkeeping — so both routes read a shape
@@ -166,9 +173,9 @@ export async function resolvePluginCommit(input: PluginCommitInput): Promise<Plu
       source: "the plugin installed now",
       line:
         `\`${installed}\` — **not the commit the run used.** This run's records name no plugin ` +
-        `directory, which is what a run resumed by prose rather than by a \`/deliverer:\` command ` +
-        `leaves, so what is reported instead is the plugin installed on that machine at the ` +
-        `moment the debrief was written, read from the host's own install bookkeeping.`,
+        `directory — which happens to a run typed as a \`/deliverer:\` command as well as to one ` +
+        `resumed by prose — so what is reported instead is the plugin installed on that machine ` +
+        `at the moment the debrief was written, read from the host's own install bookkeeping.`,
     };
   }
   return {

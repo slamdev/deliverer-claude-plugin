@@ -14,7 +14,7 @@
  * so re-distilling a run rewrites its own trace and removes nothing else: nothing is ever pruned
  * (D19).
  */
-import { mkdir, rename, rm, writeFile } from "node:fs/promises";
+import { mkdir, readdir, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { formatDuration, tokenDetail, UNKNOWN_STAMP, type Trace, type TraceLine } from "./trace.ts";
 
@@ -48,12 +48,120 @@ export function traceFilePath(dataDirectory: string, trace: Trace): string {
   return join(observationDirectory(dataDirectory, trace), TRACE_FILE_NAME);
 }
 
-/** Writes the trace and removes nothing. Returns where it went. */
-export async function writeTrace(dataDirectory: string, trace: Trace): Promise<string> {
+/* ───────────────────────────── the trace as half of a pair ───────────────────────────── */
+
+/**
+ * A **trace** on disk under a staging name, waiting to be renamed into place
+ * (the-observation-reports-the-whole-run ticket 04; D9).
+ *
+ * **The window this closes was minutes wide.** `./debrief.ts` wrote the trace, then ran judging — a
+ * whole-run synthesis, minutes of model call — and only then wrote the **debrief**, so anything that
+ * stopped the process in between left a newer trace beside an older debrief, and both are what a
+ * human forwards. The artefacts this epic was measured on show exactly that: a trace ending
+ * 11:23:52 beside a debrief whose own **hunch** says the trace it read "run[s] to `[09:24:42]`",
+ * with the **identity file** still saying `finalised: yes`. The debrief spent one of its three
+ * hunches noticing that and being unable to resolve it.
+ *
+ * **`path` is the final one from the first moment, and that is the whole trap.** The debrief embeds
+ * it (`./debrief-file.ts`'s `tracePath`) and a maintainer follows it, so a staging name reaching
+ * either document would be worse than the inconsistency this fixes — it would point a reader at a
+ * file that never exists. The staging name is known in this function and nowhere else.
+ *
+ * **Placed or discarded, and there is no third answer.** A caller that returns without doing either
+ * leaves this run with no trace and a file nothing will ever place.
+ */
+export interface StagedTrace {
+  /** where the trace will be, which is what both documents carry — before it is there */
+  readonly path: string;
+  /** rename it into place: the moment the pair exists */
+  readonly place: () => Promise<void>;
+  /** remove it, leaving whatever pair is already on disk exactly as it was */
+  readonly discard: () => Promise<void>;
+}
+
+/**
+ * Renders the trace, writes it under its staging name, and removes nothing (ticket 04; D9).
+ *
+ * **A different suffix from `writeFileAtomically`'s below, on purpose.** That function's window is
+ * one write wide; this one is held open across a whole debrief write, judging and all, and two
+ * windows that could take the same name would have one truncate the other. Both carry the pid, for
+ * the reason that function gives: two observers in one data directory are routine.
+ *
+ * The live **observer** rewrites this run's trace on every reading, so the same process stages under
+ * the same name each time — a leftover from a reading that died mid-write is overwritten here rather
+ * than accumulating, and `sweepStaged` takes the ones no live process owns.
+ */
+export async function stageTrace(dataDirectory: string, trace: Trace): Promise<StagedTrace> {
   const path = traceFilePath(dataDirectory, trace);
-  await mkdir(observationDirectory(dataDirectory, trace), { recursive: true });
-  await writeFileAtomically(path, renderTrace(trace));
-  return path;
+  const directory = observationDirectory(dataDirectory, trace);
+  const staged = join(directory, `${TRACE_FILE_NAME}.staging.${process.pid}`);
+  await mkdir(directory, { recursive: true });
+  await sweepStaged(directory);
+  const discard = async (): Promise<void> => {
+    // This process's own file, so removing it undoes nobody else's work — and failing to remove it
+    // is never worth reporting over whatever failure asked for the discard.
+    await rm(staged, { force: true }).catch(() => undefined);
+  };
+  try {
+    await writeFile(staged, renderTrace(trace), "utf8");
+  } catch (error) {
+    await discard();
+    throw error;
+  }
+  return {
+    path,
+    place: async () => {
+      try {
+        // Within one directory, so it is atomic: a reader sees the previous whole trace or this one.
+        await rename(staged, path);
+      } catch (error) {
+        // The debrief is already on disk by now and it names `path`, so a rename that failed leaves
+        // it naming a trace that is not there — which the failure the caller reports says. A
+        // `.staging.` file nothing will ever place would say nothing to anybody, so it goes.
+        await discard();
+        throw error;
+      }
+    },
+    discard,
+  };
+}
+
+/**
+ * Staged traces left by a process that is gone (ticket 04; D9).
+ *
+ * A discard covers every failure the code can see. What it cannot see is the process being killed
+ * outright — a terminal closed on a replay, a machine shut down while an observer was judging — and
+ * that leaves a staged trace nothing will ever place or remove. So each staging sweeps the ones
+ * whose holder is gone, by the same liveness rule `../observe.mjs` uses for its lock and
+ * `../../hooks/install-mcp-server.sh` for the install's: a pid that no longer exists holds nothing.
+ *
+ * Never throws and never reports: a directory that cannot be listed, or a file that will not be
+ * removed, costs one stale file and nothing else.
+ */
+async function sweepStaged(directory: string): Promise<void> {
+  const prefix = `${TRACE_FILE_NAME}.staging.`;
+  let names: readonly string[];
+  try {
+    names = await readdir(directory);
+  } catch {
+    return;
+  }
+  for (const name of names) {
+    if (!name.startsWith(prefix)) continue;
+    const pid = Number(name.slice(prefix.length));
+    if (!Number.isInteger(pid) || pid <= 0 || pid === process.pid || alive(pid)) continue;
+    await rm(join(directory, name), { force: true }).catch(() => undefined);
+  }
+}
+
+/** Whether a pid still exists. `EPERM` — somebody else's process — counts as alive. */
+function alive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as { code?: unknown }).code === "EPERM";
+  }
 }
 
 /**

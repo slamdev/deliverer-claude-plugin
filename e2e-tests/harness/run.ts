@@ -53,6 +53,26 @@ import { sessionEnvironment, type RunDirectory } from "./run-directory.ts";
 const STDERR_LINES_KEPT = 60;
 
 /**
+ * What a **run** runs on, pinned here rather than inherited.
+ *
+ * The plugin's own agents pin `opus` in their frontmatter, so a **dispatch** has never drifted.
+ * The **orchestrator** and the general-purpose agent a **sweep** goes to pin nothing, and without
+ * these two they take whatever the machine running the tests happens to default to that day — so
+ * two runs of the same test against the same tree are two different measurements, and neither says
+ * which. That is not hypothetical: one refinement measured on 2026-09-10 ran its orchestrator and
+ * its sweep on `sonnet` while its writers ran on `opus`, and nothing in the run directory said so
+ * except the model on each request. Every figure this harness has ever reported inherited the same
+ * way, which is a floor under the run-to-run spread that nobody put there on purpose.
+ *
+ * `opus` and `high` because that is what a user of this plugin gets: the alias rather than a dated
+ * id, exactly as the agents' own frontmatter names it, and the effort tier every measured run has
+ * recorded. The other three agents the harness starts — the **responder**, the **verifier** and the
+ * smoke test's session — pin their own, and those are the harness's choices rather than a user's.
+ */
+const RUN_MODEL = "opus";
+const RUN_EFFORT = "high";
+
+/**
  * How long a run may say nothing at all before it is taken to be over.
  *
  * Generous, and deliberately so. A session waiting on a **dispatch** is not silent — the host
@@ -193,6 +213,10 @@ export async function driveRun(options: RunOptions): Promise<RunOutcome> {
       // it to.
       permissionMode: "bypassPermissions",
       canUseTool: options.canUseTool,
+      // Pinned rather than inherited, for the reason beside the two constants: an orchestrator and
+      // a sweep that take the machine's default make two runs of one test two measurements.
+      model: RUN_MODEL,
+      effort: RUN_EFFORT,
       // What a run REASONED, and not only what it did. `display` defaults to `omitted` on the models
       // these runs use, which writes every thinking block to the **session record** with its text
       // empty and an encrypted signature in place of it — so a record says which files an agent

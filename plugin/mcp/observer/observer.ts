@@ -13,7 +13,7 @@
  * (`./debrief.ts`). One composition, so what a user gets and what can be reproduced from a record
  * on disk are the same thing rather than two renderings of one idea.
  *
- * **Three readings, and they are different claims:**
+ * **Four readings, and they are different claims:**
  *
  *  - *A stage landed* — a per-dispatch record appeared — so the debrief is rewritten at once. In
  *    between, a rewrite is throttled: re-reading a delivery's 6.7 MB of records for every entry
@@ -22,16 +22,25 @@
  *    is the flag D23 makes it, and announces it. It is the one certain end there is: the session
  *    is gone, so nothing could resume.
  *  - *The terminal is gone* — nothing has been written anywhere, main record or per-dispatch, for
- *    the idle bound. That finalises it too, and it is the guess of the three: D23 lets silence be
- *    a poor signal here because getting it wrong costs a label and never the content. So it is
- *    reversible — a run that turns out to be alive un-finalises and carries on.
+ *    the idle bound, and the run is not **waiting** on a question it asked. That finalises it too,
+ *    and it is a guess where the session's own end is a signal: D23 lets silence be a poor signal
+ *    here because getting it wrong costs a label and never the content. So it is reversible — a run
+ *    that turns out to be alive un-finalises and carries on.
+ *  - *A wait ran out* — the question the run is waiting on was asked longer ago than the wait's own
+ *    ceiling (the-observation-reports-the-whole-run ticket 03; D5 and D6). It is the bound above
+ *    deferred rather than a fourth idea: nothing is written anywhere while a run waits, which is
+ *    exactly what a killed terminal looks like, so the pending question is what tells the two apart
+ *    and the ceiling is what still stops a watcher whose terminal really was killed with a question
+ *    on screen.
  *
- * **Those two are the whole of it, and what the records SAY about themselves is not a third.**
- * D23 names session end and the idle bound and nothing else. `RunFacts.ending` reads `finished` of
- * any moment where every task is completed and the run's last word is prose, and nothing about a
- * task list forbids a run passing through that shape between two stages — so finalising on it
- * spends the one synthesis (D9) on a run that is still going and then holds that answer for the
- * rest of it. The finalise below carries what that costs, and what it measures.
+ * **Those three finalisers are the whole of it, and what the records SAY about themselves is not a
+ * fourth.**
+ * D23 names session end and the idle bound, ticket 03 adds the ceiling on one wait, and nothing else
+ * is one. `RunFacts.ending` reads `finished` of any moment where every task is completed and the
+ * run's last word is prose, and nothing about a task list forbids a run passing through that shape
+ * between two stages — so finalising on it spends the one synthesis (D9) on a run that is still
+ * going and then holds that answer for the rest of it. The finalise below carries what that costs,
+ * and what it measures.
  *
  * **The stop line is best-effort by construction and the prompt line is the guarantee** (D25). The
  * host writes a run's last entry and then fires its `Stop` hooks immediately, so whether this loop
@@ -59,7 +68,7 @@ import {
 import { NOTHING_JUDGES_YET, refreshDebrief, type Judging } from "./debrief-file.ts";
 import { debriefRun, type DebriefOutcome, type JudgingInput } from "./debrief.ts";
 import { synthesisJudge } from "./judge.ts";
-import { runSkills } from "./run-facts.ts";
+import { runSkills, type RunFacts } from "./run-facts.ts";
 import { formatDuration } from "./trace.ts";
 
 /* ────────────────────────────────────── the clocks ────────────────────────────────────── */
@@ -87,8 +96,35 @@ const REFRESH_THROTTLE_MS = bound("DELIVERER_OBSERVER_REFRESH_MS", 15_000);
  * `SessionEnd` signal that never landed, and getting it wrong costs a label rather than content. A
  * human thinking about a grilling question for half an hour is what it must not mistake for a dead
  * terminal — and where it does, the run resuming un-finalises it again.
+ *
+ * **The value is unchanged and the case that comment names is no longer left to the reversal**
+ * (the-observation-reports-the-whole-run ticket 03; D5): while the run is **waiting** — its own last
+ * act an `AskUserQuestion` nobody has answered — this bound does not fire at all, because the run
+ * resuming could not have un-finalised anything. The measured refinement's human thought for 1h56m,
+ * the observer finalised at half an hour, watched `AFTER_FINALISE_MS` and exited an hour before they
+ * came back; no hook fires for the whole of a wait, so there was no process left to reverse it.
+ * `WAITING_CEILING_MS` below is what a killed terminal is caught by instead.
  */
 const IDLE_FINALISE_MS = bound("DELIVERER_OBSERVER_IDLE_MS", 30 * 60_000);
+
+/**
+ * How long a run may sit **waiting** on one question before the debrief is finalised anyway
+ * (the-observation-reports-the-whole-run ticket 03; D6).
+ *
+ * **Measured from when that question was asked, and deliberately not from the watcher's own
+ * lifetime.** `TICK_MS`'s comment above names the longest delivery on record at thirty hours, so a
+ * ceiling on how long the observer may live that was short of that would kill a watcher whose run is
+ * still going — and this one cannot, because a run that keeps writing is not waiting: every entry it
+ * writes is an answer or a later question, and either way this clock starts again or stops.
+ *
+ * **Why twelve and not thirty.** The longest wait measured on any record is 7,004s — 1h56m over one
+ * grilling question — so twelve hours is six times it. It covers an afternoon away from the desk,
+ * and it leaves nothing ticking overnight on the machine of somebody whose terminal was killed at
+ * five with a question on screen. When it expires the debrief is finalised on exactly the guess the
+ * idle bound makes today, in its own wording (`why` below), and the loop exits as it does after any
+ * other unsignalled finalise.
+ */
+const WAITING_CEILING_MS = bound("DELIVERER_OBSERVER_WAITING_MS", 12 * 60 * 60_000);
 
 /**
  * How long the observer keeps watching after finalising on its own reading rather than on a
@@ -119,8 +155,8 @@ const MOST_CONSECUTIVE_FAILURES = 5;
 /**
  * Every bound above is overridable, and the reason is the same one `e2e-tests` gives for its
  * ceilings: the states this loop has — a killed terminal, an idle bound that fires, a run that
- * resumes after one — are otherwise walkable only by waiting half an hour each. CONTRIBUTING's
- * by-hand procedure sets them.
+ * resumes after one, a wait that runs out — are otherwise walkable only by waiting half an hour
+ * each, and twelve hours for the last of them (D8). CONTRIBUTING's by-hand procedure sets them.
  */
 function bound(name: string, fallback: number): number {
   // Unset and set-but-empty both mean "no override", told apart from a real `0` — the distinction
@@ -198,6 +234,17 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
   let wasQuiet = true;
 
   let written: Extract<DebriefOutcome, { kind: "written" }> | undefined;
+  /**
+   * What the freshest reading of the records read, whether or not it reached disk
+   * (the-observation-reports-the-whole-run ticket 03; D5).
+   *
+   * **Kept apart from `written`, and the whole of the reason is the `writeWhen` gate below.** That
+   * gate holds a run that has not named its **epic** yet off disk entirely, so `written` is the last
+   * reading that was ALLOWED on disk and not the last one taken — up to a whole `RUN_PATIENCE_MS`
+   * older, and older still once a first forced write has stopped every tick from being due. The
+   * lifecycle is decided on what the records say now, so it is decided on this.
+   */
+  let lastFacts: RunFacts | undefined;
   let heldSince: number | undefined;
   /** the first reading that came back unreadable after one had come back written */
   let unreadableSince: number | undefined;
@@ -223,8 +270,45 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
     wasQuiet = !grew;
     footprint = seen;
 
-    const idle = now - lastActivityAt >= IDLE_FINALISE_MS;
-    const finalising = signalled || idle;
+    // **A run waiting on its human is not a dead terminal** (ticket 03; D5 and D6). While the
+    // freshest reading found the run's own last act to be an `AskUserQuestion` nobody has answered,
+    // silence is the run WAITING rather than evidence of anything, so the idle bound is suspended —
+    // and nothing is announced either, because nothing is finalised and an unfinalised debrief has
+    // always printed nothing at the stop. The ceiling is what still ends a wait that is really a
+    // killed terminal, and it is measured from the question's own timestamp rather than from this
+    // loop's start, so a watcher that began mid-wait inherits the same deadline.
+    //
+    // **`lastFacts` and not `written`, and that distinction is the whole of whether any of this
+    // fires.** The `writeWhen` gate in `read()` holds a run that has not named its **epic** yet off
+    // disk, so on a refinement the readings taken through the entire grilling phase are held — the
+    // measured run had no **slug** until 11:59 and asked the question this epic exists for at
+    // 09:24:42. Reading the wait off the last WRITTEN debrief there means reading it off a reading
+    // taken before the question was asked: the pending question is invisible, `idle` is true, and
+    // the finalise proceeds on the one shape it must never fire on. Walked on a record of that
+    // shape, with the patience shorter than the idle bound as it ships: `finalised — nothing was
+    // written anywhere for the idle bound`, on a record whose last entry is an unanswered
+    // `AskUserQuestion`, and the watcher exiting `AFTER_FINALISE_MS` later. The gate is untouched
+    // and nothing extra reaches disk (ticket 04; D9) — what changed is that a reading held back
+    // still tells this loop what it read.
+    //
+    // **The facts are as fresh as the silence they are weighed against.** The settling tick below is
+    // due one tick after the records stop growing, whatever the throttle is doing, so the last
+    // reading of any silence is taken inside it — and a reading that produced no facts at all
+    // suspends nothing, exactly as `waitingSince` documents. That is what keeps `idle` and the
+    // ceiling gated on the same observed silence rather than on two of different ages.
+    //
+    // **Both of them are the same silence, and that is deliberate**: `waitedOut` finalises on
+    // exactly the guess the bound below makes and never on a run that has written something. The
+    // reading it reads the pending question off is as old as the throttle, and `lastActivityAt` is
+    // not — so without `silent` here, the tick that saw a record grow would re-finalise on a stale
+    // question the human had just answered, which is the reversal under this comment being undone in
+    // the case it exists for.
+    const silent = now - lastActivityAt >= IDLE_FINALISE_MS;
+    const askedAt = waitingSince(lastFacts);
+    const waitedOut = askedAt !== undefined && silent && now - askedAt >= WAITING_CEILING_MS;
+    const waiting = askedAt !== undefined && !waitedOut;
+    const idle = silent && !waiting;
+    const finalising = signalled || idle || waitedOut;
     const throttleExpired = now - lastRefreshAt >= REFRESH_THROTTLE_MS;
     const due =
       // Only while the finalise is still owed, and that is what keeps the throttle applying
@@ -234,7 +318,8 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
       // 900 further whole readings of an 11 MB record set, each rebuilding the trace and the facts
       // and rewriting both files, on a machine whose terminal has just been killed. A run that
       // turns out to be alive still un-finalises at once: that is `grew`, `stageLanded` and
-      // `settling` below, none of which this touches.
+      // `settling` below, none of which this touches. `waitedOut` cannot go back on its own either,
+      // for the same reason — it is that same silence with a ceiling on top.
       (finalising && finalisedAt === undefined) ||
       stageLanded ||
       settling ||
@@ -282,6 +367,12 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
       if (outcome.kind === "held") {
         // The run IS here — it is its epic that is not named yet. Never a reason to give up, and
         // never counted against the patience below, which is about a record with no run in it.
+        //
+        // **And it was read, so what it read is kept** (ticket 03; D5): this is the only reading a
+        // waiting refinement gets for as long as it has no slug, and the wait it is holding is in
+        // here and nowhere else. The fallback is for a reading whose facts could not be built at all
+        // — it leaves the tick before it standing rather than blanking a wait already in hand.
+        lastFacts = outcome.facts ?? lastFacts;
         heldSince ??= now;
         await sleep(TICK_MS);
         continue;
@@ -333,6 +424,7 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
       }
 
       written = outcome;
+      lastFacts = outcome.facts;
       heldSince = undefined;
       unreadableSince = undefined;
       /** whether the reading `written` now holds was taken with the finalise flag already set */
@@ -349,6 +441,13 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
       if (finalisedAt !== undefined && advanced && !finalisedBySignal) {
         // Reversible by construction (D23): the idle bound is a guess, and a run that turns out to
         // be alive gets its label back rather than a second debrief written beside the first.
+        //
+        // **This reversal is untouched by ticket 03, and it starts working again as a consequence of
+        // ticket 02** (the-observation-reports-the-whole-run; D7). Its whole test is the run's own
+        // extent advancing, and while the extent froze at the run's first delegation `endedAt` never
+        // moved — so on the measured refinement a watcher that had never died would not have
+        // un-finalised at 11:21 either. Ticket 02's fourth own signal is what makes the extent move;
+        // nothing here made this fire, and nothing here needed to.
         //
         // The run's own extent advancing is the whole test, and what the records say about
         // themselves is deliberately not part of it: a run that reads `finished` and then writes
@@ -368,15 +467,18 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
         const resumed = await read(options, judge, { finalise: false }).catch(() => outcome);
         if (resumed.kind === "written") {
           written = resumed;
+          lastFacts = resumed.facts;
           heldIsFinal = false;
         }
       }
 
-      // D23's two finalisers and only those: the session's own end, and the idle bound for the
-      // debrief a killed terminal left. `outcome.facts.ending.kind === "finished"` is deliberately
-      // not a third, because it is a READING of the run's own words rather than a signal about the
-      // run: it is true of any moment where every task is completed and the last word is prose, and
-      // nothing about a task list forbids a run passing through that shape between two stages.
+      // D23's two finalisers, ticket 03's ceiling on one wait, and only those: the session's own
+      // end, the idle bound for the debrief a killed terminal left, and the same guess deferred
+      // where that terminal was killed with a question on screen. `outcome.facts.ending.kind ===
+      // "finished"` is deliberately not one of them, because it is a READING of the run's own words
+      // rather than a signal about the run: it is true of any moment where every task is completed
+      // and the last word is prose, and nothing about a task list forbids a run passing through that
+      // shape between two stages.
       // Finalising there spends the one synthesis (D9) on part of a run and then holds that answer
       // for the rest of it — content, which is exactly what D23 forbids the bound to cost.
       //
@@ -402,7 +504,10 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
         // already the most expensive there is, because the synthesis ran inside the reading above.
         if (!heldIsFinal) {
           const final = await read(options, judge, { finalise: true }).catch(() => outcome);
-          if (final.kind === "written") written = final;
+          if (final.kind === "written") {
+            written = final;
+            lastFacts = final.facts;
+          }
         }
         finalisedAt = Date.now();
         finalisedBySignal = signalled;
@@ -412,7 +517,7 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
           headline: headlineOf(written),
           noCredential: nothingJudgedFor(written),
         });
-        await mark(options, `finalised — ${why(signalled)}`);
+        await mark(options, `finalised — ${why(signalled, waitedOut)}`);
       }
     }
 
@@ -442,6 +547,13 @@ async function read(
     dataDirectory: options.dataDirectory,
     // The live writer: one debrief per run, kept current and staged-and-renamed every time. A
     // replay of this same run afterwards still writes BESIDE it (D19).
+    //
+    // **Every reading rewrites the pair and not one half of it**
+    // (the-observation-reports-the-whole-run ticket 04; D9): `./debrief.ts` stages this reading's
+    // trace and renames it into place once this writer has returned, so the trace beside the debrief
+    // is always the trace that debrief was written from — including on the reading that runs the one
+    // synthesis, which is the minutes-long window the ticket exists for. The `writeWhen` gate below
+    // is what keeps an unnamed epic's reading off disk entirely, staged trace and all.
     write: refreshDebrief,
     observationLosses: options.startupLosses,
     status: {
@@ -456,6 +568,10 @@ async function read(
     // leave a whole observation under `unknown-slug/` that nothing ever comes back to. At the
     // finalise, and once the caller has waited long enough, it is written under whatever the slug
     // is by then: a run that created no task at all has no better answer.
+    //
+    // **Held back is off disk and not thrown away** (ticket 03; D5). `./debrief.ts` answers `held`
+    // with the facts that reading built, because the loop's waiting-versus-dead decision is taken on
+    // them — and a refinement that has not named its epic yet gets no other kind of reading at all.
     writeWhen: (trace) => trace.slugRead || how.finalise || how.force === true,
     judging: (input) => judgeQuietly(judge, { ...input, finalising: how.finalise }),
   });
@@ -483,14 +599,46 @@ async function judgeQuietly(judge: Judge, input: JudgeInput): Promise<Judging> {
   }
 }
 
+/**
+ * When the question the freshest reading found this run **waiting** on was asked, as a clock this
+ * loop can measure a ceiling against — and `undefined` where the run is not waiting
+ * (the-observation-reports-the-whole-run ticket 03; D5).
+ *
+ * **Read off the reading the loop already holds, and never by looking at the record again.**
+ * `RunFacts` carries it out of the same pass `./run-facts.ts` already matches answers to questions
+ * in, so the whole of what a tick costs here is a field access — including on a reading the
+ * `writeWhen` gate kept off disk, which is a reading like any other to everything but the disk.
+ *
+ * Defensive, and the direction matters twice over: facts this loop does not have, and a timestamp it
+ * cannot turn into a number, both suspend nothing. The bound they would suspend is the only thing
+ * that ever stops a watcher whose terminal is really gone, so either gap leaves the lifecycle as it
+ * shipped.
+ */
+function waitingSince(facts: RunFacts | undefined): number | undefined {
+  const at = facts?.human.waitingSince;
+  if (at === undefined) return undefined;
+  const asked = Date.parse(at);
+  return Number.isFinite(asked) ? asked : undefined;
+}
+
 /* ────────────────────────────────── what the human is told ────────────────────────────── */
 
-/** One line naming the run and how it went, printed above the path in both of D25's lines. */
+/**
+ * One line naming the run and how it went, printed above the path in both of D25's lines.
+ *
+ * **It carries what the run cost in dollars** (the-observation-reports-the-whole-run ticket 06; D16).
+ * That is the question that made anybody open a debrief at all, and this line is what a human meets
+ * first — so it is answered before they do. An estimate, and the debrief's spend line is where its
+ * basis is; unknown where nothing could be priced, which is never a zero.
+ */
 function headlineOf(outcome: Extract<DebriefOutcome, { kind: "written" }>): string {
   const { facts, trace } = outcome;
+  const spend = facts.spend.usd;
   return (
     `${runSkills(facts, trace) || "a deliverer run"} · epic ${trace.slug} · ` +
-    `${formatDuration(facts.extent.durationMs)} · ${facts.dispatches.length} dispatches · ` +
+    `${formatDuration(facts.extent.durationMs)} · ` +
+    `${spend === undefined ? "spend unknown" : `about $${spend.toFixed(2)}`} · ` +
+    `${facts.dispatches.length} dispatches · ` +
     `${facts.rounds.length} rounds · ${facts.ending.kind} · ` +
     `${facts.human.questionRounds} question rounds put to you and ` +
     `${formatDuration(facts.human.totalWaitMs)} of the run spent waiting on you.`
@@ -529,9 +677,24 @@ async function mark(options: ObserveOptions, state: string): Promise<void> {
   }).catch(() => undefined);
 }
 
-function why(signalled: boolean): string {
-  // Two finalisers, so the second needs no test: `finalising` is `signalled || idle`.
-  return signalled ? "the session ended" : "nothing was written anywhere for the idle bound";
+/**
+ * Which of the three finalisers this one was, in the words the marker carries.
+ *
+ * **The third is named apart from the second** (ticket 03; D6). Both are the same guess — that the
+ * terminal is gone — but they are reached by different evidence, and a marker saying "nothing was
+ * written anywhere" of a run whose last act was a question would claim silence where the answer is
+ * that a wait ran out. Nothing else the human meets claims either: the announcement names the
+ * debrief and the run, and while a run is waiting there is no announcement at all.
+ */
+function why(signalled: boolean, waitedOut: boolean): string {
+  if (signalled) return "the session ended";
+  if (waitedOut) {
+    return (
+      "the run was waiting on a question nobody answered, for longer than a wait's own ceiling — " +
+      "which is what a terminal killed with a question on screen looks like"
+    );
+  }
+  return "nothing was written anywhere for the idle bound";
 }
 
 /* ──────────────────────────────── what the records look like ──────────────────────────── */

@@ -34,7 +34,10 @@ the reason the next section gives.
 The end-to-end tests themselves are no part of those two commands and no part of CI. `e2e-tests/` installs the plugin
 and drives whole **runs** against a real forge, so the two happy-path tests take tens of minutes and spend real money
 each: they are run deliberately, by hand. CONTRIBUTING.md § The end-to-end tests says what they take, what they need
-and how to run them.
+and how to run them. **To price a change to a writer**, drive `e2e-tests/bench/` rather than a whole run — one
+**spec-writer** dispatch for about $5, against a run's $20 and its ±$7.55; CONTRIBUTING.md § The bench says what an
+arm's figures are worth, the four things they cannot be compared against, and why a **put-back** wave costs twice what
+the dispatch does.
 
 Everything else is verified **by hand**: markdown, the manifests, the shell hooks, and the server's own behaviour. When
 behaviour moves, exercise the review lifecycle against the **scripted backend** — a canned event timeline, no model and

@@ -8,6 +8,12 @@ This file is the other half — **how to read what a run cost out of the records
 number per run and that number is not the whole bill, so working out where the money went means going to the session
 records by hand. It took a session to do the first time. It should take minutes now.
 
+**Where a figure here cannot settle a question, the bench can.** Everything below is a whole run, and a run of the
+refine test spreads $13.45 to $36.46 against a mean of $20.94 — so no reading here settles whether a change to a
+**writer** made it cheaper. `bench/` drives one **spec-writer** stage alone for about $5 and reports its own figures
+from the SDK rather than from the records, which is a different instrument answering a different question:
+CONTRIBUTING.md § The bench says what an arm's figures are worth, and `harness/writer-bench.ts` says why.
+
 ## What one run costs, and how to work it out again
 
 ### What the harness's own figure is
@@ -382,3 +388,66 @@ settle, for the model reason above.
 - **Not one of this run's 444 assistant lines carries `requestId`.** Every one of them grouped by `message.id` instead,
   which the script above already falls back to. Rule 2 is the grouping and not the field: check which one your records
   actually carry before trusting a count of requests.
+
+## Reading many run directories at once, and the trap in doing it
+
+Nineteen **run directory**s of the refine test were still on disk on 2026-09-13, and the script above reads all of
+them for nothing. Doing that is worth it, and pooling the answer is not — **which is the trap, and it is the first
+thing to know before you write a median down.**
+
+**Every run staged a different plugin.** The **harness** installs from a **staged copy** of the working tree, so a run
+covers what was in front of whoever drove it. Hash the three files a refinement's behaviour lives in and the nineteen
+runs fall into **thirteen distinct setups**:
+
+```
+for R in /tmp/deliverer-e2e/refine-typescript-library-*/; do
+  s=$R/staged-plugin/plugin
+  echo "$(basename $R)  $(git hash-object $s/skills/refine/SKILL.md $s/agents/spec-writer.md \
+                                          $s/agents/tickets-writer.md | cut -c1-7 | tr '\n' ' ')"
+done
+```
+
+Five of the thirteen setups ran more than once; eight ran exactly once. So a median over all of them measures **a week
+of churn in this repository** and not the cost of any plugin anybody can install. Group first, then read — and expect
+most groups to hold one run and settle nothing.
+
+### What the repeated setups say
+
+**The baseline pair** (`3e5a5a0`/`31f5942`/`cb97e56`), driven back to back on 2026-09-13 against one working tree —
+`V7q47f` at $9.64 and `lyFnVF` at $11.79 on their own tokens, one flat **sweep** each at $1.60 and $1.95, 17% of the
+run in both, 5 and 7 **ticket**s. **This is the group a future change is measured against**, because it is the only one
+driven deliberately as a pair rather than assembled out of whatever was on disk. Read it knowing both runs sat in the
+cheap regime: the twelve complete runs here that never nested spread $7.81 to $23.39, so a $2.15 gap is what two
+non-nesting runs do and not a sign that anything has steadied.
+
+**Two runs of the same setup, a day and a half apart** (`3aa2abd`/`797a553`/`48a8896`) — `011M3h` at $14.20 and
+`9mNNti` at $11.81, each with one **sweep**, 8 and 7 **ticket**s — ±$1.20 around $13. It was the only clean reading of
+what one setup costs twice until the baseline pair above was driven, and the two agree on the shape: hold the plugin
+still, sweep once, and a refinement lands within a couple of dollars of itself.
+
+**Three runs of one setup, and they spread 3×** (`4d9bef8`/`4e0dd7b`/`48a8896`):
+
+| | the run's own tokens | sweeps | how many, how deep | tickets |
+|---|---:|---:|---|---:|
+| `t4jQOi` | $7.81 | $0.26 | 1, flat | 4 |
+| `ivm5LN` | $24.11 | $10.13 | 5, three levels | **0** |
+| `CVPs3Q` | $23.72 | $16.09 | 5, three levels | 3 |
+
+**Identical plugin text, and the sweeps run $0.26 to $16.09.** That is the one comparison in this whole directory that
+holds the plugin still, and what it says is that **nothing in this repository decides whether a sweep nests**. The
+plugin ships no sweeper: `refine/SKILL.md` names a sweep's subject and hands it to whatever general-purpose agent the
+host offers. What that agent dispatches below itself is the host's, it varies 60× with the text held constant, and it
+varies across Claude Code versions too — nesting happened on `2.1.220` and again on `2.1.269`.
+
+**`ivm5LN` is where that has cost this suite something.** Five sweeps three levels deep, $24.11 against the then-$25
+**ceiling**, and its **orchestrator** stopped before stage 4 rather than stranding a half-written ticket set — a
+published **spec** and no tickets. That is the reading behind the refine test's raised ceiling. `t4jQOi` ran the same
+plugin eight hours earlier for $7.81.
+
+### The one thing that does survive the pooling
+
+**The spec-writer is the largest single item in fourteen of the fifteen complete runs** — and because those fifteen
+ran thirteen different setups, that is robustness rather than an artefact. It held for every setup on disk except the
+two where the sweeps nested three deep and the writer happened to come in cheap. **That is the stage to attack, and
+`bench/` is the instrument for it**; the money it costs in any one setup has to be read in that setup, not off a median
+here.
