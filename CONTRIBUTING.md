@@ -658,17 +658,19 @@ complete run, only what a human could read afterwards. Three tests, and CI runs 
   **flipped ready** with its **checks** green — then the verifier judges the code behind it against the **epic**, and
   whether those verdicts were sound.
 
-**No paid run has yet produced an `improve`, so part of what the build path asserts has never fired.** All three runs
-since the fourth **verdict** shipped came back without one — 10 `accept` and no `override` over ten **assumption**s in
-the observed run of 2026-09-06, 6 and 1 over seven on 2026-09-05, and 8 and 1 over nine in an earlier reading whose
-artefacts are gone — each reaching zero for stated reasons rather than by ignoring the verdict. The last of those is the
-narrowest reading yet: every one of its ten **verdict**s named the roads it beat and the **axis** each lost on, two of
-them said outright that a road differs on no axis and is therefore a shape preference rather than grounds, and still
-nothing was directed. That leaves every branch behind the word unexercised: the **fix wave** implementing a
-**directive**, the report's `improve` line, and the failing half of the harness's own assertion that each one was
-answered. The passing half is vacuous by design — a run that honestly found no `improve` must not fail — so this is a
-limit on what a green build path demonstrates rather than a defect in it. Closing it takes a **fixture** contrived to
-force one, which no test has.
+**A paid run has now produced an `improve`, and the branch behind it fired.** The first of the four deliveries driven
+on 2026-09-13 reached 7 `accept` and 2 `improve` over nine **assumption**s, and its first **fix wave** implemented both
+**directive**s and marked each with the commit that carried it — so the wave's `improve` path and the harness's own
+assertion that every one was answered have both now run against real ones rather than vacuously. It is still the only
+reading that has: the other three that day reached 9 `accept` and 1 `override` over ten **assumption**s, 9 and none
+over nine, and 9 and 1 over ten, and before them 10 `accept` and no `override` over ten in the observed run of
+2026-09-06, 6 and 1 over seven on 2026-09-05, and 8 and 1 over nine in a reading whose artefacts are gone. Every one of
+those reached zero for stated reasons rather than by ignoring the verdict — the 2026-09-06 reading is the narrowest of
+them, each of its ten **verdict**s naming the roads it beat and the **axis** each lost on, two saying outright that a
+road differs on no axis and is therefore a shape preference rather than grounds. **What a green build path still does
+not demonstrate is the failing half** of that assertion: it can only fail on a run that leaves an `improve` unanswered,
+and a happy path that passes never produces one. Closing that takes a **fixture** contrived to force it, which no test
+has.
 
 **Both paid tests are observed, and each asserts a debrief.** The plugin observes runs by default and the harness
 leaves that default alone, so an **observer** runs beside each of the two and the test asserts what a human would look
@@ -712,12 +714,29 @@ was in front of whoever drove it. What survives grouping them: the **spec-writer
 fourteen of the fifteen complete runs, across thirteen setups, which is the stage to attack and the stage `bench/`
 prices. And three runs of one identical setup spread $7.81 to $24.11 on whether their sweeps nested — so a sweep's cost
 is the host's general-purpose agent and not a lever any file here holds. `e2e-tests/README.md` § Reading many run
-directories at once has every group and the trap under them. The delivery, measured on
-2026-09-06, took **59m 18s and $10.58** — the run itself 55m 29s and $9.75,
-the verifier $0.83 — and flipped its change request ready with green checks over three tickets, five commits, ten
-**assumption**s and two **rounds**. It was measured twice before that, at **23m 12s and $7.40** and **22m 14s and
-$6.85**, and both of those readings predate the **adjudication** that compares roads: that step is now the longest and
-most expensive of a delivery's eight, and `e2e-tests/README.md` prices the difference per stage. Run together, which is
+directories at once has every group and the trap under them. **The delivery's baseline is the four runs of 2026-09-13**,
+two of one working tree and then two of another after a change to two agent files — the first repeat pairs a delivery
+has ever had, where every earlier reading stood alone:
+
+| | `Y1I19A` | `tnGkaZ` | `xDZIVh` | `fRFP9e` |
+|---|---:|---:|---:|---:|
+| wall clock | 26m 23s | 37m 40s | 31m 00s | 31m 26s |
+| the run | $7.71 | $9.55 | $8.21 | $8.45 |
+| the **verifier**, on top | $0.82 | $0.78 | $1.05 | $0.87 |
+| the two **rounds**, outside both | $0.73 | $0.65 | $0.75 | $0.69 |
+| commits over three tickets | 5 | 8 | 4 | 7 |
+| **verdict**s | 7 `accept` 2 `improve` | 9 and 1 `override` | 9 | 9 and 1 `override` |
+
+All four passed every mechanical assertion and their verifier, no **ceiling** reached. **What the first pair settles is
+what one reading is worth**: one working tree, driven back to back, spread **$7.71 to $9.55 and 26m to 38m** — 24% on
+the money and 43% on the clock — so a change that moved a delivery by a dollar cannot be seen in a single run, and the
+second pair's $8.21 and $8.45 sit inside the first pair's range rather than apart from it. The **adjudication** is the
+most expensive stage in all four, at $1.34, $1.83, $2.57 and $2.39; the three **implementer**s together run $2.04 to
+$2.59 and are the steadiest thing a delivery has. The delivery was measured on **2026-09-06** at **59m 18s and
+$10.58** — the run itself 55m 29s and $9.75, the verifier $0.83 — over three tickets, five commits, ten
+**assumption**s and two **rounds**, and twice before that at **23m 12s and $7.40** and **22m 14s and
+$6.85**, and both of those last readings predate the **adjudication** that compares roads: that step is now the
+longest and most expensive of a delivery's eight, and `e2e-tests/README.md` prices the difference per stage. Run together, which is
 what `npm test` does, the whole suite took **23m** and the two runs with their verdicts came to **$13.28**, then
 **$13.14** — the two long tests overlap, so the suite is the slower of them plus a rounding error. That pair predates
 the delivery above too, and nothing has driven the two together since; the arithmetic on the two latest readings puts a
