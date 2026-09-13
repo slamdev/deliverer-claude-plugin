@@ -117,6 +117,11 @@ open** — a sweep follows the thread itself, however many looks that takes, and
 You hold it for the rest of the interview and nowhere else: the brief hands the spec writer the design rather than the
 interview's bookkeeping, and the task list carries one task per stage.
 
+**Say as you dispatch that the looking is first-hand.** A subject broad enough to split is one an agent will split, and
+the half it hands on comes back late — or comes back to you instead, long after the sweep that sent it has reported
+without it. Telling a second subject from a second look at the same one is yours, because the **frontier** is what says
+which of the two you are owed, and you are the one holding it.
+
 - **Test every pending question against that subject.** A question that turns on it — one you cannot answer well without
   what the sweep is out to find — waits for the sweep, and every other question goes into the round now.
 - **An empty round leaves the sweep as the only thing to wait for.** When the hold takes every question out of the

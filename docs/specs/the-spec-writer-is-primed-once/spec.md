@@ -628,12 +628,21 @@ own, more than the spec-writer, and came back with facts the brief then recorded
 skill hands a sweep a subject and lets it follow the thread itself; this plugin ships no sweeper, so what happens below
 that dispatch is the host's general-purpose agent and not a lever any file here holds.
 
-**That is this run and not this test, and the nesting is nobody's to edit.** Three runs of one identical plugin — the
-same `refine/SKILL.md`, the same two **writer**s — spread $7.81 to $24.11, and the whole of that gap is whether their
-**sweep**s nested: $0.26 against $10.13 and $16.09. Held still, the text decides nothing here. Across the thirteen
-complete runs on disk, over twelve different setups, the **spec-writer** is still the largest single item in twelve.
-`e2e-tests/README.md` § Reading many run directories at once carries both. **So the stage this epic attacks is the
-right stage**, and the sweeps are a question no ticket here should swallow.
+**That is this run and not this test, and no text of ours decides the nesting.** Three runs of one identical plugin —
+the same `refine/SKILL.md`, the same two **writer**s — spread $7.81 to $24.11, and the whole of that gap is whether
+their **sweep**s nested: $0.26 against $10.13 and $16.09. Held still, the text decided nothing. Across the thirteen
+complete runs on disk, over twelve different setups, the **spec-writer** is still the largest single item in twelve, so
+**the stage this epic attacks is the right stage** and the sweeps are not its subject. `e2e-tests/README.md` § Reading
+many run directories at once carries both readings.
+
+**What the transcripts did settle is a defect worth one rule, and it landed here rather than as a ticket.** Across the
+four runs whose sweeps nested, a sweep's own background **dispatch** came back to it twice in eleven, where the
+**orchestrator**'s came back nine times in nine and a dispatch that blocked came back four times in four. In the run
+above, the sweep waited thirteen minutes, gave up, redid the reading itself, and reported two facts as unsettled that
+its own grandchild had settled with citations two minutes earlier — while that grandchild's **report** reached the
+orchestrator instead, after the sweep had already closed.
+`refine/SKILL.md` § Sweeps now has the orchestrator say as it dispatches that the looking is first-hand. It answers a
+failure the records show rather than the money, which no run either side of it could read.
 
 ### Nothing from an observed repository appears here
 
