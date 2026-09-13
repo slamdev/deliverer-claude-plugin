@@ -94,6 +94,18 @@ than the $2/$10 introductory rate then in force. **Do this first, every time.** 
 On 2026-09-06 the same check passed on the second of a delivery's two rounds and, on the first, disagreed by 418 output
 tokens for a reason worth knowing before you trust any single round as an oracle — the last section says which.
 
+**On 2026-09-13 the oracle passed eight times over and the run's own reported total stopped agreeing with it.** Across
+four deliveries every one of the eight rounds' `spend.costUsd` reconstructed to the seventh decimal on the
+`claude-sonnet-5` row below, and each run's **observation** agreed with it too — those dollars are the SDK's own
+`total_cost_usd` rather than any table's, so that is a second independent witness. The **orchestrator**'s reported
+figure is the one that moved: reconstructing its records on that row lands **1.0% to 1.5% OVER** what the harness
+reported, on all four and in the opposite direction to both earlier readings, and re-pricing only its `claude-sonnet-5`
+**dispatch**es at **$2/MTok input and $10 output** closes the gap to within a cent — $8.4481 against a reported $8.45
+on the last of the four. So two SDK-sourced figures disagree about one model's rate, and **nothing in a run directory
+settles which one bills**: that takes a usage or invoice report, which is outside them. Until it does, price a round
+from its own `spend`, read a whole run's reconstruction as ±1.5%, and know that the plugin's own `observer/rates.ts`
+carries the $2/$10 row and prices every **debrief**'s dollar figure from it.
+
 ### Prices, as verified on 2026-08-15 and again on 2026-09-06
 
 | model | input | output | cache write 5m | cache write 1h | cache read |
@@ -388,6 +400,70 @@ settle, for the model reason above.
 - **Not one of this run's 444 assistant lines carries `requestId`.** Every one of them grouped by `message.id` instead,
   which the script above already falls back to. Rule 2 is the grouping and not the field: check which one your records
   actually carry before trusting a count of requests.
+
+## What the four deliveries of 2026-09-13 cost
+
+From `build-typescript-library-2026-09-13T` `16-55-12-Y1I19A`, `18-56-09-tnGkaZ`, `20-07-29-xDZIVh` and
+`20-51-10-fRFP9e`, all of which passed. **The first two staged one plugin and the last two another**, which is the
+grouping to read them in — and the harness's own `staged … at <sha>` diagnostic does not say so, because it names a
+commit of the staged copy and moves with that commit's timestamp even when nothing changed. Hash the content instead:
+
+```
+for R in /tmp/deliverer-e2e/build-typescript-library-*/; do
+  echo "$(basename $R)  $(cd $R/staged-plugin && git ls-files -s plugin | git hash-object --stdin | cut -c1-12)"
+done
+```
+
+That gives `45aa336` for the first pair and `754e07b` for the second, which added two paragraphs to
+`agents/assumption-reviewer.md` and `agents/comments-addresser.md`.
+
+| stage | model | `Y1I19A` | `tnGkaZ` | `xDZIVh` | `fRFP9e` |
+|---|---|---:|---:|---:|---:|
+| orchestrator (in-session) | opus-5 | 1.3910 | 1.5240 | 1.4486 | 1.4175 |
+| implementer — ticket 01 | opus-5 | 0.7691 | 0.7175 | 0.5683 | 0.5608 |
+| implementer — ticket 02 | opus-5 | 0.8809 | 0.8306 | 0.6334 | 0.7692 |
+| implementer — ticket 03 | opus-5 | 0.9437 | 0.9047 | 0.8355 | 0.9545 |
+| change-request-creator | opus-5 | 0.5600 | 0.5261 | 0.5819 | 0.4630 |
+| assumption-reviewer | opus-5 | **1.3366** | **1.8325** | **2.5693** | **2.3917** |
+| code-reviewer — round 1 (the poller) | sonnet-5 | 0.2410 | 0.1951 | 0.1942 | 0.1398 |
+| comments-addresser — fix wave 1 | opus-5 | 1.1000 | 1.1924 | 0.5758 | 1.1702 |
+| code-reviewer — round 2 (the poller) | sonnet-5 | 0.1399 | 0.1411 | 0.1281 | 0.1301 |
+| comments-addresser — fix wave 2 | opus-5 | 0.4639 | **1.7954** | 0.7660 | 0.5414 |
+| **the harness's figure** | | 7.8261 | 9.6592 | 8.3010 | 8.5381 |
+| | | *(reported 7.71)* | *(9.55)* | *(8.21)* | *(8.45)* |
+| round 1, the review itself | sonnet-5 | 0.3739 | 0.2285 | 0.3811 | 0.4351 |
+| round 2, the review itself | sonnet-5 | 0.3585 | 0.4196 | 0.3681 | 0.2516 |
+| **what the delivery actually cost** | | **8.5585** | **10.3073** | **9.0502** | **9.2248** |
+| the verifier, charged separately | opus-5 | 0.8203 | 0.7849 | 1.0468 | 0.8734 |
+| the observation, charged separately | sonnet, haiku | 2.8076 | 3.0899 | 2.9792 | 3.2641 |
+| wall clock | | 26m 19s | 37m 35s | 30m 55s | 31m 21s |
+
+**The first pair is what a single delivery reading is worth.** One working tree, driven back to back, and it spread
+$7.71 to $9.55 and 26m to 38m — 24% and 43%. So group before you read, exactly as the refinements below demand, and
+expect no change under a dollar or two to be visible in one run.
+
+**Where a delivery's variance lives, traced once end to end.** `tnGkaZ`'s $1.80 fix wave 2 against `Y1I19A`'s $0.46 is
+the largest single gap in the table, and it is not diffuse noise: its **implementer**s wrote an `align` that validated
+its own `width` and recomputed `padVisible`'s arithmetic, where `Y1I19A`'s derived the gap from `padVisible`'s own
+output and duplicated nothing. Its second **round** found three **review findings** in that duplication — its first
+round having reported "no duplicated helpers" over the same code, from two tool calls and no cross-file search — and
+the wave that answered them refactored three files and reversed a standing **directive**. One upstream coin-flip in how
+a function was shaped, amplified through review into 3.9× on a stage. **The three implementers are the steadiest thing
+a delivery has**, $2.04 to $2.59 across all four; everything after the code is written is where a run's spread comes
+from.
+
+**The adjudication is the most expensive stage in all four**, and rose across the pairs — $1.34 and $1.83 on the first
+plugin, $2.57 and $2.39 on the second. Suggestive and not established: `xDZIVh` reached zero **directive**s, so the
+paragraph the second plugin added to `agents/assumption-reviewer.md` had no path to run in the most expensive
+adjudication of the four, and the first pair's own 37% spread is most of the difference.
+
+**These four runs' rounds carry no reasoning, and a run driven after them does.** Every one of the eighteen thinking
+blocks across their eight rounds came back empty: `thinking.display` reaches a round only if the tools server sets it,
+and `harness/run.ts`'s setting covers the run's own session and its **dispatch**es, never the separate process a round
+runs in. Reading why one round found what another missed meant reconstructing it from tool calls and the final report.
+`server/agent-backend.ts` sets `summarized` on the round's own options as of this reading, so a round costs a little
+more than the figures above and its record says why it looked where it looked — **the rows in this table were all
+measured before that**.
 
 ## Reading many run directories at once, and the trap in doing it
 

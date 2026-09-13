@@ -508,6 +508,17 @@ export function createAgentBackend(deps: AgentBackendDeps): ReviewBackend {
         permissionMode: "bypassPermissions",
         allowDangerouslySkipPermissions: true,
         hooks: { PreToolUse: [{ hooks: [liveness] }] },
+        // What the round REASONED, and not only what it did. `display` defaults to `omitted` on the
+        // models a round runs on, which writes every thinking block to the round's own **session
+        // record** with its text empty and an encrypted signature in place of it — a record saying
+        // which files the reviewer opened and never why. Measured on four deliveries of
+        // 2026-09-13: all eighteen thinking blocks across their eight rounds were empty, so when
+        // one round raised three findings a round before it had missed, why it looked where it
+        // looked was unrecoverable and had to be inferred from its tool calls. The run's own
+        // session sets this (`e2e-tests/harness/run.ts`) and a round is a separate process that
+        // never inherited it. Not free: the summary is output tokens, so a round costs a little
+        // more than one measured before this line.
+        thinking: { type: "adaptive", display: "summarized" },
         abortController: controller,
         stderr: (data: string) => {
           for (const line of data.split("\n")) {
