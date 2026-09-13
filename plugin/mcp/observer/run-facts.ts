@@ -229,8 +229,9 @@ export interface RunFacts {
    * ran (run-observation ticket 05).
    *
    * Read off the same match as the commit above, so the two can never name different builds. It is
-   * what the synthesis quotes the plugin's own lines from; a run resumed by prose names none, and
-   * the judging says so and reads the tree installed now instead.
+   * what the synthesis quotes the plugin's own lines from; a record that names none — which a run
+   * typed as a `/deliverer:` command may leave as well as one resumed by prose
+   * (`./plugin-commit.ts`) — leaves the judging to say so and read the tree installed now instead.
    */
   readonly pluginDirectoryInRecords: string | undefined;
   /** the repository the run ran in — for the **identity file** alone, never for the debrief */
