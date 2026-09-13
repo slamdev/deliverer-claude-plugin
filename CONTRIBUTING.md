@@ -688,10 +688,12 @@ seven refinements of this fixture, every one of them on `opus`, spread from **$1
 own records carry, a mean of $20.94 either side of a standard deviation of $7.55 — and the 2026-09-12 reading, at
 $24.75 on its own tokens, sits inside that spread rather than extending it. A figure below is one run, so a change that
 moved a refinement by a dollar or two would be invisible in it, and none of them is a saving anybody has measured.
-**Where a refinement's money actually goes is not a stage this repository can edit**: the 2026-09-12 reading spent
-$15.68 of its $24.75 on **sweep**s, four of them, because the one the **orchestrator** dispatched sent one of its own
-and that one sent two more. This plugin ships no sweeper and hands a sweep whatever general-purpose agent the host
-offers, so everything below that first dispatch is the host's and no file here reaches it. The delivery, measured on
+**Where a refinement's money goes is read across thirteen of them and not out of one.** The **spec-writer** is the
+largest single item in twelve of the thirteen complete runs left on disk on 2026-09-12, at a median of $6.73;
+**sweep**s take 13% of a run at the median and three runs sent none. The exception is a sweep that dispatches sweeps of
+its own, which costs six times what a flat one does and once stopped a run before stage 4 on budget. This plugin ships
+no sweeper, so what a sweep dispatches below itself is the host's; `e2e-tests/README.md` § Where a refinement's money
+goes has the table and what it does and does not settle. The delivery, measured on
 2026-09-06, took **59m 18s and $10.58** — the run itself 55m 29s and $9.75,
 the verifier $0.83 — and flipped its change request ready with green checks over three tickets, five commits, ten
 **assumption**s and two **rounds**. It was measured twice before that, at **23m 12s and $7.40** and **22m 14s and

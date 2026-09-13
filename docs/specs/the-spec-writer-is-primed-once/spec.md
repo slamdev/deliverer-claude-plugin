@@ -626,8 +626,14 @@ skill asks; that sweep dispatched a second, and the second dispatched two more. 
 the run and one of them — a reading of six terminal emulators' source for what SGR 58 and 59 mean — spent $6.85 on its
 own, more than the spec-writer, and came back with facts the brief then recorded as **claim**s nothing could settle. The
 skill hands a sweep a subject and lets it follow the thread itself; this plugin ships no sweeper, so what happens below
-that dispatch is the host's general-purpose agent and not a lever any file here holds. **It is the largest single item
-in a refinement's spend and no ticket in this epic reaches it.**
+that dispatch is the host's general-purpose agent and not a lever any file here holds.
+
+**That is this run and not this test.** Thirteen complete refinements of the fixture were read off disk afterwards, and
+the **spec-writer** is the largest single item in twelve of them; **sweep**s take 13% of a run at the median. What this
+run has in common with the two other nested ones is the nesting, which costs six times a flat sweep and has stopped a
+run on its **ceiling** once. `e2e-tests/README.md` § Where a refinement's money goes carries that reading. **So the
+stage this epic attacks is still the right stage**, and the sweeps are a separate question no ticket here should
+swallow.
 
 ### Nothing from an observed repository appears here
 

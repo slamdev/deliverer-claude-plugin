@@ -388,3 +388,37 @@ settle, for the model reason above.
 - **Not one of this run's 444 assistant lines carries `requestId`.** Every one of them grouped by `message.id` instead,
   which the script above already falls back to. Rule 2 is the grouping and not the field: check which one your records
   actually carry before trusting a count of requests.
+
+## Where a refinement's money goes, across seventeen of them
+
+A single run says nothing about a refinement's shape, but seventeen **run directory**s were still on disk on
+2026-09-12, and the script above reads all of them for nothing. Four had hit an org spend limit mid-run — their records
+carry `<synthetic>` assistant lines with zero usage — so those four are floors rather than readings and are excluded
+from every figure below. That leaves **thirteen complete refinements of the same fixture**, spread over a week.
+
+| | median | min | max |
+|---|---:|---:|---:|
+| the run's own tokens | $16.40 | $7.81 | $24.75 |
+| **spec-writer** | $6.73 | $4.06 | $12.28 |
+| **orchestrator** | $3.73 | $2.35 | $7.26 |
+| **sweep**s, all of them together | $2.16 | $0.00 | $15.68 |
+| **tickets-writer** | $1.94 | $0.00 | $4.97 |
+
+**The spec-writer is the largest single item in twelve of the thirteen.** That is the stage to attack, and it is the
+stage `bench/` exists to price. The sweeps take 13% of a run at the median and three runs sent none at all.
+
+**The exception is a sweep that dispatches sweeps of its own, and it is worth knowing about.** Three of the thirteen
+nested — a sweep sent a sweep, and in two of them that one sent two more. Their sweeps cost **$10.13 at the median
+against $1.59** for the ten that stayed flat, and in the one run where the sweeps beat the spec-writer they took 63% of
+the whole bill. Nesting is not a version effect: it happened on Claude Code `2.1.220` and again on `2.1.269`, and two
+runs started in the same minute on the same version went one each way.
+
+**One nested run has already failed a stage on money.** `ivm5LN` sent five sweeps three levels deep, spent $24.11
+against the then-$25 **ceiling**, and its orchestrator stopped before stage 4 rather than stranding a half-written
+ticket set — so it published a **spec** and no **ticket**s. That is the reading behind the refine test's raised
+ceiling, and it is the one place a sweep has cost this suite an assertion.
+
+**What none of this settles is what to do about it.** This plugin ships no sweeper: `refine/SKILL.md` names a sweep's
+subject and hands it to whatever general-purpose agent the host offers, and what that agent dispatches below itself is
+its own. The dispatch text is the only lever here, nobody has pulled it, and a run either side would not read it —
+count the **dispatch**es and their depth, which a **run directory** gives exactly and for free.
