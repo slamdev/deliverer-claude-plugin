@@ -30,6 +30,8 @@ You are needed for the conversation at the start and the merge at the end. Every
   escalated to you; improved on means another of those roads held up better under failure, under attack, at the limits
   or for whoever calls the code, and the run took it without asking you first; the fixes made after the review record
   theirs on their own commits instead, where you meet them unratified rather than adjudicated
+- a description in three parts — a summary, evidence with a before and an after, and how dangerous it is to merge —
+  written once the last fixes have landed
 - green checks, and the change request flipped out of draft (if the checks are red it stays a draft, and the report says
   so)
 - a closing report: how many tickets landed, what the reviews cost, every road it took without asking, what was
@@ -76,6 +78,10 @@ You are needed for the conversation at the start and the merge at the end. Every
 
    This records whether you track work in GitHub issues, GitLab issues, local markdown files or something else, so
    `/deliverer:refine` publishes specs and tickets where you actually keep them.
+
+**A repository set up before `mattpocock-skills` v1.3 keeps its glossary in `CONTEXT.md`.** The skills now read and
+write `GLOSSARY.md` and nothing else, so move it — `git mv CONTEXT.md GLOSSARY.md`, and a `CONTEXT-MAP.md` to
+`GLOSSARY-MAP.md` the same way — or the next `/deliverer:refine` starts a second glossary beside it.
 
 ## Configuration
 
@@ -320,8 +326,9 @@ and it changes how a session's agents are run. Set `CLAUDE_CODE_EXPERIMENTAL_AGE
 Several agents at once during a `/deliverer:refine` interview is not this: a refinement sends its questions of fact out
 to be answered beside the conversation, on purpose, and no setting of yours is behind it.
 
-**`/deliverer:refine` stops and says a skill is missing** — `mattpocock-skills` is not installed or not enabled. Check
-`/plugin`.
+**`/deliverer:refine` stops at its grilling, or `/deliverer:build` at its change request stage, saying a skill is
+missing** — `mattpocock-skills` is not installed, not enabled, or older than v1.3, which brought the `pr` skill a
+delivery describes its change request with. Check `/plugin`, and update it there.
 
 **Specs and tickets land somewhere unexpected** — run `/mattpocock-skills:setup-matt-pocock-skills` in the repository to
 record where your issues live.

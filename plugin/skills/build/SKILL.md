@@ -105,7 +105,8 @@ a fresh id (**Rounds**).
    branch's commits recorded is this stage doing its job rather than half-doing it. Keep the URL it reports, and every
    comment its report names as **anchored anywhere but at a translated line on head** — the agent's own wording, and
    wider than the diff: an assumption about a caller the branch never touched is anchored at the file on purpose, and is
-   one of these.
+   one of these. It describes the change request with `mattpocock-skills:pr`, and a report naming that skill missing is
+   a stage that cannot be completed: report it as a **hand-off** and dispatch nothing further.
 3. **Adjudicate the assumptions** — dispatch `assumption-reviewer`. For each `ASSUMPTION` comment it compares the roads
    the **fork** left open and replies one verdict — `accept`, `improve`, `override` or `escalate`. An `improve` is a
    road that beat the one the code took on a named **axis**, so it carries a **directive** stage 5 implements and code
@@ -121,7 +122,14 @@ a fresh id (**Rounds**).
    still gets caught.
 7. **Second fix wave** — dispatch `comments-addresser` again, carrying the second round's prose and the findings the
    first wave declined with their grounds (**Dispatch**), for what that round raised.
-8. **Flip it ready** — once **two rounds have completed** (**Rounds**) and you have read the change request's **checks**
+8. **Refresh the description** — dispatch `change-request-creator` again, continued where the stage-2 agent is still
+   addressable — telling it the fix waves have landed since it read the branch — and cold otherwise, so the description
+   a human reads accounts for both fix waves rather than for the tickets alone. It changes the title and description and
+   nothing else, so its report names no assumption comment posted; one it does name is a **fork** stage 2 missed that
+   nothing will adjudicate now, and rides into your report as a **hand-off**. This stage runs whatever stage 9 then
+   does, flip or draft — a change request left a draft is the one a human has the most to judge. A report naming `pr`
+   missing ends the run as it does at stage 2.
+9. **Flip it ready** — once **two rounds have completed** (**Rounds**) and you have read the change request's **checks**
    green on the forge, take the change request out of draft and report. The fix wave reports them too; where its account
    and the forge disagree, put the stage back rather than choosing between them. Escalations and declined findings ride
    into the report rather than holding the flip: they are what the human review is for. When the checks are not green,
@@ -131,7 +139,7 @@ a fresh id (**Rounds**).
 
 ## Rounds
 
-A round is one `code-reviewer` dispatch, and **two rounds that reached `completed`** is the bar stage 8 waits on. A
+A round is one `code-reviewer` dispatch, and **two rounds that reached `completed`** is the bar stage 9 waits on. A
 fresh round comes of a cold dispatch, under a `review_id` no round has used; continuing an agent carries on the id it
 already holds and opens none.
 
@@ -160,7 +168,7 @@ request, as **Resume** has it.
 looking — an idle notice for a dispatch you have already accounted for asks nothing of you, so nothing is owed for it. A
 signal that does ask something is not one of those: a **report** to read, a stage that went wrong, a round to put back.
 
-**One stage, one task.** Create one each for stages 1 to 7 as the run opens, since stage 8 is the flip and the report
+**One stage, one task.** Create one each for stages 1 to 8 as the run opens, since stage 9 is the flip and the report
 itself — named from the stage it serves and prefixed with the epic's slug so two epics can share a session, as
 `<slug>: open the change request`. A resumed run opens the same set, with the stages the branch and the change request
 already account for created `completed`. Mark a task `in_progress` as you enter its stage and `completed` once you have

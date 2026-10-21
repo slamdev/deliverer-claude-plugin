@@ -4,7 +4,7 @@ A Claude Code plugin: `plugin/` is the product, and everything outside it exists
 
 - **`CONTRIBUTING.md`** — read for the contribution flow, the `./claude` container, the project tree, what CI does and
   does not check, or how to run the end-to-end tests; and before changing how contribution itself works.
-- **`CONTEXT.md`** — the glossary. Read before naming a domain concept in prose, a commit, a spec or a ticket.
+- **`GLOSSARY.md`** — the glossary. Read before naming a domain concept in prose, a commit, a spec or a ticket.
 
 ## What ships
 
@@ -62,12 +62,12 @@ from. Keep them, including the blocks `lifecycle.ts` marks as defensive.
 ## Writing
 
 - **Use the glossary's words**: change request (not PR), ticket (not issue), fork, assumption, verdict, round, fix wave.
-  `CONTEXT.md` lists the synonyms each term displaces under `_Avoid_`. A term you need that is missing is a signal —
+  `GLOSSARY.md` lists the synonyms each term displaces under `_Avoid_`. A term you need that is missing is a signal —
   either the language is invented, or it is a real gap for `/mattpocock-skills:domain-modeling`.
-- **The doc stack cites one way.** `CONTEXT.md` sits at the bottom, `docs/adrs/` above it, `docs/specs/` on top: a
-  document cites downward only. `CONTEXT.md` cites nothing — it defines the words *spec*, *ticket* and *ADR*, and names
-  no particular one. An ADR uses glossary terms and names no spec or ticket. A spec or ticket links the ADR that settled
-  a decision instead of restating it, which keeps the ADR the one place that decision changes.
+- **The doc stack cites one way.** `GLOSSARY.md` sits at the bottom, `docs/adrs/` above it, `docs/specs/` on top: a
+  document cites downward only. `GLOSSARY.md` cites nothing — it defines the words *spec*, *ticket* and *ADR*, and
+  names no particular one. An ADR uses glossary terms and names no spec or ticket. A spec or ticket links the ADR that
+  settled a decision instead of restating it, which keeps the ADR the one place that decision changes.
 - ADRs in `docs/adrs/` are rare: hard to reverse, surprising without context, **and** the result of a real trade-off.
   Miss any of the three and skip it.
 - `plugin/skills/*/SKILL.md` and `plugin/agents/*.md` are prose written to be read by a model, in a deliberate register.
@@ -86,4 +86,4 @@ from. Keep them, including the blocks `lifecycle.ts` marks as defensive.
   live as markdown under `docs/specs/`, never as `gh issue`.
 - **`docs/agents/triage-labels.md`** — read when setting an issue's `Status:` line; five canonical roles, used verbatim.
 - **`docs/agents/domain.md`** — read when exploring the codebase or recording a decision; single-context, one
-  `CONTEXT.md` plus `docs/adrs/`.
+  `GLOSSARY.md` plus `docs/adrs/`.

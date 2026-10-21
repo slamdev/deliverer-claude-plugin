@@ -140,14 +140,38 @@ export function assertReviewToolsPresent(surface: SessionSurface, pluginName: st
  * Nothing installs `mattpocock-skills` separately: the marketplace entry declares it, the install
  * resolves it, and a session carrying both when the harness asked for one is the evidence that the
  * declaration works. Refinement's stage 1 is what stops running when it does not.
+ *
+ * Brought in is not enough, because the declaration floats: an upstream release that renames or
+ * removes a skill the plugin invokes by name installs cleanly and stops a user's run at the stage
+ * that invokes it. So each of `invoked` must be on the session's surface under the dependency's
+ * namespace — read from what the session loaded and never from the dependency's own files, so it
+ * holds whatever upstream does to a skill's text (the-dependency-moves-to-v1-3 ticket 02).
  */
-export function assertDependencyBroughtIn(surface: SessionSurface, dependency: string): void {
+export function assertDependencyBroughtIn(
+  surface: SessionSurface,
+  dependency: string,
+  invoked: readonly string[],
+): void {
   const loaded = surface.plugins.map((plugin) => plugin.name);
   if (!loaded.includes(dependency)) {
     assert.fail(
       `the session does not carry ${dependency}, which the marketplace entry declares as a ` +
         `dependency and the install should have brought in. It loaded: ` +
         `${loaded.join(", ") || "no plugins"}`,
+    );
+  }
+  const namespace = `${dependency}:`;
+  const provided = surface.skills
+    .filter((skill) => skill.startsWith(namespace))
+    .map((skill) => skill.slice(namespace.length));
+  const missing = missingFrom(invoked, provided);
+  if (missing.length > 0) {
+    // Every one missing and everything provided, so a rename reads apart from a removal here
+    // rather than on a rerun.
+    assert.fail(
+      `${dependency} is loaded but provides no ${missing.join(", ")}, which the plugin invokes ` +
+        `by name — a user's run stops at the stage that invokes it. It provides: ` +
+        `${provided.join(", ") || "no skills at all"}`,
     );
   }
 }
@@ -642,7 +666,7 @@ export function assertChangeRequestOpened(outcome: BuildOutcome): void {
  *
  * The double is opt-in and the real review is the default, so this is not about what the harness
  * chose — it is about what a contributor's own environment file or shell would have handed it. One
- * line left in either and every **round** replays a canned timeline: all eight stages pass having
+ * line left in either and every **round** replays a canned timeline: all nine stages pass having
  * reviewed nothing, which is a green test that reviewed nothing.
  */
 export function assertNoScriptedBackend(outcome: BuildOutcome): void {
@@ -881,7 +905,7 @@ export function assertImprovementsAnswered(outcome: BuildOutcome): void {
 }
 
 /**
- * Two **rounds** completed, which is the bar stage 8 waits on.
+ * Two **rounds** completed, which is the bar stage 9 waits on.
  *
  * Read out of the run's own report, because a round leaves no other record: the tools server holds
  * its state in memory for the life of the session, and the findings it posts are comments like any
@@ -900,7 +924,7 @@ export function assertRoundsCompleted(outcome: BuildOutcome, floor: number): voi
   }
   if (completed < floor) {
     assert.fail(
-      `the run reported ${completed} completed rounds where stage 8 waits on ${floor}. A change ` +
+      `the run reported ${completed} completed rounds where stage 9 waits on ${floor}. A change ` +
         `request flipped ready on fewer is one shipping a review nobody did.`,
     );
   }
@@ -967,7 +991,7 @@ export function assertRoundsReportedSpend(outcome: BuildOutcome): void {
 /**
  * The change request was **flipped ready** — taken out of draft.
  *
- * That is stage 8 having run, and it is earned by two completed rounds and green checks and by
+ * That is stage 9 having run, and it is earned by two completed rounds and green checks and by
  * nothing else. A delivery that left it a draft reported why; this says it happened.
  */
 export function assertFlippedReady(outcome: BuildOutcome): void {
@@ -988,7 +1012,7 @@ export function assertFlippedReady(outcome: BuildOutcome): void {
  * change request with no checks at all is not green, it is unjudged, and the fixture ships a CI
  * workflow precisely so that green means something. §Further Notes recorded exactly this as a
  * **claim** — that a freshly created private repository's workflow runs reach the plugin as checks
- * in time for stage 8 — and a run that finds none has settled it the other way.
+ * in time for stage 9 — and a run that finds none has settled it the other way.
  */
 export function assertChecksGreen(outcome: BuildOutcome): void {
   const request = delivered(outcome, "its checks");

@@ -36,6 +36,15 @@ import { stageWorkingTree } from "../harness/staged-copy.ts";
 const DECLARED_DEPENDENCY = "mattpocock-skills";
 
 /**
+ * The dependency's skills the shipped prose invokes by name: the pair refinement's stage 1 runs,
+ * and `pr`, which `change-request-creator` describes a change request with from
+ * the-dependency-moves-to-v1-3 ticket 03. Fixed here rather than read off the prose, so adding an
+ * invocation is an edit somebody makes here on purpose. A model invokes all three, so one upstream
+ * makes human-only drops off the session's listing and fails here — correctly.
+ */
+const INVOKED_SKILLS = ["grilling", "domain-modeling", "pr"];
+
+/**
  * What the plugin ships, as the ticket states it: both commands, all seven agents. WHICH ones is
  * read off the plugin directory, so one added later is covered the day it ships; these are the
  * floor under that, so one deleted is an edit somebody makes here on purpose.
@@ -55,7 +64,7 @@ const SHIPPED_AGENTS = 7;
  */
 const CEILING_MS = 10 * 60 * 1000;
 
-test("the installed plugin comes up with both commands, every agent and all three review tools", {
+test("the installed plugin comes up whole, with the skills it invokes from its dependency", {
   timeout: CEILING_MS,
 }, async (t) => {
   const runDirectory = await createRunDirectory("installation-smoke");
@@ -77,7 +86,7 @@ test("the installed plugin comes up with both commands, every agent and all thre
   assertCommandsPresent(surface, shipped.commands, SHIPPED_COMMANDS);
   assertAgentsPresent(surface, shipped.agents, SHIPPED_AGENTS);
   assertReviewToolsPresent(surface, installed.pluginName);
-  assertDependencyBroughtIn(surface, DECLARED_DEPENDENCY);
+  assertDependencyBroughtIn(surface, DECLARED_DEPENDENCY, INVOKED_SKILLS);
 
   const loadedPath = loadedPluginPath(surface, installed.pluginName);
   assertPluginMatchesWorkingTree(

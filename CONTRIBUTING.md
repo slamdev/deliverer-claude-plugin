@@ -60,7 +60,7 @@ This is not ceremony. The reasons are specific:
   instructions to an agent, and they have a deliberate register — load-bearing bold, no hedging, "you are done when…"
   completion bars. A human editing them by feel drifts that register a sentence at a time. Use
   `/mattpocock-skills:writing-for-agents` when you touch them.
-- **The vocabulary is enforced by a document, not by a compiler.** `CONTEXT.md` is the glossary, and it lists the
+- **The vocabulary is enforced by a document, not by a compiler.** `GLOSSARY.md` is the glossary, and it lists the
   synonyms each term displaces under `_Avoid_`. Changing the model means running
   `/mattpocock-skills:domain-modeling`, which challenges the term and updates the glossary in the same pass.
 - **The server's comments carry the reasoning, not just the what.** Headers in `plugin/mcp/server/` cite the grill
@@ -115,7 +115,7 @@ what moved.
 ```
 .
 ├── plugin/                              ← THE PRODUCT. Everything published; nothing outside ships.
-│   ├── .claude-plugin/plugin.json         manifest: name, mattpocock-skills dependency, 4 userConfig options
+│   ├── .claude-plugin/plugin.json         manifest: name, 4 userConfig options
 │   ├── skills/{refine,build}/SKILL.md     the two commands
 │   ├── agents/                            the seven dispatched agents
 │   │   ├── spec-writer.md                 brief   → published spec
@@ -165,15 +165,16 @@ what moved.
 │   │                                      name a debrief, signal the finalise; reads the switch from
 │   │                                      CLAUDE_PLUGIN_OPTION_OBSERVE_RUNS and never ${user_config.*}
 │   └── .mcp.json                          wires userConfig → the server's environment
-├── .claude-plugin/marketplace.json      the marketplace entry (git-subdir → plugin/)
-├── CONTEXT.md                           the glossary / ubiquitous language
+├── .claude-plugin/marketplace.json      the marketplace entry (git-subdir → plugin/), and
+│                                        the mattpocock-skills dependency, declared there
+├── GLOSSARY.md                          the glossary / ubiquitous language
 ├── docs/
 │   ├── adrs/                              architectural decisions — eighteen, all on the plugin itself
 │   ├── specs/<slug>/                      specs and tickets for work on THIS repo
 │   └── agents/                            how the contributor skills behave here
 │       ├── issue-tracker.md                → local markdown under docs/specs/, never gh issue
 │       ├── triage-labels.md                → the five Status: values
-│       └── domain.md                       → single-context: CONTEXT.md + docs/adrs/
+│       └── domain.md                       → single-context: GLOSSARY.md + docs/adrs/
 ├── e2e-tests/                           the end-to-end harness — installs the plugin, drives whole runs
 │   ├── README.md                          what a run costs per stage, and how to work that out from its records
 │   ├── harness/                           the run directory, the staged copy, the builder and the matchers
@@ -203,7 +204,7 @@ changing those conventions.
 A relentless interview that sharpens the idea until no decision is left silently assumed. **Stay in the room** — this is
 the only stage that needs you, and the decisions are yours.
 
-It runs `/grilling` with `/domain-modeling` alongside, so new terms land in `CONTEXT.md` and hard, surprising,
+It runs `/grilling` with `/domain-modeling` alongside, so new terms land in `GLOSSARY.md` and hard, surprising,
 genuinely-traded-off decisions land in `docs/adrs/` as they crystallise rather than afterwards.
 
 You are done when the frontier of open questions is empty and you agree you have a shared understanding.
@@ -227,7 +228,7 @@ Implements the work, using `/tdd` at the seams the spec named. Work one ticket a
 
 ### House conventions
 
-- **Use the glossary's words.** If a term you need is missing from `CONTEXT.md`, that is a signal: either you are
+- **Use the glossary's words.** If a term you need is missing from `GLOSSARY.md`, that is a signal: either you are
   inventing language the project doesn't use, or there is a real gap worth running `/mattpocock-skills:domain-modeling`
   over.
 - **Wrapping.** Server TypeScript wraps at ~100 columns, markdown at 120. Nothing enforces this — keep it by hand.
@@ -278,7 +279,7 @@ Know this before you rely on a green tick:
   has to mean it. Nothing else has tests at all: `plugin/mcp/package.json` has exactly two scripts, `lint` and
   `typecheck`. The **observer** is no exception — no runner, no fixture and nothing recorded stands behind it, and
   § Replaying a run's records below is the whole of how it is checked.
-- **No markdown is checked.** The skills, the agents, `README.md` and `CONTEXT.md` are the bulk of the product and
+- **No markdown is checked.** The skills, the agents, `README.md` and `GLOSSARY.md` are the bulk of the product and
   nothing lints, wraps or spell-checks them.
 - **Nothing in CI runs the server, either launcher, or any of the four hook events.** `SessionStart` installs and
   publishes; `UserPromptSubmit`, `Stop` and `SessionEnd` are the **observer**'s. No manifest is validated against its
@@ -647,12 +648,13 @@ It is the automated counterpart to the three procedures above, at a much higher 
 complete run, only what a human could read afterwards. Three tests, and CI runs none of them:
 
 - **The installation smoke test.** One command and, in seconds, you know the plugin still installs and still presents
-  both commands, all seven agents and all three review tools. No repository on the forge and no model asked for more
-  than one trivial turn — cheap enough to run after any change to a manifest, either hook or the launcher.
+  both commands, all seven agents and all three review tools, and that `mattpocock-skills` still provides the skills
+  the plugin invokes by name. No repository on the forge and no model asked for more than one trivial turn — cheap
+  enough to run after any change to a manifest, either hook or the launcher.
 - **The refine happy path.** `/deliverer:refine` against a **standing repo**, with a **responder** answering the
   grilling in your place out of the **fixture**'s own **brief**. It asserts a published **spec** and one file per
   **ticket**, and then a **verifier** judges whether what came out is any good.
-- **The build happy path.** `/deliverer:build` against a **throwaway repo** created for the run: all eight stages, two
+- **The build happy path.** `/deliverer:build` against a **throwaway repo** created for the run: all nine stages, two
   real **rounds** through the tools server and both **fix waves**. It asserts a commit naming every ticket, a
   **verdict** on every **assumption**, a fix wave's answer to every `improve` among them, and the **change request**
   **flipped ready** with its **checks** green — then the verifier judges the code behind it against the **epic**, and

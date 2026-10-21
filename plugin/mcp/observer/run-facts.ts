@@ -347,7 +347,7 @@ export function runFactsOf(input: RunFactsInput): RunFacts {
  * (the-observation-reports-the-whole-run ticket 06; D15).
  *
  * **Unknown is the honest answer for a figure nobody could compute, and never zero** — the rule
- * `CONTEXT.md`'s **Spend** already states. So a model id the table has never heard of prices nothing,
+ * `GLOSSARY.md`'s **Spend** already states. So a model id the table has never heard of prices nothing,
  * is named, and says here that the run's dollar figure is short by whatever those requests cost. It
  * is a loss and not a **defect**: nothing about it is something the run cost its human, and it is the
  * reading — this table's own age — that fell short. That is what the losses section is for, and it is
