@@ -2,7 +2,9 @@
 
 The **bench** (`harness/writer-bench.ts`) replays one **spec-writer** **dispatch** out of this directory, so a change
 to the writer can be read for about $5 instead of the $24 a whole **refinement** costs. These files are that
-dispatch's inputs, taken from one **run** and never edited since.
+dispatch's inputs, taken from one **run** and edited once since: the glossary that run wrote under its pre-v1.3 name
+is `clone/GLOSSARY.md` here, the name `mattpocock-skills` v1.3 reads, its contents untouched, and the brief's four
+mentions of it carry the new name — four characters longer, and the brief's only edit.
 
 **The run is `refine-typescript-library-2026-09-12T09-13-58-mfWFt4`**, driven on 2026-09-12 against this fixture:
 `claude-opus-5` at effort `high`, Claude Code 2.1.220. It spent $21.61 over 47m 47s and published a 55.9 KB spec over
@@ -20,8 +22,8 @@ The difference is not small, and the same happened to every other input:
 
 | file | as dispatched, here | left on disk at the end of the run |
 |---|---|---|
-| `brief.md` | 18,655 characters | 23,595 bytes |
-| `clone/CONTEXT.md` | 2,046 characters | 2,968 bytes |
+| `brief.md` | 18,659 characters | 23,595 bytes |
+| `clone/GLOSSARY.md` | 2,046 characters | 2,968 bytes |
 | `clone/docs/adr/0002-…` | 720 characters | 866 bytes |
 | `clone/docs/adr/0003-…` | 1,389 characters | 2,555 bytes |
 

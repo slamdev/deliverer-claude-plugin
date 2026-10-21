@@ -2,7 +2,7 @@
  * What a token costs, and the arithmetic that turns a **run**'s tokens into dollars
  * (the-observation-reports-the-whole-run ticket 06; D12 through D18).
  *
- * **Why this file exists at all.** `CONTEXT.md` has defined **spend** as "its tokens, and a dollar
+ * **Why this file exists at all.** `GLOSSARY.md` has defined **spend** as "its tokens, and a dollar
  * estimate labelled with the provider that served it" since the term was written, and the dollar
  * half had never been delivered: there was no price table anywhere in `observer/`, so a **debrief**
  * could price its own observation at $1.22 — `./model-call.ts` reads the SDK's own
@@ -131,7 +131,7 @@ export interface Pricing {
   /**
    * The dollars, or `undefined` where nothing here could be priced at all.
    *
-   * Unknown and never zero, which is what `CONTEXT.md`'s **spend** requires of a figure nobody could
+   * Unknown and never zero, which is what `GLOSSARY.md`'s **spend** requires of a figure nobody could
    * compute — and the reason this is not a plain sum starting at 0.
    */
   readonly usd: number | undefined;

@@ -77,6 +77,10 @@ You are needed for the conversation at the start and the merge at the end. Every
    This records whether you track work in GitHub issues, GitLab issues, local markdown files or something else, so
    `/deliverer:refine` publishes specs and tickets where you actually keep them.
 
+**A repository set up before `mattpocock-skills` v1.3 keeps its glossary in `CONTEXT.md`.** The skills now read and
+write `GLOSSARY.md` and nothing else, so move it — `git mv CONTEXT.md GLOSSARY.md`, and a `CONTEXT-MAP.md` to
+`GLOSSARY-MAP.md` the same way — or the next `/deliverer:refine` starts a second glossary beside it.
+
 ## Configuration
 
 Set these from `/plugin` → **deliverer**.

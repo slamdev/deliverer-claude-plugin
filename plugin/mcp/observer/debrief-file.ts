@@ -1016,7 +1016,7 @@ function roundLine(round: RunRound): string {
  * priced, the message id prefix those requests carry, and anything it could not price.
  *
  * **Unknown survives where nothing could be priced at all** (D15), because that is what
- * `CONTEXT.md`'s **spend** requires of a figure nobody could compute — never a zero, and never a
+ * `GLOSSARY.md`'s **spend** requires of a figure nobody could compute — never a zero, and never a
  * cheap-looking run standing in for a model this table has never heard of.
  *
  * The rounds' dollars above are the tools server's own measurement of a **round**, and the two are

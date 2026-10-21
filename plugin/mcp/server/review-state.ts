@@ -363,7 +363,7 @@ export interface ReviewStatusResult {
  * The `spend` object a poll publishes, or nothing at all when not one figure of it is known.
  *
  * Read off a record that holds `null` for unknown, and every `null` is then DROPPED rather than
- * sent: a figure nobody measured is unknown, absence says exactly that, and `CONTEXT.md`'s
+ * sent: a figure nobody measured is unknown, absence says exactly that, and `GLOSSARY.md`'s
  * **spend** entry forbids the confident zero that would otherwise read as a cheap review
  * (a-poll-says-what-it-knows D1/D2).
  *

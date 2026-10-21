@@ -184,10 +184,10 @@ would have to change — rather than published as separate spec stubs or left on
 Grounds: tracked where anyone reading the spec will see them, without leaving half-specified epics in
 `docs/specs/` that nobody has been grilled on.
 
-**25. The epic owes: a README example for `wrap`, the `CONTEXT.md` glossary, and the three ADRs.** No `CLAUDE.md`
+**25. The epic owes: a README example for `wrap`, the `GLOSSARY.md` glossary, and the three ADRs.** No `CLAUDE.md`
 amendment.
 Grounds: the README's existing two-line example block is the first thing anyone sees, and should show a coloured
-string surviving a break. `CONTEXT.md` and `docs/adr/` were written during refinement and are currently untracked;
+string surviving a break. `GLOSSARY.md` and `docs/adr/` were written during refinement and are currently untracked;
 the epic commits them. A `CLAUDE.md` amendment pointing at them was offered and declined.
 
 ## Open forks
@@ -200,7 +200,7 @@ recommendation given, and are recorded as the user chose them.
 
 Written during refinement, all currently untracked, all to be committed by this epic:
 
-- `CONTEXT.md` — glossary. Defines SGR escape, Visible width, Visible character, Width, Truncate, Wrap, Line,
+- `GLOSSARY.md` — glossary. Defines SGR escape, Visible width, Visible character, Width, Truncate, Wrap, Line,
   Break opportunity, Hard break, Forced break, Bleed, each with an `_Avoid_` list of banned synonyms.
 - `docs/adr/0001-wrap-returns-an-array-of-lines.md`
 - `docs/adr/0002-wrap-requires-a-width-of-at-least-one.md`
@@ -259,7 +259,7 @@ reopen, not a detail to work around.
    the layout algorithm needs to know a character's *rendered* width beyond what `visibleWidth` already reports.
    This is what decision 23 assumes. Settle by checking the algorithm never needs to measure a partial line by any
    other means.
-8. **The three ADRs and `CONTEXT.md` written during refinement are accurate and fit to commit as they stand.** They
+8. **The three ADRs and `GLOSSARY.md` written during refinement are accurate and fit to commit as they stand.** They
    were written from the conversation, not from a fresh reading of the code. Settle by reading them against
    `src/` — in particular ADR 0002's characterisation of `truncate`'s width-0 behaviour, which decision 21 shows
    is subtler than "you get an empty result" for coloured input.

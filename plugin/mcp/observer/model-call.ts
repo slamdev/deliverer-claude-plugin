@@ -200,7 +200,7 @@ const asRecord = (value: unknown): Record<string, unknown> | undefined =>
 
 /**
  * A counter nobody measured and a counter measured at zero are the same answer: unknown.
- * `CONTEXT.md` defines **spend** so that unknown is the honest answer for a figure nobody measured
+ * `GLOSSARY.md` defines **spend** so that unknown is the honest answer for a figure nobody measured
  * and never zero.
  */
 const measured = (count: number | undefined): number | undefined =>
@@ -317,7 +317,7 @@ function usagesOf(perModel: Record<string, unknown>): readonly RequestUsage[] {
  * starts at `NOTHING_SPENT`, whose dollars are a real `0` because no call had been made, and a
  * plain sum would let that zero swallow the `undefined` of every unmeasured call after it. A
  * debrief of five calls that priced none of them then reads `$0.00` where it owes the reader
- * `unknown` — the one thing `CONTEXT.md`'s definition of **spend** forbids.
+ * `unknown` — the one thing `GLOSSARY.md`'s definition of **spend** forbids.
  *
  * Where both sides did make calls the measured dollars sum and an unmeasured one rides as nothing,
  * exactly as an absent token counter does inside a usage shape that IS there. Where neither

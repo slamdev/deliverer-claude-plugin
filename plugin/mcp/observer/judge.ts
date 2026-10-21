@@ -1149,7 +1149,7 @@ export function synthesisJudge(
     // `./observer.ts`'s `judgeQuietly`, which knows nothing of the notes and would answer with a
     // cost of no calls and no dollars — so up to thirteen cheap calls already paid for would read
     // as `$0.00` in the one line that exists to say what the observation cost, which is the one
-    // reading `CONTEXT.md`'s definition of **spend** forbids. Named as a loss of this half instead,
+    // reading `GLOSSARY.md`'s definition of **spend** forbids. Named as a loss of this half instead,
     // and the run is still judged on whatever notes did land.
     try {
       await notes.catchUp({

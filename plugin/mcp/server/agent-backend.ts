@@ -284,7 +284,7 @@ function summedTokens(modelUsage: unknown, field: string): number | undefined {
 
 /**
  * A counter nobody measured and a counter measured at zero are the same answer: unknown.
- * `CONTEXT.md` defines **spend** so that unknown is the honest answer for a figure nobody measured
+ * `GLOSSARY.md` defines **spend** so that unknown is the honest answer for a figure nobody measured
  * and never zero, and a confident zero beside a real dollar figure reads as a cheap review.
  */
 const measured = (count: number | undefined): number | undefined =>
