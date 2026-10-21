@@ -140,14 +140,38 @@ export function assertReviewToolsPresent(surface: SessionSurface, pluginName: st
  * Nothing installs `mattpocock-skills` separately: the marketplace entry declares it, the install
  * resolves it, and a session carrying both when the harness asked for one is the evidence that the
  * declaration works. Refinement's stage 1 is what stops running when it does not.
+ *
+ * Brought in is not enough, because the declaration floats: an upstream release that renames or
+ * removes a skill the plugin invokes by name installs cleanly and stops a user's run at the stage
+ * that invokes it. So each of `invoked` must be on the session's surface under the dependency's
+ * namespace — read from what the session loaded and never from the dependency's own files, so it
+ * holds whatever upstream does to a skill's text (the-dependency-moves-to-v1-3 ticket 02).
  */
-export function assertDependencyBroughtIn(surface: SessionSurface, dependency: string): void {
+export function assertDependencyBroughtIn(
+  surface: SessionSurface,
+  dependency: string,
+  invoked: readonly string[],
+): void {
   const loaded = surface.plugins.map((plugin) => plugin.name);
   if (!loaded.includes(dependency)) {
     assert.fail(
       `the session does not carry ${dependency}, which the marketplace entry declares as a ` +
         `dependency and the install should have brought in. It loaded: ` +
         `${loaded.join(", ") || "no plugins"}`,
+    );
+  }
+  const namespace = `${dependency}:`;
+  const provided = surface.skills
+    .filter((skill) => skill.startsWith(namespace))
+    .map((skill) => skill.slice(namespace.length));
+  const missing = missingFrom(invoked, provided);
+  if (missing.length > 0) {
+    // Every one missing and everything provided, so a rename reads apart from a removal here
+    // rather than on a rerun.
+    assert.fail(
+      `${dependency} is loaded but provides no ${missing.join(", ")}, which the plugin invokes ` +
+        `by name — a user's run stops at the stage that invokes it. It provides: ` +
+        `${provided.join(", ") || "no skills at all"}`,
     );
   }
 }

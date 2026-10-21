@@ -648,8 +648,9 @@ It is the automated counterpart to the three procedures above, at a much higher 
 complete run, only what a human could read afterwards. Three tests, and CI runs none of them:
 
 - **The installation smoke test.** One command and, in seconds, you know the plugin still installs and still presents
-  both commands, all seven agents and all three review tools. No repository on the forge and no model asked for more
-  than one trivial turn — cheap enough to run after any change to a manifest, either hook or the launcher.
+  both commands, all seven agents and all three review tools, and that `mattpocock-skills` still provides the skills
+  the plugin invokes by name. No repository on the forge and no model asked for more than one trivial turn — cheap
+  enough to run after any change to a manifest, either hook or the launcher.
 - **The refine happy path.** `/deliverer:refine` against a **standing repo**, with a **responder** answering the
   grilling in your place out of the **fixture**'s own **brief**. It asserts a published **spec** and one file per
   **ticket**, and then a **verifier** judges whether what came out is any good.

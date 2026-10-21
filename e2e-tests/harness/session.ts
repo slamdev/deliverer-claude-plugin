@@ -79,6 +79,8 @@ export interface SessionSurface {
   readonly cwd: string;
   readonly commands: readonly string[];
   readonly agents: readonly string[];
+  /** every skill the session can invoke, a plugin's under its namespace — `plugin:skill` */
+  readonly skills: readonly string[];
   readonly plugins: readonly { readonly name: string; readonly path: string }[];
   readonly mcpServers: readonly McpServerObservation[];
   /** what the trivial turn answered, and how the session classified it */
@@ -200,6 +202,7 @@ export async function observeSession(
     cwd: init.cwd,
     commands: init.slash_commands,
     agents: init.agents ?? [],
+    skills: init.skills,
     plugins: init.plugins.map((plugin) => ({ name: plugin.name, path: plugin.path })),
     mcpServers,
     reply: result.subtype === "success" ? result.result : "",
