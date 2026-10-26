@@ -41,7 +41,7 @@
  * session carrying them, which is what an orchestrator does. The reading then carries the one
  * figure the question is about: how many waves the writer's reports cost.
  */
-import { query, type SDKUserMessage } from "@anthropic-ai/claude-agent-sdk";
+import { query, type EffortLevel, type SDKUserMessage } from "@anthropic-ai/claude-agent-sdk";
 import { cp, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { CeilingReached, minutes, type Ceilings } from "./ceilings.ts";
@@ -409,7 +409,7 @@ function asUser(content: string): SDKUserMessage {
 interface AgentDefinition {
   readonly body: string;
   readonly model: string;
-  readonly effort: "low" | "medium" | "high";
+  readonly effort: EffortLevel;
   readonly disallowedTools: readonly string[];
 }
 
@@ -444,17 +444,35 @@ async function readAgent(path: string): Promise<AgentDefinition> {
   }
   const frontmatter = matched[1] ?? "";
   const model = declared(frontmatter, "model") ?? "opus";
-  const effort = declared(frontmatter, "effort") ?? "medium";
+  const effort = tier(path, declared(frontmatter, "effort") ?? "medium");
   const tools = declared(frontmatter, "disallowedTools") ?? "";
   return {
     body: matched[2] ?? "",
     model,
-    effort: effort === "low" || effort === "high" ? effort : "medium",
+    effort,
     disallowedTools: tools
       .split(",")
       .map((tool) => tool.trim())
       .filter((tool) => tool !== ""),
   };
+}
+
+const TIERS: readonly EffortLevel[] = ["low", "medium", "high", "xhigh", "max"];
+
+/**
+ * A declared **effort** passed through as the tier it names. Only a missing key falls back to
+ * `medium`: a declared tier narrowed to another would measure a dispatch no host runs, and a value
+ * the SDK does not name stops the arm before it spends anything.
+ */
+function tier(path: string, effort: string): EffortLevel {
+  const named = TIERS.find((candidate) => candidate === effort);
+  if (named === undefined) {
+    throw new Error(
+      `${path} declares \`effort: ${effort}\`, which is no tier the Agent SDK accepts ` +
+        `(${TIERS.join(", ")}), so there is no session this arm could drive at it.`,
+    );
+  }
+  return named;
 }
 
 /** One top-level scalar out of the frontmatter. Not a YAML parser, and it does not need to be. */
