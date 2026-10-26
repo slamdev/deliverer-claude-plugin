@@ -660,11 +660,14 @@ export function assertEpicBranchCarriesEpic(outcome: RefineOutcome): void {
 }
 
 /**
- * Exactly one change request is on the forge, open from the epic branch, and still a **draft**.
+ * Exactly one change request is on the forge, open from the epic branch, still a **draft**, and
+ * described with the facts refine's fixed text carries.
  *
  * One, because a second is a refinement that lost its **bearings** — a change request already open
  * for the branch is the change request. A draft, because nothing has been delivered yet: build's
- * last stage is what takes it out of draft.
+ * last stage is what takes it out of draft. The description is held to its two facts — the spec's
+ * location and the ticket count — and not to its wording, since the facts are what a human opening
+ * the draft reads it for.
  */
 export function assertDraftOpenedFromEpicBranch(outcome: RefineOutcome): void {
   const opened = outcome.changeRequests;
@@ -692,6 +695,39 @@ export function assertDraftOpenedFromEpicBranch(outcome: RefineOutcome): void {
         `where an open draft was expected: nothing has been delivered yet.`,
     );
   }
+  const specPath = outcome.epic.specPath;
+  if (specPath !== null && !only.body.includes(specPath)) {
+    assert.fail(
+      `${only.url}'s description never names the spec's location, ${specPath}: ` +
+        `${description(only.body)}`,
+    );
+  }
+  const count = outcome.epic.tickets.length;
+  // The location is taken out first, so a digit in a slug is never read as the count.
+  const beside = specPath === null ? only.body : only.body.replaceAll(specPath, "");
+  if (!namesCount(beside, count)) {
+    assert.fail(
+      `${only.url}'s description never names the ticket count, ${count}: ` +
+        `${description(only.body)}`,
+    );
+  }
+}
+
+const COUNT_WORDS = [
+  "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+  "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen",
+  "nineteen", "twenty",
+];
+
+/** Whether the text names the count as a number of its own, in digits or as a word. */
+function namesCount(text: string, count: number): boolean {
+  if (new RegExp(`(^|[^0-9])${count}([^0-9]|$)`).test(text)) return true;
+  const word = COUNT_WORDS[count];
+  return word !== undefined && new RegExp(`\\b${word}\\b`, "i").test(text);
+}
+
+function description(text: string): string {
+  return text.trim() === "" ? "it is empty." : `it reads "${text.trim()}".`;
 }
 
 /* -------------------------------------------------------------------------------------------- *

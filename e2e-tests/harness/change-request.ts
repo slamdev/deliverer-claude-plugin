@@ -63,6 +63,8 @@ export interface ChangeRequestSummary {
   /** the **epic branch** it was opened from */
   readonly branch: string;
   readonly state: string;
+  /** its description, as the forge holds it now */
+  readonly body: string;
 }
 
 /** One commit on the epic branch, and what it records about the work it did. */
@@ -161,7 +163,7 @@ export async function listChangeRequests(
       "--limit",
       "50",
       "--json",
-      "number,url,title,isDraft,headRefName,state",
+      "number,url,title,isDraft,headRefName,state,body",
     ],
     `listing the change requests on ${fullName}`,
   );
@@ -173,6 +175,7 @@ export async function listChangeRequests(
     isDraft: entry.isDraft === true,
     branch: String(entry.headRefName ?? ""),
     state: String(entry.state ?? ""),
+    body: String(entry.body ?? ""),
   }));
 }
 
