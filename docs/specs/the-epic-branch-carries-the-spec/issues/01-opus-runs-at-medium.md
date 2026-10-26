@@ -17,8 +17,8 @@ before it moves. Settled in `../spec.md` under Implementation Decisions › Effo
       names one. The accepted tiers and the refusal of anything else are unchanged.
 - [ ] The observer's synthesis tier is `medium`. It is still its own fixed constant and still does not read the review's
       option; the comment saying why is kept and stays true.
-- [ ] The writer bench falls back to `medium` for an agent file declaring no `effort`, and its comment's count of shipped
-      agents is accurate.
+- [ ] The writer bench falls back to `medium` for an agent file declaring no `effort`, and its comment's count of
+      shipped agents is accurate.
 - [ ] The review lifecycle runs to completion against the scripted backend with the effort option unset, and the tier
       that reaches the backend is `medium`.
 - [ ] Typecheck and lint pass in both packages.

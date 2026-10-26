@@ -18,8 +18,8 @@ Implementation Decisions › Refine's publishing stage; ADR-0015 already allows 
 - [ ] It pushes the branch and opens the change request as a draft, titled from the spec's title and described with a
       fixed text naming the spec's location, the ticket count, and that the delivery will rewrite it. It does not run
       `pr`.
-- [ ] Resume and re-run: a branch already carrying the paths at their current content owes no commit; a difference owes a
-      new commit on top, never an amend or force-push; a change request already open for the branch is the change
+- [ ] Resume and re-run: a branch already carrying the paths at their current content owes no commit; a difference owes
+      a new commit on top, never an amend or force-push; a change request already open for the branch is the change
       request.
 - [ ] The task list carries `<slug>: open the draft` when the stage runs, and four tasks as today when it does not; a
       resumed run creates it `completed` when the change request is open.

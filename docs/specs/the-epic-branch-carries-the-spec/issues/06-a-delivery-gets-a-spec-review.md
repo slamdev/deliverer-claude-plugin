@@ -23,8 +23,8 @@ Settled in `../spec.md` under Implementation Decisions â€º `spec-reviewer` and â
 - [ ] The flip bar is unchanged. Build's report carries the count of spec findings posted, and a hand-off where the spec
       review never reported.
 - [ ] Build's task list carries the new stage as its own task.
-- [ ] The installation smoke test expects eight shipped agents; the build happy path's dispatch floor rises by one and its
-      description of what a delivery dispatches names the spec reviewer.
+- [ ] The installation smoke test expects eight shipped agents; the build happy path's dispatch floor rises by one and
+      its description of what a delivery dispatches names the spec reviewer.
 - [ ] Typecheck and lint pass in both packages.
 
 ## Comments

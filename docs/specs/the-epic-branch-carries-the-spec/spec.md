@@ -34,9 +34,9 @@ last migration; three changes between the versions that bear on the forked skill
 ## Solution
 
 **Opus runs at `medium` everywhere the plugin chooses its tier.** The five agents' frontmatter, the default of the
-`code_review_effort` option, and the synthesis's fixed tier all move from `high` to `medium`. An owner who wants a deeper
-review still sets the option. `spec-writer` is priced on the bench before the change lands, and keeps `high` only if its
-figures show a clear regression — a call brought back to the human, not taken by the implementer.
+`code_review_effort` option, and the synthesis's fixed tier all move from `high` to `medium`. An owner who wants a
+deeper review still sets the option. `spec-writer` is priced on the bench before the change lands, and keeps `high` only
+if its figures show a clear regression — a call brought back to the human, not taken by the implementer.
 
 **A refinement into an in-repository tracker publishes on the epic branch.** When the project's conventions put specs
 and tickets as files in the repository, refine gains a stage after the tickets are written: it creates the epic branch

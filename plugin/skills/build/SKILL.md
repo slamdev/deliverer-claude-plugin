@@ -33,12 +33,12 @@ an agent — continued or cold — or report it**, never fix.
 branch and the change request are what say how far it got: the commits carrying a `Ticket:` line name the tickets
 **begun**, and one without it is not a ticket — a refinement's commit of the spec and tickets among them. An open
 change request says nothing about whether stage 2 ran, since a refinement may have opened it before any ticket began,
-so stage 2 is dispatched on every run (**Stages**). Begun and not finished, because an `implementer` commits each coherent piece as it lands — so the last ticket
-named may be part-delivered with nothing anywhere saying so, and it is dispatched again ahead of the ones carrying no
-commit at all. That implementer reads the commits, implements only what they left undone, and reports the commit that
-covered it where the branch covered it in full already. Start from the earliest stage whose evidence you cannot find —
-dispatching any agent but `code-reviewer` cold is safe, because each one resumes on its own and adds only what is
-missing. `code-reviewer` is the exception: see **Rounds**.
+so stage 2 is dispatched on every run (**Stages**). Begun and not finished, because an `implementer` commits each
+coherent piece as it lands — so the last ticket named may be part-delivered with nothing anywhere saying so, and it is
+dispatched again ahead of the ones carrying no commit at all. That implementer reads the commits, implements only what
+they left undone, and reports the commit that covered it where the branch covered it in full already. Start from the
+earliest stage whose evidence you cannot find — dispatching any agent but `code-reviewer` cold is safe, because each one
+resumes on its own and adds only what is missing. `code-reviewer` is the exception: see **Rounds**.
 
 **The commits carry one fact that is not about progress.** A commit's `Gates:` section names a **gate** it left red for
 work nobody asked for — outside its ticket where it carries a `Ticket:` line, and outside anything a comment asked for
@@ -112,14 +112,15 @@ a fresh id (**Rounds**).
    that one ticket besides. You are done when every ticket the epic lists has a report naming its commits.
 2. **Open the change request** — dispatch `change-request-creator`, on every run, resumed or not. It opens the change
    request as a **draft** — or, where one is already open for the branch, refine's draft among them, brings that one up
-   to date and leaves its draft state as found — describes it, and mirrors into an `ASSUMPTION` comment every assumption recorded by a commit carrying a `Ticket:` line. A commit
-   without that line is a **fix wave**'s, recording the **forks** that wave closed silently: the mirror passes those
-   over and nothing adjudicates them, so no stage is ever owed for them — and a report naming fewer comments than the
-   branch's commits recorded is this stage doing its job rather than half-doing it. Keep the URL it reports, and every
-   comment its report names as **anchored anywhere but at a translated line on head** — the agent's own wording, and
-   wider than the diff: an assumption about a caller the branch never touched is anchored at the file on purpose, and is
-   one of these. It describes the change request with `mattpocock-skills:pr`, and a report naming that skill missing is
-   a stage that cannot be completed: report it as a **hand-off** and dispatch nothing further.
+   to date and leaves its draft state as found — describes it, and mirrors into an `ASSUMPTION` comment every assumption
+   recorded by a commit carrying a `Ticket:` line. A commit without that line is a **fix wave**'s, recording the
+   **forks** that wave closed silently: the mirror passes those over and nothing adjudicates them, so no stage is ever
+   owed for them — and a report naming fewer comments than the branch's commits recorded is this stage doing its job
+   rather than half-doing it. Keep the URL it reports, and every comment its report names as **anchored anywhere but at
+   a translated line on head** — the agent's own wording, and wider than the diff: an assumption about a caller the
+   branch never touched is anchored at the file on purpose, and is one of these. It describes the change request with
+   `mattpocock-skills:pr`, and a report naming that skill missing is a stage that cannot be completed: report it as a
+   **hand-off** and dispatch nothing further.
 3. **Adjudicate the assumptions** — dispatch `assumption-reviewer`. For each `ASSUMPTION` comment it compares the roads
    the **fork** left open and replies one verdict — `accept`, `improve`, `override` or `escalate`. An `improve` is a
    road that beat the one the code took on a named **axis**, so it carries a **directive** stage 6 implements and code
@@ -190,13 +191,13 @@ signal that does ask something is not one of those: a **report** to read, a stag
 **One stage, one task.** Create one each for stages 1 to 9 as the run opens, since stage 10 is the flip and the report
 itself — named from the stage it serves and prefixed with the epic's slug so two epics can share a session, as
 `<slug>: open the change request`. A resumed run opens the same set, with the stages the branch already accounts for
-created `completed` — never stage 2's, which runs every time. Mark a task `in_progress` as you enter its stage and `completed` once you have
-read the report that ends it. `completed` says the stage is over rather than that it succeeded, so a round that died
-carries its outcome in its subject — `<slug>: second round (failed — no review)`. Putting a stage back to an agent —
-continued or cold — is the same stage rather than a new one, so it gets no task of its own: the task it already has
-flips back to `in_progress`, and `completed` once the report you were owed lands. **A round is the exception**, because
-a cold `code-reviewer` opens a fresh one (**Rounds**): a round you spend after one that died is another round, and it
-gets a task of its own.
+created `completed` — never stage 2's, which runs every time. Mark a task `in_progress` as you enter its stage and
+`completed` once you have read the report that ends it. `completed` says the stage is over rather than that it
+succeeded, so a round that died carries its outcome in its subject — `<slug>: second round (failed — no review)`.
+Putting a stage back to an agent — continued or cold — is the same stage rather than a new one, so it gets no task of
+its own: the task it already has flips back to `in_progress`, and `completed` once the report you were owed lands. **A
+round is the exception**, because a cold `code-reviewer` opens a fresh one (**Rounds**): a round you spend after one
+that died is another round, and it gets a task of its own.
 
 Stage 1's one task carries all its tickets, relabelled as each lands: `<slug>: implement every ticket (4/21)` as the
 subject and `Implementing ticket 4/21 — <ticket>` as the `activeForm`, both in the one `TaskUpdate`. The numerator is

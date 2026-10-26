@@ -9,8 +9,8 @@ calls, one per skill, because upstream measured that a skill named in prose does
 `../spec.md` under Implementation Decisions › Skill invocation.
 
 - [ ] Refine's stage 1 tells the orchestrator to call the Skill tool twice — once with `grilling`, once with
-      `domain-modeling` — rather than naming both in one sentence. What follows (the overrides for asking and sweeps, the
-      stop-and-report when either is missing, the done bar) is unchanged.
+      `domain-modeling` — rather than naming both in one sentence. What follows (the overrides for asking and sweeps,
+      the stop-and-report when either is missing, the done bar) is unchanged.
 - [ ] `change-request-creator` tells the agent to call the Skill tool with `pr` for the description. Its installed check
       before step 1, and its writing the description it produces with nothing added, are unchanged.
 - [ ] No other instruction in either file moves; the prose keeps the register `writing-for-agents` describes.
