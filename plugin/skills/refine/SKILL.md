@@ -17,24 +17,23 @@ Your argument names the idea; when it names none, ask the user for it rather tha
 once, as a short **slug** — the brief's filename, the task list and the published artifacts all carry it, so two epics
 never collide.
 
-**Stage 1's conversation and its decisions are yours and nobody else's** — the human is in the room, the decisions are
+**Stage 1's conversation and its decisions are yours and nobody else's**: the human is in the room, the decisions are
 theirs, and what goes out of stage 1 is fact-finding and never the interview itself. Stages 3 and 4 are one agent
 dispatch each — **one stage, one task** (**Progress**) — and the dispatched agent's **report** is all you get back: what
-it names is what you know. **That is what makes the brief load-bearing**: a **writer** meets the codebase for itself but
-never the conversation, so a decision the brief leaves out is one the writer closes again on its own — silently, and
-maybe the other way. Where a report leaves you unsure, or a writer's document is wrong, put the stage back to the writer
+it names is what you know. A **writer** meets the codebase for itself but never the conversation, so a decision the
+brief leaves out is one the writer closes again on its own, and maybe the other way — **that is what makes the brief
+load-bearing**. Where a report leaves you unsure, or a writer's document is wrong, put the stage back to the writer
 naming what it got wrong rather than editing the document yourself: the writer holds the context the document needs.
 Yours is the work no agent does: grill the idea, send its questions of fact out as **sweep**s (**Sweeps**), write the
-brief, dispatch the two writers in order, read their reports, publish the epic on its **epic branch** where the
-project keeps it in the repository, and hand the epic to the human.
+brief, dispatch the two writers in order, read their reports, publish the epic on its **epic branch** where the project
+keeps it in the repository, and hand the epic to the human.
 
-A **mechanical question about the tree, the forge or the web** is yours to settle — does this symbol exist, what does
+**A mechanical question about the tree, the forge or the web is yours to settle** — does this symbol exist, what does
 this file say, what does a published **spec** already carry, does this tool's own documentation name the feature —
-because each of those answers true or false in a single look. Following a thread is not one, however cheap each step of
-it looks: a search whose results are read to decide what to search next goes out to a **sweep**. That binds for the
-whole **run** rather than stage 1 alone — the reading stage 3 does, checking what a **writer** reported, is a single
-look and so yours. And it bounds your reading and nothing else: the **brief** is yours to write, and so are the glossary
-entries and ADRs stage 1 lands.
+because each answers true or false in a single look. **A thread goes out to a sweep**: a search whose results are read
+to decide what to search next is one, however cheap each step of it looks. That bar binds the whole **run** — the
+reading stage 3 does, checking what a **writer** reported, is a single look and so yours — and it bounds your reading
+and nothing else: the **brief**, and the glossary entries and ADRs stage 1 lands, are yours to write.
 
 **Resume.** This idea may be part-refined — by an earlier run of your own that was interrupted, or by hand. The
 artifacts are what say how far it got: the brief on disk says stage 2 ran, a published spec says stage 3 ran, and
@@ -55,8 +54,7 @@ and reads the repo first-hand on top of it.
 
 **Sequencing.** A stage you dispatched in this run is unfinished until its **report** is in hand, and an acknowledgement
 is not a report: a writer you continue may answer you at once and finish its work in the background, and until the
-report lands that stage has not run. Wait for the report itself. A `sleep` or a poll stands in for none — pick a
-duration too short and you ask again, too long and the epic waits on your guess.
+report lands that stage has not run. Wait for the report itself; a `sleep` or a poll stands in for none.
 
 **Continue a dispatch while it is still addressable** — to put a stage back, or to ask after a report that never came. A
 writer is still holding the context that wrote the document, so the correction costs a patch where a cold dispatch pays
@@ -66,59 +64,79 @@ re-run.
 
 ## Stages
 
-1. **Grill the idea** — call the Skill tool twice, once with `mattpocock-skills:grilling` and once with
+1. **Grill the idea.** Call the Skill tool twice, once with `mattpocock-skills:grilling` and once with
    `mattpocock-skills:domain-modeling`, and run the grilling on the idea with domain-modeling alongside, so terms and
-   decisions land in the project's glossary and ADRs as they crystallise. Those two skills own
-   how the interview runs, apart from how a question reaches the human (**Asking**) and everything a **sweep** does
-   (**Sweeps**); when either is not installed, report that and stop rather than improvising an interview. You are done
-   on grilling's own bar: the frontier empty, and the user's confirmation that you have reached a shared understanding.
+   decisions land in the project's glossary and ADRs as they crystallise. When either is not installed, report that and
+   stop rather than improvising an interview. Those two skills own how the interview runs, apart from how a question
+   reaches the human (**Asking**) and how a question of fact gets settled (**Sweeps**). Each round, before it is asked,
+   every question on the **frontier** goes through:
+   1. its kind told. A decision is the human's and goes toward the round. A question of fact goes to the **mechanical**
+      bar: one you can close in a single look, you settle yourself; one that wants a thread followed — a feature traced
+      from one file to the next, a second repository read, a published document fetched and then read for what to fetch
+      after it — goes out as a **sweep**, dispatched the moment its subject is clear;
+   2. for a decision, every sweep in flight tested against it. A question that turns on a sweep's subject — one you
+      cannot ask well without what the sweep is out to find — waits for that sweep; every other question goes into the
+      round now, since a sweep never holds up the questions it does not touch;
+   3. the round asked (**Asking**) — or, where the holds took every question out of it, the sweep waited for rather
+      than asking anyway.
+
+   Each sweep that lands releases its subject: every question it was holding goes into the next round, with its premise
+   corrected where the sweep's facts changed it, and a settled decision whose premise those facts undercut goes back to
+   the human as a **fork**, saying what changed — an answer carried on a premise that turned out false is a decision
+   silently assumed, the one thing this stage exists to prevent. The hold lasts as long as the sweep is in flight and
+   no longer. You are done on grilling's own bar: the frontier empty — a question a sweep is holding is still on it —
+   and the user's confirmation that you have reached a shared understanding.
 2. **Write the brief** — as **The brief** below. You are done when every one of the five things it carries is written
    out of the conversation or stated to hold nothing, and a fresh agent could carry the design forward from it alone.
-3. **Write the spec** — dispatch `spec-writer`. It publishes the spec to the project's issue tracker. Keep the location
-   it reports. Its **report** raises the **fork**s its reading forced — among them the decision a killed **claim** took
-   down with it — and every one is yours to hold: say what the writer found, close them all with the human in one round
-   of questions (**Asking**) before stage 4 runs, and put the stage back once carrying every answer, whether you
-   continue the writer or dispatch a cold one, since an answer that reaches stage 4 any other way is one the record does
-   not carry. **One report, one round, one put-back**: the forks a report raised are the whole set, and you hold them
-   all the moment it lands. Folding those answers in can raise forks the writer could not have seen before, and the
-   corrected report carries them — that report is the next one, held and closed and folded in the same way, as often as
-   the writing needs. You are done when the spec's location is in hand and no decision a killed claim took down is still
-   open.
-4. **Break it into tickets** — dispatch `tickets-writer`. It publishes one ticket per slice, numbered in dependency
-   order. Keep the count and the locations it reports.
+3. **Write the spec.** Dispatch `spec-writer`; it publishes the spec to the project's issue tracker, and its **report**
+   raises the **fork**s its reading forced — among them the decision a killed **claim** took down with it. Every one is
+   yours to hold, and **one report, one round, one put-back** is the loop each report goes through:
+   1. the spec's location it names kept;
+   2. every fork it raises closed with the human in one round of questions (**Asking**), saying what the writer found.
+      The forks a report raised are the whole set, and you hold them all the moment it lands;
+   3. the stage put back once, carrying every answer — the writer continued where it is addressable, a cold dispatch
+      otherwise — since an answer that reaches stage 4 any other way is one the record does not carry;
+   4. the corrected report taken as the next one, through the same loop: folding the answers in can raise forks the
+      writer could not have seen before, as often as the writing needs.
+
+   You are done when the spec's location is in hand and no decision a killed claim took down is still open.
+4. **Break it into tickets.** Dispatch `tickets-writer`, carrying the spec's location. It publishes one ticket per
+   slice, numbered in dependency order. You are done when its report is in hand, with the count and the locations it
+   names kept.
 5. **Open the draft** — only where the project's conventions put the spec and tickets as files in the repository, the
    same conventions the writers published to. Where they put them on the forge's issues, this stage is not part of the
    run: go to stage 6. It is **mechanical** throughout — every step a git or forge operation, with no wording to choose:
-   - **The branch.** Fetch first. The **epic branch** is the branch on the remote that carries the epic's spec at its
-     location — look first under the name from the epic's **slug** in the style of the branches already there, the rule
-     `implementer` names it by, then across the remote's other branches. Where one carries it, switch to it and pull.
-     Where none does, create it from the up-to-date default branch on the remote, under that name; a branch of that
-     name the remote already carries without the spec is someone else's work, so report it and stop rather than
-     committing on it. Switch with `--merge`: the tree's uncommitted changes are carried onto the branch even where a
-     file differs between the two, and where that merge conflicts, stop and report the conflicting files as a
-     **hand-off** rather than resolving them.
-   - **The commit.** Add exactly the paths this refinement wrote — the epic's spec and tickets, and every glossary and
-     ADR file stage 1 landed — and name the same paths on the commit itself (`git commit -- <paths>`), so nothing else
-     the index already held rides in. Every other change in the tree stays as you found it, staged or not, and goes
-     into your report. One of those files that already carried uncommitted changes of the human's when the run opened
-     goes in whole, since no mechanical step tells their lines from yours: name it in your report. The message follows
-     the project's own commit conventions and carries no `Ticket:` line: this is no ticket's work.
-   - **The change request.** Push the branch and open its change request as a **draft**, titled with the spec's title,
-     and described with this text and nothing else, the two placeholders filled in and passed through a file rather
-     than on the command line, where the backticks would run as a command:
+   1. **The branch.** Fetch first. The **epic branch** is the branch on the remote that carries the epic's spec at its
+      location — look first under the name from the epic's **slug** in the style of the branches already there, the
+      rule `implementer` names it by, then across the remote's other branches. Where one carries it, switch to it and
+      pull. Where none does, create it from the up-to-date default branch on the remote, under that name; a branch of
+      that name the remote already carries without the spec is someone else's work, so report it and stop rather than
+      committing on it. Switch with `--merge`, so the tree's uncommitted changes are carried onto the branch even where
+      a file differs between the two; where that merge conflicts, stop and report the conflicting files as a
+      **hand-off** rather than resolving them.
+   2. **The commit.** Add exactly the paths this refinement wrote — the epic's spec and tickets, and every glossary and
+      ADR file stage 1 landed — and name the same paths on the commit itself (`git commit -- <paths>`), so nothing else
+      the index already held rides in. Every other change in the tree stays as you found it, staged or not, and goes
+      into your report. One of those files that already carried uncommitted changes of the human's when the run opened
+      goes in whole, since no mechanical step tells their lines from yours: name it in your report. The message follows
+      the project's own commit conventions and carries no `Ticket:` line: this is no ticket's work.
+   3. **The change request.** Push the branch and open its change request as a **draft**, titled with the spec's title,
+      and described with this text and nothing else, the two placeholders filled in and passed through a file rather
+      than on the command line, where the backticks would run as a command:
 
-     ```
-     The spec for this epic is at `<spec location>`, broken into <ticket count> tickets beside it.
+      ```
+      The spec for this epic is at `<spec location>`, broken into <ticket count> tickets beside it.
 
-     This description is a placeholder: the delivery rewrites it.
-     ```
+      This description is a placeholder: the delivery rewrites it.
+      ```
 
-     The description stays this placeholder because build writes the real one; `pr` is build's to run.
-   - **Resume.** The branch, its commits and the forge say how far this stage got, on every run. A branch already
-     carrying those paths at their current content owes no commit; a difference owes a new commit on top, pushed —
-     history only grows, so never an amend and never a force-push. A change request already open for the branch is the
-     change request, draft or not: push to it and leave its title and description as they stand. Where none is open —
-     never opened, or closed or merged since — open a fresh draft as above: one open at a time, never two.
+      The description stays this placeholder because build writes the real one; `pr` is build's to run.
+
+   **Resume.** The branch, its commits and the forge say how far this stage got, on every run. A branch already carrying
+   those paths at their current content owes no commit; a difference owes a new commit on top, pushed — history only
+   grows, so never an amend and never a force-push. A change request already open for the branch is the change request,
+   draft or not: push to it and leave its title and description as they stand. Where none is open — never opened, or
+   closed or merged since — open a fresh draft as above: one open at a time, never two.
 
    You are done when the epic branch on the remote carries every one of those paths at its current content, and a
    change request is open from it.
@@ -137,47 +155,23 @@ the frontier to fit — the human answers in batches, and every question the rou
 
 ## Sweeps
 
-Dispatching a **sweep** never holds up the questions it does not touch, and a question the sweep is about to answer
-never reaches the human before it lands. Both hold at once, because the subject you sent the sweep out to settle is what
-separates them.
+A **sweep** is a fact-finding dispatch, one subject each, and several run at once so two questions of fact never queue
+behind one another. Whatever general-purpose agent your host offers is what it goes to: this plugin ships no sweeper of
+its own. Send each the moment its subject is clear, and **send it even where dispatching makes you wait for the
+report**: on a host where that blocks, the interview serialises — send, wait, ask, send — and the sweep still goes out,
+because the reading is the cost and the waiting only takes time. The dispatch carries:
 
-**A question of fact you cannot close in one mechanical look goes out to a sweep.** Test every one against that bar as
-it arrives: where the answer wants a thread followed — a feature traced from one file to the next, a second repository
-read, a published document fetched and then read for what to fetch after it — the sweep settles it, and you dispatch.
-Read it yourself and it lands in a context every later turn of the interview re-reads; a sweep reads it in a context
-that ends when its report does.
+- **the subject, named as the question of fact the sweep is out to close — never the next file to open.** A sweep
+  follows the thread itself, however many looks that takes, and comes back once the question is closed;
+- **that the looking is first-hand.** A subject broad enough to split is one an agent will split, and the half it hands
+  on comes back late — or comes back to you instead, long after the sweep that sent it has reported without it. Telling
+  a second subject from a second look at the same one is yours, because the **frontier** is what says which of the two
+  you are owed;
+- **what it owes back: the facts and where it found them** — never a view on the design, which is the human's to form
+  with you.
 
-**Several sweeps run at once, one subject each**, so two questions of fact never queue behind one another. Send each as
-soon as its subject is clear, and **send it even where dispatching makes you wait for the report**: on a host where that
-blocks, the interview serialises — send, wait, ask, send — and the sweep still goes out, because the reading is the cost
-and the waiting only takes time.
-
-**A sweep is handed one subject and owes back the facts and where it found them** — never a view on the design, which is
-the human's to form with you. Whatever general-purpose agent your host offers is what it goes to: this plugin ships no
-sweeper of its own.
-
-**Name the subject as you dispatch: the question of fact the sweep is out there to close, and never the next file to
-open** — a sweep follows the thread itself, however many looks that takes, and comes back once the question is closed.
-You hold it for the rest of the interview and nowhere else: the brief hands the spec writer the design rather than the
-interview's bookkeeping, and the task list carries one task per stage.
-
-**Say as you dispatch that the looking is first-hand.** A subject broad enough to split is one an agent will split, and
-the half it hands on comes back late — or comes back to you instead, long after the sweep that sent it has reported
-without it. Telling a second subject from a second look at the same one is yours, because the **frontier** is what says
-which of the two you are owed, and you are the one holding it.
-
-- **Test every pending question against that subject.** A question that turns on it — one you cannot answer well without
-  what the sweep is out to find — waits for the sweep, and every other question goes into the round now.
-- **An empty round leaves the sweep as the only thing to wait for.** When the hold takes every question out of the
-  round, wait for the sweep rather than asking anyway. What never waits on a sweep is the question the sweep does not
-  touch, and this round holds none of those.
-- **A landed sweep's subject holds nothing.** Once its **report** is in hand, every question that subject was holding
-  goes into the next round, with the premise corrected where the sweep's facts changed it. The hold lasts as long as the
-  sweep is in flight and no longer — a subject that outlives its sweep takes questions off the frontier that nothing is
-  coming for.
-- **A sweep that contradicts a settled decision reopens it.** Where its facts undercut the premise the human decided on,
-  say what changed and put the decision back to them as a **fork**. An answer carried on a premise that turned out false
-  is a decision silently assumed, which is the one thing this stage exists to prevent.
+You hold the subject for the rest of the interview and nowhere else: the brief hands the spec writer the design rather
+than the interview's bookkeeping, and the task list carries one task per stage.
 
 **Where your host offers no agent to sweep with, read inline** and carry that into your **report** as a **hand-off**.
 There is nowhere else for the reading to go, and stalling an interview over a host's configuration strands a human who
@@ -205,13 +199,10 @@ settled rides in the **grounds** beside the decision it settled, where the contr
 **Cheapest is counted in the writer's reading, not in your typing.** A claim about what a file says is settled by
 opening that file, what a test covers by reading its body, what a tool does by running that tool once. A path that says
 to settle it by doing the work sends the **writer** off to build the thing and run the suite before a line of the spec
-exists — and a stage that prototypes its way to an answer one look would have given pays for the prototype and again
-for every later turn that re-reads it. So write the path down at the price it really costs: name the file, the body or
-the command where one of those closes the claim.
-
-**A claim only a prototype settles gets that path and says so.** Where building it is genuinely the only thing that
-would settle one — an extraction nobody has attempted, an output nothing has compared — a writer sent to prototype
-knowingly is worth what it spends, and the claim it comes back with is one the brief could never have closed.
+exists, so write the path down at the price it really costs: name the file, the body or the command where one of those
+closes the claim. **A claim only a prototype settles gets that path and says so**: where building it is genuinely the
+only thing that would settle one — an extraction nobody has attempted, an output nothing has compared — a writer sent to
+prototype knowingly is worth what it spends.
 
 Redact secrets and personal data: the brief outlives the session, on a disk nobody is watching.
 
