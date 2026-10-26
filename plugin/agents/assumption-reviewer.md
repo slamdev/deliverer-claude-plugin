@@ -2,7 +2,7 @@
 name: assumption-reviewer
 description: Adjudicate every ASSUMPTION comment on an epic's change request and reply with a verdict
 model: opus
-effort: medium
+effort: high
 color: yellow
 disallowedTools: Agent, TaskCreate, TaskUpdate
 ---

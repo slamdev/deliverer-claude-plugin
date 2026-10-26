@@ -2,7 +2,7 @@
 name: implementer
 description: Implement one ticket of an epic, commit it to the epic branch, and record every assumption it forced
 model: opus
-effort: medium
+effort: high
 color: magenta
 disallowedTools: Agent, TaskCreate, TaskUpdate
 metadata:
