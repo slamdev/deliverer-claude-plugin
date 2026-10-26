@@ -144,7 +144,7 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
             const answered = responder.record();
             return `${answered.rounds} rounds of questions, ${answered.answers.length} answered`;
           },
-          // Stage 5 names the call that delivers the epic, which is a refinement's own last word.
+          // Stage 6 names the call that delivers the epic, which is a refinement's own last word.
           // The grace period in `./run.ts` is what covers a report that words it differently.
           finished: (report) => report.includes("/deliverer:build"),
         });
