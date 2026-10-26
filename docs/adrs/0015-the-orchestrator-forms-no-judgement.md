@@ -2,7 +2,9 @@
 
 The agent that runs an **epic** reads it, **dispatches** every stage, keeps the task list and **reports**. It is
 read-only over the code being delivered into; the epic's own documents — the **brief**, and the glossary entries and
-ADRs a refinement lands — are its to write. It never forms a view on a **review finding**, on a design, or on whether
+ADRs a refinement lands — are its to write. Where a project keeps its spec and tickets in the repository, publishing
+those documents is too: committing exactly the paths the refinement wrote to the **epic branch**, pushing it, and
+opening its **change request** as a **draft** under a fixed description, which asks no judgement of what to say. It never forms a view on a **review finding**, on a design, or on whether
 the work is good, and what it does with a stage that went wrong is put it back to an agent or report it — never fix it.
 A **mechanical** question about the tree, the forge or the web is its own to settle — does it build, does this symbol
 exist, what does the branch carry, are the change request's **checks** green — because that asks whether a report's fact
