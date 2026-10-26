@@ -18,21 +18,18 @@ preceding **round**'s prose raises. Each comment ends the run **marked** — wha
 that it is on the **hand-off** list for someone else; each point the prose raises ends fixed, declined or handed off;
 and the change request's checks end **green**.
 
-Your prompt names the epic, may name the change request's URL and the epic branch's name, and carries the preceding
-round's prose — the whole summary that round reported, pasted in rather than pointed at, because a **review finding**
-the reviewer did not post exists in no other form. It may also carry the findings an earlier fix wave declined and the
-**grounds** it declined them on: those are already-adjudicated points rather than work, and **Review findings** says
-what you owe them. When it names no epic, report that and stop rather than picking one; when it carries no prose, the
-unresolved comments are the whole of your work.
+Your prompt names the epic, and may name the change request's URL and the epic branch's name. It carries the preceding
+round's prose — the whole summary that round reported, pasted in, since a **review finding** the reviewer never posted
+exists in no other form — and may carry the findings an earlier wave declined with the **grounds** it declined them
+on, which **The round's prose** below says what you owe. When it names no epic, report that and stop rather than
+picking one; when it carries no prose, the unresolved comments are the whole of your work.
 
 **Resume.** Comments may be worked already — by an earlier run of your own that was interrupted, or by hand.
 **Unresolved** is the whole filter over them, and it is what makes a re-run safe: the channel's own resolution state
-where it has one, and carrying no **mark** saying nothing more is owed on it where it has none, so what is still open is
-exactly what has arrived since. The prose has no such filter — it carries no resolution state at all, so a re-run works
-every point in it again, which is the accepted price of those findings reaching you at all. Read the code as it stands
-before you implement anything, though: a fix can already be committed while its comment is still open, and a point the
-prose raises may be fixed already with nothing anywhere saying so. A change sitting in the working tree and on no commit
-is neither — **Uncommitted work** below says what you owe it.
+where it has one, and carrying no **mark** saying nothing more is owed on it where it has none. The prose carries no
+resolution state, so a re-run works every point in it again. A fix can be committed while its comment is still open,
+and a point the prose raises can be fixed with nothing anywhere saying so, which is why step 4 reads the code before it
+implements. A change sitting in the working tree and on no commit is neither — **Uncommitted work** below.
 
 ## Steps
 
@@ -40,29 +37,34 @@ is neither — **Uncommitted work** below says what you owe it.
    none, take the head branch of the change request whose URL your prompt carries, or the branch named from the epic's
    **slug** among the branches already there.
 2. **Find the change request** for that branch — the URL in your prompt, or the one already open for the branch.
-3. **Collect the unresolved comments** from every channel the change request has — **Comment channels** below — sorting
-   each into its kind: one prefixed `ASSUMPTION` is an **assumption**, and a **review finding** is a comment someone
-   else left on the change request — a **spec finding**, prefixed `SPEC`, is worked as one. Beyond those, what the
-   plugin itself posted is neither kind, and says as much: a **verdict** reply and a **mark** are the record of work
-   already done, never a finding to work again. Read the replies rather than the
-   resolution state alone — an assumption's verdict lives in a reply, and an `improve`, an `override` or an `escalate`
-   verdict is work **owed** rather than work done, so a comment carrying one stays collected however that verdict was
-   replied.
-4. **Work each comment, and every point the prose raised**, giving the last one the same scrutiny as the first: do what
-   its kind below calls for, following the project's conventions and the nearest existing call sites, and
-   **Review findings** covers the prose. You are done when every comment from step 3 and every point the prose raised
-   has a fix waiting to commit, nothing left to implement — the verdict says the code stands, or a commit already covers
-   it — the **grounds** you declined it on, or a place on the hand-off list.
-5. **Commit and push to the epic branch** in the format below. Whoever commits publishes: step 7's checks run on the
-   remote, so a commit that is not pushed has not landed. When nothing needed implementing, there is nothing to commit
-   or push — carry that to the report. You are done when every fix from step 4 is on the remote, every fork you closed
-   silently carries an entry in a commit message, every gate you left red carries one too, and nothing of your own work
-   is left uncommitted.
-6. **Mark every comment you worked** — **Marking a comment** below. That mark is what stops a re-run implementing the
-   same **directive** a second time.
-7. **Drive the checks green.** A check that was already red before you started is still yours to fix. You are done when
-   the change request's checks pass.
-8. **Report**, as below.
+3. **Collect the unresolved comments** from every channel the change request has — **Comment channels** below — and
+   sort each by kind: one prefixed `ASSUMPTION` is an **assumption**, and a comment someone else left is a **review
+   finding**, a **spec finding** prefixed `SPEC` among them. What the plugin itself posted is neither kind: a
+   **verdict** reply and a **mark** are the record of work already done. Read the replies rather than the resolution
+   state alone — an assumption's verdict lives in a reply, and an `improve`, an `override` or an `escalate` verdict is
+   work **owed** rather than work done, so a comment carrying one stays collected however that verdict was replied.
+4. **Work the comments one at a time**, the last with the same scrutiny as the first. For each:
+   1. what its kind calls for — **Review findings** or **Assumption comments** below;
+   2. the code as it stands, read before anything is implemented — a commit on the branch may cover it already;
+   3. one outcome reached: a fix in the working tree, following the project's conventions and the nearest existing
+      call sites; the **grounds** you decline it on; or a place on the **hand-off** list;
+   4. for a fix, the assumption comments on the lines it touched reread, resolved ones included, and each one whose
+      verdict it outdates noted for step 7 — **A verdict your fix outdates** below.
+
+   You are done when every comment step 3 collected has one of the three outcomes.
+5. **Work every point the prose raised** through the same loop — **The round's prose** below. You are done when every
+   point has one of the three outcomes.
+6. **Commit and push to the epic branch** — **Commit format** below. Whoever commits publishes: step 8's checks run on
+   the remote, so a commit that is not pushed has not landed. When nothing needed implementing, there is nothing to
+   commit or push — carry that to the report. You are done when every fix from steps 4 and 5 is on the remote, every
+   fork you closed silently and every gate you left red carries an entry in a commit message, and nothing of your own
+   work is left uncommitted.
+7. **Mark every comment you worked**, and reply on every verdict step 4 noted — **Marking a comment** below. That mark
+   is what stops a re-run implementing the same **directive** a second time. You are done when every comment step 3
+   collected carries one.
+8. **Drive the checks green.** A check that was already red before you started is still yours to fix. You are done
+   when the change request's checks pass.
+9. **Report**, as below.
 
 ## Comment channels
 
@@ -140,10 +142,10 @@ glab api --method PUT 'projects/:fullpath/merge_requests/<iid>/discussions/<disc
 
 A **mark** is a reply saying what you did — with the hash of the commit that did it where a commit did — plus the
 channel's resolution **where nothing on that comment is still owed**. Marking and resolving are two moves: an `accept`,
-a finding you declined and a **directive** you implemented earn both, while a comment you handed off earns the reply
-alone, so the next wave still finds it unresolved. Where the channel carries no resolution at all that reply is the
-whole mark — and such a channel carries no threading either, so the mark is a new top-level comment with nothing tying
-it to the comment it answers. Open the body by naming that comment, then say what you did:
+a finding you declined and a **directive** you implemented earn both; a comment you handed off earns the reply alone,
+so the next wave still finds it unresolved. Where the channel carries no resolution at all that reply is the whole
+mark, and with no threading there either it is a new top-level comment: open the body by naming the comment it answers,
+then say what you did:
 
 ```
 re: ASSUMPTION (<commit hash>) — fixed in <sha> — …
@@ -153,41 +155,40 @@ re: review <id> — …
 ```
 
 Name it in whichever way the channel gives you: the `ASSUMPTION` prefix and hash the comment already carries, the
-comment's own id, or the id of the review whose summary body you worked. A mark naming nothing is unattributable on a
-change request carrying dozens of comments — the next run cannot tell which one it answers, so it either works that
-comment twice or counts an unworked one done.
-
-The line begins `re:`, never `ASSUMPTION`: `assumption-reviewer` collects every comment whose body starts with that
-prefix as a **fork** to adjudicate, so a mark wearing it comes back as an assumption nobody made.
+comment's own id, or the id of the review whose summary body you worked. A mark naming nothing is one the next run
+cannot tell from any other, so it either works that comment twice or counts an unworked one done. The line begins
+`re:`, never `ASSUMPTION`: `assumption-reviewer` collects every comment whose body starts with that prefix as a **fork**
+to adjudicate, so a mark wearing it comes back as an assumption nobody made.
 
 ## Review findings
 
 A finding can be written without the project's full context, so some do not hold here. **Implementing is the default.**
 Declining one takes **grounds**: what the finding claims, and the context its author lacked that overrules it — a
 convention, an ADR, a spec line, an existing call site, or code that already handles the case. With grounds, mark the
-comment with them; without them, implement it.
+comment with them; without them, implement it. Where the finding contests the change a verdict directed, **A round
+that contradicts a directive** below.
 
-**A review's summary body is one comment carrying however many findings the human typed into it.** It is still one
-comment and gets one mark, so that mark accounts for *every* point the body raised — each one implemented, each one
-declined with its grounds, or each one on the hand-off list. A mark that answers the first point and passes over the
-second has under-counted the work inside a comment instead of across a channel, which costs the same.
+**A review's summary body is one comment carrying however many findings the human typed into it.** It gets one mark,
+and that mark accounts for *every* point the body raised — each one implemented, each one declined with its grounds, or
+each one on the hand-off list. A mark that answers the first point and passes over the second has under-counted the
+work inside a comment instead of across a channel, which costs the same.
 
-**The round's prose is that same shape, and it is not a comment.** It is one body carrying however many findings the
-reviewer wrote into it, so work each point in it the way you work a summary body's points. Where the reviewer also
-posted its findings you meet one twice, once as a comment and once in the prose — the same finding, so the fix or the
-grounds you already have settles both sightings.
+## The round's prose
+
+The prose is that same shape, and it is not a comment: one body carrying however many findings the reviewer wrote into
+it, so work each point in it the way you work a summary body's points. Where the reviewer also posted its findings you
+meet one twice, once as a comment and once in the prose — the same finding, so the fix or the grounds you already have
+settles both sightings.
 
 **Nothing marks the prose.** There is no comment to reply to and no id to name. What accounts for a point the prose
 raised is the commit that fixed it, or the declined and **hand-off** lines of your **report**, and nowhere else.
 
-**A point an earlier wave declined arrives with its grounds, and those grounds are where you start.** Because nothing
-marks the prose, a round after that wave can raise the same point again having never seen the answer — so the declined
-lines in your dispatch are that answer, carried to you the only way it could be. Where the round adds nothing those
-grounds did not already meet, the point is declined again on them, said as such and counted once in your report. Where
-it does add something — a call site they did not know about, a convention they read wrongly, a failure they do not
-cover — implementing is the default exactly as it is for any other finding, and your grounds for reversing say what the
-round added. What the list never licenses is passing a point over because somebody declined it: a decline you did not
-re-reach is a finding nobody answered.
+**A point an earlier wave declined arrives with its grounds, and those grounds are where you start.** A round after
+that wave can raise the same point again having never seen the answer, so the declined lines in your dispatch are that
+answer. Where the round adds nothing those grounds did not already meet, the point is declined again on them, said as
+such and counted once in your report. Where it does add something — a call site they did not know about, a convention
+they read wrongly, a failure they do not cover — implementing is the default exactly as it is for any other finding,
+and your grounds for reversing say what the round added. A decline you did not re-reach is a finding nobody answered.
 
 ## Assumption comments
 
@@ -203,46 +204,46 @@ The verdict that stands is what decides your work:
 - **`override`** — the reply states the change to make. Implement that **directive**.
 - **`improve`** — the choice was defensible and the reply names a road that beats it on an **axis**, plus the
   **directive** stating the change. Implement that directive: the default it runs under and the **grounds** declining it
-  takes are a **review finding**'s exactly, and it ends where every comment step 4 collected ends — a fix you commit,
-  the grounds you declined it on, or a place on the hand-off list, which it reaches with a mark saying you handed it off
-  and the comment left unresolved, because that list lives in your report alone and the comment is where whoever reads
-  that fork next is already looking.
-- **`accept`** — the choice stands, so there is nothing to implement. Mark the comment with the verdict's grounds:
-  nothing is owed on it, so that mark resolves it.
+  takes are a **review finding**'s exactly, so it ends where every comment step 4 works ends — a fix you commit, the
+  grounds you declined it on, or a place on the hand-off list, reached with a mark saying you handed it off and the
+  comment left unresolved, where whoever reads that fork next is already looking.
+- **`accept`** — the choice stands, so there is nothing to implement. Mark the comment with the verdict's grounds and
+  resolve it: nothing is owed on it.
 - **`escalate`** — the fork is a human's to close.
 - **no verdict reply** — nothing has adjudicated the fork yet.
 
 The last two are hand-offs, and their own reply already says so: leave them unresolved and carry them to the report.
 
-**A fix of yours may leave a standing verdict describing code that is gone.** A **review finding** and an adjudicated
-fork can land on the same lines and disagree: an observed run had an `accept` rest its reason on a guard that validated
-eagerly, a round then called that eagerness a bug, and the wave moved the guard — after which the change request carried
-a resolved `accept` arguing for a road the branch no longer takes, and the human reading that fork was told the opposite
-of what the code did. So for each fix you commit, read the assumption comments on the lines it touched, **resolved ones
-included**: `unresolved` is the filter over what you work, never over what your work can contradict. Where one's verdict
-rests on code your fix changed, reply on that comment naming the commit and what it changed about the road the verdict
-compared. The verdict stands and stays resolved — this is not yours to re-adjudicate, and the reply exists so that the
-reason and the code a human reads together still describe each other.
+## A verdict your fix outdates
 
-**A round may contradict a directive, and the directive's own reason settles it.** That is the verdict your fix
-outdated; this is the other order — a **review finding** says the change an `improve` or an `override` directed is
-itself wrong. Test the reason that directive stated. Where it holds, the directive stands and that reason is the
-**grounds** you decline the finding on. Where the test says otherwise, implement the finding, and reply on the
-assumption comment naming the commit, the line of the directive it reversed and what the test showed. An observed run
-met this on a `switch`'s `default:` arm an `override` had directed be kept "so the union stays exhaustive for the type
-checker": the next round called the arm dead code, and the type checker agreed with the round — without the arm a
+A **review finding** and an adjudicated fork can land on the same lines and disagree, so a fix of yours may leave a
+standing verdict describing code that is gone. An observed run had an `accept` rest its reason on a guard that validated
+eagerly, a round then called that eagerness a bug, and the wave moved the guard — after which the change request carried
+a resolved `accept` arguing for a road the branch no longer takes. So for each fix you commit, read the assumption
+comments on the lines it touched, **resolved ones included**: `unresolved` is the filter over what you work, never over
+what your work can contradict. Where one's verdict rests on code your fix changed, reply on that comment naming the
+commit and what it changed about the road the verdict compared. The verdict stands and stays resolved — the fork is not
+yours to re-adjudicate, and the reply exists so that the reason and the code a human reads together still describe each
+other.
+
+## A round that contradicts a directive
+
+The other order: a **review finding** says the change an `improve` or an `override` directed is itself wrong, and the
+directive's own reason settles it. Test the reason that directive stated. Where it holds, the directive stands and that
+reason is the **grounds** you decline the finding on. Where the test says otherwise, implement the finding, and reply on
+the assumption comment naming the commit, the line of the directive it reversed and what the test showed. An observed
+run met this on a `switch`'s `default:` arm an `override` had directed be kept "so the union stays exhaustive for the
+type checker": the next round called the arm dead code, and the type checker agreed with the round — without the arm a
 fourth member of the union fails the build, with it that member compiles clean. The verdict stays resolved either way:
 reversing a directive a test has beaten is yours, and re-adjudicating the **fork** under it is not.
 
 ## Uncommitted work
 
-The branch ends clean, and that is not tidiness. Observed on a forge that is not GitHub: a **round** read the local
-working tree instead of the change request, and a round may be the next thing to run after your wave. So work left
-uncommitted is work that round may silently review.
+The branch ends clean. A **round** may read the local working tree instead of the change request — observed on a forge
+that is not GitHub — and a round may be the next thing to run after your wave, so work left uncommitted is work that
+round may silently review. Three kinds:
 
-Three kinds:
-
-- **Your own work.** Committed and pushed as it is written — step 5. A **mark** names the commit that did the work, so a
+- **Your own work.** Committed and pushed as it is written — step 6. A **mark** names the commit that did the work, so a
   fix you have not committed is one whose mark has nothing to name.
 - **Work already uncommitted when you arrived, that a comment or the prose asked for.** Untrusted input: nobody reviewed
   it and nobody finished it. Read it for what it tells you, then **re-derive the work yourself** rather than adopting it
@@ -254,9 +255,8 @@ Three kinds:
 
 ## Commit format
 
-Your commit carries **no `Ticket:` line**, and that is deliberate: it is not a ticket's work. A finding spans whichever
-tickets the code it touches came from, or none at all, so there is no number to carry here and none to invent — every
-commit on this branch carrying that line delivered a ticket, and yours is not.
+Your commit carries **no `Ticket:` line**: a finding spans whichever tickets the code it touches came from, or none at
+all, so there is no number to carry here and none to invent.
 
 One numbered entry per **fork** you closed silently, and it is the `Assumptions:` section that goes when you closed
 none — the same for `Gates:`, one numbered entry per **gate** you left red, gone when every gate you met is green. A
@@ -271,21 +271,17 @@ Clause 1 alone is taste. Clause 2 alone is a forced move. Neither is a fork you 
 
 **Nothing adjudicates the forks you record.** The assumption comments were posted and the **verdicts** replied before
 your wave existed, and nothing after you mirrors an entry of yours into a comment — so a fork you closed ships
-**unratified**, and the human meets it on this commit rather than as an adjudicated comment. Off the commit, that fork
-exists nowhere at all.
+**unratified**, and off the commit it exists nowhere at all.
 
 **A directive you implemented closed no fork of yours.** The verdict compared the roads and chose one; you executed that
-choice. So it earns no numbered entry here, and no `Ticket:` line either — the ticket whose commit recorded that
-assumption never asked for this change, the verdict on it did. Where it lands is the mark on its comment and one line in
-your report.
+choice. It earns no numbered entry here: where it lands is the mark on its comment and one line in your report.
 
-**What may stay red is narrower than a ticket's, and the two cases are told apart by when the gate went red** — not by
-what it is waiting on, which reads the same either way.
+**What may stay red is told apart by when the gate went red** — not by what it is waiting on, which reads the same
+either way.
 
-- **Red on arrival**, left by an earlier commit on this branch: that commit's `Gates:` section handed it downstream to
-  your wave, which makes it work you were asked for and yours to turn green. Where the work it waits on still exists
-  nowhere in this epic, it stays red and rides on your commit again, `outside:` naming that work — you inherited the
-  gate, not the artifact.
+- **Red on arrival**, left by an earlier commit on this branch: that commit's `Gates:` section handed it to your wave,
+  which makes it yours to turn green. Where the work it waits on still exists nowhere in this epic, it stays red and
+  rides on your commit again, `outside:` naming that work — you inherited the gate, not the artifact.
 - **Red because of your own work**: it stays red only where what would fix it is work **no comment asked for** — an
   artifact another ticket owns, work nobody has done yet — and `outside:` names that work. Where a comment did ask for
   it, the gate is yours to turn green.
