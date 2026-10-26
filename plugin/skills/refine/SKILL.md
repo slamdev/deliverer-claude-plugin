@@ -37,11 +37,13 @@ look and so yours. And it bounds your reading and nothing else: the **brief** is
 entries and ADRs stage 1 lands.
 
 **Resume.** This idea may be part-refined — by an earlier run of your own that was interrupted, or by hand. The
-artifacts are what say how far it got: the brief on disk says stage 2 ran, a published spec says stage 3 ran, published
-tickets say stage 4 did, and a change request open from the epic branch says stage 5 did. Start from the earliest stage
-whose artifact you cannot find — re-dispatching either writer is safe, because each one resumes on its own and adds only
-what is missing, and stage 5 reads its own progress off the branch and the forge. Stage 1 is the exception: a
-conversation leaves nothing behind but the brief, so when the brief is gone the grilling is owed again.
+artifacts are what say how far it got: the brief on disk says stage 2 ran, a published spec says stage 3 ran, and
+published tickets say stage 4 did. Start from the earliest stage whose artifact you cannot find — re-dispatching either
+writer is safe, because each one resumes on its own and adds only what is missing. Stage 1 is the exception: a
+conversation leaves nothing behind but the brief, so when the brief is gone the grilling is owed again. An open change
+request says nothing about whether stage 5 is done, since the spec or tickets may have changed since it opened, so stage
+5 runs on every run where it is part of the run: it reads its own progress off the branch and the forge, commits only
+what differs, and opens no second change request.
 
 **Dispatch.** Every dispatch carries the epic's **slug**. Stage 3's carries the brief's path; stage 4's carries the
 spec's location instead — once the spec is published it is the record, so the tickets are cut from it rather than from
@@ -88,8 +90,8 @@ re-run.
      style of the branches already there — the rule `implementer` names it by, so build finds it under the same name.
      Where the remote already carries it, switch to it and pull instead. Uncommitted changes in the tree ride across
      the switch.
-   - **The commit.** Stage exactly the paths this refinement wrote: the epic's spec and tickets, and every glossary and ADR
-     file stage 1 landed. Every other change in the tree stays as you found it, unstaged, and goes into your report.
+   - **The commit.** Stage exactly the paths this refinement wrote: the epic's spec and tickets, and every glossary and
+     ADR file stage 1 landed. Every other change in the tree stays as you found it, unstaged, and goes into your report.
      The message follows the project's own commit conventions and carries no `Ticket:` line: this is no ticket's work.
    - **The change request.** Push the branch and open its change request as a **draft**, titled with the spec's title,
      and described with this text and nothing else, the two placeholders filled in:
@@ -101,10 +103,10 @@ re-run.
      ```
 
      The description stays this placeholder because build writes the real one; `pr` is build's to run.
-   - **Resume.** The branch, its commits and the forge say how far this stage got. A branch already carrying those paths
-     at their current content owes no commit; a difference owes a new commit on top, pushed — history only grows, so
-     never an amend and never a force-push. A change request already open for the branch is the change request,
-     whatever its state.
+   - **Resume.** The branch, its commits and the forge say how far this stage got, on every run. A branch already
+     carrying those paths at their current content owes no commit; a difference owes a new commit on top, pushed —
+     history only grows, so never an amend and never a force-push. A change request already open for the branch is the
+     change request, whatever its state: push to it and leave its title and description as they stand.
 
    You are done when the epic branch on the remote carries every one of those paths at its current content, and a
    change request is open from it.
@@ -209,10 +211,10 @@ opens and create them all at once: five where the spec and tickets live in the r
 forge's issues. Name each from the stage it serves and prefix it with the epic's slug so two epics can share a session:
 `<slug>: grill the idea`, `<slug>: open the draft`. Mark a task `in_progress` as you enter its stage and `completed`
 once its artifact exists — for stages 3 and 4, once you have read the writer's report; for stage 5, once its own bar
-holds. Putting a stage back
-to its writer flips its task to `in_progress` again, and `completed` once the corrected report lands: a correction is
-the same stage rather than a new one, so it gets no task of its own. A resumed run opens the same set, with the stages
-whose artifacts it found created `completed` — stage 5's when a change request is already open from the epic branch.
+holds. Putting a stage back to its writer flips its task to `in_progress` again, and `completed` once the corrected
+report lands: a correction is the same stage rather than a new one, so it gets no task of its own. A resumed run opens
+the same set, with the stages whose artifacts it found created `completed` — never stage 5's, which runs on every run
+and is marked `completed` once its bar holds on this one.
 
 ## What to report
 
