@@ -22,11 +22,12 @@ Implementation Decisions › Refine's publishing stage; ADR-0015 already allows 
       a new commit on top, never an amend or force-push; a change request already open for the branch is the change
       request.
 - [ ] The task list carries `<slug>: open the draft` when the stage runs, and four tasks as today when it does not; a
-      resumed run creates it `completed` when the change request is open.
+      resumed run never creates it `completed`, since the stage runs on every run, and marks it `completed` once the
+      stage's bar holds on this one.
 - [ ] The report additionally names the epic branch, the change request's URL, and every change left uncommitted in the
       tree; the hand-over call stays `/deliverer:build <epic location>`.
-- [ ] The refine happy path runs against a throwaway repo instead of the standing repo; the standing repo stays the
-      bench's.
+- [ ] The refine happy path runs against a throwaway repo instead of the standing repo, which nothing drives any
+      longer and is removed.
 - [ ] The assertion that nothing was pushed is replaced by three read off the forge: the default branch did not move;
       exactly one new branch exists, carrying the spec and tickets at the paths the fixture's conventions name; exactly
       one change request is open from it, as a draft. The other refine assertions are kept.

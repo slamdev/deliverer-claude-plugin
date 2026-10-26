@@ -70,7 +70,7 @@ export interface FixtureEpic {
 }
 
 export interface Fixture {
-  /** the directory's name, which is half of what the standing repo is named for */
+  /** the directory's name, which is half of what a throwaway repo is named for */
   readonly name: string;
   readonly root: string;
   /** the codebase, and everything a repository declares about itself */

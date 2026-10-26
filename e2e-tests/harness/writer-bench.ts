@@ -479,7 +479,10 @@ function tier(path: string, effort: string): EffortLevel {
 function declared(frontmatter: string, key: string): string | undefined {
   for (const line of frontmatter.split("\n")) {
     if (!line.startsWith(`${key}:`)) continue;
-    return line.slice(key.length + 1).trim();
+    // A scalar quoted in YAML is the same value unquoted, and the host reads it that way.
+    const value = line.slice(key.length + 1).trim();
+    const quoted = /^(["'])(.*)\1$/.exec(value);
+    return quoted?.[2] ?? value;
   }
   return undefined;
 }

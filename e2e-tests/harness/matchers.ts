@@ -9,6 +9,7 @@
  * with, what the install wrote, what the loaded plugin contains. None of them asserts a mechanism.
  */
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { BuildOutcome } from "./build-run.ts";
 import { minutes } from "./ceilings.ts";
@@ -341,6 +342,37 @@ export function assertSessionRecordsKept(
 }
 
 /**
+ * The orchestrator itself dispatched an agent of the given type at least once.
+ *
+ * A floor on the count of records cannot say this: it counts every record under the run's
+ * configuration directory, the observer's and the delegated review's own among them, so a run that
+ * skipped a stage can still clear it. The type is read off the `.meta.json` sidecar the host writes
+ * beside each record of the orchestrator's own session, which names the agent that was dispatched.
+ */
+export function assertAgentDispatched(outcome: ObservedRun, agentType: string, why: string): void {
+  const records = outcome.records;
+  const types = dispatchRecordsOfRun(records, outcome.run.sessionId).map((record) => {
+    try {
+      const sidecar = join(records.root, record.replace(/\.jsonl$/, ".meta.json"));
+      const parsed: unknown = JSON.parse(readFileSync(sidecar, "utf8"));
+      const declared =
+        typeof parsed === "object" && parsed !== null && "agentType" in parsed
+          ? parsed.agentType
+          : undefined;
+      return typeof declared === "string" ? declared : "(no agent type)";
+    } catch {
+      return "(no readable sidecar)";
+    }
+  });
+  if (!types.some((type) => type === agentType || type.endsWith(`:${agentType}`))) {
+    assert.fail(
+      `the run dispatched no ${agentType}: ${why}. The orchestrator's own dispatches were ` +
+        `${types.join(", ") || "none at all"}.`,
+    );
+  }
+}
+
+/**
  * The **observer** left a **debrief** for this run, and its header names the run (run-observation
  * ticket 08).
  *
@@ -612,13 +644,19 @@ export function assertDefaultBranchUnmoved(outcome: RefineOutcome): void {
 }
 
 /**
- * Exactly one branch is new on the forge, and it carries the epic's spec and every ticket at the
- * paths this fixture's conventions name.
+ * Exactly one branch is new on the forge, it carries the epic's spec and every ticket at the paths
+ * this fixture's conventions name, and its commits are refine's own and nothing else.
  *
  * The spec's path is built from the fixture's own declaration rather than read off the working
  * tree, so a spec published under some other name is a failure here and not a match against
  * itself. The tickets are the ones the working tree holds, since how many there are is the
  * writer's to decide: one the run wrote and never committed is one the branch does not carry.
+ *
+ * Refine's own, held three ways: no commit carries a `Ticket:` line, because this is no ticket's
+ * work; every path the commits change is markdown, because everything a refinement writes is and a
+ * sweep of the whole tree would carry something that is not; and the clone holds no markdown left
+ * uncommitted, because a glossary entry or an ADR stage 1 landed and stage 5 never committed is
+ * one the branch does not carry either.
  */
 export function assertEpicBranchCarriesEpic(outcome: RefineOutcome): void {
   const branches = outcome.newBranches;
@@ -655,6 +693,30 @@ export function assertEpicBranchCarriesEpic(outcome: RefineOutcome): void {
     assert.fail(
       `${uncommitted.length} of the ${outcome.epic.tickets.length} tickets in the working tree ` +
         `are not on ${branch.name}: ${uncommitted.join(", ")}. ${carriedThere}`,
+    );
+  }
+  const ticketed = branch.commits.filter((commit) => /^Ticket:/m.test(commit.message));
+  if (ticketed.length > 0) {
+    assert.fail(
+      `${branch.name} carries ${ticketed.length} commits with a Ticket: line ` +
+        `(${ticketed.map((commit) => commit.sha.slice(0, 7)).join(", ")}). A refinement's commit ` +
+        `is no ticket's work, and build reads a Ticket: line as a ticket begun.`,
+    );
+  }
+  const changed = branch.commits.flatMap((commit) => commit.files);
+  const swept = [...new Set(changed.filter((path) => !path.endsWith(".md")))];
+  if (swept.length > 0) {
+    assert.fail(
+      `${branch.name}'s commits change ${swept.join(", ")}, which no refinement writes. A ` +
+        `refinement commits the paths it wrote and nothing else the tree held.`,
+    );
+  }
+  if (outcome.uncommittedMarkdown.length > 0) {
+    assert.fail(
+      `the clone still holds ${outcome.uncommittedMarkdown.join(", ")} uncommitted once the run ` +
+        `is over. The fixture starts clean, so these are the run's own — a glossary entry or an ` +
+        `ADR stage 1 landed is committed with the spec and tickets, and ${branch.name} does not ` +
+        `carry these.`,
     );
   }
 }

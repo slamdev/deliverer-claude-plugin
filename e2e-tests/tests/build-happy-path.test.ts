@@ -20,6 +20,7 @@ import { test } from "node:test";
 import { buildRun, verify } from "../harness/build-run.ts";
 import { DEFAULT_CEILINGS, minutes, testTimeout, totalSpend } from "../harness/ceilings.ts";
 import {
+  assertAgentDispatched,
   assertAssumptionsAdjudicated,
   assertChangeRequestOpened,
   assertChecksGreen,
@@ -78,6 +79,13 @@ test("a delivery implements an epic and flips its change request ready", {
   // question (`../harness/report.ts`).
   assertRoundsCompleted(outcome, ROUNDS);
   assertSessionRecordsKept(outcome, DISPATCH_FLOOR, WHAT_IT_DISPATCHES);
+  // By name, because the floor above counts records the observer and the delegated review leave
+  // beside the run's own, and a delivery that skipped its spec review still clears it.
+  assertAgentDispatched(
+    outcome,
+    "spec-reviewer",
+    "every delivery reads its change request against the spec once, before the first round",
+  );
   // After the records are known to be there, because this is the one bar read out of what the
   // tools server itself answered rather than out of what the delivery produced: every round that
   // reached a result reports what it spent. It is the only automated seam that reaches the real

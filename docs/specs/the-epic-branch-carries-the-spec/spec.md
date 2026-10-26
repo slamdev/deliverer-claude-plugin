@@ -146,7 +146,7 @@ discipline; refine's stage 1 and `change-request-creator` each call the Skill to
 41. As a project owner, I want spec findings posted as comments marked `SPEC`, so that they survive an interrupted run
     and I can tell them from review findings and assumption comments.
 42. As a project owner, I want the spec review to run after the assumptions are adjudicated and before the first round,
-    so that the first fix wave addresses its findings and both rounds review those fixes.
+    so that the first fix wave addresses its findings and the second round reviews those fixes.
 43. As a project owner, I want the spec review to run once per delivery, so that it costs one dispatch.
 44. As a project owner, I want the first fix wave to work spec findings as it works review findings — implement by
     default, decline only with grounds — so that nothing new governs them.
@@ -222,38 +222,55 @@ discipline; refine's stage 1 and `change-request-creator` each call the Skill to
   does its task.
 - **Stage order**: grill, write the brief, write the spec, break it into tickets, **open the draft**, hand the epic
   over. The task list carries one task per stage that runs: five for an in-repository tracker, four otherwise.
-- **The branch**: from an up-to-date default branch, named from the slug in the style of the branches already there —
-  the same rule `implementer` uses today, so build and refine name it the same way. The working tree's uncommitted
-  changes ride across the switch; only refine's own paths are staged.
+- **The branch**: the branch on the remote carrying the epic's spec, looked for under the slug's name first and then
+  across the rest; where none carries it, a new one from the up-to-date default branch on the remote, named from the
+  slug in the style of the branches already there — the same rule `implementer` uses today, so build and refine name
+  it the same way. A branch of that name already on the remote without the spec is someone else's, and the stage stops
+  rather than committing on it. The switch is `--merge`, so the working tree's uncommitted changes ride across it even
+  where a file differs between the two; a conflict stops the stage as a hand-off.
 - **The commit**: exactly the paths the run wrote — the epic's directory (spec and tickets), and every glossary and ADR
-  file stage 1 landed. Every other change in the tree is left as found and named in the report. The commit message
-  follows the project's own conventions and carries no `Ticket:` line: it is not a ticket's work.
-- **The change request**: opened as a draft. Title from the spec's title. Description is a fixed text: the spec's
-  location, the ticket count, and a line saying the delivery will rewrite it. Refine does not run `pr`.
+  file stage 1 landed — named on the commit itself, so nothing else the index held rides in. Every other change in the
+  tree is left as found and named in the report, and so is any of those files that already carried the human's own
+  changes, which goes in whole. The commit message follows the project's own conventions and carries no `Ticket:`
+  line: it is not a ticket's work.
+- **The change request**: opened as a draft. Title from the spec's title. Description is a fixed text, passed through
+  a file: the spec's location, the ticket count, and a line saying the delivery will rewrite it. Refine does not run
+  `pr`.
 - **Resume and re-run**: the branch, its commits and the forge say how far the stage got. A branch already carrying
   refine's paths at their current content owes no commit; a difference owes a new commit on top, never an amend or a
-  force-push. A change request already open for the branch is the change request, whatever its state.
+  force-push. A change request already open for the branch is the change request, draft or not; where none is open —
+  never opened, or closed or merged since — a fresh draft is opened, so there is one open at a time and never two.
+- **Resume off the branch**: once the stage has run, the spec and tickets may sit on the epic branch alone. Where the
+  checkout carries no spec, refine finds the epic branch the same way and switches to it before judging how far the
+  writers got.
 - **The report** additionally names the epic branch, the change request's URL, and every change left uncommitted.
 - **Mechanical, not judgement**: every step is a git or forge operation with no choice of wording in it, which is what
   ADR-0015 now allows the orchestrator. No new agent is introduced for it.
 
 ### Build
 
-- **Finding the epic**: where the default branch does not carry the epic location build was handed, build looks for
-  the branch named from the epic's slug and reads the epic off it. Where neither carries it, build reports that and
-  stops. Where the default branch carries it, build behaves as today.
+- **Finding the epic**: an epic on the forge's issues is read there, as today. One in the repository is read off the
+  default branch where it carries the epic location; where it does not, build fetches and reads the epic off the
+  branch on the remote that carries it, looking under the slug's name first. Where none carries it, build reports that
+  and stops.
 - **The first implementer** is handed the epic branch's name whenever build found one, and adopts it — switching to it
-  and pulling — rather than creating a branch. The rule for creating one, when none exists, is unchanged.
+  and pulling — rather than creating a branch. Where no ticket's work is on it yet, it merges the up-to-date default
+  branch in, so a delivery starts from the default branch as it is now rather than as it was at refinement. The rule
+  for creating one, when none exists, is unchanged.
 - **Stage 2 always runs**: an open change request is no longer evidence that stage 2 ran, so a resumed build always
   dispatches `change-request-creator`. Its existing resume rules already make that safe: an open change request is
-  brought up to date rather than duplicated, its draft state left as found, and assumptions mirrored only where no
-  assumption comment carries them.
+  brought up to date rather than duplicated, and assumptions mirrored only where no assumption comment carries them.
+  It puts the change request back to draft where someone took it out, since a draft is what a change request stays
+  while a round is owed.
+- **Stage 1 on resume**: a change request whose description is no longer refine's placeholder was written by stage 2,
+  so stage 1 is over and no implementer is dispatched again.
 - **New stage, after the adjudication and before the first round**: dispatch `spec-reviewer` with the epic and the
   change request's URL. Its report names the spec findings it posted. The first fix wave picks them up as unresolved
   comments; the dispatch to it changes in nothing else.
 - **Resume**: build cannot tell from the comments whether a spec review finished — that reading is a judgement — so a
   resumed run dispatches `spec-reviewer` again, as it already does `assumption-reviewer`.
-- **Flip**: unchanged. A spec review that never reported is a hand-off in the report, not a reason to stay a draft.
+- **Flip**: unchanged. A spec review that never reported, or reported a document it could not read, is a hand-off in
+  the report, not a reason to stay a draft.
 - **Report**: carries the count of spec findings posted, and a hand-off where the spec review never reported.
 
 ### `spec-reviewer`
@@ -261,7 +278,8 @@ discipline; refine's stage 1 and `change-request-creator` each call the Skill to
 - A new shipped agent, opus at `medium`, with the same disallowed tools and the same first-person preamble as the
   others: it dispatches nothing, writes nothing to the task list, and changes no code.
 - **Input**: the epic (its location, from which it reads the spec and every ticket, in the repository or on the forge)
-  and the change request's URL. It switches to the epic branch and reads the diff first-hand.
+  and the change request's URL. It switches to the epic branch and reads the diff first-hand, against the remote's
+  copy of the base. Refine's commit and the fix waves' commits are not held against the spec's scope.
 - **What it reports**, in upstream's three kinds: requirements the spec or a ticket asked for that are missing or
   partial; behaviour the diff carries that nothing asked for; requirements that look implemented but wrong. Each
   quotes the spec or ticket line it rests on.
@@ -341,8 +359,8 @@ discipline; refine's stage 1 and `change-request-creator` each call the Skill to
 
 Before this change, the spec reached a delivery only through the tickets an implementer read, and only the user stories
 a ticket happened to cover. `tickets-writer` says so. The spec review is the first reading of the change request as a
-whole against the document behind it, and its findings land before the first round so that both rounds review the
-fixes they cause.
+whole against the document behind it, and its findings land before the first round so that the first fix wave works
+them and the second round reviews the fixes they cause.
 
 ### Refine's commit is not a ticket's, and build already reads it that way
 

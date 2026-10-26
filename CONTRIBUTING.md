@@ -783,8 +783,9 @@ stage runs in series, so anything else on the box is in it.
   individual credential is read out of it, so it works whichever way you authenticate to a model.
 - **A forge token `gh` can see.** `gh` and `git` are run with the environment the harness inherited rather than with
   that file, so `GITHUB_TOKEN` has to be exported — which is what `./claude` does with the line already in your `.env`.
-- **Permission to create private repositories**, and to delete them for the build test. A deletion the harness cannot
-  make is reported and leaves the repository standing, never a test that had otherwise passed turned red.
+- **Permission to create private repositories**, and to delete them: both happy paths delete theirs on success. A
+  deletion the harness cannot make is reported and leaves the repository standing, never a test that had otherwise
+  passed turned red.
 - **Node, `git`, `gh` and the Claude CLI** — the versions the dockerfile pins; the plugin is installed with the same
   binary you would install it with. The harness runs unbuilt under Node's type stripping, so its manifest asks for
   `^22.18.0 || >=23.6.0`.

@@ -36,15 +36,19 @@ That is a reading of what each comment says rather than a match on its text, so 
 2. **Read the spec and every ticket** the epic lists, whole — from the branch where the epic lives in the repository,
    and from the forge's issues where it lives there. When you cannot read the spec, or any ticket, report which and
    stop, having posted nothing: a review against half the epic reports the other half missing.
-3. **Read the diff first-hand** — the change request's base branch against its head, three-dot, so the comparison is
-   against the merge-base, and the commit list beside it. The spec and tickets the branch itself carries are the
-   yardstick rather than the work: they ask for nothing of themselves. You are done when every file the diff touches
-   has been read as head has it.
+3. **Read the diff first-hand** — fetch, then the remote's copy of the change request's base branch against its head,
+   three-dot (`git diff origin/<base>...HEAD`), so the comparison is against the merge-base, and the commit list beside
+   it. Never the local copy of the base: one behind the remote widens the diff to work merged since, which then reads
+   as the epic's. The epic's own documents the branch carries — its spec and tickets, and the glossary entries and
+   ADRs its refinement committed beside them — are the yardstick rather than the work: they ask for nothing of
+   themselves. A commit carrying no `Ticket:` line past those is a **fix wave** answering a comment on the change
+   request, and what a comment asked for was asked, so no hunk such a commit alone carries is `unasked`. You are done
+   when every file the diff touches has been read as head has it.
 4. **Collect the `SPEC` comments already on it** from every channel the change request has — **Comment channels**
    below.
-5. **Find every spec finding**, in the three kinds under **Findings**. Hold each requirement the spec and its tickets
-   state against the diff, one at a time, and then each hunk of the diff against the requirements — the first pass
-   finds what is missing or wrong, the second what nothing asked for. You are done when every requirement and every
+5. **Find every spec finding**, in the three kinds under **Findings**. Hold each line of the spec and its tickets that
+   asks for something against the diff, one at a time, and then each hunk of the diff against those lines — the first
+   pass finds what is missing or wrong, the second what nothing asked for. You are done when every such line and every
    hunk has been held against the other.
 6. **Post every finding no `SPEC` comment already carries**, one comment each, in **Comment format**, anchored by
    **Where it is anchored**. Never a batch: a fix wave marks one comment for one piece of work.
@@ -52,12 +56,12 @@ That is a reading of what each comment says rather than a match on its text, so 
 
 ## Findings
 
-Three kinds, each one upstream's, and each one a claim you can rest on a line of the spec or a ticket:
+Three kinds, each one upstream's, and each one resting on a line of the spec or a ticket:
 
-- **`missing`** — a requirement the spec or a ticket asked for that the diff does not carry, or carries only part of.
+- **`missing`** — something the spec or a ticket asked for that the diff does not carry, or carries only part of.
 - **`unasked`** — behaviour the diff carries that nothing in the spec or its tickets asked for.
-- **`wrong`** — a requirement the diff looks to implement, where the implementation does something other than what the
-  line asked.
+- **`wrong`** — a line the diff looks to implement, where the implementation does something other than what the line
+  asked.
 
 **Every finding quotes the line it rests on**, verbatim, and names the document it came from. That quote is what the fix
 wave implements against and what the human merging weighs: a finding with no line behind it is a preference, and it
@@ -67,10 +71,10 @@ whose slice the hunk sits in — so the quote says what was asked instead.
 **The spec is the standard, and nothing else is.** How well the code is written, whether it follows the project's
 conventions, whether a road the code took is the best one — those belong to the **round**s and the adjudication. Yours
 is whether the change request does what the epic said, so a finding is about conformance to a line and never about
-taste. Work done to make a requirement possible — a helper, a test, a type — is part of that requirement rather than
-`unasked`.
+taste. Work done to make what a line asks for possible — a helper, a test, a type — is part of that line's work rather
+than `unasked`.
 
-Judge each requirement on its own: a clean delivery has no findings at all, and that is as fine an outcome as a dozen.
+Judge each line on its own: a clean delivery has no findings at all, and that is as fine an outcome as a dozen.
 
 ## Comment format
 
@@ -94,7 +98,7 @@ Every finding goes on a channel the forge can mark **resolved**, anchored at the
    `unasked`, ordinarily.
 2. **The file, with no line**, where the diff carries the file and no one line is the finding's — a `missing` part of a
    file that is there.
-3. **The change request itself**, where the diff carries nothing the finding could sit on — a `missing` requirement no
+3. **The change request itself**, where the diff carries nothing the finding could sit on — a `missing` line no
    file of the diff begins.
 
 GitLab resolves a discussion opened at the change request itself; GitHub resolves only a thread on a file, so its

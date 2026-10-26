@@ -47,7 +47,9 @@ work done on one of them names that hash while mirroring none of them.
 3. **Open the change request as a draft**, titled from step 2 and described with `pr` — the branch has to be on the
    remote for one to exist, so push it when whoever committed did not. When one is already open for the branch — draft
    or ready — that is the change request: bring its title and description up to date rather than opening a second, and
-   leave its draft state as you found it.
+   put it back to draft where someone took it out (`gh pr ready <number> --undo`, `glab mr update <iid> --draft`). A
+   change request stays a draft while a round is still owed, and taking it out is the delivery's last stage, not
+   yours.
 4. **Read every comment channel the change request has** — **Comment channels** below — and collect the assumption
    comments already on it.
 5. **Mirror what a ticket's commits recorded.** A commit carrying a `Ticket:` line is a ticket's work, and its

@@ -40,10 +40,13 @@ entries and ADRs stage 1 lands.
 artifacts are what say how far it got: the brief on disk says stage 2 ran, a published spec says stage 3 ran, and
 published tickets say stage 4 did. Start from the earliest stage whose artifact you cannot find — re-dispatching either
 writer is safe, because each one resumes on its own and adds only what is missing. Stage 1 is the exception: a
-conversation leaves nothing behind but the brief, so when the brief is gone the grilling is owed again. An open change
-request says nothing about whether stage 5 is done, since the spec or tickets may have changed since it opened, so stage
-5 runs on every run where it is part of the run: it reads its own progress off the branch and the forge, commits only
-what differs, and opens no second change request.
+conversation leaves nothing behind but the brief, so when the brief is gone the grilling is owed again. Once stage 5
+has run, the spec and tickets may sit on the **epic branch** alone, with the checkout on some other branch: where the
+tree carries no spec, find the epic branch the way stage 5 does, and where one carries the spec, switch to it with
+`--merge` before judging anything — the writers resume off what it carries. An open change request says nothing about
+whether stage 5 is done, since the spec or tickets may have changed since it opened, so stage 5 runs on every run where
+it is part of the run: it reads its own progress off the branch and the forge, commits only what differs, and never
+opens a change request beside one already open.
 
 **Dispatch.** Every dispatch carries the epic's **slug**. Stage 3's carries the brief's path; stage 4's carries the
 spec's location instead — once the spec is published it is the record, so the tickets are cut from it rather than from
@@ -86,15 +89,23 @@ re-run.
 5. **Open the draft** — only where the project's conventions put the spec and tickets as files in the repository, the
    same conventions the writers published to. Where they put them on the forge's issues, this stage is not part of the
    run: go to stage 6. It is **mechanical** throughout — every step a git or forge operation, with no wording to choose:
-   - **The branch.** Create the **epic branch** from an up-to-date default branch, named from the epic's **slug** in the
-     style of the branches already there — the rule `implementer` names it by, so build finds it under the same name.
-     Where the remote already carries it, switch to it and pull instead. Uncommitted changes in the tree ride across
-     the switch.
-   - **The commit.** Stage exactly the paths this refinement wrote: the epic's spec and tickets, and every glossary and
-     ADR file stage 1 landed. Every other change in the tree stays as you found it, unstaged, and goes into your report.
-     The message follows the project's own commit conventions and carries no `Ticket:` line: this is no ticket's work.
+   - **The branch.** Fetch first. The **epic branch** is the branch on the remote that carries the epic's spec at its
+     location — look first under the name from the epic's **slug** in the style of the branches already there, the rule
+     `implementer` names it by, then across the remote's other branches. Where one carries it, switch to it and pull.
+     Where none does, create it from the up-to-date default branch on the remote, under that name; a branch of that
+     name the remote already carries without the spec is someone else's work, so report it and stop rather than
+     committing on it. Switch with `--merge`: the tree's uncommitted changes are carried onto the branch even where a
+     file differs between the two, and where that merge conflicts, stop and report the conflicting files as a
+     **hand-off** rather than resolving them.
+   - **The commit.** Add exactly the paths this refinement wrote — the epic's spec and tickets, and every glossary and
+     ADR file stage 1 landed — and name the same paths on the commit itself (`git commit -- <paths>`), so nothing else
+     the index already held rides in. Every other change in the tree stays as you found it, staged or not, and goes
+     into your report. One of those files that already carried uncommitted changes of the human's when the run opened
+     goes in whole, since no mechanical step tells their lines from yours: name it in your report. The message follows
+     the project's own commit conventions and carries no `Ticket:` line: this is no ticket's work.
    - **The change request.** Push the branch and open its change request as a **draft**, titled with the spec's title,
-     and described with this text and nothing else, the two placeholders filled in:
+     and described with this text and nothing else, the two placeholders filled in and passed through a file rather
+     than on the command line, where the backticks would run as a command:
 
      ```
      The spec for this epic is at `<spec location>`, broken into <ticket count> tickets beside it.
@@ -106,7 +117,8 @@ re-run.
    - **Resume.** The branch, its commits and the forge say how far this stage got, on every run. A branch already
      carrying those paths at their current content owes no commit; a difference owes a new commit on top, pushed —
      history only grows, so never an amend and never a force-push. A change request already open for the branch is the
-     change request, whatever its state: push to it and leave its title and description as they stand.
+     change request, draft or not: push to it and leave its title and description as they stand. Where none is open —
+     never opened, or closed or merged since — open a fresh draft as above: one open at a time, never two.
 
    You are done when the epic branch on the remote carries every one of those paths at its current content, and a
    change request is open from it.
@@ -222,8 +234,9 @@ The human who ran this sat through stage 1, so your report is what came of it ra
 
 - the epic's location, the spec's within it, and the brief's path
 - how many tickets, and which of them can start immediately
-- where stage 5 ran: the epic branch, the change request's URL, and every change you left uncommitted in the tree, one
-  line each, because none of it was this run's to commit
+- where stage 5 ran: the epic branch, the change request's URL, every change you left uncommitted in the tree, one
+  line each, because none of it was this run's to commit, and every file the commit took whole with changes of the
+  human's in it
 - every fork the grilling left open, one line each — those are the human's to close
 - every glossary entry and ADR the session landed
 - what the writers raised for a human — a seam newly proposed, an ADR the spec contradicts, a **claim** of yours a

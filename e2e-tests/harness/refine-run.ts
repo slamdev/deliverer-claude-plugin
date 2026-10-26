@@ -28,7 +28,14 @@ import { listChangeRequests, type ChangeRequestSummary } from "./change-request.
 import { describeDebriefs, readDebriefs, type Debriefs } from "./debrief.ts";
 import { listEpics, readEpic, type PublishedEpic } from "./epic.ts";
 import { loadFixture, type Fixture } from "./fixture.ts";
-import { DEFAULT_BRANCH, filesOnBranch, remoteBranches, remoteHead } from "./forge.ts";
+import {
+  DEFAULT_BRANCH,
+  git,
+  readBranch,
+  remoteBranches,
+  remoteHead,
+  type BranchCommit,
+} from "./forge.ts";
 import { installPluginUnderTest, REVIEW_OPTIONS } from "./install.ts";
 import { createResponder, type ResponderRecord } from "./responder.ts";
 import { createRunDirectory, type RunDirectory } from "./run-directory.ts";
@@ -49,6 +56,8 @@ export interface NewBranch {
   readonly name: string;
   /** every file it carries, relative to the repository's root */
   readonly files: readonly string[];
+  /** every commit it carries beyond the default branch the repository was created with */
+  readonly commits: readonly BranchCommit[];
 }
 
 export interface RefineOutcome {
@@ -68,6 +77,8 @@ export interface RefineOutcome {
   readonly remoteHeadAfterRun: string;
   /** every branch on the forge other than the default one, which the repository was created with */
   readonly newBranches: readonly NewBranch[];
+  /** every markdown path the clone holds changed or new and uncommitted once the run is over */
+  readonly uncommittedMarkdown: readonly string[];
   /** every change request the repository carries, so "exactly one" is a matcher's to hold */
   readonly changeRequests: readonly ChangeRequestSummary[];
   readonly records: SessionRecords;
@@ -204,6 +215,7 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
         epicsPublished,
         remoteHeadAfterRun: await remoteHead(runDirectory, repo.url),
         newBranches,
+        uncommittedMarkdown: await readUncommittedMarkdown(runDirectory),
         changeRequests,
         records: await readSessionRecords(runDirectory),
         debriefs,
@@ -233,9 +245,29 @@ async function readNewBranches(
   const read: NewBranch[] = [];
   for (const name of branches.keys()) {
     if (name === DEFAULT_BRANCH) continue;
-    read.push({ name, files: await filesOnBranch(runDirectory, repo.url, name) });
+    read.push({ name, ...(await readBranch(runDirectory, repo.url, name)) });
   }
   return read;
+}
+
+/**
+ * Every markdown path the clone holds changed or new and not committed, once the run is over.
+ *
+ * Markdown, because everything a refinement writes into the repository is — the spec, the tickets,
+ * the glossary and the ADRs — and the fixture starts clean, so any such path left over is one the
+ * run wrote and never committed. Anything else a sweep or a writer left lying about is not this
+ * stage's to commit and is not counted.
+ */
+async function readUncommittedMarkdown(runDirectory: RunDirectory): Promise<string[]> {
+  const status = await git(runDirectory, runDirectory.cloneDir)(
+    ["status", "--porcelain", "--untracked-files=all", "-z"],
+    "reading what the run left uncommitted in the clone",
+  );
+  return status.stdout
+    .split("\0")
+    .filter((entry) => entry.length > 3)
+    .map((entry) => entry.slice(3))
+    .filter((path) => path.endsWith(".md"));
 }
 
 function describeChangeRequest(changeRequest: ChangeRequestSummary): string {

@@ -11,11 +11,14 @@ for a human.
 
 Your argument names the epic; when it names none, report that and stop rather than picking one.
 
-**Find the epic before anything else.** Where the default branch carries the epic location you were handed, read the
-epic there. Where it does not, the epic may sit on its **epic branch** alone — a refinement publishes its spec and
-tickets there and nowhere else — so look for the branch named from the epic's **slug** in the style of the branches
-already there, and read the epic off it. That branch is the epic branch, found before any ticket is begun. Where
-neither carries the epic location, report that and stop.
+**Find the epic before anything else.** Where the epic location you were handed is on the forge's issues, read the
+epic there: no branch carries it, and the first `implementer` creates the epic branch. Where it is in the repository,
+fetch first. Where the default branch carries it, read the epic there. Where it does not, the epic may sit on its
+**epic branch** alone — a refinement publishes its spec and tickets there and nowhere else — and that branch is the one
+on the remote carrying the epic location: look first under the name from the epic's **slug** in the style of the
+branches already there, then across the remote's other branches, and read the epic off the one that carries it. That
+branch is the epic branch, found before any ticket is begun. Where no branch carries the epic location, report that and
+stop.
 
 Every stage below is made of agent dispatches — **one stage, one task** (**Progress**) — and each dispatched agent's
 **report** is all you get back: what it names is what you know. Where a report leaves you unsure, put the stage back
@@ -32,13 +35,16 @@ an agent — continued or cold — or report it**, never fix.
 **Resume.** This epic may be part-delivered — by an earlier run of your own that was interrupted, or by hand. The epic
 branch and the change request are what say how far it got: the commits carrying a `Ticket:` line name the tickets
 **begun**, and one without it is not a ticket — a refinement's commit of the spec and tickets among them. An open
-change request says nothing about whether stage 2 ran, since a refinement may have opened it before any ticket began,
-so stage 2 is dispatched on every run (**Stages**). Begun and not finished, because an `implementer` commits each
-coherent piece as it lands — so the last ticket named may be part-delivered with nothing anywhere saying so, and it is
-dispatched again ahead of the ones carrying no commit at all. That implementer reads the commits, implements only what
-they left undone, and reports the commit that covered it where the branch covered it in full already. Start from the
-earliest stage whose evidence you cannot find — dispatching any agent but `code-reviewer` cold is safe, because each one
-resumes on its own and adds only what is missing. `code-reviewer` is the exception: see **Rounds**.
+change request alone says nothing about whether stage 2 ran, since a refinement may have opened it before any ticket
+began, so stage 2 is dispatched on every run (**Stages**). Its description does say: one that does not read
+`This description is a placeholder` was written by stage 2, which runs only once every ticket has a report, so stage 1
+is over and no `implementer` goes out again. Short of that, a ticket is begun and not finished, because an
+`implementer` commits each coherent piece as it lands — so the last ticket named may be part-delivered with nothing
+anywhere saying so, and it is dispatched again ahead of the ones carrying no commit at all. That implementer reads the
+commits, implements only what they left undone, and reports the commit that covered it where the branch covered it in
+full already. Start from the earliest stage whose evidence you cannot find — dispatching any agent but `code-reviewer`
+cold is safe, because each one resumes on its own and adds only what is missing. `code-reviewer` is the exception:
+see **Rounds**.
 
 **The commits carry one fact that is not about progress.** A commit's `Gates:` section names a **gate** it left red for
 work nobody asked for — outside its ticket where it carries a `Ticket:` line, and outside anything a comment asked for
@@ -112,26 +118,27 @@ a fresh id (**Rounds**).
    that one ticket besides. You are done when every ticket the epic lists has a report naming its commits.
 2. **Open the change request** — dispatch `change-request-creator`, on every run, resumed or not. It opens the change
    request as a **draft** — or, where one is already open for the branch, refine's draft among them, brings that one up
-   to date and leaves its draft state as found — describes it, and mirrors into an `ASSUMPTION` comment every assumption
-   recorded by a commit carrying a `Ticket:` line. A commit without that line is a **fix wave**'s, recording the
-   **forks** that wave closed silently: the mirror passes those over and nothing adjudicates them, so no stage is ever
-   owed for them — and a report naming fewer comments than the branch's commits recorded is this stage doing its job
-   rather than half-doing it. Keep the URL it reports, and every comment its report names as **anchored anywhere but at
-   a translated line on head** — the agent's own wording, and wider than the diff: an assumption about a caller the
-   branch never touched is anchored at the file on purpose, and is one of these. It describes the change request with
-   `mattpocock-skills:pr`, and a report naming that skill missing is a stage that cannot be completed: report it as a
-   **hand-off** and dispatch nothing further.
+   to date and puts it back to draft where someone took it out — describes it, and mirrors into an `ASSUMPTION` comment
+   every assumption recorded by a commit carrying a `Ticket:` line. A commit without that line is a **fix wave**'s,
+   recording the **forks** that wave closed silently: the mirror passes those over and nothing adjudicates them, so no
+   stage is ever owed for them — and a report naming fewer comments than the branch's commits recorded is this stage
+   doing its job rather than half-doing it. Keep the URL it reports, and every comment its report names as **anchored
+   anywhere but at a translated line on head** — the agent's own wording, and wider than the diff: an assumption about
+   a caller the branch never touched is anchored at the file on purpose, and is one of these. It describes the change
+   request with `mattpocock-skills:pr`, and a report naming that skill missing is a stage that cannot be completed:
+   report it as a **hand-off** and dispatch nothing further.
 3. **Adjudicate the assumptions** — dispatch `assumption-reviewer`. For each `ASSUMPTION` comment it compares the roads
    the **fork** left open and replies one verdict — `accept`, `improve`, `override` or `escalate`. An `improve` is a
    road that beat the one the code took on a named **axis**, so it carries a **directive** stage 6 implements and code
    no ticket asked for changes on a judgement nobody ratified. Keep the four counts, and every `improve` its report
    names directing.
 4. **Read it against the spec** — dispatch `spec-reviewer`, once. It reads the change request against the epic's spec
-   and every ticket, and posts each **spec finding** — a requirement missing or partial, behaviour nothing asked for, a
-   requirement implemented but wrong — as a `SPEC` comment, which stage 6 works as it works any other. It is no
-   **round** and counts toward nothing stage 10 waits on. Keep the count of findings its report names posting. Where it
-   still ends without a report once continued or dispatched cold, carry the stage into your report as a **hand-off** —
-   the change request went unread against its spec — and go on to stage 5.
+   and every ticket, and posts each **spec finding** — something asked for missing or partial, behaviour nothing asked
+   for, something asked for implemented but wrong — as a `SPEC` comment, which stage 6 works as it works any other. It
+   is no **round** and counts toward nothing stage 10 waits on. Keep the count of findings its report names posting.
+   Where its report names a document it could not read, or it still ends without a report once continued or dispatched
+   cold, carry the stage into your report as a **hand-off** — the change request went unread against its spec, whatever
+   count it names — and go on to stage 5.
 5. **First round** — dispatch `code-reviewer`. It drives one **round** and reports its prose. Keep that prose: stage 6
    is dispatched with all of it (**Dispatch**).
 6. **First fix wave** — dispatch `comments-addresser`, carrying the first round's prose (**Dispatch**). It works every
@@ -202,7 +209,8 @@ that died is another round, and it gets a task of its own.
 Stage 1's one task carries all its tickets, relabelled as each lands: `<slug>: implement every ticket (4/21)` as the
 subject and `Implementing ticket 4/21 — <ticket>` as the `activeForm`, both in the one `TaskUpdate`. The numerator is
 how many tickets have a report in hand. A resumed run has none, so it opens at the tickets the `Ticket:` lines name
-**less the last one**, which **Resume** dispatches again.
+**less the last one**, which **Resume** dispatches again — or at all of them, created `completed`, where the change
+request's description says stage 2 already ran.
 
 ## What to report
 
