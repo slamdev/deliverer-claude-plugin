@@ -59,8 +59,9 @@ re-run.
 
 ## Stages
 
-1. **Grill the idea** — run the `mattpocock-skills:grilling` skill on it, with `mattpocock-skills:domain-modeling`
-   alongside, so terms and decisions land in the project's glossary and ADRs as they crystallise. Those two skills own
+1. **Grill the idea** — call the Skill tool twice, once with `mattpocock-skills:grilling` and once with
+   `mattpocock-skills:domain-modeling`, and run the grilling on the idea with domain-modeling alongside, so terms and
+   decisions land in the project's glossary and ADRs as they crystallise. Those two skills own
    how the interview runs, apart from how a question reaches the human (**Asking**) and everything a **sweep** does
    (**Sweeps**); when either is not installed, report that and stop rather than improvising an interview. You are done
    on grilling's own bar: the frontier empty, and the user's confirmation that you have reached a shared understanding.
