@@ -93,7 +93,7 @@ Set these from `/plugin` → **deliverer**.
 call the plugin makes runs under — each code review, and the observation of each run. Read once when a session starts,
 so an edit takes effect in your next session.
 
-**Code review effort** — _default `high`._ How deep each review goes: `low`, `medium`, `high`, `xhigh` or `max`. Deeper
+**Code review effort** — _default `medium`._ How deep each review goes: `low`, `medium`, `high`, `xhigh` or `max`. Deeper
 costs more time and money, and raises more findings for the fix waves to work through.
 
 **Code review model** — _default `opus[1m]`._ Which model reviews, and the model the observation's own synthesis runs on

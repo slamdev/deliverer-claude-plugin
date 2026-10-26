@@ -420,8 +420,8 @@ interface AgentDefinition {
  * Read rather than assumed, so an arm measuring a variant that pins a different model or a
  * different **effort** measures that variant, and a frontmatter key that moves does not leave the
  * bench quietly driving the old value. A key the file does not carry falls back to what the
- * plugin's six opus agents of seven all declare today, which is what a dispatch of an agent missing
- * it would also get.
+ * plugin's seven opus agents of eight all declare today, which is what a dispatch of an agent
+ * missing it would also get.
  */
 async function readAgent(path: string): Promise<AgentDefinition> {
   let source: string;
