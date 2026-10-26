@@ -668,7 +668,7 @@ on 2026-09-13 reached 7 `accept` and 2 `improve` over nine **assumption**s, and 
 **directive**s and marked each with the commit that carried it — so the wave's `improve` path and the harness's own
 assertion that every one was answered have both now run against real ones rather than vacuously. It is still the only
 reading that has: the other three that day reached 9 `accept` and 1 `override` over ten **assumption**s, 9 and none
-over nine, and 9 and 1 over ten, and before them 10 `accept` and no `override` over ten in the observed run of
+over nine, and 9 and 1 over ten, then 7 and none over seven on 2026-10-26, and before them 10 `accept` and no `override` over ten in the observed run of
 2026-09-06, 6 and 1 over seven on 2026-09-05, and 8 and 1 over nine in a reading whose artefacts are gone. Every one of
 those reached zero for stated reasons rather than by ignoring the verdict — the 2026-09-06 reading is the narrowest of
 them, each of its ten **verdict**s naming the roads it beat and the **axis** each lost on, two saying outright that a
@@ -744,9 +744,28 @@ $6.85**, and both of those last readings predate the **adjudication** that compa
 and most expensive of the delivery measured on 2026-09-06, and `e2e-tests/README.md` prices the difference per stage.
 Run together, which is what `npm test` does, the whole suite took **23m** and the two runs with their verdicts came to
 **$13.28**, then **$13.14** — the two long tests overlap, so the suite is the slower of them plus a rounding error. That
-pair predates the delivery above too, and nothing has driven the two together since; the arithmetic on the two latest
-readings puts a suite at about an hour and about $26, which is derived rather than measured. The smoke test is seconds
-and effectively free.
+pair predates the delivery above too. The smoke test is seconds and effectively free.
+
+**The suite was driven together again on 2026-10-26, and it is the first reading on a new model.** All three passed in
+**26m 28s**, every mechanical assertion and both verifiers, no **ceiling** reached:
+
+| | refinement `p6Ks0d` | delivery `cY57Hv` |
+|---|---:|---:|
+| wall clock | 21m 23s | 24m 45s |
+| the run | $9.32, **responder** $0.42 over 10 rounds | $7.31 |
+| the **verifier**, on top | $0.42 | $0.47 |
+| the two **rounds**, outside both | — | $0.38 |
+| **sweep**s | 1, flat, $0.37 | — |
+| what came out | 10 **ticket**s over 59 user stories | 8 commits over three tickets |
+| **verdict**s | — | 7 `accept` |
+
+**Compare it with neither baseline above.** The harness pins the alias `opus`, and on 2026-10-26 that alias resolved to
+`claude-opus-5-5` where every reading above ran on `claude-opus-5` — so this pair differs from them in the model as well
+as in the plugin. It staged the refinement setup `98aa512`/`65bcf86`/`a86d14c`, against the baseline's
+`3e5a5a0`/`31f5942`/`cb97e56`, and the delivery's plugin hashes `c9ff7d9`. Both figures sit inside the spreads their
+own baselines already have — the refinement inside $7.81 to $24.75, the delivery under the $7.71 to $9.55 of the four of
+2026-09-13 by forty cents — which is a single reading of a new setup on a new model and licenses no claim that either
+changed. `e2e-tests/README.md` breaks the pair down per stage and says why its price table did not reconstruct it.
 
 Those are the figures the harness reports, which are the **orchestrator** and its **dispatches** and nothing else — a
 delivery's **rounds** and the observation both run as their own processes, and neither's **spend** is in them. **Every

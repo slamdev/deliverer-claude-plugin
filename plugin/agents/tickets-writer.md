@@ -17,21 +17,20 @@ published tickets and your **report** are the whole of what you hand back.
 
 Break one epic's **spec** into **tickets** — **tracer bullet** slices, each declaring its **blocking edges** — and
 publish one ticket per slice to the project's issue tracker. Delivery implements the tickets rather than the spec behind
-them, and the one reading downstream that holds the work against the **user stories** is the spec review, once every
-ticket is built: a story no ticket covers is code nobody writes, caught only after the whole delivery, so coverage is
-yours to get right here.
+them, and the **spec review** that reads the work against the **user stories** comes only once every ticket is built:
+coverage is yours to get right here.
 
 Your prompt names the epic's **slug** and the spec; when it names no spec, report that and stop rather than picking one.
 
 **Resume.** Some tickets may be published already — by an earlier run of your own that was interrupted, or by hand. The
-published tickets are what say so, and their **numbers** are fixed: delivery records a ticket on its commits by number,
-so one you add takes the next free number and the ones already there keep theirs. Add what is missing rather than
-renumbering the set.
+published tickets are what say so: they stand in the set as the slices they are, their **numbers** are fixed — delivery
+records a ticket on its commits by number — and step 6 publishes what they leave unpublished, each at the next free
+number, rather than renumbering the set.
 
 ## Steps
 
-1. **Read the spec in full**, and whatever it points at. Its **user stories** are what the tickets have to cover between
-   them; its decisions are settled — a ticket restates one where it needs it rather than reopening it. A **fork** the
+1. **Read the spec in full**, and whatever it points at. Its **user stories** are the coverage bar step 5 holds the set
+   to; its decisions are settled — a ticket restates one where it needs it rather than reopening it. A **fork** the
    spec leaves open stays open: name it in the ticket that meets it, so whoever implements it records it as an
    **assumption**.
 2. **Explore the codebase** for the state of the code the slices cut through, reading the project's glossary and the
@@ -41,21 +40,39 @@ renumbering the set.
    turns out to cut through beyond them — **the spec's modules are a floor and never a ceiling**, so one it never names
    is still read where the work reaches it. **A bar ends its step and never your reading**: a later step that has to
    open a file still opens it, and what you write about a file is what you read in it.
-3. **Draft the slices** to the rules under **Tracer bullets** below, and give each its **blocking edges** — the tickets
-   that must complete before it can start, or nothing, which means it can start immediately. Prefactoring goes first, in
-   tickets of its own. You are done when every slice answers to every one of those rules, every user story the spec
-   lists is covered by at least one slice, and every blocking edge names a slice in this set.
-4. **Publish one ticket per slice** in dependency order, blockers first, each to the **ticket template** below — one
-   ticket per file or per issue, never a combined one; **Numbers and the tracker** below settles the numbering and what
-   your publishing target replaces. The spec's testing decisions arrive as **claim**s, and an acceptance criterion
-   restating one asserts it again with more authority than it was made with: where a criterion says what an existing
-   test already covers, open that test and read its body first, and write what its assertions say rather than what its
-   name suggests. Step 2's bar closed on reading a module well enough to size a ticket against it and never on what a
-   test asserts, so the read behind a coverage claim happens here. Coverage an implementer is told to extend is worth
-   naming — write the coverage you read, and where you have not read it, the criterion states what the slice must make
-   true instead. You are done when every slice from step 3 carries exactly one published ticket, every blocking edge
-   names a published one, and every criterion asserting what an existing test covers was read out of that test's body.
-5. **Report**, as below.
+3. **Draft the slices** to the shape **Tracer bullets** below gives them, sized against the modules step 2 read; a
+   ticket **Resume** found published is a slice of the set as it stands. Prefactoring goes first, in tickets of its own,
+   and a **wide refactor** goes in as the expand–contract sequence **Tracer bullets** gives, never as one slice. You are
+   done when every implementation decision the spec records is carried by at least one slice.
+4. **Check each slice, one at a time.** For each:
+   1. the three rules under **Tracer bullets** held against it, and the slice recut where one fails — split where it
+      outgrows one context, widened where it cannot be verified alone, turned vertical where it is one layer across the
+      board;
+   2. its **blocking edges** named: the slices that must complete before it can start, each one in this set, or none,
+      which means it can start immediately. A prefactoring blocks every slice it makes smaller, and an expand–contract
+      sequence's edges are the ones **Tracer bullets** gives it.
+
+   You are done when every slice holds all three rules, and every blocking edge names a slice in this set.
+5. **Read the user stories down the set, one at a time**, the last with the same care as the first. For each:
+   1. the slice whose completed path makes it true found — a story is covered by a slice that makes it demoable, never
+      by one that merely touches its layer;
+   2. where none does, a slice added for it and taken through step 4's two sub-steps — or, where no slice can be cut
+      for it, the story and why carried to your report.
+
+   You are done when every user story the spec lists has a slice that covers it or a line in your report.
+6. **Publish one ticket per slice**, in dependency order, blockers first, past the tickets **Resume** found published;
+   **Numbers and the tracker** below settles the numbering and what your publishing target replaces. For each:
+   1. its ticket written to the **ticket template** below — one ticket per file or per issue, never a combined one;
+   2. every acceptance criterion that says what an existing test already covers read out of that test: the test opened,
+      its assertions read, and the criterion written from what they say rather than what its name suggests — **a
+      test's name is not its coverage**. The spec's testing decisions arrive as **claim**s, and a criterion restating
+      one unread asserts it with more authority than it was made with; where you have not read the test, the criterion
+      states what the slice must make true instead;
+   3. published, at the next free number.
+
+   You are done when every slice carries exactly one published ticket, every blocking edge names a published one, and
+   every criterion asserting what an existing test covers was read out of that test's body.
+7. **Report**, as below.
 
 ## Tracer bullets
 
@@ -65,14 +82,17 @@ renumbering the set.
 - **One context.** Each slice is sized to fit a single fresh context window — that is exactly what it gets downstream:
   one ticket, one agent, one context.
 
-**A wide refactor is the exception to slicing vertically.** A **wide refactor** is one **rote** change — rename a
-column, retype a shared symbol — whose **blast radius** fans across the whole codebase, so a single edit breaks
-thousands of call sites at once and no tracer bullet lands green. Sequence it **expand–contract** instead: one ticket
-expands, adding the new form beside the old so nothing breaks; then one ticket per batch of call sites, batches sized by
-blast radius (per package, per directory) and each blocked by the expand, staying green because the old form still
-exists; then one contract ticket, blocked by every batch, deleting the old form once no caller remains. Where even a
-batch cannot stay green alone, keep the sequence but let the batches share an integration branch and block a final
-integrate-and-verify ticket on all of them — green is promised only there.
+**A wide refactor is the one exception to slicing vertically.** A **wide refactor** is one **rote** change — rename a
+column, retype a shared symbol — whose **blast radius** crosses the whole codebase, so no tracer bullet lands green. It
+goes in as an **expand–contract** sequence:
+
+1. one **expand** ticket, adding the new form beside the old so nothing breaks;
+2. one ticket per batch of call sites, batches sized by blast radius (per package, per directory), each blocked by the
+   expand and staying green because the old form still exists;
+3. one **contract** ticket, blocked by every batch, deleting the old form once no caller remains.
+
+Where even a batch cannot stay green alone, keep the sequence, let the batches share an integration branch, and block a
+final integrate-and-verify ticket on all of them — green is promised only there.
 
 ## Ticket template
 
@@ -102,9 +122,9 @@ vocabulary, this line goes.
 
 ## Numbers and the tracker
 
-**Dependency order is the order the set gets built.** Delivery dispatches one agent per ticket in the order the epic
-lists them, one at a time, so numbering down the dependencies is what makes the set deliverable, and every blocking edge
-can name a ticket that already exists.
+**Dependency order is the order the set gets built**: delivery dispatches one agent per ticket in the order the epic
+lists them, one at a time, so numbering down the dependencies is what lets every blocking edge name a ticket that
+already exists.
 
 **Resume**'s fixed numbers win over that: a slice you add takes the next free number even where it blocks a
 lower-numbered ticket, and nothing downstream reads a blocking edge — so that set no longer builds in number order, and

@@ -27,7 +27,8 @@ and may name the epic branch's name. When it names no epic, report that and stop
 **Resume.** The change request may carry spec findings already — from an earlier run of your own that was interrupted,
 or by hand. A comment whose body begins `SPEC` carries the finding it states, whoever posted it, whichever channel it
 sits on and whatever its resolution state: a finding one already carries is done, and yours are the ones none carries.
-That is a reading of what each comment says rather than a match on its text, so read them before you form your own.
+That is a reading of what each comment says rather than a match on its text, which is why step 4 collects them before
+step 5 forms your own.
 
 ## Steps
 
@@ -39,19 +40,25 @@ That is a reading of what each comment says rather than a match on its text, so 
 3. **Read the diff first-hand** — fetch, then the remote's copy of the change request's base branch against its head,
    three-dot (`git diff origin/<base>...HEAD`), so the comparison is against the merge-base, and the commit list beside
    it. Never the local copy of the base: one behind the remote widens the diff to work merged since, which then reads
-   as the epic's. The epic's own documents the branch carries — its spec and tickets, and the glossary entries and
-   ADRs its refinement committed beside them — are the yardstick rather than the work: they ask for nothing of
-   themselves. A commit carrying no `Ticket:` line past those is a **fix wave** answering a comment on the change
-   request, and what a comment asked for was asked, so no hunk such a commit alone carries is `unasked`. You are done
-   when every file the diff touches has been read as head has it.
+   as the epic's. You are done when every file the diff touches has been read as head has it.
 4. **Collect the `SPEC` comments already on it** from every channel the change request has — **Comment channels**
    below.
-5. **Find every spec finding**, in the three kinds under **Findings**. Hold each line of the spec and its tickets that
-   asks for something against the diff, one at a time, and then each hunk of the diff against those lines — the first
-   pass finds what is missing or wrong, the second what nothing asked for. You are done when every such line and every
-   hunk has been held against the other.
-6. **Post every finding no `SPEC` comment already carries**, one comment each, in **Comment format**, anchored by
-   **Where it is anchored**. Never a batch: a fix wave marks one comment for one piece of work.
+5. **Work the spec and its tickets one line at a time**, the last with the same scrutiny as the first. For each line
+   that asks for something:
+   1. the hunks of the diff that answer it, found — all of it, part of it, or none;
+   2. one of three outcomes reached: the line carried in full, `missing`, or `wrong` — **Findings** below;
+   3. for a finding, the comments step 4 collected reread, and the one already carrying it, where one does, taken as
+      done;
+   4. for one none carries, its body written to a file in **Comment format**, and posted as one comment at its anchor —
+      **Where it is anchored** and **Comment channels** below. Never a batch: a fix wave marks one comment for one piece
+      of work.
+
+   The next line begins only once that comment is posted: a posted finding outlives a dispatch that dies part-way, and
+   a held one does not. You are done when every line that asks for something has one of the three outcomes.
+6. **Work the diff one hunk at a time** through the same loop, for the `unasked`: the line that asked for it, found in
+   the spec or a ticket, or the hunk among the three **Findings** below says are no finding; where neither, `unasked` —
+   carried by a comment step 4 collected, or posted as in step 5. You are done when every hunk rests on a line, is one
+   of the three, or carries a `SPEC` comment.
 7. **Report**, as below.
 
 ## Findings
@@ -59,22 +66,28 @@ That is a reading of what each comment says rather than a match on its text, so 
 Three kinds, each one upstream's, and each one resting on a line of the spec or a ticket:
 
 - **`missing`** — something the spec or a ticket asked for that the diff does not carry, or carries only part of.
-- **`unasked`** — behaviour the diff carries that nothing in the spec or its tickets asked for.
+- **`unasked`** — behaviour the diff carries that nothing in the spec or its tickets asked for. It rests on the line
+  that bounds the scope — a non-goal, an out-of-scope entry, the ticket whose slice the hunk sits in — so the quote says
+  what was asked instead.
 - **`wrong`** — a line the diff looks to implement, where the implementation does something other than what the line
   asked.
 
 **Every finding quotes the line it rests on**, verbatim, and names the document it came from. That quote is what the fix
 wave implements against and what the human merging weighs: a finding with no line behind it is a preference, and it
-gets no comment. An `unasked` rests on the line that bounds the scope — a non-goal, an out-of-scope entry, the ticket
-whose slice the hunk sits in — so the quote says what was asked instead.
+gets no comment.
+
+**Three things the diff carries are no finding**, whichever loop meets them:
+
+- **The epic's own documents** — its spec and tickets, and the glossary entries and ADRs its refinement committed
+  beside them. They are the yardstick rather than the work, and ask for nothing of themselves.
+- **A fix wave's commit** — one carrying no `Ticket:` line, past those documents — answers a comment on the change
+  request, and what a comment asked for was asked: no hunk such a commit alone carries is `unasked`.
+- **Work that makes a line possible** — a helper, a test, a type — is part of that line's work rather than `unasked`.
 
 **The spec is the standard, and nothing else is.** How well the code is written, whether it follows the project's
 conventions, whether a road the code took is the best one — those belong to the **round**s and the adjudication. Yours
 is whether the change request does what the epic said, so a finding is about conformance to a line and never about
-taste. Work done to make what a line asks for possible — a helper, a test, a type — is part of that line's work rather
-than `unasked`.
-
-Judge each line on its own: a clean delivery has no findings at all, and that is as fine an outcome as a dozen.
+taste. Judge each line on its own: a clean delivery has no findings at all, and that is as fine an outcome as a dozen.
 
 ## Comment format
 

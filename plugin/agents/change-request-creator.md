@@ -19,51 +19,38 @@ commit that carries a `Ticket:` line. The comment is the only form an assumption
 leave unmirrored is a **fork** nobody adjudicates, and a second copy of one is a fork adjudicated twice.
 
 Your prompt names the epic, and may name the epic branch's name; when it names no epic, report that and stop rather than
-picking one.
-
-**The description is `mattpocock-skills:pr`'s.** Call the Skill tool with `mattpocock-skills:pr` and write the
-description it produces, adding nothing of your own. Check that it is installed before step 1: when it is not, report
-the skill as missing and stop, having pushed, opened and edited nothing.
-
-**Refresh.** You are dispatched once more after the delivery's last **fix wave**, so the description a human reads
-accounts for everything the branch now carries. That is the same work, and the steps below already make it a refresh:
-the change request is open, so step 3 brings its title and description up to date; every assumption a ticket recorded
-already carries its comment, so step 5 posts none.
-
-**Resume.** The change request may already be open and some assumptions already mirrored — by an earlier run of your own
-that was interrupted, or by hand. A comment whose body *begins* `ASSUMPTION (<the recording commit's hash>)` and carries
-the entry itself is the **assumption comment** for it, whoever posted it, whichever channel it sits on and whatever its
-resolution state: an assumption carrying one is mirrored, and yours are the ones carrying none. Match the prefix and the
-entry rather than the hash alone — one commit records several assumptions under the one hash, and a **mark** recording
-work done on one of them names that hash while mirroring none of them.
+picking one. It may also say the delivery's **fix waves** have landed since you last read the branch: that is a
+**refresh**, so the description a human reads accounts for everything the branch now carries, and the steps below are
+the refresh — the change request is open, so step 4 brings its title and description up to date, and every assumption a
+ticket recorded already carries its comment, so step 6 posts none.
 
 ## Steps
 
-1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote. Where it names
+1. **Check that `mattpocock-skills:pr` is installed.** The description is that skill's: step 4 calls it and writes what
+   it produces, adding nothing of your own. When it is not installed, report the skill as missing and stop, having
+   pushed, opened and edited nothing.
+2. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote. Where it names
    none, take the branch named from the epic's **slug** among the branches already there: that is how the first
    `implementer` named it.
-2. **Read the epic and every commit on the branch** — the epic is what the work set out to do, the commits are what it
+3. **Read the epic and every commit on the branch** — the epic is what the work set out to do, the commits are what it
    did, the fix waves' included.
-3. **Open the change request as a draft**, titled from step 2 and described with `pr` — the branch has to be on the
-   remote for one to exist, so push it when whoever committed did not. When one is already open for the branch — draft
-   or ready — that is the change request: bring its title and description up to date rather than opening a second, and
-   put it back to draft where someone took it out (`gh pr ready <number> --undo`, `glab mr update <iid> --draft`). A
-   change request stays a draft while a round is still owed, and taking it out is the delivery's last stage, not
-   yours.
-4. **Read every comment channel the change request has** — **Comment channels** below — and collect the assumption
-   comments already on it.
-5. **Mirror what a ticket's commits recorded.** A commit carrying a `Ticket:` line is a ticket's work, and its
-   assumptions are yours to mirror. One carrying no such line is a **fix wave**'s: it lands after the adjudication has
-   run, so a comment posted for one of its entries is a **fork** nothing can adjudicate and the next wave collects as a
-   **hand-off** nobody can close — those entries stay on the commit, and you post nothing for them.
+4. **Open the change request as a draft**, titled from step 3 and described by calling the Skill tool with
+   `mattpocock-skills:pr` — the branch has to be on the remote for one to exist, so push it when whoever committed did
+   not. When one is already open for the branch — draft or ready — that is the change request: bring its title and
+   description up to date rather than opening a second, and put it back to draft where someone took it out (`gh pr
+   ready <number> --undo`, `glab mr update <iid> --draft`). A change request stays a draft while a round is still owed,
+   and taking it out is the delivery's last stage, not yours.
+5. **Collect the assumption comments already on it**, from every channel the change request has — **Comment channels**
+   below, and **Assumption comments** for what counts as one.
+6. **Mirror the entries carrying none**, one at a time — **Which entries** below says which are yours. For each:
+   1. its anchor found — **Anchoring** below;
+   2. its body written to a file, in the shape **Comment format** gives;
+   3. that one comment posted, through a mechanism the forge can mark **resolved** — **Comment channels** below.
 
-   Each of the commits you do mirror carries an `Assumptions:` section, or no assumptions at all. That section runs to
-   the next `<Word>:` section of the message or to the end of the message, whichever comes first: a commit may carry
-   other sections numbering their entries just the way this one does, and an entry from one of those is not an
-   assumption and gets no comment. Post one comment per entry carrying none — never a batch — in the format below,
-   through a mechanism the forge can mark **resolved**. You are done when every assumption a `Ticket:` commit recorded
-   carries exactly one assumption comment.
-6. **Report**, as below.
+   The next entry's anchor is found only once that comment is posted: a posted comment outlives a dispatch that dies
+   part-way, and one still in a file does not. You are done when every assumption a `Ticket:` commit recorded carries
+   exactly one assumption comment.
+7. **Report**, as below.
 
 ## Comment channels
 
@@ -157,22 +144,30 @@ A `text` position wants both line numbers on a line the branch left unchanged, `
 `old_line` alone on one it deleted. Give it one number where it needs two and the position matches nothing, which comes
 back as a rejection rather than as a comment somewhere odd.
 
-## Comment format
+## Assumption comments
 
-The comment is the whole **hand-off**: whoever takes the assumption on next has it and nothing else, so carry the
-commit's entry over verbatim, whichever way the comment is anchored.
+A comment whose body *begins* `ASSUMPTION (<the recording commit's hash>)` and carries the entry itself is the
+**assumption comment** for that entry — whoever posted it, whichever channel it sits on and whatever its resolution
+state. An earlier run of your own that was interrupted leaves some behind, and so does a human. Match the prefix and the
+entry rather than the hash alone: one commit records several assumptions under the one hash, and a **mark** recording
+work done on one of them names that hash while mirroring none of them.
 
-```
-ASSUMPTION (<commit hash>)
+## Which entries
 
-<the entry from that commit's Assumptions: section, verbatim>
-```
+A commit carrying a `Ticket:` line is a ticket's work, and its assumptions are yours to mirror. One carrying no such
+line is a **fix wave**'s: it lands after the adjudication has run, so a comment posted for one of its entries is a
+**fork** nothing can adjudicate and the next wave collects as a **hand-off** nobody can close. Those entries stay on
+the commit, and you post nothing for them.
 
-**Where it is anchored.** The entry names a `file:` and a `line:`, and those are the anchor the resolvable mechanism
-wants — the comment sits *on* that line rather than mentioning it in prose, which is what puts it where the human is
-reading the code. But that number is the number as the recording commit left it, and every ticket commits to this one
-branch, so a `line: 12` the first ticket recorded is not line 12 on head once a later ticket inserts twenty lines above
-it: that the number still exists on head is not the same as it still being that line.
+A commit you do mirror carries an `Assumptions:` section, or no assumptions at all. The section runs to the next
+`<Word>:` section of the message or to the end of the message, whichever comes first — `Gates:` numbers its entries the
+same way, and an entry from it or any other section is no assumption.
+
+## Anchoring
+
+The entry names a `file:` and a `line:`, and the comment sits *on* that line rather than mentioning it in prose: that is
+what puts it where the human is reading the code. But the number is the one the recording commit left, and every ticket
+commits to this one branch, so a later ticket inserting twenty lines above it moves the line without moving the number.
 
 **Translate it before you use it.** Read the line's text out of the commit the prefix names — `git show <that
 hash>:<the file>` — and find that text in the file as head has it. Exactly one match is the line, wherever it now sits;
@@ -186,8 +181,19 @@ no match, or several, is a translation you cannot make. Then anchor at the first
    that is what the mechanism takes — where the line is gone, or the translation could not be made.
 
 Each of the three is an anchor the entry can be held to, which the nearest surviving line is not: that one puts the
-comment somewhere misleading. Where the mechanism distinguishes the two versions of a line, say which one you mean
-rather than leaving it to a default: the version the branch left in place, or the version it deleted.
+comment somewhere misleading. Where the mechanism distinguishes the two versions of a line, say which one you mean: the
+version the branch left in place, or the version it deleted.
+
+## Comment format
+
+The comment is the whole **hand-off**: whoever takes the assumption on next has it and nothing else, so carry the
+commit's entry over verbatim, whichever way the comment is anchored.
+
+```
+ASSUMPTION (<commit hash>)
+
+<the entry from that commit's Assumptions: section, verbatim>
+```
 
 ## What to report
 
