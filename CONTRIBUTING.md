@@ -21,7 +21,7 @@ These are artifacts we write. They are never run against this repository.
 |---------------------------------|-----------------------------------------------------------------------|
 | `plugin/skills/refine/SKILL.md` | `/deliverer:refine` — an idea becomes an epic: a spec and its tickets |
 | `plugin/skills/build/SKILL.md`  | `/deliverer:build` — an epic becomes a reviewed change request        |
-| `plugin/agents/*.md`            | the seven agents those two skills dispatch                            |
+| `plugin/agents/*.md`            | the eight agents those two skills dispatch                            |
 
 ### The skills you contribute with — the toolkit
 
@@ -117,12 +117,13 @@ what moved.
 ├── plugin/                              ← THE PRODUCT. Everything published; nothing outside ships.
 │   ├── .claude-plugin/plugin.json         manifest: name, 4 userConfig options
 │   ├── skills/{refine,build}/SKILL.md     the two commands
-│   ├── agents/                            the seven dispatched agents
+│   ├── agents/                            the eight dispatched agents
 │   │   ├── spec-writer.md                 brief   → published spec
 │   │   ├── tickets-writer.md              spec    → one ticket per vertical slice
 │   │   ├── implementer.md                 ticket  → commits on the epic branch
 │   │   ├── change-request-creator.md      branch  → draft change request + ASSUMPTION comments
 │   │   ├── assumption-reviewer.md         assumption → accept / improve / override / escalate
+│   │   ├── spec-reviewer.md               change request vs spec and tickets → SPEC comments
 │   │   ├── code-reviewer.md               drives one review round via the MCP server
 │   │   └── comments-addresser.md          unresolved comments → fixes, declines, hand-offs
 │   ├── mcp/                               the plugin's Node code, one package — ships UNBUILT (Node strips
@@ -648,13 +649,15 @@ It is the automated counterpart to the three procedures above, at a much higher 
 complete run, only what a human could read afterwards. Three tests, and CI runs none of them:
 
 - **The installation smoke test.** One command and, in seconds, you know the plugin still installs and still presents
-  both commands, all seven agents and all three review tools, and that `mattpocock-skills` still provides the skills
+  both commands, all eight agents and all three review tools, and that `mattpocock-skills` still provides the skills
   the plugin invokes by name. No repository on the forge and no model asked for more than one trivial turn — cheap
   enough to run after any change to a manifest, either hook or the launcher.
-- **The refine happy path.** `/deliverer:refine` against a **standing repo**, with a **responder** answering the
-  grilling in your place out of the **fixture**'s own **brief**. It asserts a published **spec** and one file per
-  **ticket**, and then a **verifier** judges whether what came out is any good.
-- **The build happy path.** `/deliverer:build` against a **throwaway repo** created for the run: all nine stages, two
+- **The refine happy path.** `/deliverer:refine` against a **throwaway repo** created for the run, carrying no epic,
+  with a **responder** answering the grilling in your place out of the **fixture**'s own **brief**. It asserts a
+  published **spec** and one file per **ticket**, and three facts off the forge: the default branch did not move,
+  exactly one new branch carries the spec and tickets at the paths the fixture's conventions name, and exactly one
+  **change request** is open from it as a **draft**. Then a **verifier** judges whether what came out is any good.
+- **The build happy path.** `/deliverer:build` against a **throwaway repo** created for the run: all ten stages, two
   real **rounds** through the tools server and both **fix waves**. It asserts a commit naming every ticket, a
   **verdict** on every **assumption**, a fix wave's answer to every `improve` among them, and the **change request**
   **flipped ready** with its **checks** green — then the verifier judges the code behind it against the **epic**, and
@@ -737,13 +740,13 @@ most expensive stage in all four, at $1.34, $1.83, $2.57 and $2.39; the three **
 $2.59 and are the steadiest thing a delivery has. The delivery was measured on **2026-09-06** at **59m 18s and
 $10.58** — the run itself 55m 29s and $9.75, the verifier $0.83 — over three tickets, five commits, ten
 **assumption**s and two **rounds**, and twice before that at **23m 12s and $7.40** and **22m 14s and
-$6.85**, and both of those last readings predate the **adjudication** that compares roads: that step is now the
-longest and most expensive of a delivery's eight, and `e2e-tests/README.md` prices the difference per stage. Run together, which is
-what `npm test` does, the whole suite took **23m** and the two runs with their verdicts came to **$13.28**, then
-**$13.14** — the two long tests overlap, so the suite is the slower of them plus a rounding error. That pair predates
-the delivery above too, and nothing has driven the two together since; the arithmetic on the two latest readings puts a
-suite at about an hour and about $26, which is derived rather than measured. The smoke test is seconds and effectively
-free.
+$6.85**, and both of those last readings predate the **adjudication** that compares roads: that step was the longest
+and most expensive of the delivery measured on 2026-09-06, and `e2e-tests/README.md` prices the difference per stage.
+Run together, which is what `npm test` does, the whole suite took **23m** and the two runs with their verdicts came to
+**$13.28**, then **$13.14** — the two long tests overlap, so the suite is the slower of them plus a rounding error. That
+pair predates the delivery above too, and nothing has driven the two together since; the arithmetic on the two latest
+readings puts a suite at about an hour and about $26, which is derived rather than measured. The smoke test is seconds
+and effectively free.
 
 Those are the figures the harness reports, which are the **orchestrator** and its **dispatches** and nothing else — a
 delivery's **rounds** and the observation both run as their own processes, and neither's **spend** is in them. **Every
@@ -780,8 +783,9 @@ stage runs in series, so anything else on the box is in it.
   individual credential is read out of it, so it works whichever way you authenticate to a model.
 - **A forge token `gh` can see.** `gh` and `git` are run with the environment the harness inherited rather than with
   that file, so `GITHUB_TOKEN` has to be exported — which is what `./claude` does with the line already in your `.env`.
-- **Permission to create private repositories**, and to delete them for the build test. A deletion the harness cannot
-  make is reported and leaves the repository standing, never a test that had otherwise passed turned red.
+- **Permission to create private repositories**, and to delete them: both happy paths delete theirs on success. A
+  deletion the harness cannot make is reported and leaves the repository standing, never a test that had otherwise
+  passed turned red.
 - **Node, `git`, `gh` and the Claude CLI** — the versions the dockerfile pins; the plugin is installed with the same
   binary you would install it with. The harness runs unbuilt under Node's type stripping, so its manifest asks for
   `^22.18.0 || >=23.6.0`.
@@ -833,9 +837,8 @@ rather than reproduced. Nothing in it is ever removed, passed or failed:
   did not look in until it was taught to — that one was silently not collected, and nothing was lost by it. No
   assertion covers the collection either way, so the diagnostic naming what was collected is the only sign it happened.
 
-On the forge, the refine test's **standing repo** stays — it is cloned and never written back to, so it is brought into
-step with the fixture rather than recreated. The build test's **throwaway repo** is deleted when the test passes and
-left standing, with its branch and change request, when it fails: the change request is the evidence.
+On the forge, each happy path's **throwaway repo** is deleted when the test passes and left standing, with its branch
+and change request, when it fails: the change request is the evidence.
 
 ### The bench — one writer's stage, driven alone
 

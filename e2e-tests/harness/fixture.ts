@@ -7,7 +7,7 @@
  *
  *  - `repository/` — the codebase a run is driven against: its unit tests, its typecheck, its CI
  *    workflow and the `CLAUDE.md` declaring the conventions both skills publish by. It is what the
- *    standing repo carries (`./standing-repo.ts`).
+ *    throwaway repo carries (`./throwaway-repo.ts`).
  *  - `idea.md` — the **idea** a refinement is handed, as its argument.
  *  - `brief.md` — the **brief** the **responder** answers a grilling out of.
  *  - `fixture.json` — the same conventions the repository declares in prose, in the form a matcher
@@ -23,8 +23,8 @@
  *    branch from the moment that repository exists rather than seeded by a test afterwards
  *    (`./forge.ts`).
  *
- * **Only a delivery gets the epic.** The **standing repo** a refinement clones is built from the
- * same fixture without it: a tracker root that already carries an epic is one a refinement can
+ * **Only a delivery gets the epic.** The **throwaway repo** a refinement is driven against is built
+ * from the same fixture without it: a tracker root that already carries an epic is one a refinement can
  * publish its own on top of, and two epics under one slug are indistinguishable from a refinement
  * that published nothing. A fixture that carries no `epic/` is a fixture no delivery can be driven
  * against, which is the builder's to say and not this module's.
@@ -70,7 +70,7 @@ export interface FixtureEpic {
 }
 
 export interface Fixture {
-  /** the directory's name, which is half of what the standing repo is named for */
+  /** the directory's name, which is half of what a throwaway repo is named for */
   readonly name: string;
   readonly root: string;
   /** the codebase, and everything a repository declares about itself */

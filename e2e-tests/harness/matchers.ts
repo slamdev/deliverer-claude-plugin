@@ -9,6 +9,7 @@
  * with, what the install wrote, what the loaded plugin contains. None of them asserts a mechanism.
  */
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { BuildOutcome } from "./build-run.ts";
 import { minutes } from "./ceilings.ts";
@@ -53,7 +54,7 @@ function missingFrom(expected: readonly string[], actual: readonly string[]): st
  * the plugin directory rather than written down (`./repository.ts` says why), so a skill or an
  * agent added later is covered the day it ships — but a shipped file DELETED takes its own
  * expectation with it, and staging that copied nothing would expect nothing at all. `floor` is the
- * bar the ticket states in words: two commands, seven agents. It is a FLOOR and not a count, so
+ * bar the ticket states in words: two commands, eight agents. It is a FLOOR and not a count, so
  * growing the plugin costs nothing and shrinking it is a deliberate edit here.
  */
 function assertAllPresent(
@@ -87,7 +88,7 @@ export function assertCommandsPresent(
   assertAllPresent("commands", floor, expected, surface.commands);
 }
 
-/** All seven agents are in the session. */
+/** All eight agents are in the session. */
 export function assertAgentsPresent(
   surface: SessionSurface,
   expected: readonly string[],
@@ -336,6 +337,37 @@ export function assertSessionRecordsKept(
         `least ${dispatchedFloor} were expected — ${dispatches}, and a failure inside any of ` +
         `them is only readable from its own record. Kept: ` +
         `${records.dispatched.join(", ") || "none"}`,
+    );
+  }
+}
+
+/**
+ * The orchestrator itself dispatched an agent of the given type at least once.
+ *
+ * A floor on the count of records cannot say this: it counts every record under the run's
+ * configuration directory, the observer's and the delegated review's own among them, so a run that
+ * skipped a stage can still clear it. The type is read off the `.meta.json` sidecar the host writes
+ * beside each record of the orchestrator's own session, which names the agent that was dispatched.
+ */
+export function assertAgentDispatched(outcome: ObservedRun, agentType: string, why: string): void {
+  const records = outcome.records;
+  const types = dispatchRecordsOfRun(records, outcome.run.sessionId).map((record) => {
+    try {
+      const sidecar = join(records.root, record.replace(/\.jsonl$/, ".meta.json"));
+      const parsed: unknown = JSON.parse(readFileSync(sidecar, "utf8"));
+      const declared =
+        typeof parsed === "object" && parsed !== null && "agentType" in parsed
+          ? parsed.agentType
+          : undefined;
+      return typeof declared === "string" ? declared : "(no agent type)";
+    } catch {
+      return "(no readable sidecar)";
+    }
+  });
+  if (!types.some((type) => type === agentType || type.endsWith(`:${agentType}`))) {
+    assert.fail(
+      `the run dispatched no ${agentType}: ${why}. The orchestrator's own dispatches were ` +
+        `${types.join(", ") || "none at all"}.`,
     );
   }
 }
@@ -595,20 +627,169 @@ function assertTriageLabel(
 }
 
 /**
- * The run pushed nothing.
+ * The default branch is where the repository was created at.
  *
- * This is what lets the repository stand rather than be thrown away: with nothing written back, no
- * two runs can reach each other. Asked of the FORGE and not of the clone, because a clone whose own
- * branch moved says nothing about what was published to it.
+ * A refinement publishes on an **epic branch** of its own and never on the default branch: what it
+ * commits is the spec and tickets a human has yet to read. Asked of the FORGE and not of the
+ * clone, because a clone whose own branch moved says nothing about what was published.
  */
-export function assertNothingPushed(outcome: RefineOutcome): void {
-  if (outcome.remoteHeadAfterRun !== outcome.standingRepo.headBeforeRun) {
+export function assertDefaultBranchUnmoved(outcome: RefineOutcome): void {
+  if (outcome.remoteHeadAfterRun !== outcome.repo.headAtCreation) {
     assert.fail(
-      `${outcome.standingRepo.fullName} moved from ${outcome.standingRepo.headBeforeRun} to ` +
-        `${outcome.remoteHeadAfterRun} during the run. A refinement pushes nothing, and a ` +
-        `standing repo one run can write to is one the next run inherits.`,
+      `${DEFAULT_BRANCH} on ${outcome.repo.fullName} moved from ${outcome.repo.headAtCreation} ` +
+        `to ${outcome.remoteHeadAfterRun || "nothing at all"} during the run. A refinement ` +
+        `publishes on the epic branch and leaves the default branch where it found it.`,
     );
   }
+}
+
+/**
+ * Exactly one branch is new on the forge, it carries the epic's spec and every ticket at the paths
+ * this fixture's conventions name, and its commits are refine's own and nothing else.
+ *
+ * The spec's path is built from the fixture's own declaration rather than read off the working
+ * tree, so a spec published under some other name is a failure here and not a match against
+ * itself. The tickets are the ones the working tree holds, since how many there are is the
+ * writer's to decide: one the run wrote and never committed is one the branch does not carry.
+ *
+ * Refine's own, held three ways: no commit carries a `Ticket:` line, because this is no ticket's
+ * work; every path the commits change is markdown, because everything a refinement writes is and a
+ * sweep of the whole tree would carry something that is not; and the clone holds no markdown left
+ * uncommitted, because a glossary entry or an ADR stage 1 landed and stage 5 never committed is
+ * one the branch does not carry either.
+ */
+export function assertEpicBranchCarriesEpic(outcome: RefineOutcome): void {
+  const branches = outcome.newBranches;
+  const branch = branches[0];
+  if (branches.length !== 1 || branch === undefined) {
+    assert.fail(
+      `the forge carries ${branches.length} branches beside ${DEFAULT_BRANCH} on ` +
+        `${outcome.repo.fullName} where exactly one was expected: ` +
+        `${branches.map((found) => found.name).join(", ") || "none at all"}. A refinement into ` +
+        `an in-repository tracker pushes the epic branch, and only that.`,
+    );
+  }
+  const { tracker } = outcome.fixture;
+  const directory = `${tracker.root}/${outcome.epic.slug}`;
+  const carried = new Set(branch.files);
+  const specPath = `${directory}/${tracker.specFile}`;
+  const ticketsDirectory = `${directory}/${tracker.ticketsDirectory}/`;
+  const underEpic = branch.files.filter((path) => path.startsWith(`${directory}/`));
+  const carriedThere = `Under ${directory}/ it carries ${underEpic.join(", ") || "nothing"}.`;
+
+  if (!carried.has(specPath)) {
+    assert.fail(
+      `${branch.name} carries no spec at ${specPath}, which is where this fixture's conventions ` +
+        `put one. ${carriedThere}`,
+    );
+  }
+  if (!branch.files.some((path) => path.startsWith(ticketsDirectory))) {
+    assert.fail(`${branch.name} carries no tickets under ${ticketsDirectory}. ${carriedThere}`);
+  }
+  const uncommitted = outcome.epic.tickets
+    .map((ticket) => ticket.path)
+    .filter((path) => !carried.has(path));
+  if (uncommitted.length > 0) {
+    assert.fail(
+      `${uncommitted.length} of the ${outcome.epic.tickets.length} tickets in the working tree ` +
+        `are not on ${branch.name}: ${uncommitted.join(", ")}. ${carriedThere}`,
+    );
+  }
+  const ticketed = branch.commits.filter((commit) => /^Ticket:/m.test(commit.message));
+  if (ticketed.length > 0) {
+    assert.fail(
+      `${branch.name} carries ${ticketed.length} commits with a Ticket: line ` +
+        `(${ticketed.map((commit) => commit.sha.slice(0, 7)).join(", ")}). A refinement's commit ` +
+        `is no ticket's work, and build reads a Ticket: line as a ticket begun.`,
+    );
+  }
+  const changed = branch.commits.flatMap((commit) => commit.files);
+  const swept = [...new Set(changed.filter((path) => !path.endsWith(".md")))];
+  if (swept.length > 0) {
+    assert.fail(
+      `${branch.name}'s commits change ${swept.join(", ")}, which no refinement writes. A ` +
+        `refinement commits the paths it wrote and nothing else the tree held.`,
+    );
+  }
+  if (outcome.uncommittedMarkdown.length > 0) {
+    assert.fail(
+      `the clone still holds ${outcome.uncommittedMarkdown.join(", ")} uncommitted once the run ` +
+        `is over. The fixture starts clean, so these are the run's own — a glossary entry or an ` +
+        `ADR stage 1 landed is committed with the spec and tickets, and ${branch.name} does not ` +
+        `carry these.`,
+    );
+  }
+}
+
+/**
+ * Exactly one change request is on the forge, open from the epic branch, still a **draft**, and
+ * described with the facts refine's fixed text carries.
+ *
+ * One, because a second is a refinement that lost its **bearings** — a change request already open
+ * for the branch is the change request. A draft, because nothing has been delivered yet: build's
+ * last stage is what takes it out of draft. The description is held to its two facts — the spec's
+ * location and the ticket count — and not to its wording, since the facts are what a human opening
+ * the draft reads it for.
+ */
+export function assertDraftOpenedFromEpicBranch(outcome: RefineOutcome): void {
+  const opened = outcome.changeRequests;
+  const only = opened[0];
+  if (opened.length !== 1 || only === undefined) {
+    const listed = opened
+      .map((request) => `${request.url} from ${request.branch} (${request.state})`)
+      .join(", ");
+    assert.fail(
+      `the refinement left ${opened.length} change requests on ${outcome.repo.fullName} where ` +
+        `exactly one was expected: ${listed || "none at all"}. Its last stage before the ` +
+        `hand-over opens one, as a draft, from the epic branch.`,
+    );
+  }
+  const epicBranch = outcome.newBranches[0]?.name;
+  if (only.branch !== epicBranch) {
+    assert.fail(
+      `${only.url} was opened from ${only.branch || "no branch this harness could read"} ` +
+        `rather than from the epic branch ${epicBranch ?? "(none was pushed)"}.`,
+    );
+  }
+  if (only.state !== "OPEN" || !only.isDraft) {
+    assert.fail(
+      `${only.url} is ${only.state}${only.isDraft ? " and a draft" : " and out of draft"} ` +
+        `where an open draft was expected: nothing has been delivered yet.`,
+    );
+  }
+  const specPath = outcome.epic.specPath;
+  if (specPath !== null && !only.body.includes(specPath)) {
+    assert.fail(
+      `${only.url}'s description never names the spec's location, ${specPath}: ` +
+        `${description(only.body)}`,
+    );
+  }
+  const count = outcome.epic.tickets.length;
+  // The location is taken out first, so a digit in a slug is never read as the count.
+  const beside = specPath === null ? only.body : only.body.replaceAll(specPath, "");
+  if (!namesCount(beside, count)) {
+    assert.fail(
+      `${only.url}'s description never names the ticket count, ${count}: ` +
+        `${description(only.body)}`,
+    );
+  }
+}
+
+const COUNT_WORDS = [
+  "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+  "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen",
+  "nineteen", "twenty",
+];
+
+/** Whether the text names the count as a number of its own, in digits or as a word. */
+function namesCount(text: string, count: number): boolean {
+  if (new RegExp(`(^|[^0-9])${count}([^0-9]|$)`).test(text)) return true;
+  const word = COUNT_WORDS[count];
+  return word !== undefined && new RegExp(`\\b${word}\\b`, "i").test(text);
+}
+
+function description(text: string): string {
+  return text.trim() === "" ? "it is empty." : `it reads "${text.trim()}".`;
 }
 
 /* -------------------------------------------------------------------------------------------- *
@@ -666,7 +847,7 @@ export function assertChangeRequestOpened(outcome: BuildOutcome): void {
  *
  * The double is opt-in and the real review is the default, so this is not about what the harness
  * chose — it is about what a contributor's own environment file or shell would have handed it. One
- * line left in either and every **round** replays a canned timeline: all nine stages pass having
+ * line left in either and every **round** replays a canned timeline: all ten stages pass having
  * reviewed nothing, which is a green test that reviewed nothing.
  */
 export function assertNoScriptedBackend(outcome: BuildOutcome): void {
@@ -905,7 +1086,7 @@ export function assertImprovementsAnswered(outcome: BuildOutcome): void {
 }
 
 /**
- * Two **rounds** completed, which is the bar stage 9 waits on.
+ * Two **rounds** completed, which is the bar stage 10 waits on.
  *
  * Read out of the run's own report, because a round leaves no other record: the tools server holds
  * its state in memory for the life of the session, and the findings it posts are comments like any
@@ -917,14 +1098,14 @@ export function assertRoundsCompleted(outcome: BuildOutcome, floor: number): voi
   if (completed === null) {
     assert.fail(
       `the run's report does not say how many rounds completed, and nothing else records one. ` +
-        `Stage 8 waits on ${floor}, and the report is asked for the count in so many words — so ` +
+        `Stage 10 waits on ${floor}, and the report is asked for the count in so many words — so ` +
         `this is either a report that stopped saying it or a reader that stopped recognising how ` +
         `it says it. The report:\n  ${quoted(outcome.run.report.split("\n"))}`,
     );
   }
   if (completed < floor) {
     assert.fail(
-      `the run reported ${completed} completed rounds where stage 9 waits on ${floor}. A change ` +
+      `the run reported ${completed} completed rounds where stage 10 waits on ${floor}. A change ` +
         `request flipped ready on fewer is one shipping a review nobody did.`,
     );
   }
@@ -991,14 +1172,14 @@ export function assertRoundsReportedSpend(outcome: BuildOutcome): void {
 /**
  * The change request was **flipped ready** — taken out of draft.
  *
- * That is stage 9 having run, and it is earned by two completed rounds and green checks and by
+ * That is stage 10 having run, and it is earned by two completed rounds and green checks and by
  * nothing else. A delivery that left it a draft reported why; this says it happened.
  */
 export function assertFlippedReady(outcome: BuildOutcome): void {
   const request = delivered(outcome, "whether it was flipped ready");
   if (request.isDraft) {
     assert.fail(
-      `${request.url} is still a draft. Stage 8 takes it out of draft once two rounds have ` +
+      `${request.url} is still a draft. Stage 10 takes it out of draft once two rounds have ` +
         `completed and the checks are green, so either it did not run or it found one of those ` +
         `wanting. The run reported:\n  ${quoted(outcome.run.report.split("\n"))}`,
     );
@@ -1012,7 +1193,7 @@ export function assertFlippedReady(outcome: BuildOutcome): void {
  * change request with no checks at all is not green, it is unjudged, and the fixture ships a CI
  * workflow precisely so that green means something. §Further Notes recorded exactly this as a
  * **claim** — that a freshly created private repository's workflow runs reach the plugin as checks
- * in time for stage 9 — and a run that finds none has settled it the other way.
+ * in time for stage 10 — and a run that finds none has settled it the other way.
  */
 export function assertChecksGreen(outcome: BuildOutcome): void {
   const request = delivered(outcome, "its checks");
@@ -1029,7 +1210,7 @@ export function assertChecksGreen(outcome: BuildOutcome): void {
     const named = red.map((check) => `${check.name} (${check.conclusion || check.status})`);
     assert.fail(
       `${red.length} of ${request.checks.length} checks on ${request.url} are not green: ` +
-        `${named.join(", ")}. Stage 8 flips a change request ready on green, so either the fix ` +
+        `${named.join(", ")}. Stage 10 flips a change request ready on green, so either the fix ` +
         `waves left the branch red or the flip did not wait.`,
     );
   }

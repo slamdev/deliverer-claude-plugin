@@ -578,6 +578,7 @@ const OWN_AGENTS = new Set([
   "code-reviewer",
   "comments-addresser",
   "implementer",
+  "spec-reviewer",
   "spec-writer",
   "tickets-writer",
 ]);

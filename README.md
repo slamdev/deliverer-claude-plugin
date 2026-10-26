@@ -18,11 +18,17 @@ You are needed for the conversation at the start and the merge at the end. Every
 - a spec published to your issue tracker, written from the decisions you actually made in the conversation
 - one ticket per slice of work, numbered in dependency order, each sized for a single agent to pick up
 - the questions the conversation deliberately left open — those stay yours to answer
+- where your tracker keeps specs and tickets as files in the repository: an epic branch carrying them, with the
+  glossary entries and ADRs the conversation landed, pushed to your remote with a draft change request open from it —
+  visible to your team — and your checkout left on that branch
 - the exact `/deliverer:build` call that delivers the epic
 
 **From `/deliverer:build`:**
 
 - a change request with every ticket implemented, on one branch
+- the change request read once against the spec and its tickets — what is missing, what nothing asked for, and what
+  looks implemented wrong — raised as comments before the first round of code review, and fixed with that round's
+  findings, so the second round reads those fixes
 - two rounds of code review, with the findings raised as comments where your forge lets the reviewer raise them, and
   fixed either way
 - every judgement call the tickets' implementation had to make silently, raised as a comment on the change request and
@@ -34,8 +40,8 @@ You are needed for the conversation at the start and the merge at the end. Every
   written once the last fixes have landed
 - green checks, and the change request flipped out of draft (if the checks are red it stays a draft, and the report says
   so)
-- a closing report: how many tickets landed, what the reviews cost, every road it took without asking, what was
-  escalated, and what was declined and why
+- a closing report: how many tickets landed, how many spec findings were raised, what the reviews cost, every road it
+  took without asking, what was escalated, and what was declined and why
 
 ## Requirements
 
@@ -91,8 +97,8 @@ Set these from `/plugin` → **deliverer**.
 call the plugin makes runs under — each code review, and the observation of each run. Read once when a session starts,
 so an edit takes effect in your next session.
 
-**Code review effort** — _default `high`._ How deep each review goes: `low`, `medium`, `high`, `xhigh` or `max`. Deeper
-costs more time and money, and raises more findings for the fix waves to work through.
+**Code review effort** — _default `medium`._ How deep each review goes: `low`, `medium`, `high`, `xhigh` or `max`.
+Deeper costs more time and money, and raises more findings for the fix waves to work through.
 
 **Code review model** — _default `opus[1m]`._ Which model reviews, and the model the observation's own synthesis runs on
 with it. The `[1m]` suffix is the one-million-token context window, and it is what lets a review read a large diff at

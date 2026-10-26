@@ -102,7 +102,7 @@ export const NOTE_MODEL = "haiku";
 
 /**
  * Reasoning depth, as the SDK's own option rather than as prompt text — the cheap end of the same
- * dial `./judge.ts` sets to `high`. A note reads one slice and reports what it saw; there is
+ * dial `./judge.ts` sets to `medium`. A note reads one slice and reports what it saw; there is
  * nothing here to reason a long way about, and thirteen of these run per delivery.
  */
 export const NOTE_EFFORT = "low";

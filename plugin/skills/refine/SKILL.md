@@ -18,14 +18,15 @@ once, as a short **slug** — the brief's filename, the task list and the publis
 never collide.
 
 **Stage 1's conversation and its decisions are yours and nobody else's** — the human is in the room, the decisions are
-theirs, and what goes out of stage 1 is fact-finding and never the interview itself. Every stage after it is one agent
-dispatch — **one stage, one task** (**Progress**) — and the dispatched agent's **report** is all you get back: what it
-names is what you know. **That is what makes the brief load-bearing**: a **writer** meets the codebase for itself but
+theirs, and what goes out of stage 1 is fact-finding and never the interview itself. Stages 3 and 4 are one agent
+dispatch each — **one stage, one task** (**Progress**) — and the dispatched agent's **report** is all you get back: what
+it names is what you know. **That is what makes the brief load-bearing**: a **writer** meets the codebase for itself but
 never the conversation, so a decision the brief leaves out is one the writer closes again on its own — silently, and
 maybe the other way. Where a report leaves you unsure, or a writer's document is wrong, put the stage back to the writer
 naming what it got wrong rather than editing the document yourself: the writer holds the context the document needs.
 Yours is the work no agent does: grill the idea, send its questions of fact out as **sweep**s (**Sweeps**), write the
-brief, dispatch the two writers in order, read their reports, and hand the epic to the human.
+brief, dispatch the two writers in order, read their reports, publish the epic on its **epic branch** where the
+project keeps it in the repository, and hand the epic to the human.
 
 A **mechanical question about the tree, the forge or the web** is yours to settle — does this symbol exist, what does
 this file say, what does a published **spec** already carry, does this tool's own documentation name the feature —
@@ -36,10 +37,16 @@ look and so yours. And it bounds your reading and nothing else: the **brief** is
 entries and ADRs stage 1 lands.
 
 **Resume.** This idea may be part-refined — by an earlier run of your own that was interrupted, or by hand. The
-artifacts are what say how far it got: the brief on disk says stage 2 ran, a published spec says stage 3 ran, published
-tickets say stage 4 did. Start from the earliest stage whose artifact you cannot find — re-dispatching either writer is
-safe, because each one resumes on its own and adds only what is missing. Stage 1 is the exception: a conversation leaves
-nothing behind but the brief, so when the brief is gone the grilling is owed again.
+artifacts are what say how far it got: the brief on disk says stage 2 ran, a published spec says stage 3 ran, and
+published tickets say stage 4 did. Start from the earliest stage whose artifact you cannot find — re-dispatching either
+writer is safe, because each one resumes on its own and adds only what is missing. Stage 1 is the exception: a
+conversation leaves nothing behind but the brief, so when the brief is gone the grilling is owed again. Once stage 5
+has run, the spec and tickets may sit on the **epic branch** alone, with the checkout on some other branch: where the
+tree carries no spec, find the epic branch the way stage 5 does, and where one carries the spec, switch to it with
+`--merge` before judging anything — the writers resume off what it carries. An open change request says nothing about
+whether stage 5 is done, since the spec or tickets may have changed since it opened, so stage 5 runs on every run where
+it is part of the run: it reads its own progress off the branch and the forge, commits only what differs, and never
+opens a change request beside one already open.
 
 **Dispatch.** Every dispatch carries the epic's **slug**. Stage 3's carries the brief's path; stage 4's carries the
 spec's location instead — once the spec is published it is the record, so the tickets are cut from it rather than from
@@ -59,8 +66,9 @@ re-run.
 
 ## Stages
 
-1. **Grill the idea** — run the `mattpocock-skills:grilling` skill on it, with `mattpocock-skills:domain-modeling`
-   alongside, so terms and decisions land in the project's glossary and ADRs as they crystallise. Those two skills own
+1. **Grill the idea** — call the Skill tool twice, once with `mattpocock-skills:grilling` and once with
+   `mattpocock-skills:domain-modeling`, and run the grilling on the idea with domain-modeling alongside, so terms and
+   decisions land in the project's glossary and ADRs as they crystallise. Those two skills own
    how the interview runs, apart from how a question reaches the human (**Asking**) and everything a **sweep** does
    (**Sweeps**); when either is not installed, report that and stop rather than improvising an interview. You are done
    on grilling's own bar: the frontier empty, and the user's confirmation that you have reached a shared understanding.
@@ -78,7 +86,43 @@ re-run.
    open.
 4. **Break it into tickets** — dispatch `tickets-writer`. It publishes one ticket per slice, numbered in dependency
    order. Keep the count and the locations it reports.
-5. **Hand the epic over** — report as below, and name the call that delivers it: `/deliverer:build <epic location>`, the
+5. **Open the draft** — only where the project's conventions put the spec and tickets as files in the repository, the
+   same conventions the writers published to. Where they put them on the forge's issues, this stage is not part of the
+   run: go to stage 6. It is **mechanical** throughout — every step a git or forge operation, with no wording to choose:
+   - **The branch.** Fetch first. The **epic branch** is the branch on the remote that carries the epic's spec at its
+     location — look first under the name from the epic's **slug** in the style of the branches already there, the rule
+     `implementer` names it by, then across the remote's other branches. Where one carries it, switch to it and pull.
+     Where none does, create it from the up-to-date default branch on the remote, under that name; a branch of that
+     name the remote already carries without the spec is someone else's work, so report it and stop rather than
+     committing on it. Switch with `--merge`: the tree's uncommitted changes are carried onto the branch even where a
+     file differs between the two, and where that merge conflicts, stop and report the conflicting files as a
+     **hand-off** rather than resolving them.
+   - **The commit.** Add exactly the paths this refinement wrote — the epic's spec and tickets, and every glossary and
+     ADR file stage 1 landed — and name the same paths on the commit itself (`git commit -- <paths>`), so nothing else
+     the index already held rides in. Every other change in the tree stays as you found it, staged or not, and goes
+     into your report. One of those files that already carried uncommitted changes of the human's when the run opened
+     goes in whole, since no mechanical step tells their lines from yours: name it in your report. The message follows
+     the project's own commit conventions and carries no `Ticket:` line: this is no ticket's work.
+   - **The change request.** Push the branch and open its change request as a **draft**, titled with the spec's title,
+     and described with this text and nothing else, the two placeholders filled in and passed through a file rather
+     than on the command line, where the backticks would run as a command:
+
+     ```
+     The spec for this epic is at `<spec location>`, broken into <ticket count> tickets beside it.
+
+     This description is a placeholder: the delivery rewrites it.
+     ```
+
+     The description stays this placeholder because build writes the real one; `pr` is build's to run.
+   - **Resume.** The branch, its commits and the forge say how far this stage got, on every run. A branch already
+     carrying those paths at their current content owes no commit; a difference owes a new commit on top, pushed —
+     history only grows, so never an amend and never a force-push. A change request already open for the branch is the
+     change request, draft or not: push to it and leave its title and description as they stand. Where none is open —
+     never opened, or closed or merged since — open a fresh draft as above: one open at a time, never two.
+
+   You are done when the epic branch on the remote carries every one of those paths at its current content, and a
+   change request is open from it.
+6. **Hand the epic over** — report as below, and name the call that delivers it: `/deliverer:build <epic location>`, the
    location being where the spec and its tickets sit together, as the project's conventions have it.
 
 ## Asking
@@ -173,13 +217,16 @@ Redact secrets and personal data: the brief outlives the session, on a disk nobo
 
 ## Progress
 
-The task list is the human's window on the run. **One stage, one task** — one each for stages 1 to 4, since stage 5 is
-the report itself. Create all four as the run opens, named from the stage they serve and prefixed with the epic's slug
-so two epics can share a session: `<slug>: grill the idea`. Mark a task `in_progress` as you enter its stage and
-`completed` once its artifact exists — for stages 3 and 4, once you have read the writer's report. Putting a stage back
-to its writer flips its task to `in_progress` again, and `completed` once the corrected report lands: a correction is
-the same stage rather than a new one, so it gets no task of its own. A resumed run opens the same four, with the stages
-whose artifacts it found created `completed`.
+The task list is the human's window on the run. **One stage, one task** — one each for stages 1 to 4, and one for stage
+5 where it is part of the run, since stage 6 is the report itself. Read the project's tracker conventions as the run
+opens and create them all at once: five where the spec and tickets live in the repository, four where they live on the
+forge's issues. Name each from the stage it serves and prefix it with the epic's slug so two epics can share a session:
+`<slug>: grill the idea`, `<slug>: open the draft`. Mark a task `in_progress` as you enter its stage and `completed`
+once its artifact exists — for stages 3 and 4, once you have read the writer's report; for stage 5, once its own bar
+holds. Putting a stage back to its writer flips its task to `in_progress` again, and `completed` once the corrected
+report lands: a correction is the same stage rather than a new one, so it gets no task of its own. A resumed run opens
+the same set, with the stages whose artifacts it found created `completed` — never stage 5's, which runs on every run
+and is marked `completed` once its bar holds on this one.
 
 ## What to report
 
@@ -187,6 +234,9 @@ The human who ran this sat through stage 1, so your report is what came of it ra
 
 - the epic's location, the spec's within it, and the brief's path
 - how many tickets, and which of them can start immediately
+- where stage 5 ran: the epic branch, the change request's URL, every change you left uncommitted in the tree, one
+  line each, because none of it was this run's to commit, and every file the commit took whole with changes of the
+  human's in it
 - every fork the grilling left open, one line each — those are the human's to close
 - every glossary entry and ADR the session landed
 - what the writers raised for a human — a seam newly proposed, an ADR the spec contradicts, a **claim** of yours a

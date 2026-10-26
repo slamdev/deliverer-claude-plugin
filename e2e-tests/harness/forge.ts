@@ -2,11 +2,10 @@
  * The forge, and the git plumbing every repository the harness owns is built with
  * (end-to-end-tests ticket 03).
  *
- * Two repositories are made from one **fixture** and they differ only in their lifetime: the
- * **standing repo** a refinement clones outlives every run, and the **throwaway repo** a delivery
- * is driven against is created per run and destroyed when the test passes. Everything under
- * that — what a fixture's repository is, which branch it lands on, how git authenticates, who the
- * fixture's commit is authored by — is the same for both and lives here, once.
+ * Every repository the harness drives a run against is a **throwaway repo** made from one
+ * **fixture**, created per run and destroyed when the test passes. Everything under that — what a
+ * fixture's repository is, which branch it lands on, how git authenticates, who the fixture's
+ * commit is authored by — lives here, once.
  *
  * **Credentials never land in a file.** `gh` already holds the forge token, and
  * `gh auth git-credential` is what it offers git for exactly this; the empty helper ahead of it
@@ -157,15 +156,6 @@ async function copyEpic(
   }
 }
 
-/** The tree the fixture repository is at: the content alone, so a rebuild of it is not drift. */
-export async function fixtureTree(runDirectory: RunDirectory): Promise<string> {
-  const tree = await git(runDirectory, runDirectory.fixtureRepoDir)(
-    ["rev-parse", "HEAD^{tree}"],
-    "reading the fixture's tree",
-  );
-  return tree.stdout.trim();
-}
-
 /** The fixture pushed over whatever the forge had, which may be nothing at all. */
 export async function forcePushFixture(runDirectory: RunDirectory, url: string): Promise<void> {
   await git(runDirectory, runDirectory.fixtureRepoDir)(
@@ -204,23 +194,85 @@ export async function remoteHead(runDirectory: RunDirectory, url: string): Promi
   return (listed.stdout.split(/\s/)[0] ?? "").trim();
 }
 
-/** How the forge describes a repository's visibility, or null when there is no such repository. */
-export async function repositoryVisibility(
+/**
+ * Every branch the forge carries, by name, with the commit it is at.
+ *
+ * Asked of the forge for the same reason `remoteHead` is: what a refinement published is what the
+ * forge has, and a branch that exists only in the clone was published nowhere.
+ */
+export async function remoteBranches(
   runDirectory: RunDirectory,
-  fullName: string,
-): Promise<string | null> {
-  try {
-    const viewed = await gh(runDirectory)(
-      ["repo", "view", fullName, "--json", "visibility", "--jq", ".visibility"],
-      `confirming ${fullName} exists`,
-    );
-    return viewed.stdout.trim().toUpperCase();
-  } catch (error) {
-    // A repository that is not there reads differently from a forge that cannot be reached, and
-    // treating the second as absence would turn a network failure into a repository nobody wanted.
-    if (/could not resolve to a repository|not found|404/i.test(String(error))) return null;
-    throw error;
+  url: string,
+): Promise<ReadonlyMap<string, string>> {
+  const listed = await execute("git", [...GIT_CREDENTIALS, "ls-remote", "--heads", url], {
+    cwd: runDirectory.root,
+    env: runEnvironment(runDirectory),
+    purpose: "listing the branches the forge carries",
+  });
+  const branches = new Map<string, string>();
+  for (const line of listed.stdout.split("\n")) {
+    const [commit, ref] = line.trim().split(/\s+/);
+    if (commit !== undefined && ref?.startsWith("refs/heads/") === true) {
+      branches.set(ref.slice("refs/heads/".length), commit);
+    }
   }
+  return branches;
+}
+
+/** One commit a branch carries beyond the fixture's own. */
+export interface BranchCommit {
+  readonly sha: string;
+  readonly message: string;
+  /** every path it changed, relative to the repository's root */
+  readonly files: readonly string[];
+}
+
+/** What one branch on the forge carries: every file, and every commit beyond the fixture's. */
+export interface BranchContents {
+  readonly files: readonly string[];
+  readonly commits: readonly BranchCommit[];
+}
+
+/**
+ * Every file one branch on the forge carries, as paths relative to the repository's root, and every
+ * commit it carries beyond the fixture's own — which is where the repository was created at.
+ *
+ * Fetched into the fixture's own repository rather than the clone, so the clone is left exactly as
+ * the run left it for whoever reads the run directory afterwards.
+ */
+export async function readBranch(
+  runDirectory: RunDirectory,
+  url: string,
+  branch: string,
+): Promise<BranchContents> {
+  const inFixture = git(runDirectory, runDirectory.fixtureRepoDir);
+  await inFixture(
+    [...GIT_CREDENTIALS, "fetch", "--quiet", url, `refs/heads/${branch}`],
+    `fetching ${branch} from the forge`,
+  );
+  const listed = await inFixture(
+    ["ls-tree", "-r", "--name-only", "-z", "FETCH_HEAD"],
+    `listing what ${branch} carries`,
+  );
+  const files = listed.stdout.split("\0").filter((path) => path !== "");
+  const revisions = await inFixture(
+    ["rev-list", "--reverse", "HEAD..FETCH_HEAD"],
+    `listing the commits ${branch} carries beyond the fixture's`,
+  );
+  const commits: BranchCommit[] = [];
+  for (const sha of revisions.stdout.split("\n").filter((line) => line !== "")) {
+    const message = await inFixture(["log", "-1", "--format=%B", sha], `reading ${sha}'s message`);
+    const changed = await inFixture(
+      ["diff-tree", "--no-commit-id", "--name-only", "-r", "-m", "-z", sha],
+      `listing what ${sha} changed`,
+    );
+    commits.push({
+      sha,
+      message: message.stdout,
+      files: [...new Set(changed.stdout.split("\0").filter((path) => path !== ""))],
+    });
+  }
+  return { files, commits };
 }
 
 export async function createPrivateRepository(

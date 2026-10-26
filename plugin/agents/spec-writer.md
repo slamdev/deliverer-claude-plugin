@@ -2,7 +2,7 @@
 name: spec-writer
 description: Write one epic's spec from a refinement brief and publish it to the project's issue tracker
 model: opus
-effort: high
+effort: medium
 color: purple
 disallowedTools: Agent, TaskCreate, TaskUpdate
 metadata:

@@ -129,7 +129,7 @@ export const SYNTHESIS_MODEL = "opus[1m]";
  *
  * This is where the review's effort tier had to go and this one does not: the review reaches its
  * model through a slash command whose depth is an argument, and this call reaches the SDK
- * directly. `high` is the review's own shipped default, and it is stated rather than left to
+ * directly. `medium` is the review's own shipped default, and it is stated rather than left to
  * whatever the SDK's default becomes.
  *
  * **The review's `code_review_effort` is deliberately NOT read here** (one-environment-file ticket
@@ -138,7 +138,7 @@ export const SYNTHESIS_MODEL = "opus[1m]";
  * deliberately, and tying them to a review tier would let an owner who wants cheap reviews quietly
  * halve every debrief's depth. Widening this to match the model is the symmetry to refuse.
  */
-export const SYNTHESIS_EFFORT = "high";
+export const SYNTHESIS_EFFORT = "medium";
 
 /**
  * How long the synthesis gets before it is stopped and reported as a failure.
@@ -502,7 +502,7 @@ observation is being written, so name the tree's files by their full path. ${
   }
 
 What is in it: \`skills/refine/SKILL.md\` and \`skills/build/SKILL.md\` (the two commands, and the
-stages each run), \`agents/*.md\` (the seven agents a run dispatches — a dispatch's whole conduct is
+stages each run), \`agents/*.md\` (the eight agents a run dispatches — a dispatch's whole conduct is
 one of these), \`mcp/\` (the tools server behind a **round**, and the plugin's other Node code),
 \`hooks/\`, and
 \`.claude-plugin/plugin.json\`. Read what you need of it. **Start with the skill this run ran**, and

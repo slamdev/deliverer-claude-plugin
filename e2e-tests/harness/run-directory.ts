@@ -26,7 +26,7 @@
  *    agents here, so the responder's and the verifier's session records stay out of the clone's.
  *  - **the staged copy**, which is the plugin the run installs (`./staged-copy.ts`).
  *  - **the fixture built into a repository, and the clone taken back off the forge**
- *    (`./standing-repo.ts`, ticket 02). The first is what the standing repo is synced from; the
+ *    (`./throwaway-repo.ts`, ticket 03). The first is what the repository is pushed from; the
  *    second is the working tree a run publishes into, and the only one a session ever sees.
  *
  * NOTHING IS EVER REMOVED. A run that went wrong is only readable afterwards, so the directory
@@ -52,7 +52,7 @@ const RUN_ROOT = join(tmpdir(), "deliverer-e2e");
  * CONTRIBUTING teaches `DELIVERER_REVIEW_BACKEND=scripted` as the way to exercise the lifecycle,
  * and the harness hands the repository's environment file to the session WHOLE and never reads it.
  * Left in that file or in the contributor's shell it reaches the session, from there the tools
- * server the session starts, and every **round** replays a canned timeline: all nine stages pass
+ * server the session starts, and every **round** replays a canned timeline: all ten stages pass
  * having reviewed nothing.
  *
  * So it is kept from arriving rather than trusted to be absent. The selector is the one that
@@ -114,9 +114,9 @@ export interface RunDirectory {
   readonly stagedCopyDir: string;
   /** the empty directory a session with no clone runs in, and the harness's own agents always do */
   readonly sessionDir: string;
-  /** the fixture built into a repository, which the standing repo is brought into step with */
+  /** the fixture built into a repository, which the run's repository on the forge is pushed from */
   readonly fixtureRepoDir: string;
-  /** the clone of the standing repo: the working tree a run publishes into */
+  /** the clone of that repository: the working tree a run publishes into */
   readonly cloneDir: string;
 }
 

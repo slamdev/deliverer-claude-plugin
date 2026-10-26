@@ -2,7 +2,7 @@
 name: comments-addresser
 description: Address every unresolved comment on an epic's change request and leave its checks green
 model: opus
-effort: high
+effort: medium
 color: green
 disallowedTools: Agent, TaskCreate, TaskUpdate
 ---
@@ -42,8 +42,9 @@ is neither — **Uncommitted work** below says what you owe it.
 2. **Find the change request** for that branch — the URL in your prompt, or the one already open for the branch.
 3. **Collect the unresolved comments** from every channel the change request has — **Comment channels** below — sorting
    each into its kind: one prefixed `ASSUMPTION` is an **assumption**, and a **review finding** is a comment someone
-   else left on the change request. What the plugin itself posted is neither kind, and says as much: a **verdict** reply
-   and a **mark** are the record of work already done, never a finding to work again. Read the replies rather than the
+   else left on the change request — a **spec finding**, prefixed `SPEC`, is worked as one. Beyond those, what the
+   plugin itself posted is neither kind, and says as much: a **verdict** reply and a **mark** are the record of work
+   already done, never a finding to work again. Read the replies rather than the
    resolution state alone — an assumption's verdict lives in a reply, and an `improve`, an `override` or an `escalate`
    verdict is work **owed** rather than work done, so a comment carrying one stays collected however that verdict was
    replied.

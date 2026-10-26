@@ -22,13 +22,15 @@ A completed **round** is the one thing that leaves no mark — nothing on the fo
 recover that count, so the rule is to spend a round whenever it is in doubt: an extra round costs time, while flipping a
 change request ready on one round ships a review nobody did.
 
-Two stages leave a mark that is durable without being legible to the **orchestrator**, and they take the round's
+Three stages leave a mark that is durable without being legible to the **orchestrator**, and they take the round's
 treatment for the same reason. An adjudication and a **fix wave** both leave their record in a **comment**'s replies,
 and telling a **verdict** that owes a change from a reply recording the change made is a judgement about what those
-replies say rather than a fact about the forge — so it is not the orchestrator's to form. It counts no comments: on a
-resumed run it dispatches both again and each reads its own filter, spending a dispatch whenever the position is in
-doubt exactly as it spends a round. The marks themselves still matter, and to the agents that leave them: they are why
-that re-dispatch adds only what is missing rather than a second copy.
+replies say rather than a fact about the forge — so it is not the orchestrator's to form. A **spec review** leaves its
+**spec finding**s as comments, which say what it found and never whether it finished reading, and telling the two apart
+is the same judgement. It counts no comments: on a resumed run it dispatches all three again and each reads its own
+filter, spending a dispatch whenever the position is in doubt exactly as it spends a round. The marks themselves still
+matter, and to the agents that leave them: they are why that re-dispatch adds only what is missing rather than a second
+copy.
 
 A refinement conversation is the other exception. It leaves nothing behind but the document written from it, so when
 that document is gone the conversation is owed again.

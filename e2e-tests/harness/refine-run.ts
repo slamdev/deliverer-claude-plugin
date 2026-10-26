@@ -2,12 +2,18 @@
  * The builder a refine test is written against (end-to-end-tests ticket 02).
  *
  * A second test for this skill costs a few lines: name a **fixture**, override a ceiling if it
- * needs one, and start. Everything between — the **staged copy**, the install, the **standing
- * repo**, the clone, the **responder** in the human's seat, the ceilings and the accounting — is
- * here, once.
+ * needs one, and start. Everything between — the **staged copy**, the install, the **throwaway
+ * repo**, the clone, the **responder** in the human's seat, the ceilings, the accounting and the
+ * cleanup — is here, once.
  *
- * What comes back is what a human could see afterwards, and nothing from inside the run. The
- * matchers judge it (`./matchers.ts`); the **verifier** judges what they cannot (`./verifier.ts`).
+ * What comes back is what a human could see afterwards, and nothing from inside the run: the epic
+ * in the working tree, and — since a refinement into an in-repository tracker now publishes on the
+ * **epic branch** (the-epic-branch-carries-the-spec ticket 04) — the branches and the **change
+ * request**s the forge carries. The matchers judge it (`./matchers.ts`); the **verifier** judges
+ * what they cannot (`./verifier.ts`).
+ *
+ * **The repository is destroyed by the test and not by this file**, exactly as a delivery's is
+ * (`./build-run.ts`): a failing run leaves its epic branch and its draft standing as the evidence.
  */
 import type { TestContext } from "node:test";
 import {
@@ -18,25 +24,46 @@ import {
   type Spend,
 } from "./ceilings.ts";
 import { briefsBeforeRun, collectBriefs, type Briefs } from "./brief.ts";
+import { listChangeRequests, type ChangeRequestSummary } from "./change-request.ts";
 import { describeDebriefs, readDebriefs, type Debriefs } from "./debrief.ts";
 import { listEpics, readEpic, type PublishedEpic } from "./epic.ts";
 import { loadFixture, type Fixture } from "./fixture.ts";
-import { remoteHead } from "./forge.ts";
+import {
+  DEFAULT_BRANCH,
+  git,
+  readBranch,
+  remoteBranches,
+  remoteHead,
+  type BranchCommit,
+} from "./forge.ts";
 import { installPluginUnderTest, REVIEW_OPTIONS } from "./install.ts";
 import { createResponder, type ResponderRecord } from "./responder.ts";
 import { createRunDirectory, type RunDirectory } from "./run-directory.ts";
 import { driveRun, readSessionRecords, type RunOutcome, type SessionRecords } from "./run.ts";
-import { cloneStandingRepo, type StandingRepo } from "./standing-repo.ts";
 import { stageWorkingTree } from "./staged-copy.ts";
+import {
+  createThrowawayRepoWithoutEpic,
+  deleteThrowawayRepo,
+  type ThrowawayRepo,
+} from "./throwaway-repo.ts";
 import { verifyEpic, type Verdict } from "./verifier.ts";
 
-/** The test's half of the standing repo's name. Never the run's: the repository outlives it. */
+/** The test's half of the repository's name. The run's half is the run directory's own. */
 const TEST_NAME = "refine";
+
+/** A branch the run left on the forge that the repository was not created with. */
+export interface NewBranch {
+  readonly name: string;
+  /** every file it carries, relative to the repository's root */
+  readonly files: readonly string[];
+  /** every commit it carries beyond the default branch the repository was created with */
+  readonly commits: readonly BranchCommit[];
+}
 
 export interface RefineOutcome {
   readonly runDirectory: RunDirectory;
   readonly fixture: Fixture;
-  readonly standingRepo: StandingRepo;
+  readonly repo: ThrowawayRepo;
   readonly run: RunOutcome;
   /** the skill this test drove: the same string the command it sent carries */
   readonly skill: string;
@@ -46,8 +73,14 @@ export interface RefineOutcome {
   readonly epicsAfter: readonly string[];
   /** the ones that appeared, which is what the run published — worked out once, here */
   readonly epicsPublished: readonly string[];
-  /** what the forge has the standing repo's branch at, once the run is over */
+  /** what the forge has the default branch at, once the run is over */
   readonly remoteHeadAfterRun: string;
+  /** every branch on the forge other than the default one, which the repository was created with */
+  readonly newBranches: readonly NewBranch[];
+  /** every markdown path the clone holds changed or new and uncommitted once the run is over */
+  readonly uncommittedMarkdown: readonly string[];
+  /** every change request the repository carries, so "exactly one" is a matcher's to hold */
+  readonly changeRequests: readonly ChangeRequestSummary[];
   readonly records: SessionRecords;
   /** what the observer had left beside the run the moment it returned (`./debrief.ts`) */
   readonly debriefs: Debriefs;
@@ -58,6 +91,11 @@ export interface RefineOutcome {
   readonly epic: PublishedEpic;
   /** the test's own signal, so a verdict is stopped with the test rather than after it */
   readonly ceiling: AbortSignal;
+  /**
+   * The throwaway repo deleted, once every assertion has passed. Whatever went wrong comes back as
+   * a line to report rather than as a throw: a cleanup must never turn a passing test red.
+   */
+  cleanUp(): Promise<string | null>;
 }
 
 export interface RefineRunBuilder {
@@ -89,12 +127,10 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
       t.diagnostic(`staged ${staged.fileCount} files of the working tree at ${staged.commit}`);
       await installPluginUnderTest(runDirectory, staged, REVIEW_OPTIONS);
 
-      const standingRepo = await cloneStandingRepo(runDirectory, fixture, TEST_NAME);
+      const repo = await createThrowawayRepoWithoutEpic(runDirectory, fixture);
       t.diagnostic(
-        `standing repo ${standingRepo.fullName}` +
-          `${standingRepo.created ? " (created by this run)" : ""}` +
-          `${standingRepo.forcePushed ? " (force-synced from the fixture)" : ""}` +
-          ` at ${standingRepo.headBeforeRun.slice(0, 12)}`,
+        `throwaway repo ${repo.fullName} created private, carrying no epic, on ` +
+          `${DEFAULT_BRANCH} at ${repo.headAtCreation.slice(0, 12)}`,
       );
 
       const epicsBefore = await listEpics(runDirectory.cloneDir, fixture.tracker);
@@ -119,7 +155,7 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
             const answered = responder.record();
             return `${answered.rounds} rounds of questions, ${answered.answers.length} answered`;
           },
-          // Stage 5 names the call that delivers the epic, which is a refinement's own last word.
+          // Stage 6 names the call that delivers the epic, which is a refinement's own last word.
           // The grace period in `./run.ts` is what covers a report that words it differently.
           finished: (report) => report.includes("/deliverer:build"),
         });
@@ -159,17 +195,28 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
 
       const epicsAfter = await listEpics(runDirectory.cloneDir, fixture.tracker);
       const epicsPublished = epicsAfter.filter((slug) => !epicsBefore.includes(slug));
+      const newBranches = await readNewBranches(runDirectory, repo);
+      const changeRequests = await listChangeRequests(runDirectory, repo.fullName);
+      t.diagnostic(
+        `the forge carries ${newBranches.length} new branches ` +
+          `(${newBranches.map((branch) => branch.name).join(", ") || "none"}) and ` +
+          `${changeRequests.length} change requests ` +
+          `(${changeRequests.map(describeChangeRequest).join(", ") || "none"})`,
+      );
       return {
         runDirectory,
         fixture,
-        standingRepo,
+        repo,
         run,
         skill: TEST_NAME,
         responder: answered,
         epicsBefore,
         epicsAfter,
         epicsPublished,
-        remoteHeadAfterRun: await remoteHead(runDirectory, standingRepo.url),
+        remoteHeadAfterRun: await remoteHead(runDirectory, repo.url),
+        newBranches,
+        uncommittedMarkdown: await readUncommittedMarkdown(runDirectory),
+        changeRequests,
         records: await readSessionRecords(runDirectory),
         debriefs,
         briefs,
@@ -182,10 +229,52 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
           epicsPublished[0] ?? "(nothing published)",
         ),
         ceiling: t.signal,
+        cleanUp: () => deleteThrowawayRepo(runDirectory, repo),
       };
     },
   };
   return builder;
+}
+
+/** Every branch the forge carries beyond the default one, each with the files it carries. */
+async function readNewBranches(
+  runDirectory: RunDirectory,
+  repo: ThrowawayRepo,
+): Promise<NewBranch[]> {
+  const branches = await remoteBranches(runDirectory, repo.url);
+  const read: NewBranch[] = [];
+  for (const name of branches.keys()) {
+    if (name === DEFAULT_BRANCH) continue;
+    read.push({ name, ...(await readBranch(runDirectory, repo.url, name)) });
+  }
+  return read;
+}
+
+/**
+ * Every markdown path the clone holds changed or new and not committed, once the run is over.
+ *
+ * Markdown, because everything a refinement writes into the repository is — the spec, the tickets,
+ * the glossary and the ADRs — and the fixture starts clean, so any such path left over is one the
+ * run wrote and never committed. Anything else a sweep or a writer left lying about is not this
+ * stage's to commit and is not counted.
+ */
+async function readUncommittedMarkdown(runDirectory: RunDirectory): Promise<string[]> {
+  const status = await git(runDirectory, runDirectory.cloneDir)(
+    ["status", "--porcelain", "--untracked-files=all", "-z"],
+    "reading what the run left uncommitted in the clone",
+  );
+  return status.stdout
+    .split("\0")
+    .filter((entry) => entry.length > 3)
+    .map((entry) => entry.slice(3))
+    .filter((path) => path.endsWith(".md"));
+}
+
+function describeChangeRequest(changeRequest: ChangeRequestSummary): string {
+  return (
+    `${changeRequest.url} from ${changeRequest.branch}, ${changeRequest.state}` +
+    `${changeRequest.isDraft ? " and a draft" : " and out of draft"}`
+  );
 }
 
 /**

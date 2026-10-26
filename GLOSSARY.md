@@ -119,8 +119,8 @@ follow-up, outstanding item
 ### Delivery
 
 **Epic branch**:
-The one branch every ticket of an epic commits to, and the branch its change request is opened from. _Avoid_: feature
-branch, topic branch
+The one branch an epic is carried on — its spec and tickets where they live in the repository, then every ticket's
+commits — and the branch its change request is opened from. _Avoid_: feature branch, topic branch
 
 **Change request**:
 The unit of delivery a human reviews and merges, on whatever forge the repository uses. _Avoid_: PR, MR, pull request,
@@ -151,6 +151,15 @@ A comment carrying one assumption verbatim from the commit that recorded it, mar
 **Review finding**:
 Something a round raised about the code, posted as a comment. Implementing one is the default; declining it takes
 grounds. _Avoid_: bug, issue, nit, suggestion
+
+**Spec review**:
+One reading of an epic's change request against its spec and tickets — what they asked for that is missing or partial,
+what the change request does that nothing asked for, and what looks implemented but wrong. It is no **round**: it counts
+toward nothing a change request is flipped ready against. _Avoid_: spec axis, conformance check
+
+**Spec finding**:
+Something a spec review raised, posted as a comment quoting the spec line it rests on and marked out from every other
+comment by a `SPEC` prefix. A fix wave works it as it works a review finding. _Avoid_: requirement gap, drift
 
 **Mark**:
 What a **comment** carries once it has been worked: a reply saying what was done, with the hash of the commit that did

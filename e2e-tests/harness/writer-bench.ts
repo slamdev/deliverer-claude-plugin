@@ -41,7 +41,7 @@
  * session carrying them, which is what an orchestrator does. The reading then carries the one
  * figure the question is about: how many waves the writer's reports cost.
  */
-import { query, type SDKUserMessage } from "@anthropic-ai/claude-agent-sdk";
+import { query, type EffortLevel, type SDKUserMessage } from "@anthropic-ai/claude-agent-sdk";
 import { cp, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { CeilingReached, minutes, type Ceilings } from "./ceilings.ts";
@@ -409,7 +409,7 @@ function asUser(content: string): SDKUserMessage {
 interface AgentDefinition {
   readonly body: string;
   readonly model: string;
-  readonly effort: "low" | "medium" | "high";
+  readonly effort: EffortLevel;
   readonly disallowedTools: readonly string[];
 }
 
@@ -420,8 +420,8 @@ interface AgentDefinition {
  * Read rather than assumed, so an arm measuring a variant that pins a different model or a
  * different **effort** measures that variant, and a frontmatter key that moves does not leave the
  * bench quietly driving the old value. A key the file does not carry falls back to what the
- * plugin's seven agents all declare today, which is what a dispatch of an agent missing it would
- * also get.
+ * plugin's seven opus agents of eight all declare today, which is what a dispatch of an agent
+ * missing it would also get.
  */
 async function readAgent(path: string): Promise<AgentDefinition> {
   let source: string;
@@ -444,12 +444,12 @@ async function readAgent(path: string): Promise<AgentDefinition> {
   }
   const frontmatter = matched[1] ?? "";
   const model = declared(frontmatter, "model") ?? "opus";
-  const effort = declared(frontmatter, "effort") ?? "high";
+  const effort = tier(path, declared(frontmatter, "effort") ?? "medium");
   const tools = declared(frontmatter, "disallowedTools") ?? "";
   return {
     body: matched[2] ?? "",
     model,
-    effort: effort === "low" || effort === "medium" ? effort : "high",
+    effort,
     disallowedTools: tools
       .split(",")
       .map((tool) => tool.trim())
@@ -457,11 +457,32 @@ async function readAgent(path: string): Promise<AgentDefinition> {
   };
 }
 
+const TIERS: readonly EffortLevel[] = ["low", "medium", "high", "xhigh", "max"];
+
+/**
+ * A declared **effort** passed through as the tier it names. Only a missing key falls back to
+ * `medium`: a declared tier narrowed to another would measure a dispatch no host runs, and a value
+ * the SDK does not name stops the arm before it spends anything.
+ */
+function tier(path: string, effort: string): EffortLevel {
+  const named = TIERS.find((candidate) => candidate === effort);
+  if (named === undefined) {
+    throw new Error(
+      `${path} declares \`effort: ${effort}\`, which is no tier the Agent SDK accepts ` +
+        `(${TIERS.join(", ")}), so there is no session this arm could drive at it.`,
+    );
+  }
+  return named;
+}
+
 /** One top-level scalar out of the frontmatter. Not a YAML parser, and it does not need to be. */
 function declared(frontmatter: string, key: string): string | undefined {
   for (const line of frontmatter.split("\n")) {
     if (!line.startsWith(`${key}:`)) continue;
-    return line.slice(key.length + 1).trim();
+    // A scalar quoted in YAML is the same value unquoted, and the host reads it that way.
+    const value = line.slice(key.length + 1).trim();
+    const quoted = /^(["'])(.*)\1$/.exec(value);
+    return quoted?.[2] ?? value;
   }
   return undefined;
 }

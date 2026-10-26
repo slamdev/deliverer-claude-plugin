@@ -45,12 +45,12 @@ const DECLARED_DEPENDENCY = "mattpocock-skills";
 const INVOKED_SKILLS = ["grilling", "domain-modeling", "pr"];
 
 /**
- * What the plugin ships, as the ticket states it: both commands, all seven agents. WHICH ones is
+ * What the plugin ships, as the ticket states it: both commands, all eight agents. WHICH ones is
  * read off the plugin directory, so one added later is covered the day it ships; these are the
  * floor under that, so one deleted is an edit somebody makes here on purpose.
  */
 const SHIPPED_COMMANDS = 2;
-const SHIPPED_AGENTS = 7;
+const SHIPPED_AGENTS = 8;
 
 /**
  * The whole test, ceiling included. Measured at well under a minute on a warm host; the bound is

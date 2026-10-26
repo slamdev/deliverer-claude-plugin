@@ -1,7 +1,7 @@
 /**
  * The build happy path (end-to-end-tests ticket 03).
  *
- * An **epic** goes in on the default branch of a **throwaway repo**, all nine stages run — two
+ * An **epic** goes in on the default branch of a **throwaway repo**, all ten stages run — two
  * real **rounds** through the tools server and both **fix waves** among them — and out comes a
  * **change request** **flipped ready** with its **checks** green. Both bars have to pass: the
  * mechanical assertions, because a fact should never rest on a model's opinion, and the
@@ -20,6 +20,7 @@ import { test } from "node:test";
 import { buildRun, verify } from "../harness/build-run.ts";
 import { DEFAULT_CEILINGS, minutes, testTimeout, totalSpend } from "../harness/ceilings.ts";
 import {
+  assertAgentDispatched,
   assertAssumptionsAdjudicated,
   assertChangeRequestOpened,
   assertChecksGreen,
@@ -44,19 +45,19 @@ import {
  */
 const CEILINGS = DEFAULT_CEILINGS;
 
-/** The bar stage 9 waits on, and what this test holds the delivery to. */
+/** The bar stage 10 waits on, and what this test holds the delivery to. */
 const ROUNDS = 2;
 
 /**
  * The fewest agents a delivery of this epic dispatches: one implementer per ticket, then one agent
- * per stage from 2 to 7, with the second round and the second fix wave repeating stages 4 and 5.
- * Stage 8's refresh is not counted: it continues the stage-2 change request creator while that
+ * per stage from 2 to 8, with the second round and the second fix wave repeating stages 5 and 6.
+ * Stage 9's refresh is not counted: it continues the stage-2 change request creator while that
  * one is still addressable, and a continue keeps no session record of its own.
  */
-const DISPATCH_FLOOR = 9;
+const DISPATCH_FLOOR = 10;
 const WHAT_IT_DISPATCHES =
   "a delivery dispatches an implementer per ticket, a change request creator, an assumption " +
-  "reviewer, a reviewer per round and a comments addresser per fix wave";
+  "reviewer, a spec reviewer, a reviewer per round and a comments addresser per fix wave";
 
 test("a delivery implements an epic and flips its change request ready", {
   timeout: testTimeout(CEILINGS),
@@ -78,6 +79,13 @@ test("a delivery implements an epic and flips its change request ready", {
   // question (`../harness/report.ts`).
   assertRoundsCompleted(outcome, ROUNDS);
   assertSessionRecordsKept(outcome, DISPATCH_FLOOR, WHAT_IT_DISPATCHES);
+  // By name, because the floor above counts records the observer and the delegated review leave
+  // beside the run's own, and a delivery that skipped its spec review still clears it.
+  assertAgentDispatched(
+    outcome,
+    "spec-reviewer",
+    "every delivery reads its change request against the spec once, before the first round",
+  );
   // After the records are known to be there, because this is the one bar read out of what the
   // tools server itself answered rather than out of what the delivery produced: every round that
   // reached a result reports what it spent. It is the only automated seam that reaches the real
