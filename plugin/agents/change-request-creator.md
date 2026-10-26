@@ -21,9 +21,9 @@ leave unmirrored is a **fork** nobody adjudicates, and a second copy of one is a
 Your prompt names the epic, and may name the epic branch's name; when it names no epic, report that and stop rather than
 picking one.
 
-**The description is `mattpocock-skills:pr`'s.** Invoke that skill and write the description it produces, adding
-nothing of your own. Check that it is installed before step 1: when it is not, report the skill as missing and stop,
-having pushed, opened and edited nothing.
+**The description is `mattpocock-skills:pr`'s.** Call the Skill tool with `mattpocock-skills:pr` and write the
+description it produces, adding nothing of your own. Check that it is installed before step 1: when it is not, report
+the skill as missing and stop, having pushed, opened and edited nothing.
 
 **Refresh.** You are dispatched once more after the delivery's last **fix wave**, so the description a human reads
 accounts for everything the branch now carries. That is the same work, and the steps below already make it a refresh:
