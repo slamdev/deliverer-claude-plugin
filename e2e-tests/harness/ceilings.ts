@@ -134,7 +134,7 @@ export const WRITER_BENCH_CEILINGS: Ceilings = {
 };
 
 /**
- * What a test gives the runner on top of the run's own ceiling: the install, the standing repo and
+ * What a test gives the runner on top of the run's own ceiling: the install, the repository and
  * the verdict all sit outside the run and none of them is what the wall clock is for. It is
  * deliberately generous — the runner's timeout is the outer bound, and the ceiling inside it is
  * what reports.

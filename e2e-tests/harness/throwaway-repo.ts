@@ -1,6 +1,8 @@
 /**
- * The throwaway repo: one private repository a delivery is driven against, and destroyed when the
- * test passes (end-to-end-tests ticket 03).
+ * The throwaway repo: one private repository a run is driven against, and destroyed when the test
+ * passes (end-to-end-tests ticket 03). A delivery gets one carrying its epic, and a refinement one
+ * carrying none, since a refinement now pushes an epic branch and opens a draft of its own
+ * (the-epic-branch-carries-the-spec ticket 04).
  *
  * **It has to be per run, and not for tidiness.** A **change request** cannot be deleted on this
  * forge — only closed — so a reused repository accumulates them permanently. More seriously, a run
@@ -14,16 +16,18 @@
  * more: a repository this harness could not delete is a repository to remove by hand, never a
  * passing test turned red.
  *
- * **The epic is on the default branch from the moment the repository exists.** It is part of the
- * fixture rather than something seeded afterwards, which is how a delivery finds an epic it was
- * handed the location of.
+ * **A delivery's epic is on the default branch from the moment the repository exists.** It is part
+ * of the fixture rather than something seeded afterwards, which is how a delivery finds an epic it
+ * was handed the location of. A refinement's repository is built from the same fixture without it:
+ * a tracker root that already carries an epic is one a refinement can publish its own on top of
+ * (`./fixture.ts`).
  *
  * The name carries the test and the run both, and it is the run directory's own name: a repository
  * left standing by a failure names the directory holding that run's session records, so the two are
  * read together rather than matched up by timestamp.
  */
 import { basename } from "node:path";
-import type { Fixture } from "./fixture.ts";
+import type { Fixture, FixtureEpic } from "./fixture.ts";
 import {
   buildFixtureRepository,
   cloneRepository,
@@ -39,8 +43,12 @@ export interface ThrowawayRepo {
   /** `owner/name` on the forge */
   readonly fullName: string;
   readonly url: string;
-  /** the fixture commit, which is what the epic and the whole codebase arrived as */
+  /** the fixture commit, which is what the whole codebase — and a delivery's epic — arrived as */
   readonly headAtCreation: string;
+}
+
+/** A delivery's throwaway repo, which carries the epic it is handed. */
+export interface ThrowawayRepoWithEpic extends ThrowawayRepo {
   /** where the delivery is told the epic is, relative to the repository's root */
   readonly epicLocation: string;
 }
@@ -55,7 +63,7 @@ export interface ThrowawayRepo {
 export async function createThrowawayRepo(
   runDirectory: RunDirectory,
   fixture: Fixture,
-): Promise<ThrowawayRepo> {
+): Promise<ThrowawayRepoWithEpic> {
   const epic = fixture.epic;
   if (epic === null) {
     throw new Error(
@@ -63,7 +71,26 @@ export async function createThrowawayRepo(
         `epic is an epic/ directory beside repository/ and an "epicSlug" in fixture.json.`,
     );
   }
+  const repo = await createRepository(runDirectory, fixture, epic);
+  return { ...repo, epicLocation: epic.location };
+}
 
+/**
+ * A repository created the same way, carrying the fixture's codebase and no epic: what a
+ * refinement is driven against, so the epic it publishes is the only one under the tracker root.
+ */
+export function createThrowawayRepoWithoutEpic(
+  runDirectory: RunDirectory,
+  fixture: Fixture,
+): Promise<ThrowawayRepo> {
+  return createRepository(runDirectory, fixture, null);
+}
+
+async function createRepository(
+  runDirectory: RunDirectory,
+  fixture: Fixture,
+  epic: FixtureEpic | null,
+): Promise<ThrowawayRepo> {
   const owner = await forgeAccount(runDirectory);
   const fullName = `${owner}/deliverer-e2e-${basename(runDirectory.root)}`;
   const url = `https://github.com/${fullName}.git`;
@@ -75,12 +102,7 @@ export async function createThrowawayRepo(
   await forcePushFixture(runDirectory, url);
   await cloneRepository(runDirectory, url, fullName);
 
-  return {
-    fullName,
-    url,
-    headAtCreation: await remoteHead(runDirectory, url),
-    epicLocation: epic.location,
-  };
+  return { fullName, url, headAtCreation: await remoteHead(runDirectory, url) };
 }
 
 /**
