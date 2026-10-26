@@ -54,6 +54,10 @@ nothing and reports it; one meeting no unresolved comment commits nothing and re
 dispatch worth spending whenever it is in doubt: one with nothing to do costs time, while a skipped wave flips a change
 request ready with an `improve` or an `override` unimplemented and an **escalation** nobody has seen.
 
+**The spec review leaves no evidence either.** Its `SPEC` comments say what it found, never whether it finished reading,
+and telling the two apart is the same judgement. A resumed run therefore dispatches `spec-reviewer` again whatever the
+change request carries, and it posts only the **spec findings** no `SPEC` comment already carries.
+
 **Two accounts reach you for every improvement, and the fix wave's is the one your report carries.**
 `assumption-reviewer` names every **directive** an `improve` stated and each wave names what it did with them; what
 happened to the code is the wave's to say — **the account nearer the code** again. Where a wave leaves a directive out
@@ -109,37 +113,43 @@ a fresh id (**Rounds**).
    a stage that cannot be completed: report it as a **hand-off** and dispatch nothing further.
 3. **Adjudicate the assumptions** — dispatch `assumption-reviewer`. For each `ASSUMPTION` comment it compares the roads
    the **fork** left open and replies one verdict — `accept`, `improve`, `override` or `escalate`. An `improve` is a
-   road that beat the one the code took on a named **axis**, so it carries a **directive** stage 5 implements and code
+   road that beat the one the code took on a named **axis**, so it carries a **directive** stage 6 implements and code
    no ticket asked for changes on a judgement nobody ratified. Keep the four counts, and every `improve` its report
    names directing.
-4. **First round** — dispatch `code-reviewer`. It drives one **round** and reports its prose. Keep that prose: stage 5
+4. **Read it against the spec** — dispatch `spec-reviewer`, once. It reads the change request against the epic's spec
+   and every ticket, and posts each **spec finding** — a requirement missing or partial, behaviour nothing asked for, a
+   requirement implemented but wrong — as a `SPEC` comment, which stage 6 works as it works any other. It is no
+   **round** and counts toward nothing stage 10 waits on. Keep the count of findings its report names posting. Where it
+   still ends without a report once continued or dispatched cold, carry the stage into your report as a **hand-off** —
+   the change request went unread against its spec — and go on to stage 5.
+5. **First round** — dispatch `code-reviewer`. It drives one **round** and reports its prose. Keep that prose: stage 6
    is dispatched with all of it (**Dispatch**).
-5. **First fix wave** — dispatch `comments-addresser`, carrying the first round's prose (**Dispatch**). It works every
+6. **First fix wave** — dispatch `comments-addresser`, carrying the first round's prose (**Dispatch**). It works every
    unresolved comment and every point that prose raises: implementing the improvements, the overrides and the findings,
    resolving what it implements or declines, and leaving the escalations for a human. Keep the **hand-off** list and the
    `improve` lines its report carries.
-6. **Second round** — dispatch `code-reviewer` again. It reviews the fix wave's commits, so what the first round missed
+7. **Second round** — dispatch `code-reviewer` again. It reviews the fix wave's commits, so what the first round missed
    still gets caught.
-7. **Second fix wave** — dispatch `comments-addresser` again, carrying the second round's prose and the findings the
+8. **Second fix wave** — dispatch `comments-addresser` again, carrying the second round's prose and the findings the
    first wave declined with their grounds (**Dispatch**), for what that round raised.
-8. **Refresh the description** — dispatch `change-request-creator` again, continued where the stage-2 agent is still
+9. **Refresh the description** — dispatch `change-request-creator` again, continued where the stage-2 agent is still
    addressable — telling it the fix waves have landed since it read the branch — and cold otherwise, so the description
    a human reads accounts for both fix waves rather than for the tickets alone. It changes the title and description and
    nothing else, so its report names no assumption comment posted; one it does name is a **fork** stage 2 missed that
-   nothing will adjudicate now, and rides into your report as a **hand-off**. This stage runs whatever stage 9 then
+   nothing will adjudicate now, and rides into your report as a **hand-off**. This stage runs whatever stage 10 then
    does, flip or draft — a change request left a draft is the one a human has the most to judge. A report naming `pr`
    missing ends the run as it does at stage 2.
-9. **Flip it ready** — once **two rounds have completed** (**Rounds**) and you have read the change request's **checks**
-   green on the forge, take the change request out of draft and report. The fix wave reports them too; where its account
-   and the forge disagree, put the stage back rather than choosing between them. Escalations and declined findings ride
-   into the report rather than holding the flip: they are what the human review is for. When the checks are not green,
-   leave it a draft and report that instead. When the bar cannot be met — no round completed, or one did and the second
-   cannot — leave it a draft the same way, and report the review stage as a **hand-off** with the reason each round
-   ended on.
+10. **Flip it ready** — once **two rounds have completed** (**Rounds**) and you have read the change request's
+    **checks** green on the forge, take the change request out of draft and report. The fix wave reports them too; where
+    its account and the forge disagree, put the stage back rather than choosing between them. Escalations and declined
+    findings ride into the report rather than holding the flip: they are what the human review is for. When the checks
+    are not green, leave it a draft and report that instead. When the bar cannot be met — no round completed, or one did
+    and the second cannot — leave it a draft the same way, and report the review stage as a **hand-off** with the reason
+    each round ended on.
 
 ## Rounds
 
-A round is one `code-reviewer` dispatch, and **two rounds that reached `completed`** is the bar stage 9 waits on. A
+A round is one `code-reviewer` dispatch, and **two rounds that reached `completed`** is the bar stage 10 waits on. A
 fresh round comes of a cold dispatch, under a `review_id` no round has used; continuing an agent carries on the id it
 already holds and opens none.
 
@@ -168,7 +178,7 @@ request, as **Resume** has it.
 looking — an idle notice for a dispatch you have already accounted for asks nothing of you, so nothing is owed for it. A
 signal that does ask something is not one of those: a **report** to read, a stage that went wrong, a round to put back.
 
-**One stage, one task.** Create one each for stages 1 to 8 as the run opens, since stage 9 is the flip and the report
+**One stage, one task.** Create one each for stages 1 to 9 as the run opens, since stage 10 is the flip and the report
 itself — named from the stage it serves and prefixed with the epic's slug so two epics can share a session, as
 `<slug>: open the change request`. A resumed run opens the same set, with the stages the branch and the change request
 already account for created `completed`. Mark a task `in_progress` as you enter its stage and `completed` once you have
@@ -194,6 +204,7 @@ Whoever reads this has your report and nothing else.
 - what the rounds cost — each round's total tokens and its provider-labelled dollar estimate, unknown where a round
   has none
 - how many assumptions were adjudicated `accept`, `improve`, `override` and `escalate`
+- how many spec findings the spec review posted
 - every `improve` a fix wave implemented, one line each — the **fork**, the road taken and the **axis** that carried it
 - every hand-off, one line each — the escalations and anything else still waiting on a human
 - every finding and every `improve` the fix waves declined, one line each, with its grounds
