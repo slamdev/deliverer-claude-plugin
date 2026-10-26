@@ -465,6 +465,48 @@ runs in. Reading why one round found what another missed meant reconstructing it
 more than the figures above and its record says why it looked where it looked — **the rows in this table were all
 measured before that**.
 
+## What the suite of 2026-10-26 cost, on a new model
+
+From `refine-typescript-library-2026-10-26T23-10-33-p6Ks0d` and `build-typescript-library-2026-10-26T23-10-33-cY57Hv`,
+driven together by `npm test`, both passing. **Every opus line in both is `claude-opus-5-5`** — the alias `opus` that
+`harness/run.ts` and the agents' frontmatter name moved under them — and the sonnet and haiku lines are
+`claude-sonnet-5-5` and `claude-haiku-5-5`. Nothing above this section ran on that generation.
+
+**The published price table does not reproduce what the SDK reported.** The `claude-api` skill lists `claude-opus-5-5`
+at $4/$20 with cache reads at $0.20, and priced that way both runs reconstruct 36–42% under the harness's figure. Both
+verifiers reconstruct **to the cent** at the old `claude-opus-5` rates instead — $5/$25, reads at $0.50: $0.4198 against
+a reported $0.42, and $0.4738 against $0.47. So the SDK's `total_cost_usd` prices this generation at the last one's
+rates, and as before nothing in a run directory says which figure bills. The table below uses the SDK's rates, so that
+it adds up to what the harness reported, and `claude-haiku-5-5` at $0.10/$0.50.
+
+| stage | `p6Ks0d` | | stage | `cY57Hv` |
+|---|---:|---|---|---:|
+| orchestrator | 3.2997 | | orchestrator | 1.4008 |
+| sweep, general-purpose | 0.3721 | | implementers, three | 1.4299 |
+| **spec-writer** | **3.5172** | | change-request-creator | 0.5839 |
+| tickets-writer | 0.6865 | | spec-reviewer | 0.4180 |
+| | | | **assumption-reviewer** | **0.9780** |
+| | | | code-reviewer pollers, two | 0.2454 |
+| | | | comments-addressers, two | 1.2622 |
+| | | | general-purpose, two | 0.2353 |
+| **reconstructed** | **7.8755** | | **reconstructed** | **6.5535** |
+| *reported* | *8.91* | | *reported* | *7.31* |
+| the responder, 10 sessions | 0.1668 | | the rounds, from `spend` | 0.3784 |
+| the verifier | 0.4198 | | the verifier | 0.4738 |
+| the observation | 0.9470 | | the observation | 1.1942 |
+| wall clock | 21m 23s | | wall clock | 24m 45s |
+
+**Read the reconstruction as 10–12% under, not as a total.** Even at the SDK's rates both runs fall short of the
+reported figure, where every reading above landed within 1.5% of it. The gap is not yet explained, and the
+missing-final-line under-count above is the first thing to rule out. The responder's records reconstruct at $0.17
+against the $0.42 the harness counted, a wider gap in the same direction.
+
+**What the shape says, with that caveat on it.** The **spec-writer** is still the largest single item in the
+refinement, 45% of what reconstructs, and the sweep stayed flat and cheap. In the delivery, the **adjudication** is
+still the most expensive dispatch, at $0.98 against the $1.34 to $2.57 of 2026-09-13, over seven **assumption**s and
+no `improve`. The **spec-reviewer** is a stage none of the four deliveries above had. Each observation was read before
+its **debrief** was final, so its line is a floor.
+
 ## Reading many run directories at once, and the trap in doing it
 
 Nineteen **run directory**s of the refine test were still on disk on 2026-09-13, and the script above reads all of
