@@ -23,6 +23,8 @@ You are needed for the conversation at the start and the merge at the end. Every
 **From `/deliverer:build`:**
 
 - a change request with every ticket implemented, on one branch
+- the change request read once against the spec and its tickets — what is missing, what nothing asked for, and what
+  looks implemented wrong — raised as comments and fixed before the code review starts
 - two rounds of code review, with the findings raised as comments where your forge lets the reviewer raise them, and
   fixed either way
 - every judgement call the tickets' implementation had to make silently, raised as a comment on the change request and
@@ -34,8 +36,8 @@ You are needed for the conversation at the start and the merge at the end. Every
   written once the last fixes have landed
 - green checks, and the change request flipped out of draft (if the checks are red it stays a draft, and the report says
   so)
-- a closing report: how many tickets landed, what the reviews cost, every road it took without asking, what was
-  escalated, and what was declined and why
+- a closing report: how many tickets landed, how many spec findings were raised, what the reviews cost, every road it
+  took without asking, what was escalated, and what was declined and why
 
 ## Requirements
 

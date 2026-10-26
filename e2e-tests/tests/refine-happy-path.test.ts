@@ -2,7 +2,9 @@
  * The refine happy path (end-to-end-tests ticket 02).
  *
  * An **idea** goes in, a **responder** answers the grilling in the human's place, and what comes
- * out is a published **spec** and one **ticket** per slice. Both bars have to pass: the mechanical
+ * out is a published **spec** and one **ticket** per slice — committed to an **epic branch** of a
+ * **throwaway repo**, with the epic's **change request** open from it as a **draft**
+ * (the-epic-branch-carries-the-spec ticket 04). Both bars have to pass: the mechanical
  * assertions, because a fact should never rest on a model's opinion, and the **verifier**, because
  * a run that produced correctly shaped rubbish is exactly the failure a shape-only assertion waves
  * through.
@@ -15,9 +17,11 @@ import { test } from "node:test";
 import { DEFAULT_CEILINGS, minutes, testTimeout, totalSpend } from "../harness/ceilings.ts";
 import {
   assertDebriefWritten,
+  assertDefaultBranchUnmoved,
+  assertDraftOpenedFromEpicBranch,
+  assertEpicBranchCarriesEpic,
   assertEpicPublished,
   assertGrillingAnswered,
-  assertNothingPushed,
   assertRunFinished,
   assertSessionRecordsKept,
   assertSpecPublished,
@@ -75,7 +79,12 @@ test("a refinement turns an idea into a published spec and its tickets", {
   assertEpicPublished(outcome);
   assertSpecPublished(outcome);
   assertTicketsPublished(outcome);
-  assertNothingPushed(outcome);
+  // Three facts read off the forge, where the run now publishes: the default branch is where the
+  // repository was created at, one branch is new and carries the epic, and one draft is open
+  // from that branch.
+  assertDefaultBranchUnmoved(outcome);
+  assertEpicBranchCarriesEpic(outcome);
+  assertDraftOpenedFromEpicBranch(outcome);
   assertSessionRecordsKept(outcome, DISPATCHED_WRITERS, WHAT_IT_DISPATCHES);
   // The run was observed because the plugin observes runs by default and nothing here switched
   // that off. Shallow on purpose: a debrief exists for this epic and its header names this run.
@@ -95,4 +104,10 @@ test("a refinement turns an idea into a published spec and its tickets", {
   );
 
   assertVerdictPassed(verdict);
+
+  // Only here, with every assertion passed. A failing run keeps its repository, its epic branch
+  // and its draft, because they are the evidence — and a cleanup that fails is reported rather
+  // than thrown, because it must never turn a passing test red.
+  const uncleaned = await outcome.cleanUp();
+  if (uncleaned !== null) t.diagnostic(uncleaned);
 });
