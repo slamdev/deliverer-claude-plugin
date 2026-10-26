@@ -39,7 +39,7 @@ const TRIVIAL_PROMPT = "Reply with the single word: ready";
 /**
  * The model that trivial turn runs on. Pinned so the smoke test costs the same for everybody
  * rather than whatever the contributor's default happens to be. It is the harness's own choice and
- * says nothing about the plugin: the seven agents keep the models their frontmatter declares.
+ * says nothing about the plugin: the eight agents keep the models their frontmatter declares.
  */
 const SESSION_MODEL = "sonnet";
 

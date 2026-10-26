@@ -53,7 +53,7 @@ function missingFrom(expected: readonly string[], actual: readonly string[]): st
  * the plugin directory rather than written down (`./repository.ts` says why), so a skill or an
  * agent added later is covered the day it ships — but a shipped file DELETED takes its own
  * expectation with it, and staging that copied nothing would expect nothing at all. `floor` is the
- * bar the ticket states in words: two commands, seven agents. It is a FLOOR and not a count, so
+ * bar the ticket states in words: two commands, eight agents. It is a FLOOR and not a count, so
  * growing the plugin costs nothing and shrinking it is a deliberate edit here.
  */
 function assertAllPresent(
@@ -87,7 +87,7 @@ export function assertCommandsPresent(
   assertAllPresent("commands", floor, expected, surface.commands);
 }
 
-/** All seven agents are in the session. */
+/** All eight agents are in the session. */
 export function assertAgentsPresent(
   surface: SessionSurface,
   expected: readonly string[],

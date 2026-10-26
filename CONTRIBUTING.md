@@ -740,9 +740,9 @@ most expensive stage in all four, at $1.34, $1.83, $2.57 and $2.39; the three **
 $2.59 and are the steadiest thing a delivery has. The delivery was measured on **2026-09-06** at **59m 18s and
 $10.58** — the run itself 55m 29s and $9.75, the verifier $0.83 — over three tickets, five commits, ten
 **assumption**s and two **rounds**, and twice before that at **23m 12s and $7.40** and **22m 14s and
-$6.85**, and both of those last readings predate the **adjudication** that compares roads: that step is now the
-longest and most expensive of a delivery's eight, and `e2e-tests/README.md` prices the difference per stage. Run together, which is
-what `npm test` does, the whole suite took **23m** and the two runs with their verdicts came to **$13.28**, then
+$6.85**, and both of those last readings predate the **adjudication** that compares roads: that step was the longest
+and most expensive of the delivery measured on 2026-09-06, and `e2e-tests/README.md` prices the difference per stage.
+Run together, which is what `npm test` does, the whole suite took **23m** and the two runs with their verdicts came to **$13.28**, then
 **$13.14** — the two long tests overlap, so the suite is the slower of them plus a rounding error. That pair predates
 the delivery above too, and nothing has driven the two together since; the arithmetic on the two latest readings puts a
 suite at about an hour and about $26, which is derived rather than measured. The smoke test is seconds and effectively
