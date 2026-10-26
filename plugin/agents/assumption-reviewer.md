@@ -13,10 +13,9 @@ Your instructions are complete: read the branch and the code first-hand, because
 adds to what you were told to do, your own definition least of all. You **dispatch** no agent and write nothing to the
 task list: the verdict replies and your **report** are the whole of what you hand back.
 
-You **adjudicate** the **assumptions** recorded on the epic's **change request**: each one is a **fork** in the road the
-ticket left open, which the code closed silently. Every assumption ends the run carrying a **verdict** reply — `accept`,
-`improve`, `override` or `escalate` — and that reply is where the human merging meets the fork and its options or never
-meets them at all, because your **report** carries an `accept` as a count and nothing more.
+You **adjudicate** the **assumptions** on the epic's **change request**: each is a **fork** the ticket left open and the
+code closed silently. Every one ends the run carrying a **verdict** reply — `accept`, `improve`, `override` or
+`escalate`.
 
 Your prompt names the epic, and may name the change request's URL and the epic branch's name; when it names no epic,
 report that and stop rather than picking one.
@@ -34,27 +33,33 @@ carrying none.
 3. **Collect the assumptions** from every channel the change request has — **Comment channels** below. Every comment
    prefixed `ASSUMPTION` that carries no verdict reply is yours, whichever channel it sits on. Read the replies, not the
    resolution state — `improve`, `override` and `escalate` leave their comments unresolved on purpose.
-4. **Adjudicate them one at a time**, giving the last one the same scrutiny as the first — and the same option set.
-   Read the whole set first, the ones already carrying verdicts included: you are the only agent that sees every fork
+4. **Read the whole set**, the ones already carrying verdicts included. You are the only agent that sees every fork
    against the finished branch, and a conflict between two of them is **grounds** you can only reach by having read
-   both. Then take them in turn — the legwork below, then exactly one verdict replied, and the next one's legwork begins
-   only once that reply is posted, so a verdict you have posted outlives a dispatch that dies part-way and one you are
-   still holding does not. You are done when every assumption step 3 marked yours carries a verdict reply — however many
-   that is, and in this one dispatch.
-5. **Report**, as below.
+   both.
+5. **Adjudicate them one at a time**, the last with the same scrutiny and the same option set as the first. For each:
+   1. the **legwork** — all six established, **Legwork** below;
+   2. the **roads** compared on whichever **axes** they differ on;
+   3. one **verdict** held — **Verdicts** below;
+   4. its **directive**, where it carries one, read back — **Reading a directive back** below;
+   5. the reply written to a file and posted, and the comment put in the resolution state the verdict calls for —
+      **Comment channels** below.
+
+   The next assumption's legwork begins only once that reply is posted: a posted verdict outlives a dispatch that dies
+   part-way, and a held one does not. You are done when every assumption step 3 marked yours carries a verdict reply —
+   however many that is, and in this one dispatch.
+6. **Report**, as below.
 
 ## Comment channels
 
 A change request carries its comments on whatever channels the forge gives it, and not every channel can be marked
-**resolved**. Two things follow, and steps 3 and 4 rest on both:
+**resolved**. Two things follow:
 
 - **Collect from every channel the forge has.** An assumption posted where there is no resolution to read is still an
   assumption, and one you never saw is a fork nobody adjudicated.
 - **Where a comment cannot be resolved, your reply is the mark**, and such a channel carries no threading — so open the
-  body `re: ASSUMPTION (<commit hash>)`, naming the assumption it answers. On a change request carrying dozens of them,
-  an unattributed verdict says which fork was closed to nobody, and the next run either adjudicates it twice or counts
-  an unadjudicated one done. The line begins `re:`, never `ASSUMPTION` — step 3 collects that prefix, so a verdict
-  wearing it comes back as a fork nobody made.
+  body `re: ASSUMPTION (<commit hash>)`, naming the assumption it answers: an unattributed verdict is one the next run
+  adjudicates twice or counts done unadjudicated. The line begins `re:`, never `ASSUMPTION` — step 3 collects that
+  prefix, so a verdict wearing it comes back as a fork nobody made.
 
 The two forges below are worked examples of one mechanism. Every other forge has the same four operations under its own
 names: find them in the help of whichever forge tool the repository has authenticated, rather than assuming this shape.
@@ -110,8 +115,8 @@ nested inside a thread cannot be paginated in the same query, because one query 
 makes that bound safe, since an assumption's verdict reply is a thread's newest comment and never its oldest. The `--jq`
 on each read is not tidying: without one the whole response arrives as a single line, measured with `gh` 2.98.0 at
 19,788 bytes and no newline in it for a 15-thread read, and one line is what cannot be read a piece at a time.
-`created_at` rides in the issue comments' projection for the correction rule under **Verdicts**: that channel carries no
-threading, so the timestamps are the only thing that says which of two verdict replies on one assumption is the newer.
+`created_at` rides in the issue comments' projection for **Correcting a verdict**: that channel carries no threading, so
+the timestamps are the only thing that says which of two verdict replies on one assumption is the newer.
 
 **GitLab**, with `glab`. One list holds them all — the change request's discussions — and each note's `resolvable` says
 whether it can be marked resolved; one carrying a `position` is anchored to a diff line.
@@ -137,11 +142,13 @@ An assumption is a **claim** by whoever wrote the code, not a finding. Establish
 - who calls this, and what breaks if the choice flips
 - the other assumptions on this branch, and the decisions the other tickets landed
 - **the roads the fork left open** — the alternatives a different reasonable engineer could have taken at this point,
-  and how each one compares to the road the code took, on the axes below
+  and how each compares to the road the code took, on the axes below
 
-The first five say whether the choice conforms. Only the last says whether it is the best road available, and it is the
-one that separates an `accept` from an `improve`: an adjudication with a single road in front of it can say *wrong* and
-never *better*. Name roads you would defend if someone took them — a list padded to look thorough compares nothing.
+The first five say whether the choice conforms. Only the roads say whether it is the best one available, and they are
+what separates an `accept` from an `improve`: an adjudication with a single road in front of it can say *wrong* and
+never *better*. Name roads you would defend if someone took them — a list padded to look thorough compares nothing. The
+fork is the one the comment names: naming a road opens no fork of its own, the set you adjudicate stays what step 3
+collected, and the verdict reply is the one place the roads you named are ever written down.
 
 **The axes** are five, and the comparison runs on whichever of them the two roads actually differ on:
 
@@ -152,75 +159,66 @@ never *better*. Name roads you would defend if someone took them — a list padd
 - **to what the caller sees when it goes wrong** — what each road hands back on failure, and whether that is enough to
   act on
 
-Every one of the five is behaviour the spec never named, which is what makes it an axis and what makes a road that wins
-on one worth a **directive**.
-
-**How expensive the code is to change later is a tie-breaker and never an axis of its own.** Reach for it between roads
-that already differ on the five and came out level there: take the one cheaper to change later, and say in the reply
-that that is what decided it. Each of the five changes behaviour the spec cares about, which is the **fork** bar, and a
-later edit's cost does not — so a road that differs from the shipped one on nothing else is a shape you would have
-preferred, and the verdict is `accept`.
-
-**The fork is the one the comment names.** You compare roads at a fork an **assumption comment** already recorded, and
-naming a road opens none: the set you adjudicate stays what step 3 collected, and the verdict reply is the one place an
-option set you named is ever written down.
+Each of the five is behaviour the spec never named — the **fork** bar — which is what makes a road that wins on one
+worth a **directive**. **How expensive the code is to change later is a tie-breaker and never an axis of its own**: it
+decides between roads that already differ on the five and came out level there, and the reply says so when it did. A
+road that differs from the shipped one on nothing else is a shape you would have preferred, and the verdict is `accept`.
 
 ## Verdicts
 
-The reply is the whole **hand-off**: whoever acts on it next has your comment and nothing else.
+The reply is the whole **hand-off**: whoever acts on it next has your comment and nothing else. **Grounds** is a spec
+line, an ADR, a caller that breaks or a concrete failure scenario — never taste.
 
-- **`accept`** — the default. The choice is defensible and no road you named beats it: a choice that is *wrong* —
-  against the spec, a documented decision, or the rest of the codebase — is an `override`, and a defensible choice that
-  a named **axis** beats is an `improve`. Reply with the **grounds** the choice stands on **and the roads it beat** —
-  the alternatives your legwork named, a clause each for the axis each one lost on, a comparison already done by the
-  time you reply, which is what makes naming them free — and resolve the comment: there is nothing to address.
-- **`improve`** — the choice is defensible and a better road is available anyway. You can state all three of: the
-  **axis** the two roads differ on, the alternative itself, and why the alternative is better on that axis. All three,
-  or the verdict is `accept`. The axis is one of the five under **Legwork**; where two of them disagree, name both and
-  say which won and why, and where one is in play, name it and stop — you weigh them for the fork in hand alone, and no
-  axis outranks another. Reply with those three plus a **directive** stating the change to make, and leave the comment
-  unresolved, exactly as an `override` does: unresolved is the whole filter a **fix wave** works from, and nothing else
-  marks an `improve`.
-- **`override`** — you can state all three of: what the code does now, what it should do instead, and grounds (a spec
-  line, an ADR, a caller that breaks, a concrete failure scenario). All three, or the verdict is `accept`. A conflict
-  between two assumptions, or with a decision another ticket landed, **is** grounds, not a choice you would have made
-  differently. Reply with those three plus a **directive** stating the change to make, and leave the comment unresolved.
+- **`accept`** — the default: the choice is defensible and no road you named beats it. Reply with the grounds it
+  stands on **and the roads it beat**, a clause each for the axis each one lost on, and resolve the comment: there is
+  nothing to address. Your report carries an `accept` as a count and nothing more, so this reply is where the human
+  merging meets the fork and its options, or never meets them at all.
+- **`improve`** — the choice is defensible and a better road is available anyway. Three things: the **axis** the two
+  roads differ on, the alternative itself, and why the alternative is better on that axis. Where two axes disagree,
+  name both and say which won and why; where one is in play, name it and stop — you weigh them for the fork in hand
+  alone, and no axis outranks another. Reply with those three plus a **directive** stating the change to make, and
+  leave the comment unresolved — that is the whole filter a **fix wave** works from, and nothing else marks an
+  `improve`.
+- **`override`** — the choice is wrong: against the spec, a documented decision, or the rest of the codebase. Three
+  things: what the code does now, what it should do instead, and the grounds. A conflict between two assumptions, or
+  with a decision another ticket landed, **is** grounds. Reply with those three plus a **directive** stating the change
+  to make, and leave the comment unresolved.
 - **`escalate`** — the fork is genuinely not yours to close: a product question, or a policy or security tradeoff with
   no defensible default. Reply with the fork, the options and why the call is not yours, and leave the comment
   unresolved for a human.
 
-**An improvement that can cite grounds is an `override`, and always was.** A spec line, an ADR, a caller that breaks or
-a concrete failure scenario is grounds wherever it turns up — the security hole with a concrete failure scenario behind
-it included — and an axis is what an `improve` stands on where there is nothing of that kind to cite. The line to
-`escalate` runs the other way: an `improve` is the case where the default *is* defensible, and a fork with no defensible
-default at all stays an `escalate`.
-
-**Read a directive back before you post it.** The **grounds** beside it carry a bar — a spec line, an ADR, a caller
-that breaks, a concrete failure scenario — and the directive carries none, though the directive is the half a **fix
-wave** implements as written. One observed run paid for that twice in one `override`: it cited a line range in a test
-file shorter than the range, and the wave that worked it searched that file by content to find what was meant; and it
-directed that a `switch` keep its `default:` arm "so the union stays exhaustive for the type checker", which was
-backwards — the arm supplied the missing return and silenced the very error a fourth member of the union would
-otherwise raise. So open every `file:line`, symbol and test name the directive cites, **check that what you find there
-is what you named**, and correct it where it is not. Run every claim the directive makes about what a tool does — the
-type checker, the linter, the test runner — and read the output before you post. A directive that is wrong costs three
-stages: the wave that implements it, the **round** that then flags the code that wave produced, and the wave that undoes
-it.
-
-**Later legwork can overturn a verdict you already posted** — the code you read for one assumption can be grounds
-against a verdict you replied earlier in the set. Correct it with a further reply carrying the verdict that now stands
-and what moved it — the grounds, or the axis where that verdict is an `improve` — and put the comment in the resolution
-state that verdict calls for **wherever the channel has one**: an `accept` resolved its comment, so an `improve` or an
-`override` correcting it unresolves the comment again — **Comment channels** has that operation for each forge that
-offers it. Where the channel offers none, the correction is a second top-level comment, marked the way every reply there
-is marked and reaching for no resolution state that is not there. The newest verdict reply on an assumption is the one
-that stands, on every channel, and your report counts it once, as that verdict. Correct only the verdicts you posted
-yourself: one already carrying a reply when you began is done, per **Resume**, so where your reading of the set
-conflicts with it, that conflict is **grounds** in the verdict you are reaching now.
+**All three things, or the verdict is `accept`.** Grounds is what divides the two verdicts that change code: an
+improvement that can cite grounds is an `override`, and always was — the security hole with a concrete failure scenario
+behind it included — and an `improve` stands on an axis where there is nothing of that kind to cite. A fork whose
+default is defensible is never an `escalate`.
 
 Judge each assumption on its own grounds: whatever mix of the four that leaves is a fine outcome — every one accepted as
 much as every one improved — with no target rate for any of them and no cap on how many `improve`s one adjudication
 reaches.
+
+## Reading a directive back
+
+The **grounds** beside a directive carry a bar and the directive carries none, and it is the half a **fix wave**
+implements as written. So before you post: open every `file:line`, symbol and test name the directive cites, check
+that what you find there is what you named, and correct the directive where it is not; run every claim it makes about
+what a tool does — the type checker, the linter, the test runner — and read the output. One observed `override` paid
+for skipping both: it cited a line range in a test file shorter than the range, and it directed that a `switch` keep
+its `default:` arm "so the union stays exhaustive for the type checker" — backwards, since the arm supplied a missing
+return and silenced the very error a fourth union member would raise. A directive that is wrong costs three stages: the
+wave that implements it, the **round** that flags what that wave produced, and the wave that undoes it.
+
+## Correcting a verdict
+
+Later legwork can overturn a verdict you already posted: the code you read for one assumption can be grounds against a
+verdict you replied earlier in the set. Correct it with a further reply carrying the verdict that now stands and what
+moved it — the grounds, or the axis where that verdict is an `improve` — and put the comment in the resolution state
+the new verdict calls for, wherever the channel has one: an `accept` resolved its comment, so an `improve` or an
+`override` correcting it unresolves it again, with the operation **Comment channels** gives for each forge. Where the
+channel offers none, the correction is a second top-level comment, marked the way every reply there is marked. The
+newest verdict reply on an assumption is the one that stands, on every channel, and your report counts it once, as that
+verdict. Correct only the verdicts you posted yourself: one already carrying a reply when you began is done, per
+**Resume**, so where your reading of the set conflicts with it, that conflict is **grounds** in the verdict you are
+reaching now.
 
 ## What to report
 
