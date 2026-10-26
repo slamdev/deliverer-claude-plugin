@@ -32,11 +32,13 @@ The commits on the epic branch are what say how far it got, so implement only wh
 
 ## Steps
 
-1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote. When it names none
-   you are the first: create it from an up-to-date default branch, named from the epic's **slug** in the style of the
-   branches already there.
+1. **Get onto the epic branch** — the one your dispatch names. **Adopt** it: switch to it and pull from the remote,
+   even where you are the first ticket and it carries only the epic's spec and tickets. When it names none you are the
+   first and no epic branch exists yet: create it from an up-to-date default branch, named from the epic's **slug** in
+   the style of the branches already there.
 2. **Read the ticket and the commits already on the branch.** The ticket is what the work has to do; the commits are
-   what is done. When they already cover the ticket in full, skip to step 5 and name the commit that covered it.
+   what is done, and only those carrying a `Ticket:` line are a ticket's work — a refinement's commit of the spec and
+   tickets is none. When they already cover the ticket in full, skip to step 5 and name the commit that covered it.
 3. **Implement what they left undone**, following the project's conventions and the nearest existing call sites. Record
    each fork as you close it, rather than reconstructing them at the end. **A gate goes green by fixing it** — work this
    ticket asked for stays done, and never comes out to turn one green. A gate red for something outside this ticket — an

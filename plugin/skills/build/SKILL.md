@@ -11,6 +11,12 @@ for a human.
 
 Your argument names the epic; when it names none, report that and stop rather than picking one.
 
+**Find the epic before anything else.** Where the default branch carries the epic location you were handed, read the
+epic there. Where it does not, the epic may sit on its **epic branch** alone — a refinement publishes its spec and
+tickets there and nowhere else — so look for the branch named from the epic's **slug** in the style of the branches
+already there, and read the epic off it. That branch is the epic branch, found before any ticket is begun. Where
+neither carries the epic location, report that and stop.
+
 Every stage below is made of agent dispatches — **one stage, one task** (**Progress**) — and each dispatched agent's
 **report** is all you get back: what it names is what you know. Where a report leaves you unsure, put the stage back
 rather than going to look, and the bearings you take from the branch and the change request say which stage is owed, not
@@ -25,8 +31,9 @@ an agent — continued or cold — or report it**, never fix.
 
 **Resume.** This epic may be part-delivered — by an earlier run of your own that was interrupted, or by hand. The epic
 branch and the change request are what say how far it got: the commits carrying a `Ticket:` line name the tickets
-**begun**, and one without it is not a ticket; whether a change request is open for the branch says whether stage 2
-ran. Begun and not finished, because an `implementer` commits each coherent piece as it lands — so the last ticket
+**begun**, and one without it is not a ticket — a refinement's commit of the spec and tickets among them. An open
+change request says nothing about whether stage 2 ran, since a refinement may have opened it before any ticket began,
+so stage 2 is dispatched on every run (**Stages**). Begun and not finished, because an `implementer` commits each coherent piece as it lands — so the last ticket
 named may be part-delivered with nothing anywhere saying so, and it is dispatched again ahead of the ones carrying no
 commit at all. That implementer reads the commits, implements only what they left undone, and reports the commit that
 covered it where the branch covered it in full already. Start from the earliest stage whose evidence you cannot find —
@@ -66,8 +73,9 @@ back is the whole of your move: which report is right turns on what the replies 
 is the judgement that was never yours.
 
 **Dispatch.** Every dispatch carries the epic, and — once each exists — the change request's URL and the **epic branch's
-name**, so none of them has to find it again. Neither exists at the first stage-1 dispatch: that implementer creates the
-branch and names it in its report, and stage 2 reports the URL. Each later `implementer` also carries what the reports
+name**, so none of them has to find it again. The first stage-1 dispatch carries the branch's name whenever you found
+the epic branch, and that implementer adopts it; where you found none, that implementer creates the branch and names it
+in its report. Stage 2 reports the URL. Each later `implementer` also carries what the reports
 before it named about the **gates** that bit and what satisfied them, accumulating as the stage runs. That warms a cold
 start on work not yet done, so it goes to implementers and nowhere else, and every other agent meets the repo first-hand
 because that is what its own judgement must rest on — with one deliberate exception. Each `comments-addresser` dispatch
@@ -102,8 +110,9 @@ a fresh id (**Rounds**).
 1. **Implement every ticket** — dispatch `implementer` once per ticket, in the order the epic lists them, one ticket at
    a time: they all commit to the one epic branch, so the next starts once the last one's report names its commits. Pass
    that one ticket besides. You are done when every ticket the epic lists has a report naming its commits.
-2. **Open the change request** — dispatch `change-request-creator`. It opens the change request as a **draft** and
-   mirrors into an `ASSUMPTION` comment every assumption recorded by a commit carrying a `Ticket:` line. A commit
+2. **Open the change request** — dispatch `change-request-creator`, on every run, resumed or not. It opens the change
+   request as a **draft** — or, where one is already open for the branch, refine's draft among them, brings that one up
+   to date and leaves its draft state as found — describes it, and mirrors into an `ASSUMPTION` comment every assumption recorded by a commit carrying a `Ticket:` line. A commit
    without that line is a **fix wave**'s, recording the **forks** that wave closed silently: the mirror passes those
    over and nothing adjudicates them, so no stage is ever owed for them — and a report naming fewer comments than the
    branch's commits recorded is this stage doing its job rather than half-doing it. Keep the URL it reports, and every
@@ -180,8 +189,8 @@ signal that does ask something is not one of those: a **report** to read, a stag
 
 **One stage, one task.** Create one each for stages 1 to 9 as the run opens, since stage 10 is the flip and the report
 itself — named from the stage it serves and prefixed with the epic's slug so two epics can share a session, as
-`<slug>: open the change request`. A resumed run opens the same set, with the stages the branch and the change request
-already account for created `completed`. Mark a task `in_progress` as you enter its stage and `completed` once you have
+`<slug>: open the change request`. A resumed run opens the same set, with the stages the branch already accounts for
+created `completed` — never stage 2's, which runs every time. Mark a task `in_progress` as you enter its stage and `completed` once you have
 read the report that ends it. `completed` says the stage is over rather than that it succeeded, so a round that died
 carries its outcome in its subject — `<slug>: second round (failed — no review)`. Putting a stage back to an agent —
 continued or cold — is the same stage rather than a new one, so it gets no task of its own: the task it already has
