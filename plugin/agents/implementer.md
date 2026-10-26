@@ -32,7 +32,7 @@ The commits on the epic branch are what say how far it got, so implement only wh
 
 ## Steps
 
-1. **Get onto the epic branch** — the one your dispatch names. **Adopt** it: switch to it and pull from the remote,
+1. **Get onto the epic branch** — the one your dispatch names. Adopt it: switch to it and pull from the remote,
    even where you are the first ticket and it carries only the epic's spec and tickets. When it names none you are the
    first and no epic branch exists yet: create it from an up-to-date default branch, named from the epic's **slug** in
    the style of the branches already there.
