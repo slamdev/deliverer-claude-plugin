@@ -1,6 +1,11 @@
 /**
- * The standing repo: one private repository the refine test clones and never writes back to
+ * The standing repo: one private repository a test clones and never writes back to
  * (end-to-end-tests ticket 02).
+ *
+ * **No test drives a run against it any longer.** The refine happy path moved to a **throwaway
+ * repo** once a refinement into an in-repository tracker began pushing an **epic branch** and
+ * opening a **draft** (the-epic-branch-carries-the-spec ticket 04) — exactly what a standing repo
+ * cannot take. What follows is why it could stand while a refinement pushed nothing.
  *
  * It can be standing at all because refinement's two **writers** were checked and neither commits
  * nor pushes. Everything a run produces stays in the working tree it cloned, so no two runs can

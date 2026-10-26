@@ -651,9 +651,11 @@ complete run, only what a human could read afterwards. Three tests, and CI runs 
   both commands, all seven agents and all three review tools, and that `mattpocock-skills` still provides the skills
   the plugin invokes by name. No repository on the forge and no model asked for more than one trivial turn — cheap
   enough to run after any change to a manifest, either hook or the launcher.
-- **The refine happy path.** `/deliverer:refine` against a **standing repo**, with a **responder** answering the
-  grilling in your place out of the **fixture**'s own **brief**. It asserts a published **spec** and one file per
-  **ticket**, and then a **verifier** judges whether what came out is any good.
+- **The refine happy path.** `/deliverer:refine` against a **throwaway repo** created for the run, carrying no epic,
+  with a **responder** answering the grilling in your place out of the **fixture**'s own **brief**. It asserts a
+  published **spec** and one file per **ticket**, and three facts off the forge: the default branch did not move,
+  exactly one new branch carries the spec and tickets at the paths the fixture's conventions name, and exactly one
+  **change request** is open from it as a **draft**. Then a **verifier** judges whether what came out is any good.
 - **The build happy path.** `/deliverer:build` against a **throwaway repo** created for the run: all nine stages, two
   real **rounds** through the tools server and both **fix waves**. It asserts a commit naming every ticket, a
   **verdict** on every **assumption**, a fix wave's answer to every `improve` among them, and the **change request**
@@ -833,9 +835,8 @@ rather than reproduced. Nothing in it is ever removed, passed or failed:
   did not look in until it was taught to — that one was silently not collected, and nothing was lost by it. No
   assertion covers the collection either way, so the diagnostic naming what was collected is the only sign it happened.
 
-On the forge, the refine test's **standing repo** stays — it is cloned and never written back to, so it is brought into
-step with the fixture rather than recreated. The build test's **throwaway repo** is deleted when the test passes and
-left standing, with its branch and change request, when it fails: the change request is the evidence.
+On the forge, each happy path's **throwaway repo** is deleted when the test passes and left standing, with its branch
+and change request, when it fails: the change request is the evidence.
 
 ### The bench — one writer's stage, driven alone
 

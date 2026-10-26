@@ -50,6 +50,7 @@ import {
   createThrowawayRepo,
   deleteThrowawayRepo,
   type ThrowawayRepo,
+  type ThrowawayRepoWithEpic,
 } from "./throwaway-repo.ts";
 import { verifyDelivery, type Verdict } from "./verifier.ts";
 
@@ -87,7 +88,7 @@ export interface ScriptedBackend {
 export interface BuildOutcome {
   readonly runDirectory: RunDirectory;
   readonly fixture: Fixture;
-  readonly repo: ThrowawayRepo;
+  readonly repo: ThrowawayRepoWithEpic;
   readonly run: RunOutcome;
   /** the skill this test drove: the same string the command it sent carries */
   readonly skill: string;

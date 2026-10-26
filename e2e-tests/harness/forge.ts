@@ -2,8 +2,8 @@
  * The forge, and the git plumbing every repository the harness owns is built with
  * (end-to-end-tests ticket 03).
  *
- * Two repositories are made from one **fixture** and they differ only in their lifetime: the
- * **standing repo** a refinement clones outlives every run, and the **throwaway repo** a delivery
+ * Two kinds of repository are made from one **fixture** and they differ only in their lifetime:
+ * the **standing repo** outlives every run, and the **throwaway repo** a refinement or a delivery
  * is driven against is created per run and destroyed when the test passes. Everything under
  * that — what a fixture's repository is, which branch it lands on, how git authenticates, who the
  * fixture's commit is authored by — is the same for both and lives here, once.
@@ -202,6 +202,54 @@ export async function remoteHead(runDirectory: RunDirectory, url: string): Promi
     purpose: `reading what the forge has ${DEFAULT_BRANCH} at`,
   });
   return (listed.stdout.split(/\s/)[0] ?? "").trim();
+}
+
+/**
+ * Every branch the forge carries, by name, with the commit it is at.
+ *
+ * Asked of the forge for the same reason `remoteHead` is: what a refinement published is what the
+ * forge has, and a branch that exists only in the clone was published nowhere.
+ */
+export async function remoteBranches(
+  runDirectory: RunDirectory,
+  url: string,
+): Promise<ReadonlyMap<string, string>> {
+  const listed = await execute("git", [...GIT_CREDENTIALS, "ls-remote", "--heads", url], {
+    cwd: runDirectory.root,
+    env: runEnvironment(runDirectory),
+    purpose: "listing the branches the forge carries",
+  });
+  const branches = new Map<string, string>();
+  for (const line of listed.stdout.split("\n")) {
+    const [commit, ref] = line.trim().split(/\s+/);
+    if (commit !== undefined && ref?.startsWith("refs/heads/") === true) {
+      branches.set(ref.slice("refs/heads/".length), commit);
+    }
+  }
+  return branches;
+}
+
+/**
+ * Every file one branch on the forge carries, as paths relative to the repository's root.
+ *
+ * Fetched into the fixture's own repository rather than the clone, so the clone is left exactly as
+ * the run left it for whoever reads the run directory afterwards.
+ */
+export async function filesOnBranch(
+  runDirectory: RunDirectory,
+  url: string,
+  branch: string,
+): Promise<readonly string[]> {
+  const inFixture = git(runDirectory, runDirectory.fixtureRepoDir);
+  await inFixture(
+    [...GIT_CREDENTIALS, "fetch", "--quiet", url, `refs/heads/${branch}`],
+    `fetching ${branch} from the forge`,
+  );
+  const listed = await inFixture(
+    ["ls-tree", "-r", "--name-only", "-z", "FETCH_HEAD"],
+    `listing what ${branch} carries`,
+  );
+  return listed.stdout.split("\0").filter((path) => path !== "");
 }
 
 /** How the forge describes a repository's visibility, or null when there is no such repository. */

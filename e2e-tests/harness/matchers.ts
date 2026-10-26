@@ -595,18 +595,101 @@ function assertTriageLabel(
 }
 
 /**
- * The run pushed nothing.
+ * The default branch is where the repository was created at.
  *
- * This is what lets the repository stand rather than be thrown away: with nothing written back, no
- * two runs can reach each other. Asked of the FORGE and not of the clone, because a clone whose own
- * branch moved says nothing about what was published to it.
+ * A refinement publishes on an **epic branch** of its own and never on the default branch: what it
+ * commits is the spec and tickets a human has yet to read. Asked of the FORGE and not of the
+ * clone, because a clone whose own branch moved says nothing about what was published.
  */
-export function assertNothingPushed(outcome: RefineOutcome): void {
-  if (outcome.remoteHeadAfterRun !== outcome.standingRepo.headBeforeRun) {
+export function assertDefaultBranchUnmoved(outcome: RefineOutcome): void {
+  if (outcome.remoteHeadAfterRun !== outcome.repo.headAtCreation) {
     assert.fail(
-      `${outcome.standingRepo.fullName} moved from ${outcome.standingRepo.headBeforeRun} to ` +
-        `${outcome.remoteHeadAfterRun} during the run. A refinement pushes nothing, and a ` +
-        `standing repo one run can write to is one the next run inherits.`,
+      `${DEFAULT_BRANCH} on ${outcome.repo.fullName} moved from ${outcome.repo.headAtCreation} ` +
+        `to ${outcome.remoteHeadAfterRun || "nothing at all"} during the run. A refinement ` +
+        `publishes on the epic branch and leaves the default branch where it found it.`,
+    );
+  }
+}
+
+/**
+ * Exactly one branch is new on the forge, and it carries the epic's spec and every ticket at the
+ * paths this fixture's conventions name.
+ *
+ * The spec's path is built from the fixture's own declaration rather than read off the working
+ * tree, so a spec published under some other name is a failure here and not a match against
+ * itself. The tickets are the ones the working tree holds, since how many there are is the
+ * writer's to decide: one the run wrote and never committed is one the branch does not carry.
+ */
+export function assertEpicBranchCarriesEpic(outcome: RefineOutcome): void {
+  const branches = outcome.newBranches;
+  const branch = branches[0];
+  if (branches.length !== 1 || branch === undefined) {
+    assert.fail(
+      `the forge carries ${branches.length} branches beside ${DEFAULT_BRANCH} on ` +
+        `${outcome.repo.fullName} where exactly one was expected: ` +
+        `${branches.map((found) => found.name).join(", ") || "none at all"}. A refinement into ` +
+        `an in-repository tracker pushes the epic branch, and only that.`,
+    );
+  }
+  const { tracker } = outcome.fixture;
+  const directory = `${tracker.root}/${outcome.epic.slug}`;
+  const carried = new Set(branch.files);
+  const specPath = `${directory}/${tracker.specFile}`;
+  const ticketsDirectory = `${directory}/${tracker.ticketsDirectory}/`;
+  const underEpic = branch.files.filter((path) => path.startsWith(`${directory}/`));
+  const carriedThere = `Under ${directory}/ it carries ${underEpic.join(", ") || "nothing"}.`;
+
+  if (!carried.has(specPath)) {
+    assert.fail(
+      `${branch.name} carries no spec at ${specPath}, which is where this fixture's conventions ` +
+        `put one. ${carriedThere}`,
+    );
+  }
+  if (!branch.files.some((path) => path.startsWith(ticketsDirectory))) {
+    assert.fail(`${branch.name} carries no tickets under ${ticketsDirectory}. ${carriedThere}`);
+  }
+  const uncommitted = outcome.epic.tickets
+    .map((ticket) => ticket.path)
+    .filter((path) => !carried.has(path));
+  if (uncommitted.length > 0) {
+    assert.fail(
+      `${uncommitted.length} of the ${outcome.epic.tickets.length} tickets in the working tree ` +
+        `are not on ${branch.name}: ${uncommitted.join(", ")}. ${carriedThere}`,
+    );
+  }
+}
+
+/**
+ * Exactly one change request is on the forge, open from the epic branch, and still a **draft**.
+ *
+ * One, because a second is a refinement that lost its **bearings** — a change request already open
+ * for the branch is the change request. A draft, because nothing has been delivered yet: build's
+ * last stage is what takes it out of draft.
+ */
+export function assertDraftOpenedFromEpicBranch(outcome: RefineOutcome): void {
+  const opened = outcome.changeRequests;
+  const only = opened[0];
+  if (opened.length !== 1 || only === undefined) {
+    const listed = opened
+      .map((request) => `${request.url} from ${request.branch} (${request.state})`)
+      .join(", ");
+    assert.fail(
+      `the refinement left ${opened.length} change requests on ${outcome.repo.fullName} where ` +
+        `exactly one was expected: ${listed || "none at all"}. Its last stage before the ` +
+        `hand-over opens one, as a draft, from the epic branch.`,
+    );
+  }
+  const epicBranch = outcome.newBranches[0]?.name;
+  if (only.branch !== epicBranch) {
+    assert.fail(
+      `${only.url} was opened from ${only.branch || "no branch this harness could read"} ` +
+        `rather than from the epic branch ${epicBranch ?? "(none was pushed)"}.`,
+    );
+  }
+  if (only.state !== "OPEN" || !only.isDraft) {
+    assert.fail(
+      `${only.url} is ${only.state}${only.isDraft ? " and a draft" : " and out of draft"} ` +
+        `where an open draft was expected: nothing has been delivered yet.`,
     );
   }
 }
