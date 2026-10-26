@@ -183,7 +183,7 @@ export function buildRun(fixtureName: string): BuildRunBuilder {
         // Nobody is sitting in the seat, so nothing is spent beside the run.
         spentElsewhere: () => 0,
         progress: () => progressOnTheForge(runDirectory, repo),
-        // The forge is what says a delivery is over: stage 9 is the flip, and a change request out
+        // The forge is what says a delivery is over: stage 10 is the flip, and a change request out
         // of draft is that stage having run. The report is asked for a word about its rounds
         // besides, so the last turn is not cut off before it says one — and the grace period in
         // `./run.ts` covers a report that words it differently.
@@ -311,7 +311,7 @@ function scriptedBackendIn(environment: NodeJS.ProcessEnv): Record<string, strin
   return found;
 }
 
-/** Whether the change request has been taken out of **draft**, which is stage 9 having run. */
+/** Whether the change request has been taken out of **draft**, which is stage 10 having run. */
 async function flippedReady(runDirectory: RunDirectory, repo: ThrowawayRepo): Promise<boolean> {
   try {
     const open = await listChangeRequests(runDirectory, repo.fullName);
