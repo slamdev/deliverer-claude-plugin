@@ -2,7 +2,7 @@
 name: comments-addresser
 description: Address every unresolved comment on an epic's change request and leave its checks green
 model: opus
-effort: high
+effort: medium
 color: green
 disallowedTools: Agent, TaskCreate, TaskUpdate
 ---

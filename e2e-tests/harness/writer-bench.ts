@@ -420,8 +420,8 @@ interface AgentDefinition {
  * Read rather than assumed, so an arm measuring a variant that pins a different model or a
  * different **effort** measures that variant, and a frontmatter key that moves does not leave the
  * bench quietly driving the old value. A key the file does not carry falls back to what the
- * plugin's seven agents all declare today, which is what a dispatch of an agent missing it would
- * also get.
+ * plugin's six opus agents of seven all declare today, which is what a dispatch of an agent missing
+ * it would also get.
  */
 async function readAgent(path: string): Promise<AgentDefinition> {
   let source: string;
@@ -444,12 +444,12 @@ async function readAgent(path: string): Promise<AgentDefinition> {
   }
   const frontmatter = matched[1] ?? "";
   const model = declared(frontmatter, "model") ?? "opus";
-  const effort = declared(frontmatter, "effort") ?? "high";
+  const effort = declared(frontmatter, "effort") ?? "medium";
   const tools = declared(frontmatter, "disallowedTools") ?? "";
   return {
     body: matched[2] ?? "",
     model,
-    effort: effort === "low" || effort === "medium" ? effort : "high",
+    effort: effort === "low" || effort === "high" ? effort : "medium",
     disallowedTools: tools
       .split(",")
       .map((tool) => tool.trim())

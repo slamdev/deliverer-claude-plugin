@@ -2,7 +2,7 @@
 name: tickets-writer
 description: Break an epic's spec into tracer-bullet tickets, each declaring what blocks it, and publish one per ticket
 model: opus
-effort: high
+effort: medium
 color: orange
 disallowedTools: Agent, TaskCreate, TaskUpdate
 metadata:
