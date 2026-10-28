@@ -1283,14 +1283,29 @@ function humanTimeOf(window: readonly JsonObject[]): HumanTime {
 }
 
 /**
- * Whether the run wrote nothing after this entry, which is what makes an unanswered question the
- * run's own last act (ticket 03; D5).
+ * Whether the run took no turn of its own after this entry, which is what makes an unanswered
+ * question the run's own last act (ticket 03; D5; idp-scaffold-defects § The run's last act).
  *
- * A `queue-operation` does not count, for the reason the two other readers of one here already give:
- * it is stamped when the HUMAN typed, so a prompt queued while a question is on screen is not the
- * run writing anything. Everything else does, and that strictness is the safe direction — a question
- * the run went PAST, one the human escaped out of and typed over, leaves the idle bound exactly as
- * it is today rather than suspending it on a wait that ended.
+ * **Nothing counts but the run's own turns**: an `assistant` entry, or a `user` entry carrying a
+ * tool result or text the human typed — the last read by `typedText`, the one definition of "what
+ * the human typed" this file has, so a meta preamble and a `<task-notification>` landing mid-wait
+ * are not the run writing either. Everything else is the host's bookkeeping and leaves the wait
+ * standing, whatever its kind, whether or not it carries a timestamp, and including kinds no record
+ * has shown yet: they are skipped by construction rather than listed.
+ *
+ * **It was the other way round, and a whole refinement went unobserved for it.** The test used to
+ * count every entry after the question as the run writing except a `queue-operation`. On the
+ * refinement idp-scaffold-defects was written from, the first entry after the first question was
+ * the host's `tools-used`, with no timestamp and nothing of the run's in it, followed by
+ * `last-prompt` and `atis-latch` of the same kind — so the run read as not waiting, the idle bound
+ * finalised its debrief 38 minutes into a 77-minute wait, and eight more rounds and the rest of a
+ * two-and-a-half-hour run were never seen. Every later wait in that record carried the same
+ * entries. No timestamp test stands in for the kind test: `attachment` and `system` entries are
+ * stamped, and that record holds both.
+ *
+ * **The safe direction is kept where it matters.** A question the human escaped out of and typed
+ * over is followed by what they typed, which is one of the run's own turns, so it still ends the
+ * wait and leaves the idle bound exactly as it was rather than suspending it on a wait that ended.
  *
  * **One shape reads as waiting and is really over, knowingly:** the human typed over a question and
  * the record ends there, so step 1's ceiling closes on the question itself and it is the last entry
@@ -1301,9 +1316,20 @@ function humanTimeOf(window: readonly JsonObject[]): HumanTime {
  */
 function isTheRunsLastAct(window: readonly JsonObject[], index: number): boolean {
   for (let after = index + 1; after < window.length; after += 1) {
-    if (stringField(window[after] ?? {}, "type") !== "queue-operation") return false;
+    if (isTheRunsOwnTurn(window[after] ?? {})) return false;
   }
   return true;
+}
+
+/** An assistant entry, or a user entry carrying a tool result or text the human typed. */
+function isTheRunsOwnTurn(entry: JsonObject): boolean {
+  const type = stringField(entry, "type");
+  if (type === "assistant") return true;
+  if (type !== "user") return false;
+  const carriesResult = contentBlocks(objectField(entry, "message")).some(
+    (block) => stringField(block, "tool_use_id") !== undefined,
+  );
+  return carriesResult || typedText(entry) !== undefined;
 }
 
 /* ────────────────────────────────────── shared reading ────────────────────────────────────── */

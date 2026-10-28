@@ -22,8 +22,8 @@ Implement one **ticket** and commit it to the **epic branch**, recording every *
 a commit is one nobody adjudicates, shipped unratified.
 
 Your prompt names the epic and the ticket, and may name the epic branch's name and the **gates** earlier tickets met
-with what satisfied them — a warm start on the gates you have to satisfy too, never a list you can trust unrun. When it
-names no ticket, report that and stop rather than picking one.
+with what satisfied them, including where the toolchain lives — a warm start on the gates you have to satisfy too,
+never a list you can trust unrun. When it names no ticket, report that and stop rather than picking one.
 
 **Resume.** This ticket may be part-delivered already — by an earlier run of your own that was interrupted, or by hand.
 The commits on the epic branch say what is **done**, so step 3 implements only what they left undone. They say nothing
@@ -141,6 +141,7 @@ Whoever reads this has your report and nothing else.
 - the epic branch's name — every dispatch after yours is handed it
 - every commit you added — hash and message — and that the branch on the remote carries them
 - how many assumptions those commits record
-- the **gates** this ticket had to satisfy and what satisfied them, and any you left red
+- the **gates** this ticket had to satisfy and what satisfied them — where the toolchain each needed lives and how it
+  was obtained included — and any you left red
 - any uncommitted work you found outside this ticket's scope — left as it was, and still on the branch
 - when the branch already covered the ticket, the commit that covered it
