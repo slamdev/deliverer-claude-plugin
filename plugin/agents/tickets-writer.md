@@ -71,11 +71,15 @@ spec's native children as **Numbers and the tracker** gives them.
       one unread asserts it with more authority than it was made with; where you have not read the test, the criterion
       states what the slice must make true instead;
    3. published, at the next free number — where the spec is an issue, as the spec's native child, created and
-      attached in this one step, so the spec's children list in number order.
+      attached in this one step, so the spec's children list in number order. Where the forge refuses the child —
+      the child type disabled on the project, a forge too old for it, a token without the permission — that ticket
+      falls back: published as a plain ticket carrying its **Spec** line, at that same number, the forge's reason
+      kept for your report, and publishing goes on to the next ticket.
 
    You are done when every slice carries exactly one published ticket, every blocking edge names a published one,
    every criterion asserting what an existing test covers was read out of that test's body, and, where the spec is an
-   issue, every ticket you published was made its native child before the next one was published.
+   issue, every ticket you published was made its native child before the next one was published, or fell back with
+   the forge's refusal in hand.
 7. **Report**, as below.
 
 ## Tracer bullets
@@ -169,6 +173,8 @@ Whoever reads this has your report and nothing else.
 
 - where the tickets are published, and how many, in their numbered order — and, where the spec is an issue, whether
   each one is the spec's native child, naming the child type where it is not the forge's issue type
+- every ticket that fell back to a plain ticket without a parent, and the reason the forge gave for refusing the child
+  — or that none did
 - which tickets can start immediately
 - every ticket that has to be built before a lower-numbered one, and both numbers — sequencing those two is the human's
 - every user story the spec lists that no ticket covers, and why — or that every one is covered
