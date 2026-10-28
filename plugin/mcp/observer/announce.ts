@@ -292,7 +292,7 @@ export async function writeMarker(dataDirectory: string, marker: MarkerState): P
  * (idp-scaffold-defects ticket 02).
  *
  * **The hook rewrites the marker before it re-arms, so this cannot live in the marker.** A fresh
- * observer started on a run that outlived its watcher has to do what that watcher would have done:
+ * observer started on a run that outlived its observer has to do what that one would have done:
  * un-finalise when the run's **extent** has advanced past the reading it was finalised on, and
  * otherwise leave the debrief — and its one synthesis — exactly as it is. That takes the extent the
  * finalise read, which no process holds any more; so it is put on disk at the finalise, and taken

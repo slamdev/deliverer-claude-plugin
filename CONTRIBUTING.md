@@ -497,7 +497,7 @@ loop's. Walk these after any change to either, each with what it should do:
   debrief is finalised and announced, with a marker saying the run read finished. It is a guess and not a signal — a
   run can pass through "every stage completed, last word prose" between two stages — so growing the record again
   un-finalises it, exactly as after an idle finalise. Walk it by cutting a delivery's record just after its closing
-  report, letting it settle, then appending the rest under the watcher;
+  report, letting it settle, then appending the rest under the running observer;
 - **a session ended mid-run** — `SessionEnd` signals and never finalises anything itself; the observer picks the
   signal up on its next tick and finalises the debrief;
 - **a terminal killed**, with no `SessionEnd` to be had — the idle bound finalises it, and the line naming the debrief

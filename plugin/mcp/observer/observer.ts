@@ -42,13 +42,13 @@
  * once deliberately left out, is one now, and what it measured.
  *
  * **An observer that stopped on a guess is started again** (idp-scaffold-defects ticket 02). A run
- * that outlives its watcher — finalised on the idle bound or the ceiling, `AFTER_FINALISE_MS` gone by,
- * the process exited — is observed again on the session's next `Stop` or prompt: the hook reads the
- * marker's state and the `.lock`'s pid, and starts a fresh observer through the same spawn. That one
- * begins where the dead one left off rather than from nothing — the debrief on disk final, and the
- * extent it was finalised on read back from `.final-reading` — so it un-finalises exactly when the
- * dead watcher would have and otherwise leaves the debrief, its one synthesis and its announcement
- * alone. `probing` below is that state.
+ * that outlives its observer — finalised on the idle bound or the ceiling, `AFTER_FINALISE_MS` gone
+ * by, the process exited — is observed again on the session's next `Stop` or prompt: the hook reads
+ * the marker's state and the `.lock`'s pid, and starts a fresh observer through the same spawn. That
+ * one begins where the dead one left off rather than from nothing — the debrief on disk final, and
+ * the extent it was finalised on read back from `.final-reading` — so it un-finalises exactly when
+ * the dead observer would have and otherwise leaves the debrief, its one synthesis and its
+ * announcement alone. `probing` below is that state.
  *
  * **The stop line is best-effort by construction and the prompt line is the guarantee** (D25). The
  * host writes a run's last entry and then fires its `Stop` hooks immediately, so whether this loop
@@ -297,10 +297,10 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
    * Whether the debrief on disk is a finalised one this process holds no judgement of
    * (ticket 02). While it is, every reading is taken off disk — `probe` — because the only reading
    * that could be written here is a finalised one, and this process's judge would spend a second
-   * synthesis on it: the dead watcher's answer is in the file and nowhere in memory. A reading whose
-   * extent has advanced ends it, by the same un-finalise a watcher that never died makes; anything
+   * synthesis on it: the dead observer's answer is in the file and nowhere in memory. A reading whose
+   * extent has advanced ends it, by the same un-finalise an observer that never died makes; anything
    * else leaves the debrief exactly as it was found, and the process exits `AFTER_FINALISE_MS` after
-   * it started, as the dead watcher would have after its finalise.
+   * it started, as the dead observer would have after its finalise.
    */
   let probing = inherited !== undefined;
   let probed = false;
@@ -379,7 +379,7 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
         );
         const facts = probe?.kind === "held" ? probe.facts : undefined;
         if (facts !== undefined && advancedPast(facts, extentEnd, dispatchesInRun)) {
-          // The run is alive past the reading it was finalised on: the dead watcher's reversal,
+          // The run is alive past the reading it was finalised on: the dead observer's reversal,
           // made here. Everything after this is the ordinary loop, which un-finalised the same way.
           probing = false;
           finalisedAt = undefined;
