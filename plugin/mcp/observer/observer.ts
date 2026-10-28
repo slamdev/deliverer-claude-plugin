@@ -13,7 +13,7 @@
  * (`./debrief.ts`). One composition, so what a user gets and what can be reproduced from a record
  * on disk are the same thing rather than two renderings of one idea.
  *
- * **Four readings, and they are different claims:**
+ * **Five readings, and they are different claims:**
  *
  *  - *A stage landed* — a per-dispatch record appeared — so the debrief is rewritten at once. In
  *    between, a rewrite is throttled: re-reading a delivery's 6.7 MB of records for every entry
@@ -32,15 +32,14 @@
  *    exactly what a killed terminal looks like, so the pending question is what tells the two apart
  *    and the ceiling is what still stops a watcher whose terminal really was killed with a question
  *    on screen.
+ *  - *A finished run settled* — the freshest reading says `finished` and nothing has been written
+ *    anywhere for the settle bound (idp-scaffold-defects, § The finished-and-settled finaliser). A
+ *    guess beside the idle bound and the ceiling, never a signal, and reversed exactly as they are.
  *
- * **Those three finalisers are the whole of it, and what the records SAY about themselves is not a
- * fourth.**
- * D23 names session end and the idle bound, ticket 03 adds the ceiling on one wait, and nothing else
- * is one. `RunFacts.ending` reads `finished` of any moment where every task is completed and the
- * run's last word is prose, and nothing about a task list forbids a run passing through that shape
- * between two stages — so finalising on it spends the one synthesis (D9) on a run that is still
- * going and then holds that answer for the rest of it. The finalise below carries what that costs,
- * and what it measures.
+ * **Those four finalisers are the whole of it, and only the first is certain.** D23 names session
+ * end and the idle bound, ticket 03 adds the ceiling on one wait, and the settled finish is the
+ * records' own word weighed against a short silence. The finalise below carries why that reading,
+ * once deliberately left out, is one now, and what it measured.
  *
  * **The stop line is best-effort by construction and the prompt line is the guarantee** (D25). The
  * host writes a run's last entry and then fires its `Stop` hooks immediately, so whether this loop
@@ -125,6 +124,24 @@ const IDLE_FINALISE_MS = bound("DELIVERER_OBSERVER_IDLE_MS", 30 * 60_000);
  * other unsignalled finalise.
  */
 const WAITING_CEILING_MS = bound("DELIVERER_OBSERVER_WAITING_MS", 12 * 60 * 60_000);
+
+/**
+ * How long a run whose latest reading is `finished` has to be silent before the debrief is
+ * finalised on that reading (idp-scaffold-defects, § The finished-and-settled finaliser).
+ *
+ * **The same silence the idle bound measures, and a far shorter one, because it is weighed with
+ * more evidence.** The idle bound has nothing but silence to go on, so it waits out a human thinking;
+ * this one also has the run's own records saying every stage completed and the last word was prose,
+ * which is what a run returning looks like. The measured delivery returned at 21:32:36 in a session
+ * that stayed open, and without this its debrief waited half an hour on the idle bound — and was in
+ * fact only got by the human killing the session.
+ *
+ * **Two minutes, because a run passing through `finished` between two stages is not silent for
+ * that long.** Between two stages the orchestrator is writing — a task update, a dispatch, its
+ * records growing — and every entry starts this clock again. Where the guess is still wrong, it is
+ * reversed exactly as the idle bound's is.
+ */
+const SETTLE_FINALISE_MS = bound("DELIVERER_OBSERVER_SETTLE_MS", 2 * 60_000);
 
 /**
  * How long the observer keeps watching after finalising on its own reading rather than on a
@@ -308,7 +325,13 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
     const waitedOut = askedAt !== undefined && silent && now - askedAt >= WAITING_CEILING_MS;
     const waiting = askedAt !== undefined && !waitedOut;
     const idle = silent && !waiting;
-    const finalising = signalled || idle || waitedOut;
+    // The third guess, and the same silence measured against a shorter bound: the freshest reading
+    // says the run finished, so what is left to wait for is that it stays that way. `lastFacts` for
+    // the reason the wait above uses it, and fresh for the same reason — the settling tick reads the
+    // records one tick after they stop growing, so this is never weighed on a stale `finished`.
+    const settled =
+      lastFacts?.ending.kind === "finished" && now - lastActivityAt >= SETTLE_FINALISE_MS;
+    const finalising = signalled || idle || waitedOut || settled;
     const throttleExpired = now - lastRefreshAt >= REFRESH_THROTTLE_MS;
     const due =
       // Only while the finalise is still owed, and that is what keeps the throttle applying
@@ -318,8 +341,8 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
       // 900 further whole readings of an 11 MB record set, each rebuilding the trace and the facts
       // and rewriting both files, on a machine whose terminal has just been killed. A run that
       // turns out to be alive still un-finalises at once: that is `grew`, `stageLanded` and
-      // `settling` below, none of which this touches. `waitedOut` cannot go back on its own either,
-      // for the same reason — it is that same silence with a ceiling on top.
+      // `settling` below, none of which this touches. `waitedOut` and `settled` cannot go back on
+      // their own either, for the same reason — each is that same silence with a test on top.
       (finalising && finalisedAt === undefined) ||
       stageLanded ||
       settling ||
@@ -472,26 +495,30 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
         }
       }
 
-      // D23's two finalisers, ticket 03's ceiling on one wait, and only those: the session's own
-      // end, the idle bound for the debrief a killed terminal left, and the same guess deferred
-      // where that terminal was killed with a question on screen. `outcome.facts.ending.kind ===
-      // "finished"` is deliberately not one of them, because it is a READING of the run's own words
-      // rather than a signal about the run: it is true of any moment where every task is completed
-      // and the last word is prose, and nothing about a task list forbids a run passing through that
-      // shape between two stages.
-      // Finalising there spends the one synthesis (D9) on part of a run and then holds that answer
-      // for the rest of it — content, which is exactly what D23 forbids the bound to cost.
+      // D23's two finalisers, ticket 03's ceiling on one wait, and a third guess beside those two:
+      // the session's own end, the idle bound for the debrief a killed terminal left, the same guess
+      // deferred where that terminal was killed with a question on screen — and a run that reads
+      // `finished` and then stays silent for `SETTLE_FINALISE_MS` (idp-scaffold-defects, § The
+      // finished-and-settled finaliser).
       //
-      // **The figure this comment used to carry does not reproduce any more, and the reason is
-      // `./run-facts.ts`'s extent rather than anything here.** It read one 388-entry refinement's
-      // first 290 entries as `finished` at 2h28m and 10 question rounds against the whole run's
-      // 2h57m and 11 — but those 29 minutes and that eleventh round were the human's own follow-up
-      // work after the refinement had published, and the ceiling the extent now applies cuts them
-      // out. Re-measured over all eleven run records on that machine — five refinements and six
-      // deliveries — `finished` first reads within twelve entries of the run's own last entry on
-      // every one of the ten that reach it at all, and the eleventh never does. So the case against
-      // this being a finaliser is what it always was — a reading is not a signal — and no longer a
-      // measured gap of three quarters of a run.
+      // **`finished` used to be deliberately not a finaliser, and the grounds for that have been
+      // measured away.** It is a READING of the run's own words rather than a signal about the run:
+      // true of any moment where every task is completed and the last word is prose, and nothing
+      // about a task list forbids a run passing through that shape between two stages — so
+      // finalising on it was argued to spend the one synthesis (D9) on part of a run and hold that
+      // answer for the rest of it. Two things answer that now. Re-measured over all eleven run
+      // records on the machine this was walked against — five refinements and six deliveries —
+      // `finished` first reads within twelve entries of the run's own last entry on every one of the
+      // ten that reach it at all, and the eleventh never does: the "part of a run" is a dozen
+      // entries, not three quarters of one. And the case it guarded — a run that turns out to carry
+      // on — is the case the reversal above already covers for the idle bound, unchanged: the run's
+      // extent advances, the label comes back, and `./judge.ts` keeps what the earlier answer read.
+      // What leaving it out cost was measured too: a delivery that finished in a session left open
+      // waited half an hour for its debrief, and its human killed the session to get it.
+      //
+      // **It is still a guess and never a signal**, so it is reversible and watched for
+      // `AFTER_FINALISE_MS` like the idle bound — only `SessionEnd` is the one certain end. No ADR:
+      // a constant and a condition reverse it.
       if (finalisedAt === undefined && finalising) {
         // Nothing is announced naming a debrief that still says the run is going — and the reading
         // above almost always already carried the flag, since it is taken with `finalising ||
@@ -517,7 +544,7 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
           headline: headlineOf(written),
           noCredential: nothingJudgedFor(written),
         });
-        await mark(options, `finalised — ${why(signalled, waitedOut)}`);
+        await mark(options, `finalised — ${why(signalled, waitedOut, settled)}`);
       }
     }
 
@@ -678,21 +705,29 @@ async function mark(options: ObserveOptions, state: string): Promise<void> {
 }
 
 /**
- * Which of the three finalisers this one was, in the words the marker carries.
+ * Which of the four finalisers this one was, in the words the marker carries.
  *
- * **The third is named apart from the second** (ticket 03; D6). Both are the same guess — that the
- * terminal is gone — but they are reached by different evidence, and a marker saying "nothing was
- * written anywhere" of a run whose last act was a question would claim silence where the answer is
- * that a wait ran out. Nothing else the human meets claims either: the announcement names the
+ * **The ceiling is named apart from the idle bound** (ticket 03; D6). Both are the same guess — that
+ * the terminal is gone — but they are reached by different evidence, and a marker saying "nothing
+ * was written anywhere" of a run whose last act was a question would claim silence where the answer
+ * is that a wait ran out. Nothing else the human meets claims either: the announcement names the
  * debrief and the run, and while a run is waiting there is no announcement at all.
+ *
+ * **So is the settled finish, and only `SessionEnd` reads as the session ending**
+ * (idp-scaffold-defects, § The finished-and-settled finaliser). The hook tells a finalise on the
+ * observer's own reading — any of the three guesses — from the one certain end by this wording, and
+ * re-arms only on the former; a settled finish is a guess like the other two and must read as one.
  */
-function why(signalled: boolean, waitedOut: boolean): string {
+function why(signalled: boolean, waitedOut: boolean, settled: boolean): string {
   if (signalled) return "the session ended";
   if (waitedOut) {
     return (
       "the run was waiting on a question nobody answered, for longer than a wait's own ceiling — " +
       "which is what a terminal killed with a question on screen looks like"
     );
+  }
+  if (settled) {
+    return "the run read finished and nothing was written anywhere for the settle bound";
   }
   return "nothing was written anywhere for the idle bound";
 }
