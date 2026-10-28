@@ -6,7 +6,7 @@
 #   UserPromptSubmit  start an observer when this prompt begins or resumes a run, and print a
 #                     debrief nobody has been shown yet — from ANY session, which is what a debrief
 #                     finalised after its terminal closed needs. And start one again where this
-#                     session's observer finalised on a guess and has exited since (below).
+#                     session's observer finalised and has exited since (below).
 #   Stop              print this session's debrief if the observer has one ready, and NOTHING at
 #                     all if it has not. A refinement stops for every question it asks, so silence
 #                     here is the common case and has to cost nothing. It re-arms a stopped
@@ -19,15 +19,17 @@
 #                     to declare a `timeout` — which would make EVERY exit of EVERY session wait,
 #                     observed or not.
 #
-# RE-ARMING (idp-scaffold-defects ticket 02). An observer that finalised on its own reading — the
-# idle bound, a wait's ceiling, any guess whose marker state reads `finalised — ` — watches a while
-# and exits, and a run can outlive that. On `Stop` and on `UserPromptSubmit`, a marker in such a
-# state with no observer alive starts a fresh one, which reads the run whole and un-finalises the
-# debrief only if the run moved past it. `finalised — the session ended` is never re-armed: that is
-# the one certain end. Nor is a marker with no `.final-reading` beside it, which is what an observer
-# from before this change leaves: the fresh one would have nothing to tell "moved past" by. Alive
-# is the pid in the observer's `.lock`, which `mcp/observe.mjs` writes and removes; a crashed
-# observer leaves a pid nothing answers to, which reads as not alive.
+# RE-ARMING (idp-scaffold-defects ticket 02). An observer that finalised — on any marker state that
+# reads `finalised — `, the idle bound, a wait's ceiling, a settled finish or the session's end —
+# exits sooner or later, and a run can outlive that. On `Stop` and on `UserPromptSubmit`, a marker
+# in such a state with no observer alive starts a fresh one, which reads the run whole and
+# un-finalises the debrief only if the run moved past it. `finalised — the session ended` is
+# re-armed like the rest (PR #18 review): `claude --resume` keeps the session's id and its record,
+# so a session can raise events after its own end, and any event at all is proof that it did. A
+# marker with no `.final-reading` beside it is never re-armed, which is what an observer from before
+# this change leaves: the fresh one would have nothing to tell "moved past" by. Alive is the pid in
+# the observer's `.lock`, which `mcp/observe.mjs` writes and removes; a crashed observer leaves a
+# pid nothing answers to, which reads as not alive.
 #
 # THE SWITCH IS READ FROM THE ENVIRONMENT, NEVER FROM `${user_config.*}` (D26, claim C1). A hook
 # reads the SAVED option values, where the MCP path merges the manifest's defaults first — so an
@@ -117,19 +119,17 @@ start_observer() {
   disown 2>/dev/null || true
 }
 
-# ── re-arming one that stopped on a guess (ticket 02) ──
+# ── re-arming one that finalised and exited (ticket 02) ──
 # Every read is a file test, one small file and a signal 0, so a `Stop` of every observed session
 # pays nothing measurable for them. The state is matched in the observer's own JSON spelling
-# (`observer/announce.ts` writes it), and `finalised — the session ended` is that file's
-# `SESSION_ENDED_STATE` verbatim: the two must stay the same.
-stopped_on_a_guess() {
+# (`observer/announce.ts` writes it): the two must stay the same.
+finalised_with_a_reading() {
   [[ -f "$MARKER" ]] || return 1
   # What the finalise left for the observer after it. Without it a fresh one could only un-finalise
   # unconditionally, and announce a debrief nobody's run had moved past a second time.
   [[ -f "$FINAL_READING" ]] || return 1
   local marker
   marker="$(cat "$MARKER" 2>/dev/null)" || return 1
-  [[ "$marker" == *'"state": "finalised — the session ended"'* ]] && return 1
   [[ "$marker" == *'"state": "finalised — '* ]]
 }
 
@@ -143,9 +143,13 @@ observer_alive() {
 
 rearm() {
   [[ -f "$RECORD" ]] || return 0
-  stopped_on_a_guess || return 0
+  finalised_with_a_reading || return 0
   observer_alive && return 0
-  start_observer "re-armed by the $EVENT hook: the observer had finalised on a guess and exited"
+  # A `SessionEnd` signal still on disk here is the end of this session BEFORE it was resumed:
+  # this very event says the session is live. Left in place, the fresh observer would read it on
+  # its first tick as the session ending now, and mark it so.
+  rm -f "$SESSIONS/$SESSION_ID.finalise" 2>/dev/null
+  start_observer "re-armed by the $EVENT hook: the observer had finalised and exited"
 }
 
 # ── printing a line the observer left (D25) ──
@@ -201,7 +205,7 @@ fi
 
 # Once an observer exists for this session, nothing below is asked again — which is what keeps the
 # scan underneath from running on every prompt of a run that is already being watched. The one
-# question left is whether that observer stopped on a guess and the run outlived it.
+# question left is whether that observer finalised and exited and the run outlived it.
 if [[ -e "$MARKER" ]]; then
   rearm
   exit 0

@@ -22,7 +22,8 @@ waiting ceiling — reversible exactly as an idle finalise is. Settled under **T
       `finished`.
 - [x] Driven by hand at shortened bounds: a finished copy that stops growing finalises after the settle bound; growing
       it again un-finalises it.
-- [x] A `SessionEnd` finalise still exits at once and is never reversed, and the waiting ceiling is unchanged.
+- [x] A `SessionEnd` finalise still exits at once, and the waiting ceiling is unchanged. (A signal after a settled
+      finish exiting at once too is ticket 02's, from the change request review.)
 - [x] `npm run typecheck && npm run lint` pass in the plugin's Node package.
 
 ## Comments

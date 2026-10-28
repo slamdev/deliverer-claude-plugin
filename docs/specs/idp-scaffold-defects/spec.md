@@ -70,11 +70,13 @@ writing, and a question followed only by them is a run **waiting**.
 
 ### 2. An observer that stopped on a guess is started again
 
-When a hook event arrives for a session whose observer finalised on its own reading — the idle bound or the waiting
-ceiling, never `SessionEnd` — and that observer is no longer alive, the hook starts a fresh one. Both `UserPromptSubmit`
-and `Stop` do this: `Stop` is the event an answered question produces, since an answer is a tool result rather than a
-prompt. The fresh observer reads the run whole and un-finalises the debrief on disk if the run's **extent** has
-advanced, exactly as an observer that never died would have.
+When a hook event arrives for a session whose observer finalised — on the idle bound, the waiting ceiling, a settled
+finish or `SessionEnd` — and that observer is no longer alive, the hook starts a fresh one. `SessionEnd` is included
+because `claude --resume` keeps a session's id and its record, so a session raises events after its own end; any such
+event is proof that it was resumed, and a `SessionEnd` signal still on disk then is the earlier end, removed before the
+spawn (change request review). Both `UserPromptSubmit` and `Stop` do this: `Stop` is the event an answered question
+produces, since an answer is a tool result rather than a prompt. The fresh observer reads the run whole and un-finalises
+the debrief on disk if the run's **extent** has advanced, exactly as an observer that never died would have.
 
 ### 3. A finished run that settles finalises its debrief
 
@@ -130,8 +132,8 @@ its as-of date moved to match.
     that I do not have to type anything to be observed again.
 11. As a human, I want a fresh observer to rewrite the debrief already on disk rather than write a second one beside
     it, so that one run has one debrief.
-12. As a human whose session ended through `SessionEnd`, I want no observer restarted for it, so that a signalled end
-    stays the one certain end there is.
+12. As a human who quits a session and resumes it with `claude --resume`, I want the resumed run observed again, so
+    that a session's earlier end does not leave the rest of its run unobserved.
 13. As a human whose observer is still alive, I want no second observer started beside it, so that two processes never
     write the same debrief.
 14. As a human who keeps one long-lived session open, I want a finished delivery's debrief finalised within minutes of
@@ -278,9 +280,9 @@ poll's answer and timing — never an internal call.
 - **The observer loop driven by hand**, at shortened bounds. A copy of a record is grown entry by entry while the hook
   events are fired at the hook script: a finished run that stops growing finalises after the settle bound and is
   announced; growing it again un-finalises it; an idle finalise left to exit and then followed by a `Stop` or a prompt
-  starts a fresh observer that un-finalises and carries on; a `SessionEnd`-finalised session starts nothing; a live
-  observer is never doubled. (A `Notification` printing a pending announcement once was dropped with Solution item
-  4, [ticket 04][t04].)
+  starts a fresh observer that un-finalises and carries on; a `SessionEnd`-finalised session that is resumed does the
+  same, with the stale signal gone; a live observer is never doubled. (A `Notification` printing a pending announcement
+  once was dropped with Solution item 4, [ticket 04][t04].)
 - **The scripted backend over MCP stdio** (CONTRIBUTING.md § What CI does not check). A timeline longer than the held
   bound: a poll returns after about the bound with a non-terminal status. A timeline that completes mid-hold: the poll
   returns at completion. A terminal review: the poll returns at once. A cancel during a held poll: the poll returns
@@ -326,7 +328,7 @@ and the `SessionEnd` signal at 18:30 was left with no observer to read it.
 ### Load-bearing behaviour this change must not disturb
 
 - The waiting ceiling still catches a terminal killed with a question on screen.
-- A `SessionEnd` finalise still exits at once and is never reversed.
+- A `SessionEnd` finalise still exits at once — including one that lands after a finalise on a guess.
 - `Stop` still prints nothing when there is nothing final to print.
 - A poll still carries what is known when it answers and no more, with every key absent until measured.
 

@@ -168,18 +168,10 @@ const jsonResult = (value: unknown, structured?: Record<string, unknown>): ToolR
  * Run a tool body, turning a `ToolError` into an MCP error result and anything else into one too —
  * a crashed handler would take the whole stdio server with it, and an unreviewed delivery must fail
  * loudly at the caller rather than silently at the transport.
+ *
+ * Awaited, so one wrapper serves the bodies that answer at once and the held poll that waits.
  */
-function guarded(body: () => ToolResult): ToolResult {
-  try {
-    return body();
-  } catch (error) {
-    if (error instanceof ToolError) return errorResult(error.message);
-    return errorResult(`the tools server failed to handle the call: ${(error as Error).message}`);
-  }
-}
-
-/** `guarded` for a body that waits — the held poll — with the same two translations. */
-async function guardedAsync(body: () => Promise<ToolResult>): Promise<ToolResult> {
+async function guarded(body: () => ToolResult | Promise<ToolResult>): Promise<ToolResult> {
   try {
     return await body();
   } catch (error) {
@@ -370,7 +362,7 @@ server.registerTool(
   // The host's request signal releases a held poll it has given up on, so a cancelled call leaves
   // no hold behind it.
   (args, extra) =>
-    guardedAsync(async () => {
+    guarded(async () => {
       const result = await lifecycle.status(args.review_id, extra.signal);
       return jsonResult(result, result as unknown as Record<string, unknown>);
     }),

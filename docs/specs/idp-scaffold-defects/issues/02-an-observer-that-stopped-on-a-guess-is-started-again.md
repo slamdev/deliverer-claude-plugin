@@ -1,25 +1,28 @@
 # 02 — An observer that stopped on a guess is started again
 
-**What to build:** a human whose run outlived its observer — finalised on the idle bound or the waiting ceiling, and
-exited since — is observed again the next time their session stops or they type, without doing anything. The fresh
-observer reads the run whole and un-finalises the debrief already on disk when the run's **extent** has advanced, as an
-observer that never died would have. A session that ended through `SessionEnd` is never re-armed, and a live observer is
+**What to build:** a human whose run outlived its observer — finalised on any finaliser, and exited since — is observed
+again the next time their session stops or they type, without doing anything. The fresh observer reads the run whole and
+un-finalises the debrief already on disk when the run's **extent** has advanced, as an observer that never died would
+have. A session that ended through `SessionEnd` is re-armed only when an event shows it resumed, and a live observer is
 never doubled. Settled under **Re-arming a stopped observer** in `../spec.md`.
 
 **Blocked by:** None — can start immediately.
 
 **Status:** ready-for-agent
 
-- [x] On `UserPromptSubmit` and on `Stop`, a marker whose state reads as finalised on the observer's own reading, with
+- [x] On `UserPromptSubmit` and on `Stop`, a marker whose state reads as finalised, with a final reading beside it and
       no observer alive, starts a fresh one through the existing spawn path, marker rewritten before the spawn.
-- [x] A marker reading as finalised on the session's end starts nothing.
+- [x] A marker reading as finalised on the session's end is re-armed like the rest, and a `SessionEnd` signal still on
+      disk is removed before the spawn (change request review).
 - [x] Whether an observer is alive is readable by the hook without waiting, and a crashed observer reads as not alive.
 - [x] Two hook events in a row start one observer, not two.
 - [x] The fresh observer rewrites the run's existing debrief rather than writing a second one, and announces it only if
       it un-finalises and later finalises it anew.
 - [x] `Stop` still prints nothing when there is nothing final to print, whether or not it re-armed.
 - [x] Driven by hand at shortened bounds: an idle finalise left to exit, then a grown record and a `Stop`, un-finalises
-      the debrief and carries on; the same with a prompt instead of `Stop`; a `SessionEnd`-finalised session stays put.
+      the debrief and carries on; the same with a prompt instead of `Stop`.
+- [x] Driven by hand at shortened bounds: a `SessionEnd`-finalised session, then a grown record and a `Stop`,
+      un-finalises the debrief and carries on; a `SessionEnd` signal after a settled finish exits at once.
 - [x] The hook script's header comment names the new behaviour of both events.
 - [x] `npm run typecheck && npm run lint` pass in the plugin's Node package.
 
@@ -77,3 +80,28 @@ beside the published tree:
   fired; the fresh observer un-finalised, re-finalised on the idle bound, and the debrief carried the canary — which
   only the file could have supplied. Before the fix the debrief carried a fresh judging's own reason instead.
 - `walk-stop.sh` (with `Stop` and with a prompt) and `walk-end.sh` give the results listed above unchanged.
+
+**Change request review (PR #18).** Four review findings reshape this ticket:
+
+- `claude --resume` and `--continue` keep a session's id and append to its record (2.1.311, probed with `-p` and
+  matched against the CLI reference), so `SessionEnd` is not a final end. Every finalise now leaves a final reading, the
+  session's end included; the hook re-arms any `finalised — ` state that has one, and removes a stale `.finalise`
+  first. The observer consumes the signal when it acts on it.
+- A `SessionEnd` signal landing after a finalise on a guess was ignored, leaving the observer up for
+  `AFTER_FINALISE_MS` after its session was gone. It now restates the final reading as the session's end and exits.
+- The probe's un-finalise is folded into the main loop: a probe is the main loop's reading taken off disk while
+  `probing`, and a probe that finds the run moved past its inheritance takes the one reversal.
+
+Verified by hand on 2026-10-28 with the same harness and bounds under `/tmp/idp-rev2/`, adding `t-resume.sh`:
+
+- `walk-stop.sh` (with `Stop` and with a prompt), `t-legacy.sh` and `t-reuse.sh` give the results listed above; the
+  un-finalise now reads `watching — a run that had gone quiet resumed` under a fresh observer too.
+- **A late signal.** Idle finalise, then `SessionEnd` inside the observer's window: it exited 137 ms later (window
+  4 s) with marker and final reading both `finalised — the session ended`, the signal gone, nothing re-announced.
+- **Quit, then resume.** That session's record grown and a `Stop` fired: one observer re-armed, un-finalised the same
+  `debrief.md`, re-finalised on the idle bound and announced once. `walk-end.sh`'s `SessionEnd` case now does the same
+  where it used to start nothing.
+- **A stale signal.** Idle finalise, observer exited, `SessionEnd` with nobody alive, record grown, `Stop`: the hook
+  removed the signal before the spawn, and the fresh observer un-finalised (48m12s → 1h43m) instead of marking the
+  session ended.
+- `kill -9` and the switched-off feature: unchanged.
