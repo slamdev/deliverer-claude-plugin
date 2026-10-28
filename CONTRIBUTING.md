@@ -180,6 +180,7 @@ what moved.
 │   ├── README.md                          what a run costs per stage, and how to work that out from its records
 │   ├── harness/                           the run directory, the staged copy, the builder and the matchers
 │   ├── fixtures/typescript-library/       the repository a run is driven against, its brief and its epic
+│   ├── fixtures/typescript-library-forge-issues/   the same repository, its tracker on the forge's issues
 │   ├── tests/                             three tests; CI never runs them, two spend real money
 │   └── bench/                             one writer's stage, driven alone — an instrument, not a test
 ├── hacks/claude.dockerfile              the pinned image
@@ -661,10 +662,13 @@ complete run, only what a human could read afterwards. Three tests, and CI runs 
   the plugin invokes by name. No repository on the forge and no model asked for more than one trivial turn — cheap
   enough to run after any change to a manifest, either hook or the launcher.
 - **The refine happy path.** `/deliverer:refine` against a **throwaway repo** created for the run, carrying no epic,
-  with a **responder** answering the grilling in your place out of the **fixture**'s own **brief**. It asserts a
-  published **spec** and one file per **ticket**, and three facts off the forge: the default branch did not move,
-  exactly one new branch carries the spec and tickets at the paths the fixture's conventions name, and exactly one
-  **change request** is open from it as a **draft**. Then a **verifier** judges whether what came out is any good.
+  with a **responder** answering the grilling in your place out of the **fixture**'s own **brief**. It runs once per
+  fixture: `typescript-library` keeps its tracker as files in the repository, `typescript-library-forge-issues` on
+  the forge's issues. It asserts a published **spec** and its **ticket**s — one file each, or one issue each — and
+  three facts off the forge: the default branch did not move, exactly one new branch carries what the refinement wrote
+  into the repository (the spec and tickets at the paths the fixture's conventions name, or, on the forge's issues, a
+  branch named from the slug carrying the glossary term the brief insists on), and exactly one **change request** is
+  open from it as a **draft**. Then a **verifier** judges whether what came out is any good.
 - **The build happy path.** `/deliverer:build` against a **throwaway repo** created for the run: all ten stages, two
   real **rounds** through the tools server and both **fix waves**. It asserts a commit naming every ticket, a
   **verdict** on every **assumption**, a fix wave's answer to every `improve` among them, and the **change request**

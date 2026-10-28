@@ -18,7 +18,8 @@
  *    that names no label vocabulary is owed no label, which is what the two writers already say
  *    about a project that names none. A tracker is one of two kinds: files in the repository,
  *    declared by those paths and the default, or the forge's issues, declared as
- *    `"kind": "forge-issues"` with no paths at all.
+ *    `"kind": "forge-issues"` with no paths at all. A fixture whose brief has the human insist on a
+ *    term entering the glossary names that term as `glossaryTerm`.
  *  - `epic/` — the **epic** a delivery is handed: a spec and its **tickets**, laid out the way the
  *    tracker conventions above lay one out. On an in-repository tracker it is copied into the
  *    repository at `<tracker.root>/<epicSlug>/` when the **throwaway repo** is built, so it is on
@@ -105,6 +106,14 @@ export interface Fixture {
   readonly epic: FixtureEpic | null;
   /** what its conventions call work that is ready for an agent, or null where they name nothing */
   readonly readyForAgentLabel: string | null;
+  /**
+   * The term the brief has the human insist on entering the glossary, or null where it insists on
+   * none (refine-commits-its-vocabulary ticket 04). A refinement into the forge's issues commits
+   * only the glossary and ADR paths its grilling landed, so a brief that left that to the model
+   * would leave a run free to land nothing and assert the empty path instead. Named here so the
+   * matcher looking for it on the **epic branch** names a term rather than searching for one.
+   */
+  readonly glossaryTerm: string | null;
   /** the idea a refinement is handed — one line, because it is a command's argument */
   readonly idea: string;
   /** the brief the responder answers from, verbatim */
@@ -116,6 +125,7 @@ interface FixtureManifest {
   readonly tracker?: Record<string, unknown>;
   readonly readyForAgentLabel?: unknown;
   readonly epicSlug?: unknown;
+  readonly glossaryTerm?: unknown;
 }
 
 export async function loadFixture(name: string): Promise<Fixture> {
@@ -147,6 +157,7 @@ export async function loadFixture(name: string): Promise<Fixture> {
   }
 
   const label = manifest.readyForAgentLabel;
+  const term = manifest.glossaryTerm;
   return {
     name,
     root,
@@ -154,6 +165,7 @@ export async function loadFixture(name: string): Promise<Fixture> {
     tracker,
     epic: await loadEpic(root, name, manifest.epicSlug, tracker),
     readyForAgentLabel: typeof label === "string" && label !== "" ? label : null,
+    glossaryTerm: typeof term === "string" && term !== "" ? term : null,
     idea,
     brief: await read(root, "brief.md", name),
   };

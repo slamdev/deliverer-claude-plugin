@@ -15,11 +15,12 @@ import type { BuildOutcome } from "./build-run.ts";
 import { minutes } from "./ceilings.ts";
 import type { ChangeRequest, DeliveredCommit } from "./change-request.ts";
 import { describeDebrief, dispatchRecordsOfRun } from "./debrief.ts";
+import type { PublishedEpic } from "./epic.ts";
 import { inRepositoryTracker } from "./fixture.ts";
 import { DEFAULT_BRANCH } from "./forge.ts";
 import type { PluginOptions } from "./install.ts";
 import { describeLastAnswer, describePolledRound } from "./polls.ts";
-import type { RefineOutcome } from "./refine-run.ts";
+import type { NewBranch, RefineOutcome } from "./refine-run.ts";
 import type { ObservedRun } from "./run.ts";
 import type { SessionSurface } from "./session.ts";
 import type { Verdict } from "./verifier.ts";
@@ -394,7 +395,17 @@ export function assertAgentDispatched(outcome: ObservedRun, agentType: string, w
  */
 export function assertDebriefWritten(outcome: RefineOutcome | BuildOutcome): void {
   const { debriefs, records } = outcome;
-  const slug = outcome.epic.slug;
+  // A refinement carries the slug as the run named it, which on a forge-issue tracker is not the
+  // spec issue's number `epic.slug` holds (`./refine-run.ts`).
+  const slug = "slug" in outcome ? outcome.slug : outcome.epic.slug;
+  if (slug === null) {
+    assert.fail(
+      `the run's own slug could not be read, so there is no name to look its debrief up by. On ` +
+        `a forge-issue tracker it is read off the one brief the run wrote, filed as ` +
+        `<slug>-brief.md; this run collected ` +
+        `${"briefs" in outcome ? outcome.briefs.collected.join(", ") || "none" : "none"}.`,
+    );
+  }
   const skill = `${debriefs.pluginName}:${outcome.skill}`;
   const mine = debriefs.found.filter((found) => found.filedUnder === slug);
   // An observation is keyed by the run's own first timestamp, and one whose timestamp could not be
@@ -542,8 +553,12 @@ export function assertEpicPublished(outcome: RefineOutcome): void {
 export function assertSpecPublished(outcome: RefineOutcome): void {
   const epic = outcome.epic;
   if (epic.specPath === null) {
+    const where =
+      outcome.fixture.tracker.kind === "in-repository"
+        ? `at ${epic.directory}/${outcome.fixture.tracker.specFile}`
+        : `as an issue at ${epic.directory}`;
     assert.fail(
-      `the run published no spec at ${epic.directory}/spec.md, which is where this fixture's ` +
+      `the run published no spec ${where}, which is where this fixture's ` +
         `conventions put one. What it left there instead: ` +
         `${[...epic.otherFiles, ...epic.tickets.map((ticket) => ticket.path)].join(", ")
           || "nothing"}`,
@@ -555,22 +570,48 @@ export function assertSpecPublished(outcome: RefineOutcome): void {
 }
 
 /**
- * One file per ticket, numbered from `01`, each declaring what blocks it.
+ * One file per ticket, numbered from `01`, each declaring what blocks it — or, where the tracker is
+ * the forge's issues, one issue per ticket, each declaring what blocks it.
  *
  * The numbers are the contract and not the presentation: delivery records a ticket on its commits
  * by number, so a set that skips one or starts at `1` is a set whose edges name something that is
- * not there.
+ * not there. An issue's number is the forge's to assign rather than the writer's, so the
+ * numbering is held of files alone (refine-commits-its-vocabulary ticket 04); the blocking edges
+ * and the triage label are held of both.
  */
 export function assertTicketsPublished(outcome: RefineOutcome): void {
   const epic = outcome.epic;
+  const { tracker } = outcome.fixture;
   if (epic.tickets.length === 0) {
+    const where =
+      tracker.kind === "in-repository"
+        ? `under ${epic.directory}/${tracker.ticketsDirectory}/`
+        : `as issues at ${epic.directory}`;
     assert.fail(
-      `the run published no tickets under ${epic.directory}/issues/. A spec with no tickets is ` +
+      `the run published no tickets ${where}. A spec with no tickets is ` +
         `half an epic: stage 4 is what cuts it into slices.` +
         `${epic.otherFiles.length === 0 ? "" : ` It left ${epic.otherFiles.join(", ")} instead.`}`,
     );
   }
 
+  if (tracker.kind === "in-repository") assertTicketFilesNumbered(epic);
+
+  const silent = epic.tickets.filter((ticket) => !ticket.declaresBlockingEdges);
+  if (silent.length > 0) {
+    assert.fail(
+      `${silent.length} of ${epic.tickets.length} tickets declare no blocking edges: ` +
+        `${silent.map((ticket) => ticket.file).join(", ")}. Every ticket says what blocks it, or ` +
+        `that nothing does — that is what puts them in dependency order.`,
+    );
+  }
+
+  for (const ticket of epic.tickets) {
+    assertTriageLabel(outcome, ticket.path, ticket.triageLabel, `ticket ${ticket.file}`);
+  }
+}
+
+/** Ticket files numbered from `01` in two digits, with nothing skipped and nothing repeated. */
+function assertTicketFilesNumbered(epic: PublishedEpic): void {
   const unnumbered = epic.tickets.filter((ticket) => ticket.number === null);
   if (unnumbered.length > 0) {
     assert.fail(
@@ -596,19 +637,6 @@ export function assertTicketsPublished(outcome: RefineOutcome): void {
       `${unpadded.map((ticket) => ticket.file).join(", ")} do not carry a two-digit number, so ` +
         `they sort out of order the moment there are ten of them.`,
     );
-  }
-
-  const silent = epic.tickets.filter((ticket) => !ticket.declaresBlockingEdges);
-  if (silent.length > 0) {
-    assert.fail(
-      `${silent.length} of ${epic.tickets.length} tickets declare no blocking edges: ` +
-        `${silent.map((ticket) => ticket.file).join(", ")}. Every ticket says what blocks it, or ` +
-        `that nothing does — that is what puts them in dependency order.`,
-    );
-  }
-
-  for (const ticket of epic.tickets) {
-    assertTriageLabel(outcome, ticket.path, ticket.triageLabel, `ticket ${ticket.file}`);
   }
 }
 
@@ -647,31 +675,75 @@ export function assertDefaultBranchUnmoved(outcome: RefineOutcome): void {
 }
 
 /**
- * Exactly one branch is new on the forge, it carries the epic's spec and every ticket at the paths
- * this fixture's conventions name, and its commits are refine's own and nothing else.
+ * Exactly one branch is new on the forge, it carries what this refinement wrote into the
+ * repository, and its commits are refine's own and nothing else.
+ *
+ * What it wrote is the tracker kind's to say. Where the tracker is files in the repository, it is
+ * the epic's spec and every ticket at the paths this fixture's conventions name. Where it is the
+ * forge's issues, the spec and tickets are not in the repository at all, and what the branch
+ * carries is the vocabulary the grilling landed (refine-commits-its-vocabulary ticket 04): it is
+ * named from the epic's slug, and its commits carry the glossary term the fixture's brief has the
+ * human insist on.
+ *
+ * Refine's own, held three ways whatever the kind: no commit carries a `Ticket:` line, because this
+ * is no ticket's work; every path the commits change is markdown, because everything a refinement
+ * writes is and a sweep of the whole tree would carry something that is not; and the clone holds no
+ * markdown left uncommitted, because a glossary entry or an ADR stage 1 landed and stage 5 never
+ * committed is one the branch does not carry either.
+ */
+export function assertEpicBranchCarriesEpic(outcome: RefineOutcome): void {
+  const branches = outcome.newBranches;
+  const branch = branches[0];
+  const { tracker } = outcome.fixture;
+  if (branches.length !== 1 || branch === undefined) {
+    assert.fail(
+      `the forge carries ${branches.length} branches beside ${DEFAULT_BRANCH} on ` +
+        `${outcome.repo.fullName} where exactly one was expected: ` +
+        `${branches.map((found) => found.name).join(", ") || "none at all"}. A refinement ` +
+        `${tracker.kind === "in-repository"
+          ? "into an in-repository tracker"
+          : "into the forge's issues whose grilling landed a glossary entry"} pushes the epic ` +
+        `branch, and only that.`,
+    );
+  }
+  if (tracker.kind === "in-repository") assertBranchCarriesEpicFiles(outcome, branch);
+  else assertBranchCarriesVocabulary(outcome, branch);
+
+  const ticketed = branch.commits.filter((commit) => /^Ticket:/m.test(commit.message));
+  if (ticketed.length > 0) {
+    assert.fail(
+      `${branch.name} carries ${ticketed.length} commits with a Ticket: line ` +
+        `(${ticketed.map((commit) => commit.sha.slice(0, 7)).join(", ")}). A refinement's commit ` +
+        `is no ticket's work, and build reads a Ticket: line as a ticket begun.`,
+    );
+  }
+  const changed = branch.commits.flatMap((commit) => commit.files);
+  const swept = [...new Set(changed.filter((path) => !path.endsWith(".md")))];
+  if (swept.length > 0) {
+    assert.fail(
+      `${branch.name}'s commits change ${swept.join(", ")}, which no refinement writes. A ` +
+        `refinement commits the paths it wrote and nothing else the tree held.`,
+    );
+  }
+  if (outcome.uncommittedMarkdown.length > 0) {
+    assert.fail(
+      `the clone still holds ${outcome.uncommittedMarkdown.join(", ")} uncommitted once the run ` +
+        `is over. The fixture starts clean, so these are the run's own — a glossary entry or an ` +
+        `ADR stage 1 landed is committed onto the epic branch, and ${branch.name} does not ` +
+        `carry these.`,
+    );
+  }
+}
+
+/**
+ * The spec and every ticket, at the paths an in-repository tracker's conventions name.
  *
  * The spec's path is built from the fixture's own declaration rather than read off the working
  * tree, so a spec published under some other name is a failure here and not a match against
  * itself. The tickets are the ones the working tree holds, since how many there are is the
  * writer's to decide: one the run wrote and never committed is one the branch does not carry.
- *
- * Refine's own, held three ways: no commit carries a `Ticket:` line, because this is no ticket's
- * work; every path the commits change is markdown, because everything a refinement writes is and a
- * sweep of the whole tree would carry something that is not; and the clone holds no markdown left
- * uncommitted, because a glossary entry or an ADR stage 1 landed and stage 5 never committed is
- * one the branch does not carry either.
  */
-export function assertEpicBranchCarriesEpic(outcome: RefineOutcome): void {
-  const branches = outcome.newBranches;
-  const branch = branches[0];
-  if (branches.length !== 1 || branch === undefined) {
-    assert.fail(
-      `the forge carries ${branches.length} branches beside ${DEFAULT_BRANCH} on ` +
-        `${outcome.repo.fullName} where exactly one was expected: ` +
-        `${branches.map((found) => found.name).join(", ") || "none at all"}. A refinement into ` +
-        `an in-repository tracker pushes the epic branch, and only that.`,
-    );
-  }
+function assertBranchCarriesEpicFiles(outcome: RefineOutcome, branch: NewBranch): void {
   const tracker = inRepositoryTracker(outcome.fixture, "assertEpicBranchCarriesEpic");
   const directory = `${tracker.root}/${outcome.epic.slug}`;
   const carried = new Set(branch.files);
@@ -698,28 +770,53 @@ export function assertEpicBranchCarriesEpic(outcome: RefineOutcome): void {
         `are not on ${branch.name}: ${uncommitted.join(", ")}. ${carriedThere}`,
     );
   }
-  const ticketed = branch.commits.filter((commit) => /^Ticket:/m.test(commit.message));
-  if (ticketed.length > 0) {
+}
+
+/**
+ * The forge-issue counterpart: a branch named from the epic's slug whose commits carry the
+ * glossary term the fixture's brief insists on.
+ *
+ * Named FROM the slug, in the style of the branches already there, so the name is held to carry
+ * the slug rather than to equal it — a throwaway repo carries only its default branch, so "the
+ * style already there" is the model's to read. The term is looked for in the lines the commits
+ * added, case aside, and not in a particular file: where the glossary sits is the fixture's
+ * `CLAUDE.md`'s to say and the grilling's to follow, while the term reaching the branch at all is
+ * what tells a refinement that committed its vocabulary from one that left it in the tree.
+ */
+function assertBranchCarriesVocabulary(outcome: RefineOutcome, branch: NewBranch): void {
+  const { slug, fixture } = outcome;
+  if (slug === null) {
     assert.fail(
-      `${branch.name} carries ${ticketed.length} commits with a Ticket: line ` +
-        `(${ticketed.map((commit) => commit.sha.slice(0, 7)).join(", ")}). A refinement's commit ` +
-        `is no ticket's work, and build reads a Ticket: line as a ticket begun.`,
+      `the run's own slug could not be read off the brief it wrote ` +
+        `(${outcome.briefs.collected.join(", ") || "it collected none"}), so ${branch.name} ` +
+        `cannot be held to a name made from it.`,
     );
   }
-  const changed = branch.commits.flatMap((commit) => commit.files);
-  const swept = [...new Set(changed.filter((path) => !path.endsWith(".md")))];
-  if (swept.length > 0) {
+  if (!branch.name.includes(slug)) {
     assert.fail(
-      `${branch.name}'s commits change ${swept.join(", ")}, which no refinement writes. A ` +
-        `refinement commits the paths it wrote and nothing else the tree held.`,
+      `${branch.name} is the one new branch, but it is not named from the epic's slug, ${slug}. ` +
+        `A refinement into the forge's issues commits onto the branch named from the slug, ` +
+        `which is the one build looks for.`,
     );
   }
-  if (outcome.uncommittedMarkdown.length > 0) {
+  const term = fixture.glossaryTerm;
+  if (term === null) {
     assert.fail(
-      `the clone still holds ${outcome.uncommittedMarkdown.join(", ")} uncommitted once the run ` +
-        `is over. The fixture starts clean, so these are the run's own — a glossary entry or an ` +
-        `ADR stage 1 landed is committed with the spec and tickets, and ${branch.name} does not ` +
-        `carry these.`,
+      `the fixture ${fixture.name} keeps its tracker on the forge's issues and names no ` +
+        `"glossaryTerm" in fixture.json, so nothing says what ${branch.name} should carry. Its ` +
+        `brief is meant to insist on one term entering the glossary, and the manifest names it.`,
+    );
+  }
+  const lowered = term.toLowerCase();
+  const carrying = branch.commits.filter((commit) =>
+    commit.added.some((line) => line.toLowerCase().includes(lowered)),
+  );
+  if (carrying.length === 0) {
+    const changed = [...new Set(branch.commits.flatMap((commit) => commit.files))];
+    assert.fail(
+      `no commit on ${branch.name} adds the glossary term "${term}" the brief insisted on. Its ` +
+        `${branch.commits.length} commits change ` +
+        `${changed.join(", ") || "nothing"}.`,
     );
   }
 }
@@ -761,21 +858,44 @@ export function assertDraftOpenedFromEpicBranch(outcome: RefineOutcome): void {
     );
   }
   const specPath = outcome.epic.specPath;
-  if (specPath !== null && !only.body.includes(specPath)) {
+  // An issue's location is its URL, or the `#<number>` the forge links within its own repository.
+  const locations = specPath === null ? [] : [specPath, ...issueReference(outcome, specPath)];
+  if (specPath !== null && !locations.some((location) => only.body.includes(location))) {
     assert.fail(
-      `${only.url}'s description never names the spec's location, ${specPath}: ` +
+      `${only.url}'s description never names the spec's location, ${locations.join(" or ")}: ` +
         `${description(only.body)}`,
     );
   }
   const count = outcome.epic.tickets.length;
-  // The location is taken out first, so a digit in a slug is never read as the count.
-  const beside = specPath === null ? only.body : only.body.replaceAll(specPath, "");
+  // The location is taken out first, so a digit in a slug or an issue number is never read as the
+  // count.
+  const beside = locations.reduce((body, location) => body.replaceAll(location, ""), only.body);
   if (!namesCount(beside, count)) {
     assert.fail(
       `${only.url}'s description never names the ticket count, ${count}: ` +
         `${description(only.body)}`,
     );
   }
+  // Held of the forge-issue fixture, where build's resume reads it to tell refine's draft from a
+  // description it wrote itself (refine-commits-its-vocabulary ticket 04); the in-repository
+  // fixture's run is held to what it was held to before.
+  if (outcome.fixture.tracker.kind === "forge-issues" && !only.body.includes(PLACEHOLDER_LINE)) {
+    assert.fail(
+      `${only.url}'s description does not carry refine's placeholder line, ` +
+        `"${PLACEHOLDER_LINE}", word for word: ${description(only.body)} A delivery resuming on ` +
+        `the draft reads that line to know the description is still refine's.`,
+    );
+  }
+}
+
+/** The line refine's draft description carries word for word, whatever the tracker. */
+const PLACEHOLDER_LINE = "This description is a placeholder: the delivery rewrites it.";
+
+/** `#<number>` for a spec that is an issue on the throwaway repo itself, or nothing. */
+function issueReference(outcome: RefineOutcome, specPath: string): string[] {
+  if (outcome.fixture.tracker.kind !== "forge-issues") return [];
+  const number = /\/issues\/(\d+)$/.exec(specPath)?.[1];
+  return number === undefined ? [] : [`#${number}`];
 }
 
 const COUNT_WORDS = [

@@ -1,0 +1,8 @@
+{
+  "description": "The same TypeScript library as typescript-library, except that its CLAUDE.md names the repository's GitHub issues as the tracker convention, and names GLOSSARY.md at the root for the project's vocabulary. The tracker kind below is that same declaration in the form a matcher can read; it takes no paths, because a forge-issue epic has none. glossaryTerm is the term the brief has the human insist on entering the glossary, so a refinement reliably has a glossary entry for stage 5 to commit and a matcher can name the term it looks for on the epic branch.",
+  "tracker": {
+    "kind": "forge-issues"
+  },
+  "readyForAgentLabel": "ready-for-agent",
+  "glossaryTerm": "hard break"
+}

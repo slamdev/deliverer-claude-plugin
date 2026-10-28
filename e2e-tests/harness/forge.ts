@@ -204,6 +204,11 @@ export interface BranchCommit {
   readonly message: string;
   /** every path it changed, relative to the repository's root */
   readonly files: readonly string[];
+  /**
+   * Every line it added, across every path it changed — so a matcher can say a commit carries a
+   * term without fetching the file it landed in (refine-commits-its-vocabulary ticket 04).
+   */
+  readonly added: readonly string[];
 }
 
 /** What one branch on the forge carries: every file, and every commit beyond the fixture's. */
@@ -245,10 +250,18 @@ export async function readBranch(
       ["diff-tree", "--no-commit-id", "--name-only", "-r", "-m", "-z", sha],
       `listing what ${sha} changed`,
     );
+    const patch = await inFixture(
+      ["show", "--format=", "--unified=0", "--no-color", "--no-ext-diff", sha],
+      `reading what ${sha} added`,
+    );
     commits.push({
       sha,
       message: message.stdout,
       files: [...new Set(changed.stdout.split("\0").filter((path) => path !== ""))],
+      added: patch.stdout
+        .split("\n")
+        .filter((line) => line.startsWith("+") && !line.startsWith("+++"))
+        .map((line) => line.slice(1)),
     });
   }
   return { files, commits };

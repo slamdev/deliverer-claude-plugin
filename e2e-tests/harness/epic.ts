@@ -19,7 +19,7 @@
  * the same three questions — which epics are there, what does one hold, where is the one a
  * delivery is handed — and gets the same answer shape whichever kind it is.
  */
-import { copyFile, mkdir, readFile, readdir } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, join, posix, relative, sep } from "node:path";
 import type { Fixture, FixtureEpic, InRepositoryTracker } from "./fixture.ts";
 import { listIssues, type ForgeIssue } from "./forge.ts";
@@ -62,6 +62,8 @@ export interface PublishedTicket {
   readonly number: number | null;
   readonly declaresBlockingEdges: boolean;
   readonly triageLabel: string | null;
+  /** what it says: the file's text, or the issue's body */
+  readonly text: string;
 }
 
 export interface PublishedEpic {
@@ -142,6 +144,47 @@ export async function seedEpicOnForge(
   );
 }
 
+/**
+ * The epic where something that reads files can open it — the **verifier**, whose tools are
+ * `Read`, `Glob` and `Grep` and nothing that reaches the forge (refine-commits-its-vocabulary
+ * ticket 04).
+ *
+ * An in-repository epic already is: its paths are the clone's. A forge-issue epic is written out
+ * into the run directory, one file per issue carrying its title, its URL and its body, and handed
+ * back with those files' absolute paths where the URLs were — so the verifier reads the issues
+ * first-hand, as the forge had them when the run returned, and a failing run keeps them beside
+ * everything else it left. Nothing is written into the clone, which stays as the run left it.
+ */
+export async function epicForReading(
+  runDirectory: RunDirectory,
+  fixture: Fixture,
+  epic: PublishedEpic,
+): Promise<PublishedEpic> {
+  if (fixture.tracker.kind === "in-repository") return epic;
+  const directory = join(runDirectory.root, "epic-issues");
+  await mkdir(directory, { recursive: true });
+  const written = async (name: string, title: string, url: string, body: string) => {
+    const path = join(directory, `${name}.md`);
+    await writeFile(path, `# ${title}\n\n${url}\n\n${body}\n`);
+    return path;
+  };
+  const specPath =
+    epic.specPath === null
+      ? null
+      : await written(`spec-${epic.slug}`, "the spec", epic.specPath, epic.specText);
+  const tickets: PublishedTicket[] = [];
+  for (const ticket of epic.tickets) {
+    const path = await written(
+      `ticket-${ticket.number ?? tickets.length + 1}`,
+      ticket.file,
+      ticket.path,
+      ticket.text,
+    );
+    tickets.push({ ...ticket, path });
+  }
+  return { ...epic, directory, specPath, tickets };
+}
+
 // --- in the repository -------------------------------------------------------------------------
 
 async function listEpicDirectories(
@@ -192,6 +235,7 @@ async function readEpicDirectory(
       number: number === undefined ? null : Number(number),
       declaresBlockingEdges: BLOCKING_EDGES.test(text),
       triageLabel: TRIAGE_LABEL.exec(text)?.[1] ?? null,
+      text,
     });
   }
 
@@ -283,6 +327,7 @@ function readIssueEpic(
       number: issue.number,
       declaresBlockingEdges: issue.blockedBy.length > 0 || BLOCKING_EDGES.test(issue.body),
       triageLabel: issueTriageLabel(issue, fixture),
+      text: issue.body,
     });
   }
   return {
