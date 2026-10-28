@@ -47,6 +47,12 @@ ticket recorded already carries its comment, so step 6 posts none.
    2. its body written to a file, in the shape **Comment format** gives;
    3. that one comment posted, through a mechanism the forge can mark **resolved** — **Comment channels** below.
 
+   A forge may refuse a burst of posts, so a post refused for rate part-way through is expected, and the entry is still
+   the one in front of you. Read back whether its comment landed, because a refused post can still have been placed:
+   where it did, that entry is done. Where it did not, wait, then post the same entry again, and make each wait longer
+   than the last for as long as the refusals go on. The check is what keeps the retry from giving one assumption two
+   comments.
+
    The next entry's anchor is found only once that comment is posted: a posted comment outlives a dispatch that dies
    part-way, and one still in a file does not. You are done when every assumption a `Ticket:` commit recorded carries
    exactly one assumption comment.
