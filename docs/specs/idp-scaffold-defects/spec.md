@@ -84,6 +84,10 @@ while afterwards, and un-finalised if the run turns out to be alive.
 
 ### 4. A debrief finalised after `Stop` is shown without waiting for a prompt
 
+**Dropped.** Verified by hand: the host runs a `Notification` hook but discards its `systemMessage` — nothing reaches
+the human on `permission_prompt` or `idle_prompt`, then or later — and its hooks reference says the same. Nothing
+ships, and the next-prompt route stands alone.
+
 The hook is registered for `Notification` — the event the host raises when a session sits waiting for input — and prints
 this session's pending debrief announcement there, as `Stop` does today. The next-prompt route stays as the fallback.
 
