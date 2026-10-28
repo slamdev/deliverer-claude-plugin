@@ -88,6 +88,32 @@ export const IDLE_DEADLINE_SEC = 30 * 60;
 export const DEADLINE_SEC = 4 * 60 * 60;
 
 /**
+ * The HELD POLL — how long one `code_review_status` call waits on a review that is not terminal
+ * before answering with what is known (idp-scaffold-defects, "The held poll"). A third bound, but of
+ * a call rather than of a review: it ends nothing, and a review that becomes terminal while a poll
+ * is held answers that poll at once.
+ *
+ * It exists because nothing else made the answer's timing matter. The second round of one observed
+ * delivery was refused a bare delay by its host, fell back to polling flat out, and spent 432
+ * requests and 32.1M cache-read tokens — 29% of the whole run's cache-read — on a dispatch whose
+ * only output is a status and a block of prose. Holding here paces every caller, whatever its host
+ * lets it do, and the input schema is unchanged so no caller can opt out. A rising event count does
+ * NOT end the hold: it rises with every tool call the inner reviewer makes, about every three seconds
+ * on the measured round, so answering on it would restore the cost this removes.
+ *
+ * FIFTY SECONDS, chosen against the host's timeout on an MCP tool call, which was established by
+ * hand on Claude Code 2.1.311 (the figures and their sources are in the ticket's Comments). That
+ * host puts three limits on a call to a stdio server like this one: an overall tool timeout of 1e8
+ * ms (about 28 hours) by default, `MCP_TOOL_TIMEOUT`; an idle abort after 30 minutes with no response
+ * or progress, `CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT`; and no per-request timer at all. The tightest
+ * figure anywhere near it is the 60 s per-request limit the same host puts on a NETWORK server, and
+ * fifty seconds sits inside even that — so the hold stays a wait and never becomes a failed call,
+ * should this server ever be reached some other way. A healthy round runs ~122 s, so it is about
+ * three polls; a four-hour cap is under three hundred.
+ */
+export const POLL_HOLD_SEC = 50;
+
+/**
  * The backend a server runs with when nothing selects one: the real delegated review. Naming it the
  * default rather than the double is the whole point — a server that silently replayed a script would
  * report a clean round nobody ran.

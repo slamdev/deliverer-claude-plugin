@@ -43,8 +43,9 @@ report that and stop rather than picking one.
       be read or that assigns nothing, an effort the server will not take, a `change_request_url` or a `cwd` it rejects.
       The next call answers the same way, so this is a round that never started: go to step 5 with the refusal.
 4. **Poll to a terminal status.** Nothing about the review arrives unsolicited, so call
-   `mcp__plugin_deliverer_tools__code_review_status` with your `review_id`, and repeat. Let the review end by itself:
-   the server's own bounds end one that hangs. Two answers end this step, and each is **your round** — start nothing in
+   `mcp__plugin_deliverer_tools__code_review_status` with your `review_id`. Each poll holds until the round ends or a
+   bound passes; on an answer that is not terminal, call again. Let the review end by itself: the server's own bounds
+   end one that hangs. Two answers end this step, and each is **your round** — start nothing in
    its place, because another round is another dispatch's:
     - `status` reads `completed`, `failed` or `cancelled`;
     - the call errors on an **unknown id** — the record lived its time and was evicted, so the round ran and its
