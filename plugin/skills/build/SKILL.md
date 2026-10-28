@@ -78,9 +78,11 @@ branch, and from that implementer's report otherwise, since it creates the branc
 that, every agent meets the repo first-hand, because that is what its own judgement must rest on — with two deliberate
 exceptions, each carrying what exists nowhere the agent could read:
 
-- **Each `implementer` after the first** carries what the reports before it named about the **gates** that bit and what
-  satisfied them, accumulating as the stage runs. That warms a cold start on work not yet done, so it goes to
-  implementers and nowhere else.
+- **Each `implementer` after the first, and each `comments-addresser`,** carries the **gates** account: what the
+  implementers' reports named about the gates that bit and what satisfied them — where the toolchain each gate needed
+  lives and how it was obtained included — accumulating as stage 1 runs. That warms a cold start on work not yet done,
+  which a fix wave is as much as a ticket, so it goes to them and nowhere else. It stays an account of what bit and what
+  satisfied it: the repo's conventions are read first-hand, as everything else is.
 - **Each `comments-addresser`** carries the preceding **round**'s prose, verbatim — the whole summary that round's
   report handed you, pasted in rather than pointed at. A finding the reviewer never posted exists nowhere but that prose
   (**Rounds**), the fix wave is the only agent that can act on it, and the prose reached you in a report rather than on
@@ -113,8 +115,8 @@ addressable, or once continuing it fails. A continued `code-reviewer` opens no *
    2. its report waited for, and the next ticket begun only once that report names its commits — or the commit that
       covered the ticket already;
    3. kept from the report: the epic branch's name where this dispatch created it, the **gates** that bit and what
-      satisfied them for the dispatches after it, and every gate it left red and every piece of uncommitted work it
-      found for your own report;
+      satisfied them — the toolchain's location and how it was obtained among it — for the dispatches after it, and
+      every gate it left red and every piece of uncommitted work it found for your own report;
    4. the stage's task relabelled (**Progress**).
 
    You are done when every ticket the epic lists has a report naming its commits.
@@ -143,10 +145,11 @@ addressable, or once continuing it fails. A continued `code-reviewer` opens no *
 5. **First round.** Dispatch `code-reviewer`; it drives one **round** and reports its prose. You are done when its
    report is in hand, with the round's `review_id`, how it ended and all of its prose kept (**Rounds**): stage 6 is
    dispatched with the whole of that prose.
-6. **First fix wave.** Dispatch `comments-addresser`, carrying the first round's prose (**Dispatch**). It works every
-   unresolved comment and every point that prose raises — implementing the improvements, the overrides and the findings,
-   resolving what it implements or declines, and leaving the escalations for a human — and what happened to the code is
-   its report's to say, **the account nearer the code** over `assumption-reviewer`'s. Each report goes through:
+6. **First fix wave.** Dispatch `comments-addresser`, carrying the first round's prose and the gates account
+   (**Dispatch**). It works every unresolved comment and every point that prose raises — implementing the improvements,
+   the overrides and the findings, resolving what it implements or declines, and leaving the escalations for a human —
+   and what happened to the code is its report's to say, **the account nearer the code** over `assumption-reviewer`'s.
+   Each report goes through:
    1. every **directive** stage 3 named found in it — implemented, declined with **grounds**, or handed off. One the
       report leaves out altogether has no account of the code at all: put the stage back naming it, since which report
       is right turns on what the replies on that comment say, and reading them is a judgement that is never yours;
@@ -156,9 +159,9 @@ addressable, or once continuing it fails. A continued `code-reviewer` opens no *
    You are done when every directive stage 3 named has an account in the wave's report.
 7. **Second round.** Dispatch `code-reviewer` again, cold, so that a fresh round opens (**Rounds**). It reviews the fix
    wave's commits, so what the first round missed still gets caught. You are done on stage 5's bar.
-8. **Second fix wave.** Dispatch `comments-addresser` again, carrying the second round's prose and the findings the
-   first wave declined with their grounds (**Dispatch**), for what that round raised. Its report goes through stage 6's
-   loop over the directives the first wave handed off, and you are done on the same bar.
+8. **Second fix wave.** Dispatch `comments-addresser` again, carrying the second round's prose, the findings the
+   first wave declined with their grounds, and the gates account (**Dispatch**), for what that round raised. Its
+   report goes through stage 6's loop over the directives the first wave handed off, and you are done on the same bar.
 9. **Refresh the description.** Dispatch `change-request-creator` again, continued where the stage-2 agent is still
    addressable — telling it the fix waves have landed since it read the branch — and cold otherwise, so the description
    a human reads accounts for both fix waves rather than for the tickets alone. It changes the title and description and
