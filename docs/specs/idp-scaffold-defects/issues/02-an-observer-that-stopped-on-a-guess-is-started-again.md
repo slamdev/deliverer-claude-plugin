@@ -2,8 +2,8 @@
 
 **What to build:** a human whose run outlived its observer — finalised on the idle bound or the waiting ceiling, and
 exited since — is observed again the next time their session stops or they type, without doing anything. The fresh
-observer reads the run whole and un-finalises the debrief already on disk when the run's **extent** has advanced, as a
-watcher that never died would have. A session that ended through `SessionEnd` is never re-armed, and a live observer is
+observer reads the run whole and un-finalises the debrief already on disk when the run's **extent** has advanced, as an
+observer that never died would have. A session that ended through `SessionEnd` is never re-armed, and a live observer is
 never doubled. Settled under **Re-arming a stopped observer** in `../spec.md`.
 
 **Blocked by:** None — can start immediately.
@@ -35,8 +35,8 @@ scripts were `/tmp/idp-02/{lib,walk-stop,walk-end}.sh`; hook events were fired a
   `re-armed by the Stop hook: …` first), debrief stayed `finalised: yes`, nothing announced, and on exit the marker
   read the original `finalised — nothing was written anywhere for the idle bound` again.
 - Record grown to 250, two `Stop`s back to back: both stdouts empty, one observer; it un-finalised the same
-  `debrief.md` (`finalised: no`, one debrief in the directory, header 48m12s → 1h43m), re-finalised on the idle bound and
-  announced once.
+  `debrief.md` (`finalised: no`, one debrief in the directory, header 48m12s → 1h43m), re-finalised on the idle bound
+  and announced once.
 - The same three walks with `UserPromptSubmit` instead of `Stop`: identical results.
 - `SessionEnd`-finalised session, record grown, then `Stop` and a prompt: no observer started.
 - A fresh observer `kill -9`ed mid-window leaves its pid in `.lock`; the next `Stop` read it as not alive and
@@ -51,10 +51,10 @@ Decisions taken on the spec's behalf:
 - The hook overwrites the marker, so a finalise on a guess also writes `.sessions/<id>.final-reading` (the state,
   the extent's end, the dispatch count, the debrief's path). A fresh observer inherits it: it treats the debrief as
   already final and reads off disk only (no write, no judge) until the extent advances past it. If it does, it
-  un-finalises as the old watcher would have. If not, it exits after `AFTER_FINALISE_MS` with nothing changed. A
+  un-finalises as the old observer would have. If not, it exits after `AFTER_FINALISE_MS` with nothing changed. A
   `SessionEnd` signal arriving while it probes marks the session ended and exits, with no rewrite.
 - A re-armed observer that un-finalises and later finalises again runs a fresh synthesis. The old observer's
-  answer lived only in its memory, so this costs a second whole-run reading, which a watcher that never died would
+  answer lived only in its memory, so this costs a second whole-run reading, which an observer that never died would
   not have paid.
 - A marker left by an observer from before this change has no `.final-reading` beside it. Its re-armed observer
   starts from nothing, un-finalises without checking whether the extent moved, and announces again at its own
