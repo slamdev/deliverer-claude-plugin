@@ -25,7 +25,9 @@ Your prompt names the epic's **slug** and the spec; when it names no spec, repor
 **Resume.** Some tickets may be published already — by an earlier run of your own that was interrupted, or by hand. The
 published tickets are what say so: they stand in the set as the slices they are, their **numbers** are fixed — delivery
 records a ticket on its commits by number — and step 6 publishes what they leave unpublished, each at the next free
-number, rather than renumbering the set.
+number, rather than renumbering the set. A published ticket's type and links stay exactly as found, child of the spec
+or not: what someone may already be working from is never retyped or relinked, and the tickets step 6 adds are the
+spec's native children as **Numbers and the tracker** gives them.
 
 ## Steps
 
@@ -68,10 +70,12 @@ number, rather than renumbering the set.
       test's name is not its coverage**. The spec's testing decisions arrive as **claim**s, and a criterion restating
       one unread asserts it with more authority than it was made with; where you have not read the test, the criterion
       states what the slice must make true instead;
-   3. published, at the next free number.
+   3. published, at the next free number — where the spec is an issue, as the spec's native child, created and
+      attached in this one step, so the spec's children list in number order.
 
-   You are done when every slice carries exactly one published ticket, every blocking edge names a published one, and
-   every criterion asserting what an existing test covers was read out of that test's body.
+   You are done when every slice carries exactly one published ticket, every blocking edge names a published one,
+   every criterion asserting what an existing test covers was read out of that test's body, and, where the spec is an
+   issue, every ticket you published was made its native child before the next one was published.
 7. **Report**, as below.
 
 ## Tracer bullets
@@ -138,13 +142,33 @@ title, and the platform's own parent, blocking and label mechanisms replace the 
 lines where it has them — the **Spec** line only where that mechanism can point at the spec itself, since a spec
 published as a file is not something a parent issue can name.
 
-The spec and any parent issue stay exactly as you found them: what you publish is new tickets beside them.
+**Where the spec is an issue, each ticket is the spec's native child**: the child item the forge itself lists under the
+spec issue and names on the ticket as its parent. A mention, a cross-reference or a `relates to` link is a link and not
+a child — the forge lists those apart from the spec's children, and the spec's children panel stays empty. **The ticket
+takes the child type the forge's issues accept**: where an issue can hold issues as children, the ticket is an issue;
+where it holds only some other type, the ticket is published as that type, carrying the same title, body and labels it
+would carry as an issue. What the forge accepts decides the type, read from the forge, and the domain word stays
+**ticket** whatever the forge calls it. Two worked examples, and the equivalent on any other forge:
+
+- **GitHub** — the ticket is a sub-issue of the spec issue: `gh issue create --parent <spec> …`.
+- **GitLab without Epics** — an issue accepts only a Task as its child, so the ticket is a Task whose parent is the
+  spec issue. `glab work-items create` sets no parent and no label, so it is one GraphQL `workItemCreate` call
+  (`glab api graphql`) carrying the project's `namespacePath`, the `title`, the Task's `workItemTypeId`,
+  `descriptionWidget.description`, `hierarchyWidget.parentId` (the spec issue's work item global ID) and
+  `labelsWidget.labelIds`. The Task takes the project's `#` numbers like any issue.
+
+The native parent is the mechanism that names the spec, so a child ticket drops its **Spec** line; and the **Status**
+label goes on the child, whatever its type.
+
+The spec and any parent issue stay exactly as you found them: what you publish is new tickets beside them, or under
+the spec as its children.
 
 ## What to report
 
 Whoever reads this has your report and nothing else.
 
-- where the tickets are published, and how many, in their numbered order
+- where the tickets are published, and how many, in their numbered order — and, where the spec is an issue, whether
+  each one is the spec's native child, naming the child type where it is not the forge's issue type
 - which tickets can start immediately
 - every ticket that has to be built before a lower-numbered one, and both numbers — sequencing those two is the human's
 - every user story the spec lists that no ticket covers, and why — or that every one is covered
