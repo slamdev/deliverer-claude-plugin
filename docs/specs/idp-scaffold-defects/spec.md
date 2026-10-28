@@ -74,7 +74,7 @@ When a hook event arrives for a session whose observer finalised on its own read
 ceiling, never `SessionEnd` — and that observer is no longer alive, the hook starts a fresh one. Both `UserPromptSubmit`
 and `Stop` do this: `Stop` is the event an answered question produces, since an answer is a tool result rather than a
 prompt. The fresh observer reads the run whole and un-finalises the debrief on disk if the run's **extent** has
-advanced, exactly as a watcher that never died would have.
+advanced, exactly as an observer that never died would have.
 
 ### 3. A finished run that settles finalises its debrief
 
@@ -86,7 +86,7 @@ while afterwards, and un-finalised if the run turns out to be alive.
 
 **Dropped.** Verified by hand: the host runs a `Notification` hook but discards its `systemMessage` — nothing reaches
 the human on `permission_prompt` or `idle_prompt`, then or later — and its hooks reference says the same. Nothing
-ships, and the next-prompt route stands alone.
+ships, and the next-prompt route stands alone; [ticket 04][t04] has the finding. As specified before that:
 
 The hook is registered for `Notification` — the event the host raises when a session sits waiting for input — and prints
 this session's pending debrief announcement there, as `Stop` does today. The next-prompt route stays as the fallback.
@@ -140,10 +140,10 @@ its as-of date moved to match.
     passing through `finished` between two stages is not cut off.
 16. As a human, I want the debrief's own "still going" wording to stay true of a session that stays open, so that the
     document does not promise a timing it cannot keep.
-17. As a human whose debrief was finalised after the run returned, I want it shown to me while the session sits waiting,
-    so that I see it without having to type a prompt.
-18. As a human, I want a debrief announced exactly once, whichever hook event shows it, so that I am not shown the same
-    line twice.
+17. *(Dropped with Solution item 4, [ticket 04][t04].)* As a human whose debrief was finalised after the run
+    returned, I want it shown to me while the session sits waiting, so that I see it without having to type a prompt.
+18. *(Dropped with Solution item 4, [ticket 04][t04].)* As a human, I want a debrief announced exactly once,
+    whichever hook event shows it, so that I am not shown the same line twice.
 19. As a human, I want the debrief's headline to carry what the run cost in dollars, so that the question that made me
     open it is answered.
 20. As a maintainer, I want the rate table's as-of date to move with the rates, so that the debrief's account of what it
@@ -180,8 +180,8 @@ its as-of date moved to match.
 - **The observer's run facts** — the reading that decides whether a pending question is the run's own last act.
 - **The observer's loop** — the new finaliser on a finished, settled run.
 - **The observer's rate table** — two models and the as-of date.
-- **The observer's hook script and the hooks manifest** — re-arming on `UserPromptSubmit` and `Stop`, and the new
-  `Notification` registration.
+- **The observer's hook script and the hooks manifest** — re-arming on `UserPromptSubmit` and `Stop`. The new
+  `Notification` registration was dropped with Solution item 4 ([ticket 04][t04]).
 - **The tools server's status tool and its lifecycle** — the held poll.
 - **`code-reviewer`, `change-request-creator`, and the build skill's dispatch section** — prose.
 - **The glossary's Poll entry** — already sharpened to say a poll may hold a bounded while before it answers.
@@ -207,7 +207,7 @@ its as-of date moved to match.
   the choice is the implementer's, with the constraint that a crashed observer must read as not alive.
 - Re-arming reuses the existing spawn path, and the marker is rewritten before the spawn, so two hook events in a row
   cannot start two observers.
-- The fresh observer reuses the run's existing observation directory and debrief, as the original watcher would have.
+- The fresh observer reuses the run's existing observation directory and debrief, as the original observer would have.
   A debrief already announced is not announced again unless it is un-finalised and later finalised anew.
 - `Stop` stays silent where it has nothing to print, whether or not it re-armed: a refinement stops for every question.
 
@@ -225,6 +225,9 @@ its as-of date moved to match.
 - The debrief's own "still going" paragraph is brought into line with the new finaliser.
 
 ### The Notification announcement
+
+**Dropped** with Solution item 4: the check below was made, and the host does not render the message
+([ticket 04][t04]).
 
 - The hook script handles `Notification` by printing this session's pending stop announcement, exactly as `Stop` does,
   and nothing otherwise. The one-print-per-announcement rule is unchanged: printing removes both halves.
@@ -276,7 +279,8 @@ poll's answer and timing — never an internal call.
   events are fired at the hook script: a finished run that stops growing finalises after the settle bound and is
   announced; growing it again un-finalises it; an idle finalise left to exit and then followed by a `Stop` or a prompt
   starts a fresh observer that un-finalises and carries on; a `SessionEnd`-finalised session starts nothing; a live
-  observer is never doubled; and a `Notification` prints a pending announcement once and then nothing.
+  observer is never doubled. (A `Notification` printing a pending announcement once was dropped with Solution item
+  4, [ticket 04][t04].)
 - **The scripted backend over MCP stdio** (CONTRIBUTING.md § What CI does not check). A timeline longer than the held
   bound: a poll returns after about the bound with a non-terminal status. A timeline that completes mid-hold: the poll
   returns at completion. A terminal review: the poll returns at once. A cancel during a held poll: the poll returns
@@ -317,7 +321,7 @@ and the `SessionEnd` signal at 18:30 was left with no observer to read it.
 ### Two facts to establish by hand before the constants are chosen
 
 - The host's timeout on an MCP tool call, which bounds the held poll.
-- Whether a `Notification` hook's `systemMessage` reaches the human.
+- Whether a `Notification` hook's `systemMessage` reaches the human. Established: it does not ([ticket 04][t04]).
 
 ### Load-bearing behaviour this change must not disturb
 
@@ -325,3 +329,5 @@ and the `SessionEnd` signal at 18:30 was left with no observer to read it.
 - A `SessionEnd` finalise still exits at once and is never reversed.
 - `Stop` still prints nothing when there is nothing final to print.
 - A poll still carries what is known when it answers and no more, with every key absent until measured.
+
+[t04]: issues/04-a-late-debrief-is-shown-on-notification.md
