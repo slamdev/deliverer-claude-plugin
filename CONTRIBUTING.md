@@ -502,6 +502,11 @@ loop's. Walk these after any change to either, each with what it should do:
   signal up on its next tick and finalises the debrief;
 - **a terminal killed**, with no `SessionEnd` to be had — the idle bound finalises it, and the line naming the debrief
   waits for the next prompt of any session;
+- **a run that outlived its observer** — let an idle finalise exit, grow the record, then fire `Stop` or a prompt:
+  a fresh observer starts, silently, and un-finalises the same debrief and carries on. Fired with the record
+  unchanged it starts one too, which leaves the debrief final and announces nothing; two events back to back start
+  one; a session finalised by `SessionEnd` starts none. Alive is the pid in `observations/.sessions/<id>.lock`, so
+  `kill -9` one and the next event re-arms over it;
 - **a question on screen and nobody answering** — a run **waiting** is not that killed terminal, and the two are the
   same silence on disk, so the idle bound does not fire while the run's own last act is an unanswered
   `AskUserQuestion`: the debrief keeps being rewritten, nothing is announced, and answering carries the run and its
@@ -533,7 +538,7 @@ is otherwise reachable only by waiting for it, and the seven clocks of the loop 
 - `DELIVERER_OBSERVER_SETTLE_MS` (2 min) — how long everything has to be silent, once the latest reading says the
   run finished, before the debrief is finalised on that reading — a guess reversed like the idle bound's;
 - `DELIVERER_OBSERVER_AFTER_FINALISE_MS` (30 min) — how long the watcher keeps going after a finalise nothing
-  signalled, which is the whole of the window a resumed run has to get its label back in;
+  signalled, and how long a re-armed observer probes before it exits having found the run unmoved;
 - `DELIVERER_OBSERVER_PATIENCE_MS` (10 min) — how long a record gets to show a run in it at all, and how long one that
   stopped being readable gets to come back;
 - `DELIVERER_OBSERVER_INSTALL_WAIT_MS` (2 min) — how long `observe.mjs` waits for the install to put the observer on
