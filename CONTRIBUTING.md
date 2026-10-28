@@ -493,11 +493,11 @@ loop's. Walk these after any change to either, each with what it should do:
   scanned again;
 - **a run resumed by prose in a fresh session** — an observer starts on attribution instead, off the plugin's own
   stamp in the session's record;
-- **a run that finished while its session stays open** — nothing is finalised and nothing is announced: the debrief
-  goes on being rewritten, and the line waits for one of the finalisers below. What a run's records say about how it
-  ended is a reading rather than a signal — nothing about a task list forbids a run passing through "every stage
-  completed, last word prose" between two stages — so the observer has three finalisers, the session's end, the idle
-  bound and the ceiling on one **waiting** run's wait, and no fourth;
+- **a run that finished while its session stays open** — once its records have been silent for the settle bound, the
+  debrief is finalised and announced, with a marker saying the run read finished. It is a guess and not a signal — a
+  run can pass through "every stage completed, last word prose" between two stages — so growing the record again
+  un-finalises it, exactly as after an idle finalise. Walk it by cutting a delivery's record just after its closing
+  report, letting it settle, then appending the rest under the watcher;
 - **a session ended mid-run** — `SessionEnd` signals and never finalises anything itself; the observer picks the
   signal up on its next tick and finalises the debrief;
 - **a terminal killed**, with no `SessionEnd` to be had — the idle bound finalises it, and the line naming the debrief
@@ -521,10 +521,10 @@ loop's. Walk these after any change to either, each with what it should do:
 - **observation switched off** (`CLAUDE_PLUGIN_OPTION_OBSERVE_RUNS=false`) — nothing starts at all: no process, no
   trace and no debrief.
 
-**The nine `DELIVERER_OBSERVER_*` bounds are what make that walk minutes rather than half-hours** — the killed
+**The ten `DELIVERER_OBSERVER_*` bounds are what make that walk minutes rather than half-hours** — the killed
 terminal is the idle bound's thirty minutes and nothing else, and the terminal killed on a question is twelve hours.
 `observer.ts` documents each beside the constant that reads it; they are named together here because a lifecycle state
-is otherwise reachable only by waiting for it, and the six clocks of the loop are the ones a walk turns down:
+is otherwise reachable only by waiting for it, and the seven clocks of the loop are the ones a walk turns down:
 
 - `DELIVERER_OBSERVER_TICK_MS` (2 s) — how often the records' own footprint is looked at, so it is the floor under
   every state below it;
@@ -535,6 +535,8 @@ is otherwise reachable only by waiting for it, and the six clocks of the loop ar
 - `DELIVERER_OBSERVER_WAITING_MS` (12 h) — how long a **waiting** run may sit on one unanswered question before the
   idle bound above is allowed to fire after all, measured from when that question was asked rather than from the
   watcher's own start, so a record whose question is already old is already partway through it;
+- `DELIVERER_OBSERVER_SETTLE_MS` (2 min) — how long everything has to be silent, once the latest reading says the
+  run finished, before the debrief is finalised on that reading — a guess reversed like the idle bound's;
 - `DELIVERER_OBSERVER_AFTER_FINALISE_MS` (30 min) — how long the watcher keeps going after a finalise nothing
   signalled, and how long a re-armed observer probes before it exits having found the run unmoved;
 - `DELIVERER_OBSERVER_PATIENCE_MS` (10 min) — how long a record gets to show a run in it at all, and how long one that

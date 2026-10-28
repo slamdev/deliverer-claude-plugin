@@ -88,6 +88,12 @@ export class ToolError extends Error {
  *
  * 15 s is still the right number on the measurements: a healthy round runs ~122 s, so ~8 polls,
  * where 2 s would have been ~60 — and ~960 at the absolute deadline, against ~7200 at 2 s.
+ *
+ * **The server no longer depends on any caller taking it** (idp-scaffold-defects, "The held poll").
+ * A host refused one observed `code-reviewer` the delay this advice presumes, and that round then
+ * polled flat out for 432 requests. So `code_review_status` now holds for `POLL_HOLD_SEC` itself,
+ * and this figure stays on the start tool's answer only because that answer's shape is unchanged:
+ * a caller that still waits it out before polling loses at most fifteen seconds of a held poll.
  */
 export const POLL_AFTER_MS = 15_000;
 
@@ -133,7 +139,12 @@ export interface CancelResult {
 
 export interface Lifecycle {
   start(input: StartInput): StartResult;
-  status(reviewId: unknown): ReviewStatusResult;
+  /**
+   * Asynchronous because it HOLDS: a review that is not terminal is answered when it becomes
+   * terminal or when `pollHoldSec` passes, whichever is first (see `status` below). The caller's
+   * `signal`, when given, releases the hold too — a call the host gave up on waits for nothing.
+   */
+  status(reviewId: unknown, signal?: AbortSignal): Promise<ReviewStatusResult>;
   cancel(reviewId: unknown): CancelResult;
   transcript(reviewId: string): string | null;
 }
@@ -164,6 +175,12 @@ export interface LifecycleDeps {
    * by every event the backend reports, so a review still working is never aborted for being slow.
    */
   idleDeadlineSec: number;
+  /**
+   * how long one status call holds on a review that is not terminal, in seconds — `./config.ts`'s
+   * `POLL_HOLD_SEC`. Handed in for the same reason the two bounds above are, and no more
+   * configurable than they are.
+   */
+  pollHoldSec: number;
   now?: () => number;
 }
 
@@ -239,6 +256,20 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
   let inFlightRun: ReviewRun | null = null;
   let deadlineTimer: ReturnType<typeof setTimeout> | null = null;
   let idleTimer: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * The polls held on each review, woken by the review becoming terminal and by nothing else. Not an
+   * event listener: what wakes a poll is a terminal transition however it arrives — the backend's
+   * own result, a cancellation, or either bound's abort — and every one of those goes through
+   * `apply`, so `apply` is the one place that wakes them.
+   */
+  const heldPolls = new Map<string, Set<() => void>>();
+
+  const wakeHeldPolls = (reviewId: string): void => {
+    const held = heldPolls.get(reviewId);
+    if (held === undefined) return;
+    heldPolls.delete(reviewId);
+    for (const wake of held) wake();
+  };
 
   const clearInFlight = (): void => {
     inFlightId = null;
@@ -259,7 +290,9 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
     const next = reduce(record, event, now());
     if (next === record) return;
     deps.store.put(next);
-    if (isTerminal(next.status) && inFlightId === reviewId) clearInFlight();
+    if (!isTerminal(next.status)) return;
+    if (inFlightId === reviewId) clearInFlight();
+    wakeHeldPolls(reviewId);
   };
 
   /**
@@ -471,7 +504,16 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
       return handleFor(reviewId, deps.store.get(reviewId)?.status ?? record.status);
     },
 
-    status(reviewId) {
+    /**
+     * The held poll (idp-scaffold-defects, "The held poll"). An unknown id errors AT ONCE and a
+     * terminal review answers at once — a continued `code-reviewer` resuming a finished round pays
+     * nothing. A review that is not terminal is answered when it becomes terminal, or when the hold
+     * passes with what is known then; a rising `events` count deliberately does not end it.
+     *
+     * Validation and the unknown-id refusal stay synchronous inside the async body, so they reach
+     * the tool layer as a rejected `ToolError` exactly as they used to reach it as a thrown one.
+     */
+    async status(reviewId, signal) {
       const id = validateReviewId(reviewId, "review_id");
       deps.store.evict(now());
       const record = deps.store.get(id);
@@ -481,7 +523,31 @@ export function createLifecycle(deps: LifecycleDeps): Lifecycle {
             `started, or it finished long enough ago to have been evicted.`,
         );
       }
-      return project(record);
+      if (!isTerminal(record.status) && signal?.aborted !== true) {
+        await new Promise<void>((resolve) => {
+          let held = heldPolls.get(id);
+          if (held === undefined) {
+            held = new Set();
+            heldPolls.set(id, held);
+          }
+          const wake = (): void => {
+            clearTimeout(timer);
+            signal?.removeEventListener("abort", wake);
+            const stillHeld = heldPolls.get(id);
+            stillHeld?.delete(wake);
+            if (stillHeld?.size === 0) heldPolls.delete(id);
+            resolve();
+          };
+          const timer = setTimeout(wake, boundDelayMs(deps.pollHoldSec));
+          held.add(wake);
+          signal?.addEventListener("abort", wake, { once: true });
+        });
+      }
+      // Read again after the hold: the answer carries what is known when it answers. A record
+      // cannot be evicted while it was held — only terminal records expire, and one that became
+      // terminal during the hold has its whole TTL ahead of it — so the fallback is the record the
+      // call arrived with, never an absent one.
+      return project(deps.store.get(id) ?? record);
     },
 
     cancel(reviewId) {

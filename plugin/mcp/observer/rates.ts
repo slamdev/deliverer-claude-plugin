@@ -38,7 +38,7 @@ import type { RequestUsage } from "./records.ts";
  * **One date for the whole table and not one per row**, because what a reader needs is how old the
  * arithmetic is, and a per-row date would let the oldest row hide behind a newer one.
  */
-export const RATES_AS_OF = "2026-06-24";
+export const RATES_AS_OF = "2026-10-06";
 
 /**
  * Where they were read from, in the debrief's own words.
@@ -57,12 +57,12 @@ interface ModelRate {
   /**
    * This model's cache-read multiplier where it is not the usual one.
    *
-   * D14 settles a flat 0.1×, which is what every model in the tier the observer has ever met takes.
-   * The Fable 5.1 row is the one exception the source records — cache reads at $0.25/MTok against a
-   * $10 input rate, a quarter of what the flat rule would charge — and since cache reads are the bulk
-   * of a long agentic run's tokens, applying 0.1× there would overstate the dominant term of the sum
-   * fourfold. Its Mythos counterpart is deliberately NOT given the override: the source says whether
-   * that model shares the rate is open, and a figure this file cannot ground takes the general rule.
+   * D14 settles a flat 0.1×, which is what most rows take. The source records three exceptions, and
+   * since cache reads are the bulk of a long agentic run's tokens, the flat rule on any of them would
+   * overstate the dominant term of the sum: Fable 5.1 and Mythos 5.1 read at $0.25/MTok against a
+   * $10 input rate (0.025×, fourfold), and Opus 5.5 at $0.20/MTok against $4 (0.05×, twofold). The
+   * Mythos 5.1 row once took the general rule because the source called its rate open; as of the date
+   * above the source states that it shares Fable 5.1's (idp-scaffold-defects ticket 05).
    */
   readonly cacheReadMultiplier?: number;
 }
@@ -85,21 +85,30 @@ export const CACHE_READ_MULTIPLIER = 0.1;
  * `claude-sonnet-4-5`, `claude-opus-4-1` and the rest — carry no price there, so they are absent
  * here rather than guessed at: D15 makes an id this table does not know a named gap in the debrief,
  * which is the honest answer and is never a zero.
+ *
+ * **`claude-haiku-5-5` is priced there and left out here, knowingly** (idp-scaffold-defects ticket
+ * 05). Its rate depends on the request: $0.10/$0.50 per MTok for a prompt of 100K tokens or fewer
+ * and $0.50/$2.50 above that. A row here has one rate, and the lower one would understate every
+ * long-prompt request fivefold under a figure that reads as exact; until the table can carry a
+ * prompt-length tier, that model is a named gap rather than a wrong number.
  */
 const RATES: Readonly<Record<string, ModelRate>> = {
-  // The source's own note: Claude Fable 5.1's cache reads are $0.25/MTok — 0.025× — where every other
-  // row's are the flat 0.1×.
+  // The source's own note: Claude Fable 5.1's cache reads are $0.25/MTok — 0.025× — and Claude
+  // Mythos 5.1 shares that rate.
   "claude-fable-5-1": { inputPerMTok: 10, outputPerMTok: 50, cacheReadMultiplier: 0.025 },
-  "claude-mythos-5-1": { inputPerMTok: 10, outputPerMTok: 50 },
+  "claude-mythos-5-1": { inputPerMTok: 10, outputPerMTok: 50, cacheReadMultiplier: 0.025 },
   "claude-fable-5": { inputPerMTok: 10, outputPerMTok: 50 },
   // Priced off the same source's catalogue rather than its headline table, which omits this row:
   // Claude Mythos 5 is stated there to have the same tier, limits and per-token pricing as its Fable
   // counterpart.
   "claude-mythos-5": { inputPerMTok: 10, outputPerMTok: 50 },
+  // Claude Opus 5.5's cache reads are $0.20/MTok against its $4 input — 0.05×.
+  "claude-opus-5-5": { inputPerMTok: 4, outputPerMTok: 20, cacheReadMultiplier: 0.05 },
   "claude-opus-5": { inputPerMTok: 5, outputPerMTok: 25 },
   "claude-opus-4-8": { inputPerMTok: 5, outputPerMTok: 25 },
   "claude-opus-4-7": { inputPerMTok: 5, outputPerMTok: 25 },
   "claude-opus-4-6": { inputPerMTok: 5, outputPerMTok: 25 },
+  "claude-sonnet-5-5": { inputPerMTok: 2, outputPerMTok: 10 },
   "claude-sonnet-5": { inputPerMTok: 2, outputPerMTok: 10 },
   "claude-sonnet-4-6": { inputPerMTok: 3, outputPerMTok: 15 },
   "claude-haiku-4-5": { inputPerMTok: 1, outputPerMTok: 5 },
@@ -320,7 +329,8 @@ export function ratesClause(models: readonly string[]): string {
  * **This clause exists to be checkable, so it has to be what `priceOf` did.** D14's 0.1× is the
  * general rule and `RATES`'s Fable 5.1 row overrides it at 0.025×, so a sentence that always said
  * 0.1× misstated the dominant term of a long agentic run — where cache reads are the bulk of the
- * tokens — by four times, on the one model the table prices them differently for. Story 10 is the
+ * tokens — by four times, on the models the table prices them differently for (the Opus 5.5 row's
+ * 0.05× since idp-scaffold-defects ticket 05). Story 10 is the
  * stated basis, and a basis a reader cannot reproduce by hand is worse than no basis at all.
  *
  * **Grouped by the multiplier and not by the model**, because one figure may cover several: a run
