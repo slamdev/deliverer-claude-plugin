@@ -15,6 +15,7 @@ import type { BuildOutcome } from "./build-run.ts";
 import { minutes } from "./ceilings.ts";
 import type { ChangeRequest, DeliveredCommit } from "./change-request.ts";
 import { describeDebrief, dispatchRecordsOfRun } from "./debrief.ts";
+import { inRepositoryTracker } from "./fixture.ts";
 import { DEFAULT_BRANCH } from "./forge.ts";
 import type { PluginOptions } from "./install.ts";
 import { describeLastAnswer, describePolledRound } from "./polls.ts";
@@ -521,13 +522,15 @@ export function assertGrillingAnswered(outcome: RefineOutcome): void {
   }
 }
 
-/** Exactly one epic appeared in the working tree, where the fixture's conventions put one. */
+/** Exactly one epic appeared, where the fixture's conventions put one. */
 export function assertEpicPublished(outcome: RefineOutcome): void {
   const published = outcome.epicsPublished;
+  const { tracker } = outcome.fixture;
+  const where =
+    tracker.kind === "in-repository" ? `under ${tracker.root}/` : `on the forge's issues`;
   if (published.length !== 1) {
     assert.fail(
-      `the run published ${published.length} epics under ` +
-        `${outcome.fixture.tracker.root}/ where exactly one was expected: ` +
+      `the run published ${published.length} epics ${where} where exactly one was expected: ` +
         `${published.join(", ") || "none at all"}. Before the run there were ` +
         `${outcome.epicsBefore.join(", ") || "none"}; after it, ` +
         `${outcome.epicsAfter.join(", ") || "none"}.`,
@@ -669,7 +672,7 @@ export function assertEpicBranchCarriesEpic(outcome: RefineOutcome): void {
         `an in-repository tracker pushes the epic branch, and only that.`,
     );
   }
-  const { tracker } = outcome.fixture;
+  const tracker = inRepositoryTracker(outcome.fixture, "assertEpicBranchCarriesEpic");
   const directory = `${tracker.root}/${outcome.epic.slug}`;
   const carried = new Set(branch.files);
   const specPath = `${directory}/${tracker.specFile}`;

@@ -27,6 +27,7 @@
  * read together rather than matched up by timestamp.
  */
 import { basename } from "node:path";
+import { seedEpicInTree, seedEpicOnForge } from "./epic.ts";
 import type { Fixture, FixtureEpic } from "./fixture.ts";
 import {
   buildFixtureRepository,
@@ -72,7 +73,12 @@ export async function createThrowawayRepo(
     );
   }
   const repo = await createRepository(runDirectory, fixture, epic);
-  return { ...repo, epicLocation: epic.location };
+  const epicLocation = await seedEpicOnForge(
+    { runDirectory, fullName: repo.fullName },
+    fixture,
+    epic,
+  );
+  return { ...repo, epicLocation };
 }
 
 /**
@@ -95,7 +101,11 @@ async function createRepository(
   const fullName = `${owner}/deliverer-e2e-${basename(runDirectory.root)}`;
   const url = `https://github.com/${fullName}.git`;
 
-  await buildFixtureRepository(runDirectory, fixture, epic);
+  await buildFixtureRepository(
+    runDirectory,
+    fixture,
+    epic === null ? undefined : seedEpicInTree(fixture, epic),
+  );
   await createPrivateRepository(runDirectory, fullName);
   // Force, though nothing is there: a repository the forge initialised with a file of its own would
   // otherwise refuse the push, and this repository is a moment old and nobody's.

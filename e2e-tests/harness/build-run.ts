@@ -161,7 +161,11 @@ export function buildRun(fixtureName: string): BuildRunBuilder {
           `${repo.epicLocation} on ${DEFAULT_BRANCH} at ${repo.headAtCreation.slice(0, 12)}`,
       );
 
-      const epic = await readEpic(runDirectory.cloneDir, fixture.tracker, fixture.epic?.slug ?? "");
+      const epic = await readEpic(
+        { runDirectory, fullName: repo.fullName },
+        fixture,
+        fixture.epic?.slug ?? "",
+      );
       // Read before the run, because a contributor who has the double selected wants telling now
       // rather than after twenty minutes of delivery. What actually reached the session is read off
       // the run once it is over, which is the only place that fact exists.

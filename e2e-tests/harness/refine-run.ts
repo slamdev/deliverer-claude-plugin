@@ -133,7 +133,8 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
           `${DEFAULT_BRANCH} at ${repo.headAtCreation.slice(0, 12)}`,
       );
 
-      const epicsBefore = await listEpics(runDirectory.cloneDir, fixture.tracker);
+      const source = { runDirectory, fullName: repo.fullName };
+      const epicsBefore = await listEpics(source, fixture);
       const responder = createResponder(runDirectory, fixture);
 
       // Taken before the run and collected after it, whichever way the run ends: a brief left in
@@ -193,7 +194,7 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
           `$${spend.besideRunUsd.toFixed(2)}.`,
       );
 
-      const epicsAfter = await listEpics(runDirectory.cloneDir, fixture.tracker);
+      const epicsAfter = await listEpics(source, fixture);
       const epicsPublished = epicsAfter.filter((slug) => !epicsBefore.includes(slug));
       const newBranches = await readNewBranches(runDirectory, repo);
       const changeRequests = await listChangeRequests(runDirectory, repo.fullName);
@@ -224,8 +225,8 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
         // Read whichever epic the run published, or an empty one when it published none — the
         // matcher is what names that as the failure it is.
         epic: await readEpic(
-          runDirectory.cloneDir,
-          fixture.tracker,
+          source,
+          fixture,
           epicsPublished[0] ?? "(nothing published)",
         ),
         ceiling: t.signal,
