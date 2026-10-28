@@ -7,7 +7,7 @@ Notification announcement** in `../spec.md`.
 
 **Blocked by:** 03 — it is what makes a debrief finalised after `Stop` the ordinary case.
 
-**Status:** ready-for-agent
+**Status:** wontfix
 
 - [x] First, verified by hand: whether the host renders a `Notification` hook's `systemMessage` to the human. The answer
       and how it was reached are recorded under `## Comments` below.
