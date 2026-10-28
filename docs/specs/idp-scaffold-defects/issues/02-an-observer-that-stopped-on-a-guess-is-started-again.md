@@ -53,9 +53,27 @@ Decisions taken on the spec's behalf:
   already final and reads off disk only (no write, no judge) until the extent advances past it. If it does, it
   un-finalises as the old observer would have. If not, it exits after `AFTER_FINALISE_MS` with nothing changed. A
   `SessionEnd` signal arriving while it probes marks the session ended and exits, with no rewrite.
-- A re-armed observer that un-finalises and later finalises again runs a fresh synthesis. The old observer's
-  answer lived only in its memory, so this costs a second whole-run reading, which an observer that never died would
-  not have paid.
-- A marker left by an observer from before this change has no `.final-reading` beside it. Its re-armed observer
-  starts from nothing, un-finalises without checking whether the extent moved, and announces again at its own
-  finalise.
+- *(Superseded by the review fixes below.)* A re-armed observer that un-finalises and later finalises again runs a
+  fresh synthesis. The old observer's answer lived only in its memory, so this costs a second whole-run reading, which
+  an observer that never died would not have paid.
+- *(Superseded by the review fixes below.)* A marker left by an observer from before this change has no
+  `.final-reading` beside it. Its re-armed observer starts from nothing, un-finalises without checking whether the
+  extent moved, and announces again at its own finalise.
+
+Review fixes, 2026-10-28, verified by hand with the same harness and bounds — `lib`, `t-legacy`, `t-reuse`,
+`walk-stop` and `walk-end` under `/tmp/idp-rev/`, scratch `CLAUDE_PLUGIN_DATA=/tmp/idp-rev/data`, and no `node_modules`
+beside the published tree:
+
+- **No final reading, no re-arm.** The hook re-arms only where `.sessions/<id>.final-reading` exists beside the
+  marker. A marker from before this change leaves none, so its run is left as that observer left it rather than
+  un-finalised unconditionally and announced again. `t-legacy.sh`: idle finalise, observer exited, `.final-reading`
+  removed, record grown to 250, then `Stop` and a prompt: both stdouts empty, no observer started, debrief still
+  `finalised: yes`, nothing announced. Before the fix the same walk started an observer that un-finalised it.
+- **The held answer is carried across the restart.** The finalise also writes what its judge answered into
+  `.final-reading` (`judging`, minus `modelEnvironment`, which carries the process's whole environment and is never
+  written). The fresh observer seeds its judge with it, so its later finalise reuses that answer exactly as a judge
+  that never left memory does — no further notes, no second synthesis. `t-reuse.sh`: after the idle finalise the file
+  carried `judging` with no `modelEnvironment`; its `reason` was overwritten with a canary, the record grown, `Stop`
+  fired; the fresh observer un-finalised, re-finalised on the idle bound, and the debrief carried the canary — which
+  only the file could have supplied. Before the fix the debrief carried a fresh judging's own reason instead.
+- `walk-stop.sh` (with `Stop` and with a prompt) and `walk-end.sh` give the results listed above unchanged.

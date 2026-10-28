@@ -503,10 +503,11 @@ loop's. Walk these after any change to either, each with what it should do:
 - **a terminal killed**, with no `SessionEnd` to be had — the idle bound finalises it, and the line naming the debrief
   waits for the next prompt of any session;
 - **a run that outlived its observer** — let an idle finalise exit, grow the record, then fire `Stop` or a prompt:
-  a fresh observer starts, silently, and un-finalises the same debrief and carries on. Fired with the record
-  unchanged it starts one too, which leaves the debrief final and announces nothing; two events back to back start
-  one; a session finalised by `SessionEnd` starts none. Alive is the pid in `observations/.sessions/<id>.lock`, so
-  `kill -9` one and the next event re-arms over it;
+  a fresh observer starts, silently, and un-finalises the same debrief and carries on, finalising again on the
+  answer the first one's judge held (`observations/.sessions/<id>.final-reading`) rather than a second synthesis.
+  Fired with the record unchanged it starts one too, which leaves the debrief final and announces nothing; two events
+  back to back start one; a session finalised by `SessionEnd`, or a marker with no `.final-reading` beside it, starts
+  none. Alive is the pid in `observations/.sessions/<id>.lock`, so `kill -9` one and the next event re-arms over it;
 - **a question on screen and nobody answering** — a run **waiting** is not that killed terminal, and the two are the
   same silence on disk, so the idle bound does not fire while the run's own last act is an unanswered
   `AskUserQuestion`: the debrief keeps being rewritten, nothing is announced, and answering carries the run and its

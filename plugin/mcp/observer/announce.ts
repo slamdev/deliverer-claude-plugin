@@ -34,6 +34,7 @@
 import { mkdir, readdir, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { OBSERVATIONS_DIRECTORY, writeFileAtomically } from "./trace-file.ts";
+import type { Judging } from "./debrief-file.ts";
 
 /* ─────────────────────────────────────── the layout ─────────────────────────────────────── */
 
@@ -297,6 +298,15 @@ export async function writeMarker(dataDirectory: string, marker: MarkerState): P
  * otherwise leave the debrief — and its one synthesis — exactly as it is. That takes the extent the
  * finalise read, which no process holds any more; so it is put on disk at the finalise, and taken
  * away at the un-finalise and at a finalise on the session's end.
+ *
+ * **And the answer the finalise's judge held, so a second finalise reuses it as that judge would
+ * have.** An observer that never died keeps its one synthesis in memory across an un-finalise and
+ * the next finalise (`./judge.ts`, "a second whole-run reading is not a cost a guess may impose");
+ * a fresh one has nothing in memory, so without this it would pay for that reading again. The
+ * answer is plain data and small — defects and hunches as prose, the cost and extent as figures —
+ * so it rides here, minus the one field that is not: `modelEnvironment` carries the process's whole
+ * environment, credentials included, and is never written. The judge that restores the answer
+ * attaches its own, which names the same environment file unless its owner edited it in between.
  */
 export interface FinalReading {
   /** the marker state the finalise wrote, which a fresh observer writes back while it watches */
@@ -306,6 +316,12 @@ export interface FinalReading {
   /** how many of the run's own dispatches that reading counted */
   readonly dispatches: number;
   readonly debriefPath: string;
+  /**
+   * What the finalise's judge answered, held for the next finalise; absent where nothing judged
+   * that reading (an injected judge, or a finalise whose own read failed) — a fresh observer then
+   * judges at its finalise, which is the only cost that absence has.
+   */
+  readonly judging?: Judging;
 }
 
 export function finalReadingPath(dataDirectory: string, sessionId: string): string {
@@ -318,10 +334,17 @@ export async function writeFinalReading(
   reading: FinalReading,
 ): Promise<void> {
   await mkdir(sessionsDirectory(dataDirectory), { recursive: true });
+  const { judging, ...rest } = reading;
+  const held = judging === undefined ? undefined : withoutEnvironment(judging);
   await writeFileAtomically(
     finalReadingPath(dataDirectory, sessionId),
-    `${JSON.stringify(reading, undefined, 2)}\n`,
+    `${JSON.stringify({ ...rest, judging: held }, undefined, 2)}\n`,
   );
+}
+
+/** `undefined` rather than removed, which `JSON.stringify` leaves out of the file all the same. */
+function withoutEnvironment(judging: Judging): Judging {
+  return { ...judging, modelEnvironment: undefined };
 }
 
 /**
@@ -352,10 +375,47 @@ export async function readFinalReading(
       extentEnd: it.extentEnd,
       dispatches: it.dispatches,
       debriefPath: it.debriefPath,
+      judging: heldJudging(it.judging),
     };
   } catch {
     return undefined;
   }
+}
+
+/**
+ * The held answer, where it has the shape a debrief is written from; `undefined` otherwise, which
+ * costs a fresh synthesis at the next finalise and nothing else. The file is this module's own
+ * output, so this checks what the debrief writer reads unguarded rather than every optional field.
+ */
+function heldJudging(value: unknown): Judging | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  const it = value as Record<string, unknown>;
+  const cost = it.cost as Record<string, unknown> | null | undefined;
+  if (
+    typeof cost !== "object" ||
+    cost === null ||
+    typeof cost.modelCalls !== "number" ||
+    typeof cost.tokens !== "object" ||
+    cost.tokens === null
+  ) {
+    return undefined;
+  }
+  if (it.kind === "none") return typeof it.reason === "string" ? (value as Judging) : undefined;
+  if (it.kind !== "judged") return undefined;
+  const readOf = it.readOf as Record<string, unknown> | null | undefined;
+  const tree = it.judgedAgainst as Record<string, unknown> | null | undefined;
+  return typeof it.defects === "string" &&
+    typeof it.hunches === "string" &&
+    typeof it.defectCount === "number" &&
+    typeof readOf === "object" &&
+    readOf !== null &&
+    typeof readOf.lastEntry === "number" &&
+    typeof readOf.dispatches === "number" &&
+    typeof tree === "object" &&
+    tree !== null &&
+    typeof tree.line === "string"
+    ? (value as Judging)
+    : undefined;
 }
 
 export async function clearFinalReading(dataDirectory: string, sessionId: string): Promise<void> {
