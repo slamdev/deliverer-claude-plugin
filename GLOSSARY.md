@@ -175,8 +175,9 @@ review, pass, iteration
 
 **Poll**:
 One call asking after a **round**, and what it reports back. It is the only way a round's progress or its result is ever
-seen, because nothing about a round arrives unsolicited. What it carries is what is known when it is asked and no more,
-so a figure it says nothing about is one nobody has measured yet. _Avoid_: status call, ping, check, progress update
+seen, because nothing about a round arrives unsolicited. It may hold a bounded while for the round to move before it
+answers, and what it carries is what is known when it answers and no more, so a figure it says nothing about is one
+nobody has measured yet. _Avoid_: status call, ping, check, progress update
 
 **Transcript**:
 Everything one **round**'s reviewer said as it arrived, in order, and the reason the round ended where it did not
