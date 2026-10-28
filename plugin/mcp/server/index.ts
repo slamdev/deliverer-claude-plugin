@@ -13,6 +13,8 @@
  *     → { reviewId, status, startedAt, events }   always, because all four are always known
  *       + endedAt, reason, agentDurationMs, spend, summary — each ONLY once there is something to
  *         read in it, so a key that is absent is a figure nobody has measured yet
+ *     holds up to POLL_HOLD_SEC on a review that is not terminal, and answers at once on one that
+ *     is or becomes terminal (idp-scaffold-defects, "The held poll")
  *   code_review_cancel(review_id)
  *     → { review_id, status }   the status the review HOLDS after the attempt: "cancelled" for one
  *                               that was still running, the existing terminal status for one that
@@ -44,6 +46,7 @@ import {
   BACKEND_ENV,
   DEADLINE_SEC,
   IDLE_DEADLINE_SEC,
+  POLL_HOLD_SEC,
   SCRIPT_ENV,
 } from "./config.ts";
 import type { ReviewBackend } from "./backend.ts";
@@ -140,6 +143,7 @@ const lifecycle = createLifecycle({
   claudeEnv: config.claudeEnv,
   deadlineSec: DEADLINE_SEC,
   idleDeadlineSec: IDLE_DEADLINE_SEC,
+  pollHoldSec: POLL_HOLD_SEC,
 });
 
 /* ────────────────────────── tool plumbing ────────────────────────── */
@@ -164,10 +168,12 @@ const jsonResult = (value: unknown, structured?: Record<string, unknown>): ToolR
  * Run a tool body, turning a `ToolError` into an MCP error result and anything else into one too —
  * a crashed handler would take the whole stdio server with it, and an unreviewed delivery must fail
  * loudly at the caller rather than silently at the transport.
+ *
+ * Awaited, so one wrapper serves the bodies that answer at once and the held poll that waits.
  */
-function guarded(body: () => ToolResult): ToolResult {
+async function guarded(body: () => ToolResult | Promise<ToolResult>): Promise<ToolResult> {
   try {
-    return body();
+    return await body();
   } catch (error) {
     if (error instanceof ToolError) return errorResult(error.message);
     return errorResult(`the tools server failed to handle the call: ${(error as Error).message}`);
@@ -251,8 +257,12 @@ server.registerTool(
     title: "Read a review's status and result",
     description:
       "Report everything known about one review: its status and the reviewer's prose. This is the " +
-      "only result-bearing tool. A review that found problems is a SUCCESSFUL call; an error " +
-      "result means the call could not be answered at all (an unknown id). The prose is the whole " +
+      "only result-bearing tool. A call on a review that is not yet terminal HOLDS for up to " +
+      `${POLL_HOLD_SEC}s before answering, and answers at once when the review is or becomes ` +
+      "terminal, so a poll may take that long and needs no delay of the caller's own between " +
+      "calls; an answer that is not terminal means call again. A review that found problems is a " +
+      "SUCCESSFUL call; an error result means the call could not be answered at all (an unknown " +
+      "id). The prose is the whole " +
       'result a review carries, and it is reported only when the status is "completed" — a review ' +
       "that did not complete is not a clean review, and carries none of it. A key is present ONLY " +
       "when there is something to read in it, so an answer grows as the review does: reviewId, " +
@@ -349,9 +359,11 @@ server.registerTool(
     },
     annotations: { readOnlyHint: true, openWorldHint: false },
   },
-  (args) =>
-    guarded(() => {
-      const result = lifecycle.status(args.review_id);
+  // The host's request signal releases a held poll it has given up on, so a cancelled call leaves
+  // no hold behind it.
+  (args, extra) =>
+    guarded(async () => {
+      const result = await lifecycle.status(args.review_id, extra.signal);
       return jsonResult(result, result as unknown as Record<string, unknown>);
     }),
 );

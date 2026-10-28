@@ -9,6 +9,8 @@
  * ```
  * <data>/observations/.sessions/<session-id>.observer   the marker: an observer exists for this session
  * <data>/observations/.sessions/<session-id>.finalise   the SessionEnd signal: finalise and stop
+ * <data>/observations/.sessions/<session-id>.lock       the live observer's pid (`../observe.mjs`)
+ * <data>/observations/.sessions/<session-id>.final-reading  where the last finalise left the run
  * <data>/observations/.announce/<session-id>.stop.json    what the Stop hook prints, if anything
  * <data>/observations/.announce/<session-id>.prompt.json  what the next prompt prints, if anything
  * ```
@@ -29,9 +31,10 @@
  * next prompt otherwise, including the next prompt of a session started days later, which is what
  * a debrief finalised after its terminal closed needs (D25).
  */
-import { mkdir, readdir, rm } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { OBSERVATIONS_DIRECTORY, writeFileAtomically } from "./trace-file.ts";
+import type { Judging } from "./debrief-file.ts";
 
 /* ─────────────────────────────────────── the layout ─────────────────────────────────────── */
 
@@ -64,9 +67,23 @@ export function markerPath(dataDirectory: string, sessionId: string): string {
   return join(sessionsDirectory(dataDirectory), `${sessionId}.observer`);
 }
 
-/** The `SessionEnd` hook's signal: finalise the debrief and stop. Written by the hook, never here. */
+/**
+ * The `SessionEnd` hook's signal: finalise the debrief and stop. Written by the hook, and removed
+ * by whichever side acts on it — the observer that finalises on it, or the hook re-arming an
+ * observer in a session that turned out to be resumed (`clearFinaliseSignal`).
+ */
 export function finaliseSignalPath(dataDirectory: string, sessionId: string): string {
   return join(sessionsDirectory(dataDirectory), `${sessionId}.finalise`);
+}
+
+/**
+ * Takes the signal away once it has been acted on (PR #18 review). A session that `--resume`
+ * brings back keeps its id and its record, so a `SessionEnd` left on disk is the PREVIOUS end of
+ * that session by the time anything reads it again, and an observer re-armed in it would finalise
+ * the resumed run as ended on its first tick and never be re-armed after.
+ */
+export async function clearFinaliseSignal(dataDirectory: string, sessionId: string): Promise<void> {
+  await rm(finaliseSignalPath(dataDirectory, sessionId), { force: true });
 }
 
 export function announcePaths(
@@ -252,8 +269,15 @@ export function hookOutput(systemMessage: string): string {
 /* ─────────────────────────────────── the session's marker ─────────────────────────────────── */
 
 /**
- * What the observer records about itself, for a human reading the data directory and for the
- * liveness check below. Never parsed by the shell half, which tests only whether the file exists.
+ * What the observer records about itself, for a human reading the data directory and for the hook.
+ *
+ * **The shell half reads one thing out of it: whether `state` says the observer finalised**
+ * (idp-scaffold-defects ticket 02). Every finalise writes `finalised — <why>`, and the hook re-arms
+ * a stopped observer on any of those that left a final reading beside it — `SESSION_ENDED_STATE`
+ * included, since `--resume` brings a session back after its end (PR #18 review) — so a further
+ * finaliser joins by writing a `finalised — ` state of its own, and nothing in the hook changes.
+ * Liveness is not read here: it is the `.lock` beside it, whose pid `../observe.mjs` writes and
+ * removes, and which a crashed observer leaves holding a pid nothing answers to.
  */
 export interface MarkerState {
   readonly pid: number;
@@ -263,12 +287,155 @@ export interface MarkerState {
   readonly state: string;
 }
 
+/**
+ * The finalise the session's own end makes. It is the one that exits at once rather than watching
+ * on, and it was once the one state the hook never re-armed on — until `--resume` was found to keep
+ * a session's id and record across its end (PR #18 review). It is re-armed now like any other.
+ */
+export const SESSION_ENDED_STATE = "finalised — the session ended";
+
 export async function writeMarker(dataDirectory: string, marker: MarkerState): Promise<void> {
   await mkdir(sessionsDirectory(dataDirectory), { recursive: true });
   await writeFileAtomically(
     markerPath(dataDirectory, marker.sessionId),
     `${JSON.stringify(marker, undefined, 2)}\n`,
   );
+}
+
+/* ──────────────────────────── where a finalise left the run ──────────────────────────── */
+
+/**
+ * What a finalise leaves for the observer after it (idp-scaffold-defects ticket 02) — every
+ * finalise, the session's own end included, because a resumed session is the same session.
+ *
+ * **The hook rewrites the marker before it re-arms, so this cannot live in the marker.** A fresh
+ * observer started on a run that outlived its observer has to do what that one would have done:
+ * un-finalise when the run's **extent** has advanced past the reading it was finalised on, and
+ * otherwise leave the debrief — and its one synthesis — exactly as it is. That takes the extent the
+ * finalise read, which no process holds any more; so it is put on disk at the finalise, and taken
+ * away at the un-finalise.
+ *
+ * **And the answer the finalise's judge held, so a second finalise reuses it as that judge would
+ * have.** An observer that never died keeps its one synthesis in memory across an un-finalise and
+ * the next finalise (`./judge.ts`, "a second whole-run reading is not a cost a guess may impose");
+ * a fresh one has nothing in memory, so without this it would pay for that reading again. The
+ * answer is plain data and small — defects and hunches as prose, the cost and extent as figures —
+ * so it rides here, minus the one field that is not: `modelEnvironment` carries the process's whole
+ * environment, credentials included, and is never written. The judge that restores the answer
+ * attaches its own, which names the same environment file unless its owner edited it in between.
+ */
+export interface FinalReading {
+  /** the marker state the finalise wrote, which a fresh observer writes back while it watches */
+  readonly state: string;
+  /** `RunFacts.extent.endedAt` of the reading the debrief was finalised on, `""` where absent */
+  readonly extentEnd: string;
+  /** how many of the run's own dispatches that reading counted */
+  readonly dispatches: number;
+  readonly debriefPath: string;
+  /**
+   * What the finalise's judge answered, held for the next finalise; absent where nothing judged
+   * that reading (an injected judge, or a finalise whose own read failed) — a fresh observer then
+   * judges at its finalise, which is the only cost that absence has.
+   */
+  readonly judging?: Judging;
+}
+
+export function finalReadingPath(dataDirectory: string, sessionId: string): string {
+  return join(sessionsDirectory(dataDirectory), `${sessionId}.final-reading`);
+}
+
+export async function writeFinalReading(
+  dataDirectory: string,
+  sessionId: string,
+  reading: FinalReading,
+): Promise<void> {
+  await mkdir(sessionsDirectory(dataDirectory), { recursive: true });
+  const { judging, ...rest } = reading;
+  const held = judging === undefined ? undefined : withoutEnvironment(judging);
+  await writeFileAtomically(
+    finalReadingPath(dataDirectory, sessionId),
+    `${JSON.stringify({ ...rest, judging: held }, undefined, 2)}\n`,
+  );
+}
+
+/** `undefined` rather than removed, which `JSON.stringify` leaves out of the file all the same. */
+function withoutEnvironment(judging: Judging): Judging {
+  return { ...judging, modelEnvironment: undefined };
+}
+
+/**
+ * The reading a finalise left, or `undefined` — absent, unreadable or of another shape all mean the
+ * same: there is no finalised debrief this process may treat as already settled, and it watches the
+ * run as a first observer would.
+ */
+export async function readFinalReading(
+  dataDirectory: string,
+  sessionId: string,
+): Promise<FinalReading | undefined> {
+  try {
+    const parsed: unknown = JSON.parse(
+      await readFile(finalReadingPath(dataDirectory, sessionId), "utf8"),
+    );
+    if (typeof parsed !== "object" || parsed === null) return undefined;
+    const it = parsed as Record<string, unknown>;
+    if (
+      typeof it.state !== "string" ||
+      typeof it.extentEnd !== "string" ||
+      typeof it.dispatches !== "number" ||
+      typeof it.debriefPath !== "string"
+    ) {
+      return undefined;
+    }
+    return {
+      state: it.state,
+      extentEnd: it.extentEnd,
+      dispatches: it.dispatches,
+      debriefPath: it.debriefPath,
+      judging: heldJudging(it.judging),
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The held answer, where it has the shape a debrief is written from; `undefined` otherwise, which
+ * costs a fresh synthesis at the next finalise and nothing else. The file is this module's own
+ * output, so this checks what the debrief writer reads unguarded rather than every optional field.
+ */
+function heldJudging(value: unknown): Judging | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  const it = value as Record<string, unknown>;
+  const cost = it.cost as Record<string, unknown> | null | undefined;
+  if (
+    typeof cost !== "object" ||
+    cost === null ||
+    typeof cost.modelCalls !== "number" ||
+    typeof cost.tokens !== "object" ||
+    cost.tokens === null
+  ) {
+    return undefined;
+  }
+  if (it.kind === "none") return typeof it.reason === "string" ? (value as Judging) : undefined;
+  if (it.kind !== "judged") return undefined;
+  const readOf = it.readOf as Record<string, unknown> | null | undefined;
+  const tree = it.judgedAgainst as Record<string, unknown> | null | undefined;
+  return typeof it.defects === "string" &&
+    typeof it.hunches === "string" &&
+    typeof it.defectCount === "number" &&
+    typeof readOf === "object" &&
+    readOf !== null &&
+    typeof readOf.lastEntry === "number" &&
+    typeof readOf.dispatches === "number" &&
+    typeof tree === "object" &&
+    tree !== null &&
+    typeof tree.line === "string"
+    ? (value as Judging)
+    : undefined;
+}
+
+export async function clearFinalReading(dataDirectory: string, sessionId: string): Promise<void> {
+  await rm(finalReadingPath(dataDirectory, sessionId), { force: true });
 }
 
 /**
@@ -278,7 +445,8 @@ export async function writeMarker(dataDirectory: string, marker: MarkerState): P
  * `/deliverer:refine` was typed and abandoned may still carry a real `/deliverer:build` later, and
  * a marker left behind would leave that one unobserved. It is deliberately NOT done when a run was
  * observed and finalised — the record still carries deliverer attribution, so every later prompt
- * would start an observer that re-observes a finished run and announces it again.
+ * would start an observer that re-observes a finished run and announces it again. What re-observes
+ * a run that outlived its observer is the hook reading the marker's state instead (ticket 02).
  */
 export async function clearMarker(dataDirectory: string, sessionId: string): Promise<void> {
   await rm(markerPath(dataDirectory, sessionId), { force: true });

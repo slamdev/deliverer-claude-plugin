@@ -1098,7 +1098,10 @@ function noCredentialReached(
  * that costs is paid in words instead: the answer carries the extent it read (`readOf`), and the
  * debrief says how far the reading got rather than claiming the whole run. Which is what makes the
  * kept answer honest instead of merely cheap — and it is the finalise's own trigger, not this
- * memo, that keeps the case rare: `./observer.ts` finalises on D23's two signals alone.
+ * memo, that keeps the case rare: `./observer.ts` finalises on the session's end, on long silences,
+ * and on a `finished` reading only once it has settled — and `finished` first reads within a dozen
+ * entries of a run's own last entry on every measured run that reaches it
+ * (idp-scaffold-defects, § The finished-and-settled finaliser).
  *
  * `beside` is the notes file's placement and the caller's to choose, exactly as the debrief
  * writer's two forms are: a **replay** writes a set beside whatever is there (D19), and the live
@@ -1113,10 +1116,16 @@ function noCredentialReached(
  * **And which model its synthesis asks for** (ticket 03; D7), read here for the same reason and at the
  * same moment: one observation asks for one model, where a value read per call could differ between a
  * mid-run catch-up and the finalise.
+ *
+ * **`held` is that one answer carried across a process** (idp-scaffold-defects ticket 02). An
+ * observer started again on a run that outlived the last one is the same observation resumed, and
+ * the answer that observation's finalise was given is on disk beside its final reading
+ * (`./announce.ts`). Given it, this judge starts where that one stopped — answer held, no further
+ * notes, no second synthesis — exactly as a judge that had never left memory would.
  */
 export function synthesisJudge(
   dataDirectory: string,
-  how: { readonly beside: boolean },
+  how: { readonly beside: boolean; readonly held?: Judging },
 ): (input: { trace: Trace; facts: RunFacts; finalising: boolean }) => Promise<Judging> {
   const environment = readModelEnvironment();
   const model = readModelChoice(SYNTHESIS_MODEL);
@@ -1130,15 +1139,16 @@ export function synthesisJudge(
   // because a note stays on its own cheap alias (ticket 03; D7). The gate it IS given, because a
   // note is ordinarily the call that learns there is no credential.
   const notes = runNotes(dataDirectory, how, environment, credential);
-  let made: Judging | undefined;
   /**
    * What every answer this observation gives says its calls ran under (D12).
    *
    * Attached here, once, rather than by each of the paths out of `synthesise` and `notJudged`: it is
    * a fact about the observation and not about how the judging went, and every answer's spend line
-   * owes the reader the same one.
+   * owes the reader the same one. A `held` answer is written to disk without it, so it is attached
+   * here too.
    */
   const under = (judging: Judging): Judging => ({ ...judging, modelEnvironment: environment });
+  let made: Judging | undefined = how.held === undefined ? undefined : under(how.held);
   return async (input) => {
     if (made !== undefined) return made;
     // The run's OWN dispatches and never the session's, which is the set `./run-facts.ts` already
