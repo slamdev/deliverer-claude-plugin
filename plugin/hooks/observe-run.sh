@@ -5,10 +5,22 @@
 #
 #   UserPromptSubmit  start an observer when this prompt begins or resumes a run, and print a
 #                     debrief nobody has been shown yet — from ANY session, which is what a debrief
-#                     finalised after its terminal closed needs.
+#                     finalised after its terminal closed needs. And start one again where this
+#                     session's observer finalised on a guess and has exited since (below).
 #   Stop              print this session's debrief if the observer has one ready, and NOTHING at
 #                     all if it has not. A refinement stops for every question it asks, so silence
-#                     here is the common case and has to cost nothing.
+#                     here is the common case and has to cost nothing. It re-arms a stopped
+#                     observer exactly as a prompt does, silently: an answered question is a tool
+#                     result rather than a prompt, so this is the only event a resumed grilling
+#                     raises at all.
+#
+# RE-ARMING (idp-scaffold-defects ticket 02). An observer that finalised on its own reading — the
+# idle bound, a wait's ceiling, any guess whose marker state reads `finalised — ` — watches a while
+# and exits, and a run can outlive that. On `Stop` and on `UserPromptSubmit`, a marker in such a
+# state with no observer alive starts a fresh one, which reads the run whole and un-finalises the
+# debrief only if the run moved past it. `finalised — the session ended` is never re-armed: that is
+# the one certain end. Alive is the pid in the observer's `.lock`, which `mcp/observe.mjs` writes
+# and removes; a crashed observer leaves a pid nothing answers to, which reads as not alive.
 #   SessionEnd        tell the running observer to finalise, and return. It never finalises
 #                     anything itself: the host gives a SessionEnd hook 1500 ms before it aborts it
 #                     and force-exits about five seconds later, and the only way to raise that is
@@ -73,6 +85,62 @@ RECORD="$(field transcript_path)"
 [[ "$SESSION_ID" =~ ^[A-Za-z0-9._-]{1,200}$ ]] || exit 0
 
 MARKER="$SESSIONS/$SESSION_ID.observer"
+LOCK="$SESSIONS/$SESSION_ID.lock"
+
+# ── starting an observer ──
+# The marker goes down BEFORE the spawn, so two events back to back cannot start two observers: the
+# second reads this line, which is neither absent nor a finalised state. The observer rewrites it
+# with its own state, and removes it in exactly one case: having waited out its patience and found
+# no run in this record at all, so that a real `/deliverer:` command later in the same session is
+# still observed.
+#
+# DETACHED, with stdio closed. A child holding this hook's stdout open keeps the host waiting on
+# the pipe long after the hook has exited — the run waiting on the observer. `mcp/observe.mjs`
+# re-spawns itself into its own session as its first act, which is a real `setsid(2)` on every
+# platform where `setsid(1)` exists on none of them.
+#
+# NOT the host's own `async` hook option, which backgrounds a hook but leaves the host tracking
+# it and delivering its later output into the session as an attachment — the one thing an
+# out-of-band observer may never do (D1).
+start_observer() {
+  mkdir -p "$SESSIONS" 2>/dev/null &&
+    printf '%s\n' "$1" > "$MARKER" 2>/dev/null || return 0
+  if command -v nohup >/dev/null 2>&1; then
+    nohup node "$PLUGIN_ROOT/mcp/observe.mjs" "$SESSION_ID" "$RECORD" \
+      </dev/null >/dev/null 2>&1 &
+  else
+    node "$PLUGIN_ROOT/mcp/observe.mjs" "$SESSION_ID" "$RECORD" </dev/null >/dev/null 2>&1 &
+  fi
+  disown 2>/dev/null || true
+}
+
+# ── re-arming one that stopped on a guess (ticket 02) ──
+# Both reads are a file and a signal 0, so a `Stop` of every observed session pays nothing
+# measurable for them. The state is matched in the observer's own JSON spelling
+# (`observer/announce.ts` writes it), and `finalised — the session ended` is that file's
+# `SESSION_ENDED_STATE` verbatim: the two must stay the same.
+stopped_on_a_guess() {
+  [[ -f "$MARKER" ]] || return 1
+  local marker
+  marker="$(cat "$MARKER" 2>/dev/null)" || return 1
+  [[ "$marker" == *'"state": "finalised — the session ended"'* ]] && return 1
+  [[ "$marker" == *'"state": "finalised — '* ]]
+}
+
+observer_alive() {
+  [[ -f "$LOCK" ]] || return 1
+  local pid
+  pid="$(head -c 32 "$LOCK" 2>/dev/null)"
+  pid="${pid//[!0-9]/}"
+  [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null
+}
+
+rearm() {
+  [[ -f "$RECORD" ]] || return 0
+  stopped_on_a_guess || return 0
+  observer_alive && return 0
+  start_observer "re-armed by the $EVENT hook: the observer had finalised on a guess and exited"
+}
 
 # ── printing a line the observer left (D25) ──
 # The file IS the hook's whole stdout. Printing it is what "the human has now been shown this"
@@ -91,6 +159,8 @@ case "$EVENT" in
     # Nothing at all unless the observer has finalised a debrief for THIS session. A refinement
     # stops for every question it puts to its human, and none of those is a debrief to name.
     print_announcement "$ANNOUNCE/$SESSION_ID.stop.json" "$ANNOUNCE/$SESSION_ID.prompt.json"
+    # After the print and silent whatever it does: nothing it starts writes to this stdout.
+    rearm
     exit 0
     ;;
 
@@ -124,8 +194,12 @@ if [[ -d "$ANNOUNCE" ]]; then
 fi
 
 # Once an observer exists for this session, nothing below is asked again — which is what keeps the
-# scan underneath from running on every prompt of a run that is already being watched.
-[[ -e "$MARKER" ]] && exit 0
+# scan underneath from running on every prompt of a run that is already being watched. The one
+# question left is whether that observer stopped on a guess and the run outlived it.
+if [[ -e "$MARKER" ]]; then
+  rearm
+  exit 0
+fi
 
 # Is this prompt the command that starts a run? Both skills declare `disable-model-invocation`, so
 # a run can only ever begin with a human typing one of them.
@@ -176,28 +250,7 @@ already_a_run() {
 }
 
 if starts_a_run || already_a_run; then
-  # The marker goes down BEFORE the spawn, so two prompts submitted back to back cannot start two
-  # observers. The observer rewrites it with its own state, and removes it in exactly one case:
-  # having waited out its patience and found no run in this record at all, so that a real
-  # `/deliverer:` command later in the same session is still observed.
-  mkdir -p "$SESSIONS" 2>/dev/null &&
-    printf 'started by the UserPromptSubmit hook\n' > "$MARKER" 2>/dev/null
-
-  # DETACHED, with stdio closed. A child holding this hook's stdout open keeps the host waiting on
-  # the pipe long after the hook has exited — the run waiting on the observer. `mcp/observe.mjs`
-  # re-spawns itself into its own session as its first act, which is a real `setsid(2)` on every
-  # platform where `setsid(1)` exists on none of them.
-  #
-  # NOT the host's own `async` hook option, which backgrounds a hook but leaves the host tracking
-  # it and delivering its later output into the session as an attachment — the one thing an
-  # out-of-band observer may never do (D1).
-  if command -v nohup >/dev/null 2>&1; then
-    nohup node "$PLUGIN_ROOT/mcp/observe.mjs" "$SESSION_ID" "$RECORD" \
-      </dev/null >/dev/null 2>&1 &
-  else
-    node "$PLUGIN_ROOT/mcp/observe.mjs" "$SESSION_ID" "$RECORD" </dev/null >/dev/null 2>&1 &
-  fi
-  disown 2>/dev/null || true
+  start_observer 'started by the UserPromptSubmit hook'
 fi
 
 exit 0

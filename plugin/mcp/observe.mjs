@@ -173,6 +173,11 @@ const giveUp = (what) => {
  * `wx` is the whole mechanism — the create either wins or throws — and the pid inside is what
  * makes a lock whose holder is gone not a lock, the same liveness rule
  * `hooks/install-mcp-server.sh` uses for the install's.
+ *
+ * **It is also the hook's answer to "is an observer alive"** (idp-scaffold-defects ticket 02).
+ * `hooks/observe-run.sh` reads the pid out of this file and sends it signal 0 before re-arming an
+ * observer that finalised on a guess, so the format stays a bare pid and a newline. A copy killed
+ * outright leaves its pid behind, which nothing answers to — the same not-alive this lock reads.
  */
 const lockPath = join(dataDir, "observations", ".sessions", `${sessionId}.lock`);
 
