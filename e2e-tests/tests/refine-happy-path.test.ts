@@ -122,6 +122,14 @@ for (const fixture of FIXTURES) {
     // Only here, with every assertion passed. A failing run keeps its repository, its epic branch
     // and its draft, because they are the evidence — and a cleanup that fails is reported rather
     // than thrown, because it must never turn a passing test red.
+    //
+    // `DELIVERER_E2E_KEEP_REPO=1` leaves a passing run's repository standing too, for the one
+    // procedure that needs it: refine re-run by hand on the repository a happy path left
+    // (refine-commits-its-vocabulary ticket 06). Whoever sets it deletes the repository by hand.
+    if (process.env.DELIVERER_E2E_KEEP_REPO === "1") {
+      t.diagnostic(`DELIVERER_E2E_KEEP_REPO=1: ${outcome.repo.fullName} left standing`);
+      return;
+    }
     const uncleaned = await outcome.cleanUp();
     if (uncleaned !== null) t.diagnostic(uncleaned);
   });
