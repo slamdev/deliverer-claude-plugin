@@ -42,13 +42,14 @@
  * once deliberately left out, is one now, and what it measured.
  *
  * **An observer that stopped on a guess is started again** (idp-scaffold-defects ticket 02). A run
- * that outlives its watcher — finalised on the idle bound or the ceiling, `AFTER_FINALISE_MS` gone by,
- * the process exited — is observed again on the session's next `Stop` or prompt: the hook reads the
- * marker's state and the `.lock`'s pid, and starts a fresh observer through the same spawn. That one
- * begins where the dead one left off rather than from nothing — the debrief on disk final, and the
- * extent it was finalised on read back from `.final-reading` — so it un-finalises exactly when the
- * dead watcher would have and otherwise leaves the debrief, its one synthesis and its announcement
- * alone. `probing` below is that state.
+ * that outlives its observer — finalised on the idle bound or the ceiling, `AFTER_FINALISE_MS` gone
+ * by, the process exited — is observed again on the session's next `Stop` or prompt: the hook reads
+ * the marker's state and the `.lock`'s pid, and starts a fresh observer through the same spawn. That
+ * one begins where the dead one left off rather than from nothing — the debrief on disk final, and
+ * the extent it was finalised on and the answer its judge held read back from `.final-reading` —
+ * so it un-finalises exactly when the dead observer would have, finalises again on that same
+ * answer, and otherwise leaves the debrief and its announcement alone. `probing` below is that
+ * state.
  *
  * **The stop line is best-effort by construction and the prompt line is the guarantee** (D25). The
  * host writes a run's last entry and then fires its `Stop` hooks immediately, so whether this loop
@@ -76,7 +77,6 @@ import {
   writeFinalReading,
   writeMarker,
   type Announcement,
-  type FinalReading,
 } from "./announce.ts";
 import { NOTHING_JUDGES_YET, refreshDebrief, type Judging } from "./debrief-file.ts";
 import { debriefRun, type DebriefOutcome, type JudgingInput } from "./debrief.ts";
@@ -257,10 +257,24 @@ interface Footprint {
  * of those three, because the caller is a detached process whose exceptions nobody would ever see.
  */
 export async function observeRun(options: ObserveOptions): Promise<ObserveOutcome> {
+  /**
+   * Where an earlier observer of this session finalised on a guess and then exited
+   * (idp-scaffold-defects ticket 02). Read once, at the start: it is what this process inherits.
+   *
+   * Inherited even where a `SessionEnd` signal is already waiting — the one that landed with no
+   * observer left to read it — because the debrief it names is final already: the probing branch
+   * takes that signal by marking the session ended and exiting, where the ordinary loop would
+   * finalise a debrief that needed nothing, and announce it a second time.
+   */
+  const inherited = await readFinalReading(options.dataDirectory, options.sessionId);
   // `beside: false` is the live observer's placement for its **dispatch note**s: it comes back to
   // the one file it has been appending to all run, where a REPLAY of the same run afterwards writes
-  // a set of its own beside it (D19). The same split the debrief writer already makes.
-  const judge = options.judge ?? synthesisJudge(options.dataDirectory, { beside: false });
+  // a set of its own beside it (D19). The same split the debrief writer already makes. `held` is
+  // the answer the dead observer's judge had, so a later finalise here reuses it as that judge
+  // would have rather than paying for the one synthesis twice.
+  const judge =
+    options.judge ??
+    synthesisJudge(options.dataDirectory, { beside: false, held: inherited?.judging });
   const startedAt = Date.now();
 
   let footprint: Footprint = { key: "", dispatchRecords: -1 };
@@ -283,24 +297,20 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
   let heldSince: number | undefined;
   /** the first reading that came back unreadable after one had come back written */
   let unreadableSince: number | undefined;
-  /**
-   * Where an earlier observer of this session finalised on a guess and then exited
-   * (idp-scaffold-defects ticket 02). Read once, at the start: it is what this process inherits.
-   */
-  const inherited = await inheritedFinal(options);
   let finalisedAt: number | undefined = inherited === undefined ? undefined : startedAt;
   let finalisedBySignal = false;
   let extentEnd = inherited?.extentEnd ?? "";
   let dispatchesInRun = inherited?.dispatches ?? -1;
   let consecutiveFailures = 0;
   /**
-   * Whether the debrief on disk is a finalised one this process holds no judgement of
+   * Whether the debrief on disk is a finalised one this process has not read the run against yet
    * (ticket 02). While it is, every reading is taken off disk — `probe` — because the only reading
-   * that could be written here is a finalised one, and this process's judge would spend a second
-   * synthesis on it: the dead watcher's answer is in the file and nowhere in memory. A reading whose
-   * extent has advanced ends it, by the same un-finalise a watcher that never died makes; anything
-   * else leaves the debrief exactly as it was found, and the process exits `AFTER_FINALISE_MS` after
-   * it started, as the dead watcher would have after its finalise.
+   * that could be written here is a finalised one, and writing it would rewrite and re-announce a
+   * debrief nothing has moved past; and where no answer was held for it, this process's judge would
+   * spend a second synthesis on it besides. A reading whose extent has advanced ends it, by the same
+   * un-finalise an observer that never died makes; anything else leaves the debrief exactly as it
+   * was found, and the process exits `AFTER_FINALISE_MS` after it started, as the dead observer
+   * would have after its finalise.
    */
   let probing = inherited !== undefined;
   let probed = false;
@@ -379,7 +389,7 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
         );
         const facts = probe?.kind === "held" ? probe.facts : undefined;
         if (facts !== undefined && advancedPast(facts, extentEnd, dispatchesInRun)) {
-          // The run is alive past the reading it was finalised on: the dead watcher's reversal,
+          // The run is alive past the reading it was finalised on: the dead observer's reversal,
           // made here. Everything after this is the ordinary loop, which un-finalised the same way.
           probing = false;
           finalisedAt = undefined;
@@ -609,6 +619,10 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
       // `AFTER_FINALISE_MS` like the idle bound — only `SessionEnd` is the one certain end. No ADR:
       // a constant and a condition reverse it.
       if (finalisedAt === undefined && finalising) {
+        // The answer the judge gave a reading taken as final, and only that one: a non-final
+        // answer held for the next finalise would stand in for the synthesis it never was.
+        let finalJudging = heldIsFinal ? written.judging : undefined;
+
         // Nothing is announced naming a debrief that still says the run is going — and the reading
         // above almost always already carried the flag, since it is taken with `finalising ||
         // finalisedAt !== undefined` and this branch is inside `finalising`. So this re-reads only
@@ -619,10 +633,11 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
         // second set of facts and a second write of both files, on the one tick of the run that is
         // already the most expensive there is, because the synthesis ran inside the reading above.
         if (!heldIsFinal) {
-          const final = await read(options, judge, { finalise: true }).catch(() => outcome);
-          if (final.kind === "written") {
+          const final = await read(options, judge, { finalise: true }).catch(() => undefined);
+          if (final?.kind === "written") {
             written = final;
             lastFacts = final.facts;
+            finalJudging = final.judging;
           }
         }
         finalisedAt = Date.now();
@@ -633,7 +648,7 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
           headline: headlineOf(written),
           noCredential: nothingJudgedFor(written),
         });
-        const state = `finalised — ${why(signalled, waitedOut, settled)}`;
+        const state = finalisedState(signalled, waitedOut, settled);
         // A guess leaves what an observer started after this one exits needs to reverse it as this
         // one would have (ticket 02); the session's own end leaves nothing, because nothing resumes.
         if (signalled) {
@@ -644,6 +659,7 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
             extentEnd,
             dispatches: dispatchesInRun,
             debriefPath: written.written.debriefPath,
+            judging: finalJudging,
           }).catch(() => undefined);
         }
         await mark(options, state);
@@ -748,6 +764,13 @@ async function judgeQuietly(judge: Judge, input: JudgeInput): Promise<Judging> {
  * that ever stops a watcher whose terminal is really gone, so either gap leaves the lifecycle as it
  * shipped.
  */
+function waitingSince(facts: RunFacts | undefined): number | undefined {
+  const at = facts?.human.waitingSince;
+  if (at === undefined) return undefined;
+  const asked = Date.parse(at);
+  return Number.isFinite(asked) ? asked : undefined;
+}
+
 /**
  * Whether a reading has moved past the one recorded — the run's own extent ending later, or more of
  * its own dispatches — which is the whole of the un-finalise's test, for this process's own last
@@ -755,25 +778,6 @@ async function judgeQuietly(judge: Judge, input: JudgeInput): Promise<Judging> {
  */
 function advancedPast(facts: RunFacts, extentEnd: string, dispatches: number): boolean {
   return (facts.extent.endedAt ?? "") > extentEnd || facts.dispatches.length > dispatches;
-}
-
-/**
- * The final reading an earlier observer of this session left, where this one is to start from it.
- *
- * Inherited even where a `SessionEnd` signal is already waiting — the one that landed with no
- * observer left to read it — because the debrief it names is final already: the probing branch takes
- * that signal by marking the session ended and exiting, where the ordinary loop would spend a second
- * synthesis finalising a debrief that needed nothing, and announce it a second time.
- */
-async function inheritedFinal(options: ObserveOptions): Promise<FinalReading | undefined> {
-  return readFinalReading(options.dataDirectory, options.sessionId);
-}
-
-function waitingSince(facts: RunFacts | undefined): number | undefined {
-  const at = facts?.human.waitingSince;
-  if (at === undefined) return undefined;
-  const asked = Date.parse(at);
-  return Number.isFinite(asked) ? asked : undefined;
 }
 
 /* ────────────────────────────────── what the human is told ────────────────────────────── */
@@ -833,7 +837,9 @@ async function mark(options: ObserveOptions, state: string): Promise<void> {
 }
 
 /**
- * Which of the four finalisers this one was, in the words the marker carries.
+ * Which of the four finalisers this one was, as the marker's state. The session's end is
+ * `SESSION_ENDED_STATE` itself, the string `../../hooks/observe-run.sh` matches verbatim; every
+ * other one is a `finalised — ` state of its own, which the hook re-arms on.
  *
  * **The ceiling is named apart from the idle bound** (ticket 03; D6). Both are the same guess — that
  * the terminal is gone — but they are reached by different evidence, and a marker saying "nothing
@@ -846,18 +852,18 @@ async function mark(options: ObserveOptions, state: string): Promise<void> {
  * observer's own reading — any of the three guesses — from the one certain end by this wording, and
  * re-arms only on the former; a settled finish is a guess like the other two and must read as one.
  */
-function why(signalled: boolean, waitedOut: boolean, settled: boolean): string {
-  if (signalled) return "the session ended";
+function finalisedState(signalled: boolean, waitedOut: boolean, settled: boolean): string {
+  if (signalled) return SESSION_ENDED_STATE;
   if (waitedOut) {
     return (
-      "the run was waiting on a question nobody answered, for longer than a wait's own ceiling — " +
-      "which is what a terminal killed with a question on screen looks like"
+      "finalised — the run was waiting on a question nobody answered, for longer than a wait's " +
+      "own ceiling — which is what a terminal killed with a question on screen looks like"
     );
   }
   if (settled) {
-    return "the run read finished and nothing was written anywhere for the settle bound";
+    return "finalised — the run read finished and nothing was written anywhere for the settle bound";
   }
-  return "nothing was written anywhere for the idle bound";
+  return "finalised — nothing was written anywhere for the idle bound";
 }
 
 /* ──────────────────────────────── what the records look like ──────────────────────────── */

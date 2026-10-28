@@ -40,8 +40,8 @@ under `/tmp/idp-03/`, copies of the delivery record, nothing judging):
   cleared, debrief rewritten as not final. Settled again: finalised and announced anew, then exited `debriefed`
   30s later (`AFTER_FINALISE_MS`, same as after an idle finalise). Control: a copy cut at 638 (not `finished`) under
   the same bounds is still `watching` after 22s.
-- **SessionEnd.** A finalise signal written under a watcher exits it 1s later with marker `finalised — the session
-  ended`; unchanged. The waiting ceiling's code is untouched.
+- **SessionEnd.** A finalise signal written under a running observer exits it 1s later with marker `finalised — the
+  session ended`; unchanged. The waiting ceiling's code is untouched.
 - **Marker wording for ticket 02.** The settled finish is `finalised — the run read finished …`, apart from
   `finalised — the session ended`, so a re-arm that matches "finalised, but not the session ending" counts it as a
   guess. impl-02 has been told.

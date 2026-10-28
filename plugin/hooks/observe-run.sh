@@ -13,19 +13,21 @@
 #                     observer exactly as a prompt does, silently: an answered question is a tool
 #                     result rather than a prompt, so this is the only event a resumed grilling
 #                     raises at all.
+#   SessionEnd        tell the running observer to finalise, and return. It never finalises
+#                     anything itself: the host gives a SessionEnd hook 1500 ms before it aborts it
+#                     and force-exits about five seconds later, and the only way to raise that is
+#                     to declare a `timeout` — which would make EVERY exit of EVERY session wait,
+#                     observed or not.
 #
 # RE-ARMING (idp-scaffold-defects ticket 02). An observer that finalised on its own reading — the
 # idle bound, a wait's ceiling, any guess whose marker state reads `finalised — ` — watches a while
 # and exits, and a run can outlive that. On `Stop` and on `UserPromptSubmit`, a marker in such a
 # state with no observer alive starts a fresh one, which reads the run whole and un-finalises the
 # debrief only if the run moved past it. `finalised — the session ended` is never re-armed: that is
-# the one certain end. Alive is the pid in the observer's `.lock`, which `mcp/observe.mjs` writes
-# and removes; a crashed observer leaves a pid nothing answers to, which reads as not alive.
-#   SessionEnd        tell the running observer to finalise, and return. It never finalises
-#                     anything itself: the host gives a SessionEnd hook 1500 ms before it aborts it
-#                     and force-exits about five seconds later, and the only way to raise that is
-#                     to declare a `timeout` — which would make EVERY exit of EVERY session wait,
-#                     observed or not.
+# the one certain end. Nor is a marker with no `.final-reading` beside it, which is what an observer
+# from before this change leaves: the fresh one would have nothing to tell "moved past" by. Alive
+# is the pid in the observer's `.lock`, which `mcp/observe.mjs` writes and removes; a crashed
+# observer leaves a pid nothing answers to, which reads as not alive.
 #
 # THE SWITCH IS READ FROM THE ENVIRONMENT, NEVER FROM `${user_config.*}` (D26, claim C1). A hook
 # reads the SAVED option values, where the MCP path merges the manifest's defaults first — so an
@@ -86,6 +88,7 @@ RECORD="$(field transcript_path)"
 
 MARKER="$SESSIONS/$SESSION_ID.observer"
 LOCK="$SESSIONS/$SESSION_ID.lock"
+FINAL_READING="$SESSIONS/$SESSION_ID.final-reading"
 
 # ── starting an observer ──
 # The marker goes down BEFORE the spawn, so two events back to back cannot start two observers: the
@@ -115,12 +118,15 @@ start_observer() {
 }
 
 # ── re-arming one that stopped on a guess (ticket 02) ──
-# Both reads are a file and a signal 0, so a `Stop` of every observed session pays nothing
-# measurable for them. The state is matched in the observer's own JSON spelling
+# Every read is a file test, one small file and a signal 0, so a `Stop` of every observed session
+# pays nothing measurable for them. The state is matched in the observer's own JSON spelling
 # (`observer/announce.ts` writes it), and `finalised — the session ended` is that file's
 # `SESSION_ENDED_STATE` verbatim: the two must stay the same.
 stopped_on_a_guess() {
   [[ -f "$MARKER" ]] || return 1
+  # What the finalise left for the observer after it. Without it a fresh one could only un-finalise
+  # unconditionally, and announce a debrief nobody's run had moved past a second time.
+  [[ -f "$FINAL_READING" ]] || return 1
   local marker
   marker="$(cat "$MARKER" 2>/dev/null)" || return 1
   [[ "$marker" == *'"state": "finalised — the session ended"'* ]] && return 1

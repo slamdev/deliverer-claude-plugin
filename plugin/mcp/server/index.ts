@@ -268,8 +268,9 @@ server.registerTool(
       "only result-bearing tool. A call on a review that is not yet terminal HOLDS for up to " +
       `${POLL_HOLD_SEC}s before answering, and answers at once when the review is or becomes ` +
       "terminal, so a poll may take that long and needs no delay of the caller's own between " +
-      "calls; an answer that is not terminal means call again. A review that found problems is a SUCCESSFUL call; an error " +
-      "result means the call could not be answered at all (an unknown id). The prose is the whole " +
+      "calls; an answer that is not terminal means call again. A review that found problems is a " +
+      "SUCCESSFUL call; an error result means the call could not be answered at all (an unknown " +
+      "id). The prose is the whole " +
       'result a review carries, and it is reported only when the status is "completed" — a review ' +
       "that did not complete is not a clean review, and carries none of it. A key is present ONLY " +
       "when there is something to read in it, so an answer grows as the review does: reviewId, " +

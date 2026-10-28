@@ -34,8 +34,9 @@ two primary sources that agree:
 - The env-vars reference, https://code.claude.com/docs/en/env-vars: `MCP_TOOL_TIMEOUT` is the timeout for MCP tool
   execution, "default: 100000000, about 28 hours"; HTTP, SSE and claude.ai connector servers also time out each request
   after 60 s by default, while "Stdio and WebSocket servers have no per-request timer".
-  `CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT` aborts a call whose server "sends no response and no progress notification" for 1800000 ms (30 minutes) on stdio and
-  300000 ms (5 minutes) on a network server, capped at the effective `MCP_TOOL_TIMEOUT`.
+  `CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT` aborts a call whose server "sends no response and no progress notification" for
+  1800000 ms (30 minutes) on stdio and 300000 ms (5 minutes) on a network server, capped at the effective
+  `MCP_TOOL_TIMEOUT`.
 - The installed binary, `/root/.local/share/claude/versions/2.1.311`, read with `strings`: the overall timeout resolves
   as the per-server `timeout` (if ≥ 1000) `?? MCP_TOOL_TIMEOUT ?? 1e8`, clamped to [1000, 2147483647] ms; the idle
   timeout as `CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT ?? (stdio ? 1800000 : 300000)`, checked on a 30 s interval; the 60 s
