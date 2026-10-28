@@ -583,10 +583,12 @@ export function renderDebrief(input: DebriefInput): string {
       `**This run is still going, so this debrief is not final.** ${input.status.note} Every ` +
         `figure below is the run as far as it has got, and this file is rewritten as each stage ` +
         `lands. Forwarding it is safe — the bound below holds either way — but a later reading of ` +
-        `the same file will say more. **The last of those rewrites lands minutes after the run ` +
-        `itself returns**, because the reading that closes a run is one long-context pass over ` +
-        `the whole of it: a file still carrying this paragraph shortly after a run ends is ` +
-        `settling rather than stuck.`,
+        `the same file will say more. **A run that finishes gets its last rewrite minutes after ` +
+        `it returns**, once its records have stayed quiet a short while and one long-context ` +
+        `pass over the whole of it has been read, so a file still carrying this paragraph ` +
+        `shortly after a run finishes is settling rather than stuck. A run that stops short of ` +
+        `finishing, in a session left open, is closed only when the session ends or after a ` +
+        `long silence.`,
     );
   }
 

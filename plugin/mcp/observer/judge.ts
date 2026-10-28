@@ -1098,7 +1098,10 @@ function noCredentialReached(
  * that costs is paid in words instead: the answer carries the extent it read (`readOf`), and the
  * debrief says how far the reading got rather than claiming the whole run. Which is what makes the
  * kept answer honest instead of merely cheap — and it is the finalise's own trigger, not this
- * memo, that keeps the case rare: `./observer.ts` finalises on D23's two signals alone.
+ * memo, that keeps the case rare: `./observer.ts` finalises on the session's end, on long silences,
+ * and on a `finished` reading only once it has settled — and `finished` first reads within a dozen
+ * entries of a run's own last entry on every measured run that reaches it
+ * (idp-scaffold-defects, § The finished-and-settled finaliser).
  *
  * `beside` is the notes file's placement and the caller's to choose, exactly as the debrief
  * writer's two forms are: a **replay** writes a set beside whatever is there (D19), and the live
