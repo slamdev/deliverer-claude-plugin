@@ -13,7 +13,7 @@
  * clears whatever the contributor's own configuration would otherwise have contributed. So nothing
  * here writes a token into a clone's `.git/config`, which outlives the run in the run directory.
  */
-import { chmod, copyFile, mkdir } from "node:fs/promises";
+import { chmod, copyFile, mkdir, writeFile } from "node:fs/promises";
 import { dirname, join, relative } from "node:path";
 import { execute } from "./command.ts";
 import type { Fixture } from "./fixture.ts";
@@ -141,6 +141,82 @@ export async function forcePushFixture(runDirectory: RunDirectory, url: string):
     [...GIT_CREDENTIALS, "push", "--quiet", "--force", url, `HEAD:refs/heads/${DEFAULT_BRANCH}`],
     "pushing the fixture",
   );
+}
+
+/** One file a seeded commit carries: where it lands in the repository, and its fixture copy. */
+export interface SeededFile {
+  /** slash-separated, relative to the repository's root */
+  readonly path: string;
+  readonly source: string;
+}
+
+/**
+ * A branch pushed to the forge carrying one commit on top of the fixture's, and the commit's SHA
+ * (refine-commits-its-vocabulary ticket 05).
+ *
+ * Made in the fixture's own repository, which is switched back to the default branch before this
+ * returns: `readBranch` reads a branch's commits as those beyond that repository's HEAD, so HEAD
+ * has to stay the fixture's commit. The clone is not touched, so a run fetches the branch as it
+ * would fetch one a refinement pushed from somewhere else.
+ */
+export async function pushSeededBranch(
+  runDirectory: RunDirectory,
+  url: string,
+  branch: string,
+  files: readonly SeededFile[],
+  message: string,
+): Promise<string> {
+  const inFixture = git(runDirectory, runDirectory.fixtureRepoDir);
+  await inFixture(["switch", "--quiet", "--create", branch], `creating ${branch} to seed`);
+  for (const file of files) {
+    const destination = join(runDirectory.fixtureRepoDir, ...file.path.split("/"));
+    await mkdir(dirname(destination), { recursive: true });
+    await copyFile(file.source, destination);
+  }
+  const paths = files.map((file) => file.path);
+  await inFixture(["add", "--", ...paths], `staging what ${branch} is seeded with`);
+  await inFixture(
+    [...FIXTURE_AUTHOR, "commit", "--quiet", "--message", message, "--", ...paths],
+    `committing what ${branch} is seeded with`,
+  );
+  const head = await inFixture(["rev-parse", "HEAD"], `reading the commit ${branch} is at`);
+  await inFixture(
+    [...GIT_CREDENTIALS, "push", "--quiet", url, `HEAD:refs/heads/${branch}`],
+    `pushing ${branch}`,
+  );
+  await inFixture(["switch", "--quiet", DEFAULT_BRANCH], `switching back to ${DEFAULT_BRANCH}`);
+  return head.stdout.trim();
+}
+
+/** What a draft change request is opened with. */
+export interface NewDraft {
+  readonly head: string;
+  readonly title: string;
+  readonly body: string;
+}
+
+/**
+ * A **draft** change request opened from a branch onto the default one, its description passed
+ * through a file in the run directory so that nothing in it is read by a shell.
+ */
+export async function openDraftChangeRequest(
+  runDirectory: RunDirectory,
+  fullName: string,
+  draft: NewDraft,
+): Promise<{ readonly number: number; readonly url: string }> {
+  const bodyFile = join(runDirectory.root, `seeded-draft-${draft.head.replace(/\W+/g, "-")}.md`);
+  await writeFile(bodyFile, draft.body);
+  const opened = await gh(runDirectory)(
+    ["pr", "create", "--repo", fullName, "--draft", "--head", draft.head, "--base", DEFAULT_BRANCH,
+      "--title", draft.title, "--body-file", bodyFile],
+    `opening a draft from ${draft.head} on ${fullName}`,
+  );
+  const url = opened.stdout.trim().split("\n").at(-1)?.trim() ?? "";
+  const number = /\/pull\/(\d+)$/.exec(url)?.[1];
+  if (number === undefined) {
+    throw new Error(`opening a draft from ${draft.head} answered no URL: ${opened.stdout}`);
+  }
+  return { number: Number(number), url };
 }
 
 /** The repository cloned into the run directory: the working tree a run is driven in. */

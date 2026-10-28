@@ -31,6 +31,7 @@ import {
   assertNoScriptedBackend,
   assertRoundsCompleted,
   assertRoundsReportedSpend,
+  assertRefinementCarriedOn,
   assertRunFinished,
   assertSessionRecordsKept,
   assertVerdictPassed,
@@ -59,63 +60,82 @@ const WHAT_IT_DISPATCHES =
   "a delivery dispatches an implementer per ticket, a change request creator, an assumption " +
   "reviewer, a spec reviewer, a reviewer per round and a comments addresser per fix wave";
 
-test("a delivery implements an epic and flips its change request ready", {
-  timeout: testTimeout(CEILINGS),
-}, async (t) => {
-  const outcome = await buildRun("typescript-library").withCeilings(CEILINGS).start(t);
+/**
+ * One run per **fixture**, the same assertions for each (refine-commits-its-vocabulary ticket 05).
+ * One fixture keeps its tracker as files in the repository, and its epic is on the default branch
+ * from the moment the repository exists. The other keeps it on the forge's issues, and its
+ * throwaway repo is seeded with what a refinement would have left: the issues, the **epic branch**
+ * carrying the vocabulary the grilling landed, and the **draft** opened from it. The ceilings are
+ * the in-repository fixture's evidence, shared until ticket 06's run gives the other its own.
+ *
+ * One of them on its own, from `e2e-tests/`:
+ * `node --test --test-name-pattern=<fixture> tests/build-happy-path.test.ts`.
+ */
+const FIXTURES = ["typescript-library", "typescript-library-forge-issues"];
 
-  assertNoScriptedBackend(outcome);
-  assertRunFinished(outcome);
-  assertChangeRequestOpened(outcome);
-  assertEveryTicketCommitted(outcome);
-  assertAssumptionsAdjudicated(outcome);
-  // Immediately after it, off the same comments and one bar further on: an assumption the
-  // adjudication said a better road beat has to carry the wave's answer to that directive.
-  assertImprovementsAnswered(outcome);
-  assertFlippedReady(outcome);
-  assertChecksGreen(outcome);
-  // Last of the delivery's own bars, because it is the one read out of prose: a run that failed
-  // something the forge could answer for should say so before the harness's own reading is in
-  // question (`../harness/report.ts`).
-  assertRoundsCompleted(outcome, ROUNDS);
-  assertSessionRecordsKept(outcome, DISPATCH_FLOOR, WHAT_IT_DISPATCHES);
-  // By name, because the floor above counts records the observer and the delegated review leave
-  // beside the run's own, and a delivery that skipped its spec review still clears it.
-  assertAgentDispatched(
-    outcome,
-    "spec-reviewer",
-    "every delivery reads its change request against the spec once, before the first round",
-  );
-  // After the records are known to be there, because this is the one bar read out of what the
-  // tools server itself answered rather than out of what the delivery produced: every round that
-  // reached a result reports what it spent. It is the only automated seam that reaches the real
-  // backend's spend extraction, since the scripted double's spend is scripted rather than
-  // extracted (`../harness/polls.ts`).
-  assertRoundsReportedSpend(outcome);
-  // The run was observed because the plugin observes runs by default and nothing here switched
-  // that off. Shallow on purpose: a debrief exists for this epic and its header names this run.
-  assertDebriefWritten(outcome);
+for (const fixture of FIXTURES) {
+  test(`a delivery implements an epic and flips its change request ready (${fixture})`, {
+    timeout: testTimeout(CEILINGS),
+  }, async (t) => {
+    const outcome = await buildRun(fixture).withCeilings(CEILINGS).start(t);
 
-  const verdict = await verify(outcome);
-  t.diagnostic(`the verifier: ${verdict.summary}`);
+    assertNoScriptedBackend(outcome);
+    assertRunFinished(outcome);
+    assertChangeRequestOpened(outcome);
+    // Straight after it, because it is the same question asked of a seeded epic: the one change
+    // request is the draft the refinement left, and the branch it delivered on carries the
+    // refinement's commit. An in-repository fixture is seeded with neither and is owed nothing.
+    assertRefinementCarriedOn(outcome);
+    assertEveryTicketCommitted(outcome);
+    assertAssumptionsAdjudicated(outcome);
+    // Immediately after it, off the same comments and one bar further on: an assumption the
+    // adjudication said a better road beat has to carry the wave's answer to that directive.
+    assertImprovementsAnswered(outcome);
+    assertFlippedReady(outcome);
+    assertChecksGreen(outcome);
+    // Last of the delivery's own bars, because it is the one read out of prose: a run that failed
+    // something the forge could answer for should say so before the harness's own reading is in
+    // question (`../harness/report.ts`).
+    assertRoundsCompleted(outcome, ROUNDS);
+    assertSessionRecordsKept(outcome, DISPATCH_FLOOR, WHAT_IT_DISPATCHES);
+    // By name, because the floor above counts records the observer and the delegated review leave
+    // beside the run's own, and a delivery that skipped its spec review still clears it.
+    assertAgentDispatched(
+      outcome,
+      "spec-reviewer",
+      "every delivery reads its change request against the spec once, before the first round",
+    );
+    // After the records are known to be there, because this is the one bar read out of what the
+    // tools server itself answered rather than out of what the delivery produced: every round that
+    // reached a result reports what it spent. It is the only automated seam that reaches the real
+    // backend's spend extraction, since the scripted double's spend is scripted rather than
+    // extracted (`../harness/polls.ts`).
+    assertRoundsReportedSpend(outcome);
+    // The run was observed because the plugin observes runs by default and nothing here switched
+    // that off. Shallow on purpose: a debrief exists for this epic and its header names this run.
+    assertDebriefWritten(outcome);
 
-  // Reported before the verdict is judged, because ticket 04 publishes measurements where the spec
-  // carried estimates and a run that failed its last assertion still cost what it cost.
-  t.diagnostic(
-    `measured: ${minutes(outcome.run.durationMs)} and ` +
-      `$${totalSpend(outcome.spend).toFixed(2)} for the run against a ceiling of ` +
-      `$${outcome.spend.ceilingUsd}, plus $${verdict.costUsd.toFixed(2)} for the verdict, for ` +
-      `${outcome.epic.tickets.length} tickets, ` +
-      `${outcome.changeRequest?.commits.length ?? 0} commits, ` +
-      `${outcome.changeRequest?.assumptionComments.length ?? 0} assumptions and ` +
-      `${outcome.roundsCompleted ?? "unknown"} rounds`,
-  );
+    const verdict = await verify(outcome);
+    t.diagnostic(`the verifier: ${verdict.summary}`);
 
-  assertVerdictPassed(verdict);
+    // Reported before the verdict is judged, because ticket 04 publishes measurements where the
+    // spec carried estimates and a run that failed its last assertion still cost what it cost.
+    t.diagnostic(
+      `measured: ${minutes(outcome.run.durationMs)} and ` +
+        `$${totalSpend(outcome.spend).toFixed(2)} for the run against a ceiling of ` +
+        `$${outcome.spend.ceilingUsd}, plus $${verdict.costUsd.toFixed(2)} for the verdict, for ` +
+        `${outcome.epic.tickets.length} tickets, ` +
+        `${outcome.changeRequest?.commits.length ?? 0} commits, ` +
+        `${outcome.changeRequest?.assumptionComments.length ?? 0} assumptions and ` +
+        `${outcome.roundsCompleted ?? "unknown"} rounds`,
+    );
 
-  // Only here, with every assertion passed. A failing run keeps its repository, its branch and its
-  // change request, because the change request is the evidence — and a cleanup that fails is
-  // reported rather than thrown, because it must never turn a passing test red.
-  const uncleaned = await outcome.cleanUp();
-  if (uncleaned !== null) t.diagnostic(uncleaned);
-});
+    assertVerdictPassed(verdict);
+
+    // Only here, with every assertion passed. A failing run keeps its repository, its branch and
+    // its change request, because the change request is the evidence — and a cleanup that fails is
+    // reported rather than thrown, because it must never turn a passing test red.
+    const uncleaned = await outcome.cleanUp();
+    if (uncleaned !== null) t.diagnostic(uncleaned);
+  });
+}

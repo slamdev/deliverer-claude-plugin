@@ -22,7 +22,13 @@
 import { copyFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, join, posix, relative, sep } from "node:path";
 import type { Fixture, FixtureEpic, InRepositoryTracker } from "./fixture.ts";
-import { listIssues, type ForgeIssue } from "./forge.ts";
+import {
+  createIssue,
+  listIssues,
+  openDraftChangeRequest,
+  pushSeededBranch,
+  type ForgeIssue,
+} from "./forge.ts";
 import type { RunDirectory } from "./run-directory.ts";
 
 /** Where a ticket declares what blocks it, in either shape the writer's templates use. */
@@ -122,26 +128,171 @@ export function seedEpicInTree(
 }
 
 /**
- * The delivery's epic seeded onto the throwaway repo once it exists, and the location the delivery
- * is handed.
+ * What a refinement into the forge's issues would have left beside the issues, as seeded: the
+ * **epic branch** carrying the vocabulary its grilling landed, and the **draft** opened from it.
+ */
+export interface SeededRefinement {
+  /** the epic branch, named the epic's slug */
+  readonly branch: string;
+  /** the one commit it carries beyond the fixture's, which names no ticket */
+  readonly commit: string;
+  readonly draft: { readonly number: number; readonly url: string };
+}
+
+/** The delivery's epic once it is on the throwaway repo, and what it is handed as. */
+export interface SeededEpic {
+  /** where the delivery is told the epic is: a path in the repository, or the spec issue's URL */
+  readonly location: string;
+  /** the epic as seeded, in the shape `readEpic` answers */
+  readonly epic: PublishedEpic;
+  /** what a refinement would have left beside it, or null where nothing was seeded */
+  readonly refinement: SeededRefinement | null;
+}
+
+/** A ticket file's reference to another ticket file by its number, on a forge-issue epic. */
+const TICKET_REFERENCE = /#\{(\d{1,3})\}/g;
+
+/**
+ * The delivery's epic seeded onto the throwaway repo once it exists, and what it is handed as.
  *
  * An in-repository epic is already there — `seedEpicInTree` put it on the default branch — so its
- * location is the path it landed at. A forge-issue epic is published from `epic/` as issues here:
- * that is ticket 05 of refine-commits-its-vocabulary, together with the branch and draft a
- * refinement would have left, and until it lands this says so rather than handing a delivery
- * nothing.
+ * location is the path it landed at, and it is read off the clone. A forge-issue epic is published
+ * from `epic/` here, as refine's stage 5 would have left it (refine-commits-its-vocabulary ticket
+ * 05), so build's lookup of refine's branch is exercised without paying for a refinement first:
+ *
+ *  - `epic/spec.md` becomes the spec issue, titled with the epic's **slug**, which is what build
+ *    reads the slug off and what a refinement's draft is titled with.
+ *  - each file in `epic/issues/` becomes a ticket issue, in filename order: titled with its first
+ *    heading, a sub-issue of the spec, carrying the **triage label**, and blocked by the issue each
+ *    `#{NN}` on its `Blocked by:` line names — `NN` being the ticket file's own number, written
+ *    over with the number the forge gave that ticket's issue wherever it appears.
+ *  - `epic/vocabulary/`, where the fixture carries one, is what the grilling landed: committed at
+ *    the same paths onto a branch named the slug, in one commit with no `Ticket:` line, and a draft
+ *    opened from it carrying refine's placeholder description naming the spec issue. Where the
+ *    fixture carries none, nothing is seeded beside the issues — the epic a refinement that landed
+ *    no vocabulary leaves, for which the first `implementer` creates the branch.
+ *
+ * The epic is answered from the issues as they were created, each read back by number, rather than
+ * listed: the forge's list endpoint can lag an issue created a moment earlier (ticket 03).
  */
 export async function seedEpicOnForge(
   source: EpicSource,
   fixture: Fixture,
   epic: FixtureEpic,
-): Promise<string> {
-  if (fixture.tracker.kind === "in-repository" && epic.location !== null) return epic.location;
-  throw new Error(
-    `the fixture ${fixture.name} keeps its tracker on the forge's issues, and publishing its ` +
-      `epic/ as issues on ${source.fullName} is not built yet, so a delivery has nothing to be ` +
-      `handed (refine-commits-its-vocabulary ticket 05).`,
+): Promise<SeededEpic> {
+  if (fixture.tracker.kind === "in-repository") {
+    const location = epic.location ?? posix.join(fixture.tracker.root, epic.slug);
+    return {
+      location,
+      epic: await readEpicDirectory(source.runDirectory.cloneDir, fixture.tracker, epic.slug),
+      refinement: null,
+    };
+  }
+
+  const { runDirectory, fullName } = source;
+  const labels = fixture.readyForAgentLabel === null ? [] : [fixture.readyForAgentLabel];
+  const spec = await createIssue(runDirectory, fullName, {
+    title: epic.slug,
+    body: await readFixtureFile(fixture, join(epic.directory, "spec.md")),
+    labels,
+  });
+
+  const ticketsDirectory = join(epic.directory, "issues");
+  const ticketFiles = (await filesUnder(ticketsDirectory)).filter(
+    (file) => !file.includes("/") && file.endsWith(".md"),
   );
+  if (ticketFiles.length === 0) {
+    throw new Error(`the fixture ${fixture.name} has no tickets under ${ticketsDirectory}`);
+  }
+  const issueOf = new Map<string, number>();
+  const tickets: ForgeIssue[] = [];
+  for (const file of ticketFiles) {
+    const own = TICKET_NUMBER.exec(file)?.[1];
+    if (own === undefined) {
+      throw new Error(`the ticket ${file} of the fixture ${fixture.name} carries no number`);
+    }
+    const text = await readFixtureFile(fixture, join(ticketsDirectory, file));
+    const heading = /^#[ \t]+(.+)\n+/.exec(text);
+    if (heading?.[1] === undefined) {
+      throw new Error(`the ticket ${file} of the fixture ${fixture.name} opens with no heading`);
+    }
+    const resolve = (reference: string): number => {
+      const number = issueOf.get(reference.padStart(2, "0"));
+      if (number === undefined) {
+        throw new Error(
+          `the ticket ${file} of the fixture ${fixture.name} names #{${reference}}, which no ` +
+            `ticket filed before it is numbered`,
+        );
+      }
+      return number;
+    };
+    const body = text.slice(heading[0].length);
+    const edges = body.split("\n").find((line) => BLOCKING_EDGES.test(line)) ?? "";
+    const blockedBy = [...edges.matchAll(TICKET_REFERENCE)].map((match) => resolve(match[1] ?? ""));
+    const issue = await createIssue(runDirectory, fullName, {
+      title: heading[1].trim(),
+      body: body.replace(TICKET_REFERENCE, (_, reference: string) => `#${resolve(reference)}`),
+      labels,
+      parent: spec.number,
+      blockedBy,
+    });
+    issueOf.set(own.padStart(2, "0"), issue.number);
+    tickets.push(issue);
+  }
+
+  const seededEpic = readIssueEpic(source, fixture, [spec, ...tickets], String(spec.number));
+  return {
+    location: spec.url,
+    epic: seededEpic,
+    refinement: await seedRefinement(source, fixture, epic, spec, tickets.length),
+  };
+}
+
+/**
+ * The epic branch and the draft refine's stage 5 leaves on a forge-issue tracker, where the
+ * fixture carries vocabulary for it to have committed — or null where it carries none.
+ *
+ * The branch is named the slug itself, because the throwaway repo carries no branch but the
+ * default one for it to be named in the style of; the draft is titled with the spec issue's title
+ * and described with refine's placeholder, word for word, naming the spec issue's URL — the
+ * location build is handed and looks the draft up by.
+ */
+async function seedRefinement(
+  source: EpicSource,
+  fixture: Fixture,
+  epic: FixtureEpic,
+  spec: ForgeIssue,
+  ticketCount: number,
+): Promise<SeededRefinement | null> {
+  const vocabulary = join(epic.directory, "vocabulary");
+  const files = await filesUnder(vocabulary);
+  if (files.length === 0) return null;
+  const url = `https://github.com/${source.fullName}.git`;
+  const commit = await pushSeededBranch(
+    source.runDirectory,
+    url,
+    epic.slug,
+    files.map((path) => ({ path, source: join(vocabulary, ...path.split("/")) })),
+    `add the ${epic.slug} vocabulary to the glossary`,
+  );
+  const draft = await openDraftChangeRequest(source.runDirectory, source.fullName, {
+    head: epic.slug,
+    title: spec.title,
+    body:
+      `The spec for this epic is at \`${spec.url}\`, broken into ${ticketCount} tickets.\n\n` +
+      `This description is a placeholder: the delivery rewrites it.\n`,
+  });
+  return { branch: epic.slug, commit, draft };
+}
+
+async function readFixtureFile(fixture: Fixture, path: string): Promise<string> {
+  try {
+    return await readFile(path, "utf8");
+  } catch {
+    throw new Error(
+      `the fixture ${fixture.name} is missing ${path}, which its epic is seeded from`,
+    );
+  }
 }
 
 /**

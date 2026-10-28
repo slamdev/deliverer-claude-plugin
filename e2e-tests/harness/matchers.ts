@@ -395,9 +395,10 @@ export function assertAgentDispatched(outcome: ObservedRun, agentType: string, w
  */
 export function assertDebriefWritten(outcome: RefineOutcome | BuildOutcome): void {
   const { debriefs, records } = outcome;
-  // A refinement carries the slug as the run named it, which on a forge-issue tracker is not the
-  // spec issue's number `epic.slug` holds (`./refine-run.ts`).
-  const slug = "slug" in outcome ? outcome.slug : outcome.epic.slug;
+  // Both outcomes carry the epic's slug beside the epic, because on a forge-issue tracker it is not
+  // the spec issue's number `epic.slug` holds: a refinement's as the run named it
+  // (`./refine-run.ts`), a delivery's as the fixture seeded it (`./build-run.ts`).
+  const slug = outcome.slug;
   if (slug === null) {
     assert.fail(
       `the run's own slug could not be read, so there is no name to look its debrief up by. On ` +
@@ -961,6 +962,42 @@ export function assertChangeRequestOpened(outcome: BuildOutcome): void {
     assert.fail(
       `${opened.url} was opened from ${opened.branch || "no branch this harness could read"} ` +
         `rather than from an epic branch of its own.`,
+    );
+  }
+}
+
+/**
+ * Where the throwaway repo was seeded with the epic branch and draft a refinement leaves, the
+ * delivery carried them on: the one change request is that draft, and the branch it delivered on
+ * still carries the refinement's commit (refine-commits-its-vocabulary ticket 05).
+ *
+ * Both, because they are build's lookup failing two ways. A second change request is a delivery
+ * that missed refine's branch and had its first `implementer` create one of its own —
+ * `assertChangeRequestOpened` counts it, and this says which of the two is the seeded one. A
+ * seeded commit missing from the delivered change request is a branch that was found and then
+ * rewritten, which takes the vocabulary the spec was written in out of the epic.
+ *
+ * An epic seeded with neither — every in-repository one — is owed nothing here.
+ */
+export function assertRefinementCarriedOn(outcome: BuildOutcome): void {
+  const seeded = outcome.repo.refinement;
+  if (seeded === null) return;
+  const request = delivered(outcome, "the draft a refinement left");
+  if (request.number !== seeded.draft.number) {
+    assert.fail(
+      `the delivery's change request is ${request.url}, from ${request.branch || "no branch"}, ` +
+        `where the refinement's draft ${seeded.draft.url} from ${seeded.branch} was seeded for ` +
+        `it to adopt. Build looks for an open change request from the slug-named branch whose ` +
+        `description names the spec's issue, ${outcome.repo.epicLocation}.`,
+    );
+  }
+  if (!request.commits.some((commit) => commit.hash === seeded.commit)) {
+    assert.fail(
+      `${request.url} no longer carries ${seeded.commit.slice(0, 12)}, the refinement's ` +
+        `vocabulary commit ${seeded.branch} was seeded with, so the branch was rewritten under ` +
+        `it. It carries:\n  ` +
+        `${request.commits.map((commit) => `${commit.hash.slice(0, 12)} ${commit.subject}`)
+          .join("\n  ") || "no commits"}`,
     );
   }
 }
