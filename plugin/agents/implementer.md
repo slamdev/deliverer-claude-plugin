@@ -33,14 +33,15 @@ you owe it.
 ## Steps
 
 1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote, even where you
-   are the first ticket and it carries only the epic's spec and tickets. Where no commit on it carries a `Ticket:` line
-   yet, it was cut when the epic was refined, maybe days ago: merge the up-to-date default branch into it — a merge
-   commit, never a rebase or a force-push — and push. Where the dispatch names none, you are the first and no epic
-   branch exists: create it from an up-to-date default branch, named from the epic's **slug** in the style of the
-   branches already there.
+   are the first ticket and it carries only what the epic's refinement wrote into the repository. Where no commit on
+   it carries a `Ticket:` line yet, it was cut when the epic was refined, maybe days ago: merge the up-to-date default
+   branch into it — a merge commit, never a rebase or a force-push — and push. Where the dispatch names none, you are
+   the first and no epic branch exists: create it from an up-to-date default branch, named from the epic's **slug** in
+   the style of the branches already there.
 2. **Read the ticket and the commits already on the branch.** The ticket is what the work has to do; the commits are
-   what is done, and only those carrying a `Ticket:` line are a ticket's work — a refinement's commit of the spec and
-   tickets is none. Where they already cover the ticket in full, skip to step 4 and name the commit that covered it.
+   what is done, and only those carrying a `Ticket:` line are a ticket's work — a refinement's commit of what it wrote
+   into the repository is none. Where they already cover the ticket in full, skip to step 4 and name the commit that
+   covered it.
 3. **Implement what they left undone, one piece at a time.** A **piece** is a coherent part of the work that leaves
    the branch whole, and a deliverable of several hundred lines is several of them, grown across writes rather than
    arriving in one call: the one big write is where an agent dies with nothing on disk, and it takes the whole ticket
