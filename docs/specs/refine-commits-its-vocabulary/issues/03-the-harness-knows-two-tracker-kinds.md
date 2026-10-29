@@ -22,10 +22,11 @@ and Further Notes.
 
 **Notes for tickets 04 and 05** (from the implementation):
 
-- **The tracker union** (`e2e-tests/harness/fixture.ts`): `TrackerConventions = InRepositoryTracker | ForgeIssueTracker`,
-  discriminated on `kind`. `{ kind: "in-repository", root, specFile, ticketsDirectory }` is what a `fixture.json` with
-  no `kind` declares, so `typescript-library` is unchanged. A forge-issue fixture declares
-  `"tracker": { "kind": "forge-issues" }` and nothing else. `FixtureEpic.location` is now `string | null`: null on a
+- **The tracker union** (`e2e-tests/harness/fixture.ts`):
+  `TrackerConventions = InRepositoryTracker | ForgeIssueTracker`, discriminated on `kind`.
+  `{ kind: "in-repository", root, specFile, ticketsDirectory }` is what a `fixture.json` with no `kind` declares, so
+  `typescript-library` is unchanged. A forge-issue fixture declares `"tracker": { "kind": "forge-issues" }` and
+  nothing else. `FixtureEpic.location` is now `string | null`: null on a
   forge-issue tracker, because the location is the spec issue's URL and exists only once seeded.
 - **`inRepositoryTracker(fixture, purpose)`** narrows to the in-repository kind or throws naming the caller. The
   file-assuming callers use it today: `assertEpicBranchCarriesEpic` and the spec-writer bench's `publishedSpec`. Those
@@ -53,10 +54,17 @@ and Further Notes.
   - `createIssue(runDirectory, fullName, { title, body, labels?, parent?, blockedBy? }) → ForgeIssue`
   - `listIssues(runDirectory, fullName) → ForgeIssue[]`: every state, ascending, change requests excluded
   - `readIssue(runDirectory, fullName, number) → ForgeIssue`
-  - `ForgeIssue = { number, url, title, body, state: "OPEN"|"CLOSED", labels, parent: number|null, blockedBy: number[] }`.
-    `parent` is GitHub's sub-issue link and `blockedBy` its native issue dependencies. A label the repo lacks is created
-    with the issue, so no label setup is needed.
+  - `ForgeIssue = { number, url, title, body, state: "OPEN"|"CLOSED", labels, parent: number|null,
+    blockedBy: number[] }`. `parent` is GitHub's sub-issue link and `blockedBy` its native issue dependencies. A
+    label the repo lacks is created with the issue, so no label setup is needed.
 - **Exercised by hand** against a private scratch repo, `slamdev/deliverer-e2e-scratch-ticket03`: create with a
   parent, two edges and two labels, then read, list, and both `listEpics` and `readEpic` for the forge kind. It is
   still on the forge and needs removing by hand. Seen there: the list endpoint can lag an issue created a moment
   earlier, so a seeding step that lists right after creating should read by number, or retry.
+
+**Review fixes.** The kind was tested in nine places outside `epic.ts`, the matchers and the refine builder, so the one
+branch point held only for reading and seeding. What a matcher holds a run to where the kinds differ is now
+`epicExpectations(fixture)` in `epic.ts`, and the matchers no longer test `tracker.kind`. `PublishedEpic.slug` was
+renamed `key` (what `readEpic` takes, the spec issue's number on the forge) beside a `slug` that is the epic's real
+one or null, so `RefineOutcome.slug` and `BuildOutcome.slug` are gone and `readEpic` takes the run's own name for the
+epic as an optional fourth argument.

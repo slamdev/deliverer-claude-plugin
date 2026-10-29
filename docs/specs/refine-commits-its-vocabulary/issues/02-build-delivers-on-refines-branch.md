@@ -49,3 +49,10 @@ would show.
 - One wording change beyond "Find the epic": **Resume**'s example of a commit with no `Ticket:` line now reads "a
   refinement's commit of what it wrote into the repository" rather than "of the spec and tickets", since for a
   forge-issue epic that commit carries only the vocabulary.
+
+**Review fixes: the lookup survives the rewrite, at the owner's call.** "Relied on as they stand" missed one thing:
+`change-request-creator` rewrote the draft's description through `pr`, and the spec's location went with the
+placeholder, so a delivery resumed after stage 2 could no longer find the branch by the change request naming it.
+`change-request-creator` now keeps the spec's location word for word in the description it writes, adding a
+`Spec: <spec location>` line where `pr` left it out, and "Find the epic" says the branch found may be an earlier
+delivery's as well as refine's. Refine's stage-5 re-run reads the same description the same way.

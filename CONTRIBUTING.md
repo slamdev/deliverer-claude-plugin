@@ -862,6 +862,8 @@ rather than reproduced. Nothing in it is ever removed, passed or failed:
   `delivered.diff`, the diff a delivery's change request carried, and `adjudication.md`, every **assumption comment**
   on it and every reply under it in full. Those last two are what the **verifier** is given to read, and the second one
   exists because whether the **verdict**s were sound is the subject no assertion settles.
+  **Only a brief the run's own session records show it writing is collected** out of a shared directory, however new:
+  a concurrent session's brief in `/tmp` was once taken for the run's own.
   **Where the brief was written is the orchestrator's choice, so all three temporary directories are swept**:
   `harness/brief.ts` collects out of `os.tmpdir()`, `/tmp` and the run's own `TMPDIR`. Of the pair driven on
   2026-09-13 the first wrote its brief to the shared `/tmp` and the second to `tmp/<slug>-brief.md`, which the sweep
@@ -869,7 +871,10 @@ rather than reproduced. Nothing in it is ever removed, passed or failed:
   assertion covers the collection either way, so the diagnostic naming what was collected is the only sign it happened.
 
 On the forge, each happy path's **throwaway repo** is deleted when the test passes and left standing, with its branch
-and change request, when it fails: the change request is the evidence.
+and change request, when it fails: the change request is the evidence. `DELIVERER_E2E_KEEP_REPO=1` leaves a passing
+refinement's repository standing too, and says so in a diagnostic: it is for re-running `/deliverer:refine` by hand on
+the repository a happy path left, the way ticket 06 of `refine-commits-its-vocabulary` checked stage 5's resume. The
+build path ignores it. Whoever sets it deletes the repository by hand.
 
 ### The bench — one writer's stage, driven alone
 
