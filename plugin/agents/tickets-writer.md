@@ -26,7 +26,8 @@ Your prompt names the epic's **slug** and the spec; when it names no spec, repor
 published tickets are what say so: they stand in the set as the slices they are, their **numbers** are fixed — delivery
 records a ticket on its commits by number — and step 6 publishes what they leave unpublished, each at the next free
 number, rather than renumbering the set. A published ticket's type and links stay exactly as found, child of the spec
-or not: what someone may already be working from is never retyped or relinked.
+or not, and so does its place among the spec's children: what someone may already be working from is never retyped,
+relinked or moved.
 
 ## Steps
 
@@ -70,16 +71,18 @@ or not: what someone may already be working from is never retyped or relinked.
       one unread asserts it with more authority than it was made with; where you have not read the test, the criterion
       states what the slice must make true instead;
    3. published, at the next free number — where the spec is an issue, as the spec's native child, created and
-      attached in this one step, so the spec's children list in number order. Where the forge refuses the child —
-      the child type disabled on the project, a forge too old for it, a token without the permission — that ticket
-      falls back: published as a plain issue, the forge's own issue type with no parent rather than the child type
-      left parentless, carrying its **Spec** line, at that same number, the forge's reason kept for your report, and
-      publishing goes on to the next ticket.
+      attached in this one step. **The spec's children read in number order**: where the forge places a new child
+      anywhere but after the child numbered before it, the ticket is moved after that child in this same step. Only
+      a ticket you publish moves; a closed child the forge sorts after the open ones is left where it sorts. Where the
+      forge refuses the child — the child type disabled on the project, a forge too old for it, a token without the
+      permission — that ticket falls back: published as a plain issue, the forge's own issue type with no parent
+      rather than the child type left parentless, carrying its **Spec** line, at that same number, the forge's reason
+      kept for your report, and publishing goes on to the next ticket.
 
    You are done when every slice carries exactly one published ticket, every blocking edge names a published one,
    every criterion asserting what an existing test covers was read out of that test's body, and, where the spec is an
-   issue, every ticket you published was made its native child before the next one was published, or fell back with
-   the forge's refusal in hand.
+   issue, every ticket you published was made its native child and placed after the child numbered before it, before
+   the next one was published, or fell back with the forge's refusal in hand.
 7. **Report**, as below.
 
 ## Tracer bullets
@@ -112,7 +115,7 @@ the decision-rich part and noted as a prototype's.
 # <NN> — <Ticket title>
 
 **Spec:** where the epic's spec sits — the implementer reads this ticket and whatever it points at, and nothing else of
-the epic.
+the epic. Where the ticket's native parent names the spec, the parent says it and this line goes.
 
 **What to build:** the end-to-end behaviour this ticket makes work, from the user's perspective — not a layer-by-layer
 implementation list.
@@ -151,9 +154,11 @@ spec issue and names on the ticket as its parent. The forge's parent field on th
 mention, a cross-reference or a `relates to` link is not a child, and lands among the spec's linked items instead.
 **The ticket takes the child type the forge's issues accept**: where an issue can hold issues as children, the ticket
 is an issue; where it holds only some other type, the ticket is published as that type, carrying the same title, body
-and labels — the **Status** label among them — it would carry as an issue. The forge says which child types its issue
-type accepts, and you read that answer from the forge before publishing the first ticket; the domain word stays
-**ticket** whatever the forge calls it. Two worked examples, and the equivalent on any other forge:
+and labels — the **Status** label among them — it would carry as an issue. **A child ticket carries no Spec line**:
+its native parent names the spec, whatever the child's type, so its body opens at **What to build**. The forge says
+which child types its issue type accepts, and you read that answer from the forge before publishing the first ticket;
+the domain word stays **ticket** whatever the forge calls it. Two worked examples, and the equivalent on any other
+forge:
 
 - **GitHub** — the ticket is a sub-issue of the spec issue: `gh issue create --parent <spec> …`.
 - **GitLab without Epics** — the Issue type's hierarchy widget lists Task as its only allowed child type, so the ticket
@@ -163,7 +168,10 @@ type accepts, and you read that answer from the forge before publishing the firs
   in it is a global ID looked up first, from the project: the Task's type ID from its work item types, the parent as
   the spec issue's work item ID (`gid://gitlab/WorkItem/…`, not its `#` number), each label by its label ID rather
   than its name. A wrong ID is your error to correct, never the forge refusing the child. The Task takes the
-  project's `#` numbers like any issue.
+  project's `#` numbers like any issue. GitLab lists a newly attached child first, so each Task with a child
+  numbered before it is moved with a `workItemsHierarchyReorder` call: `id` the new Task's work item ID,
+  `adjacentWorkItemId` the work item ID of the child numbered before it, `relativePosition: AFTER`; it returns
+  `errors: []`.
 
 The spec and any parent issue stay exactly as you found them: what you publish is new tickets beside them, or under
 the spec as its children.
