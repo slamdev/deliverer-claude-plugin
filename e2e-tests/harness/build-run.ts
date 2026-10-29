@@ -94,15 +94,11 @@ export interface BuildOutcome {
   readonly skill: string;
   /** the human's seat, empty: what a delivery asked that nobody was there to answer */
   readonly seat: ResponderRecord;
-  /** the epic the delivery was handed, as it was seeded: off the clone, or off the issues */
-  readonly epic: PublishedEpic;
   /**
-   * The epic's **slug**, which its **debrief** is filed under: the fixture's `epicSlug`, which a
-   * forge-issue epic's spec issue is titled with and its epic branch named. `epic.slug` is the
-   * spec issue's number there, which is what `readEpic` takes and no debrief is filed under
-   * (refine-commits-its-vocabulary ticket 04).
+   * The epic the delivery was handed, as it was seeded: off the clone, or off the issues. Its
+   * **slug**, which its **debrief** is filed under, is the fixture's `epicSlug` either way.
    */
-  readonly slug: string;
+  readonly epic: PublishedEpic;
   /** every change request the repository carries, so "exactly one" is a matcher's to hold */
   readonly changeRequests: readonly ChangeRequestSummary[];
   /** the one it opened, read whole — null when it opened none, or more than one */
@@ -260,7 +256,6 @@ export function buildRun(fixtureName: string): BuildRunBuilder {
         skill: TEST_NAME,
         seat: seat.record(),
         epic,
-        slug: fixture.epic?.slug ?? epic.slug,
         changeRequests,
         changeRequest,
         roundsCompleted: roundsCompleted(run.report),

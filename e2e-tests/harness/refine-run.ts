@@ -26,7 +26,13 @@ import {
 import { briefsBeforeRun, collectBriefs, type Briefs } from "./brief.ts";
 import { listChangeRequests, type ChangeRequestSummary } from "./change-request.ts";
 import { describeDebriefs, readDebriefs, type Debriefs } from "./debrief.ts";
-import { epicForReading, listEpics, readEpic, type PublishedEpic } from "./epic.ts";
+import {
+  epicForReading,
+  listEpics,
+  readEpic,
+  type PublishedEpic,
+  type RefinementBranch,
+} from "./epic.ts";
 import { loadFixture, type Fixture } from "./fixture.ts";
 import {
   DEFAULT_BRANCH,
@@ -34,7 +40,6 @@ import {
   readBranch,
   remoteBranches,
   remoteHead,
-  type BranchCommit,
 } from "./forge.ts";
 import { installPluginUnderTest, REVIEW_OPTIONS } from "./install.ts";
 import { createResponder, type ResponderRecord } from "./responder.ts";
@@ -52,13 +57,7 @@ import { verifyEpic, type Verdict } from "./verifier.ts";
 const TEST_NAME = "refine";
 
 /** A branch the run left on the forge that the repository was not created with. */
-export interface NewBranch {
-  readonly name: string;
-  /** every file it carries, relative to the repository's root */
-  readonly files: readonly string[];
-  /** every commit it carries beyond the default branch the repository was created with */
-  readonly commits: readonly BranchCommit[];
-}
+export type NewBranch = RefinementBranch;
 
 export interface RefineOutcome {
   readonly runDirectory: RunDirectory;
@@ -87,20 +86,15 @@ export interface RefineOutcome {
   /** what the run found in the operating system's temporary directory, and what it took away */
   readonly briefs: Briefs;
   readonly spend: Spend;
-  /** the epic the run published, read off the clone or off the throwaway repo's issues */
-  readonly epic: PublishedEpic;
   /**
-   * The epic's **slug** as the run itself named it, which is what its **debrief** is filed under
-   * and its **epic branch** is named from — or null where the run left nothing to read it off.
+   * The epic the run published, read off the clone or off the throwaway repo's issues.
    *
-   * On an in-repository tracker it is the directory the epic was published at, which is
-   * `epic.slug`. On a forge-issue tracker `epic.slug` is the spec issue's number, because the
-   * forge names an issue exactly by nothing else; the run's own name for the epic is read off the
-   * brief it wrote, which the skill files as `<slug>-brief.md` so that a later run can find it
-   * (refine-commits-its-vocabulary ticket 04). Not off the spec issue's title: that is only named
-   * FROM the slug, which is exactly the approximation the debrief's lookup cannot afford.
+   * Its **slug** is the run's own name for the epic, which its **debrief** is filed under and its
+   * **epic branch** is named from: on an in-repository tracker the directory it was published at,
+   * and on a forge-issue tracker the name of the brief the run wrote, which the skill files as
+   * `<slug>-brief.md` so that a later run can find it (refine-commits-its-vocabulary ticket 04).
    */
-  readonly slug: string | null;
+  readonly epic: PublishedEpic;
   /** the test's own signal, so a verdict is stopped with the test rather than after it */
   readonly ceiling: AbortSignal;
   /**
@@ -217,8 +211,14 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
           `(${changeRequests.map(describeChangeRequest).join(", ") || "none"})`,
       );
       // Read whichever epic the run published, or an empty one when it published none — the
-      // matcher is what names that as the failure it is.
-      const epic = await readEpic(source, fixture, epicsPublished[0] ?? "(nothing published)");
+      // matcher is what names that as the failure it is. The brief's name is handed along for a
+      // tracker that cannot name the slug itself.
+      const epic = await readEpic(
+        source,
+        fixture,
+        epicsPublished[0] ?? "(nothing published)",
+        slugOfBrief(collected),
+      );
       return {
         runDirectory,
         fixture,
@@ -238,9 +238,6 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
         briefs,
         spend,
         epic,
-        slug: fixture.tracker.kind === "in-repository"
-          ? epicsPublished[0] ?? null
-          : slugOfBrief(collected),
         ceiling: t.signal,
         cleanUp: () => deleteThrowawayRepo(runDirectory, repo),
       };

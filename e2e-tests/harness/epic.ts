@@ -3,7 +3,10 @@
  * (end-to-end-tests ticket 02; refine-commits-its-vocabulary ticket 03).
  *
  * This reads; `./matchers.ts` judges. The split is what keeps a failure able to say what was there
- * instead of only what was not.
+ * instead of only what was not. What a matcher holds a run to where the two kinds differ — where
+ * an epic is said to be, whose numbers its tickets carry, what a refinement commits onto the
+ * **epic branch** — is the kind's own knowledge as well, so it is written here too
+ * (`EpicExpectations`) and a matcher asks for it instead of testing the kind itself.
  *
  * **Where to look is the fixture's to say, and what to find there is the plugin's.** Where the
  * fixture's tracker is files in the repository, the tracker root, the spec's filename and the
@@ -16,8 +19,8 @@
  * **This is the one place the tracker kind branches.** An in-repository epic is read off the clone
  * and seeded into the fixture's tree before its one commit; a forge-issue epic is read off the
  * **throwaway repo**'s issues and seeded onto them once the repository exists. Every caller asks
- * the same three questions — which epics are there, what does one hold, where is the one a
- * delivery is handed — and gets the same answer shape whichever kind it is.
+ * the same questions — which epics are there, what does one hold, where is the one a delivery is
+ * handed, what is a run to be held to — and gets the same answer shape whichever kind it is.
  */
 import { copyFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, join, posix, relative, sep } from "node:path";
@@ -27,6 +30,7 @@ import {
   listIssues,
   openDraftChangeRequest,
   pushSeededBranch,
+  type BranchCommit,
   type ForgeIssue,
 } from "./forge.ts";
 import type { RunDirectory } from "./run-directory.ts";
@@ -74,10 +78,22 @@ export interface PublishedTicket {
 
 export interface PublishedEpic {
   /**
-   * What `listEpics` names it by: the directory's name under an in-repository tracker's root, and
-   * the spec issue's number on a forge-issue tracker.
+   * What `listEpics` names it by and `readEpic` takes: the directory's name under an
+   * in-repository tracker's root, and the spec issue's number on a forge-issue tracker.
    */
-  readonly slug: string;
+  readonly key: string;
+  /**
+   * The epic's **slug** — what its **debrief** is filed under and its **epic branch** is named
+   * from — or null where nothing says it.
+   *
+   * On an in-repository tracker it is the key: the directory is named the slug. On a forge-issue
+   * tracker the forge names an issue by its number and nothing else, so the slug is whatever the
+   * caller knew it as: the fixture's `epicSlug` for an epic the harness seeded, and for one a
+   * refinement published, the name the run filed its **brief** under (`./refine-run.ts`). Never
+   * the spec issue's title, which is only named FROM the slug — exactly the approximation a
+   * debrief's lookup cannot afford.
+   */
+  readonly slug: string | null;
   /** relative to the clone, or the throwaway repo's issues page on a forge-issue tracker */
   readonly directory: string;
   /** relative to the clone, or the spec issue's URL */
@@ -89,7 +105,9 @@ export interface PublishedEpic {
   readonly otherFiles: readonly string[];
 }
 
-/** Every epic the fixture's tracker holds, by what `readEpic` takes. Taken before a run and after. */
+/**
+ * Every epic the fixture's tracker holds, by what `readEpic` takes. Taken before a run and after.
+ */
 export async function listEpics(source: EpicSource, fixture: Fixture): Promise<string[]> {
   if (fixture.tracker.kind === "forge-issues") {
     const issues = await listIssues(source.runDirectory, source.fullName);
@@ -98,17 +116,24 @@ export async function listEpics(source: EpicSource, fixture: Fixture): Promise<s
   return listEpicDirectories(source.runDirectory.cloneDir, fixture.tracker);
 }
 
-/** One epic, by what `listEpics` named it — an empty one, read as such, where nothing is there. */
+/**
+ * One epic, by what `listEpics` named it — an empty one, read as such, where nothing is there.
+ *
+ * `slug` is the name the caller knows the epic by, for a tracker that cannot say it itself: a
+ * forge-issue epic takes it as its slug, and an in-repository one is named by its directory
+ * whatever is passed.
+ */
 export async function readEpic(
   source: EpicSource,
   fixture: Fixture,
-  slug: string,
+  key: string,
+  slug: string | null = null,
 ): Promise<PublishedEpic> {
   if (fixture.tracker.kind === "forge-issues") {
     const issues = await listIssues(source.runDirectory, source.fullName);
-    return readIssueEpic(source, fixture, issues, slug);
+    return readIssueEpic(source, fixture, issues, key, slug);
   }
-  return readEpicDirectory(source.runDirectory.cloneDir, fixture.tracker, slug);
+  return readEpicDirectory(source.runDirectory.cloneDir, fixture.tracker, key);
 }
 
 /**
@@ -240,7 +265,13 @@ export async function seedEpicOnForge(
     tickets.push(issue);
   }
 
-  const seededEpic = readIssueEpic(source, fixture, [spec, ...tickets], String(spec.number));
+  const seededEpic = readIssueEpic(
+    source,
+    fixture,
+    [spec, ...tickets],
+    String(spec.number),
+    epic.slug,
+  );
   return {
     location: spec.url,
     epic: seededEpic,
@@ -322,7 +353,7 @@ export async function epicForReading(
   const specPath =
     epic.specPath === null
       ? null
-      : await written(`spec-${epic.slug}`, "the spec", epic.specPath, epic.specText);
+      : await written(`spec-${epic.key}`, "the spec", epic.specPath, epic.specText);
   const tickets: PublishedTicket[] = [];
   for (const ticket of epic.tickets) {
     const path = await written(
@@ -334,6 +365,193 @@ export async function epicForReading(
     tickets.push({ ...ticket, path });
   }
   return { ...epic, directory, specPath, tickets };
+}
+
+// --- what a run is held to ----------------------------------------------------------------------
+
+/** A branch a refinement pushed, as `./refine-run.ts` reads it off the forge. */
+export interface RefinementBranch {
+  readonly name: string;
+  /** every file it carries, relative to the repository's root */
+  readonly files: readonly string[];
+  /** every commit it carries beyond the default branch */
+  readonly commits: readonly BranchCommit[];
+}
+
+/**
+ * What the fixture's tracker kind holds a run to wherever the two kinds differ, so a matcher asks
+ * here rather than testing the kind (refine-commits-its-vocabulary ticket 03: the kind branches
+ * in one place). The phrases are what a failure says; the shortfall is the one check whose
+ * substance is the kind's, and it answers with what is missing rather than throwing, so the
+ * matcher stays the one that fails.
+ */
+export interface EpicExpectations {
+  /** where the tracker publishes epics, as a failure says it: `under docs/specs/` */
+  readonly epicsAt: string;
+  /** where the spec of this epic is published, as a failure says it */
+  specAt(epic: PublishedEpic): string;
+  /** where its tickets are published, as a failure says it */
+  ticketsAt(epic: PublishedEpic): string;
+  /**
+   * Whether the writer numbers the tickets, so a set is held to `01` upwards in two digits. A
+   * file's number is the writer's; an issue's is the forge's to assign (ticket 04).
+   */
+  readonly writerNumbersTickets: boolean;
+  /** what pushes an epic branch on this tracker, as a failure says it: `a refinement into …` */
+  readonly refinementPushing: string;
+  /**
+   * Every way a description can name the spec's location: the location itself, and for an issue
+   * on the throwaway repo, the `#<number>` the forge links within its own repository.
+   */
+  specLocations(specPath: string): string[];
+  /**
+   * What the one branch a refinement pushed lacks of what this kind's refinement commits onto
+   * it, as the failure to report — or null where it carries all of it. `collectedBriefs` is what
+   * a forge-issue epic's slug was read off, for the failure that says it could not be.
+   */
+  refinementShortfall(
+    fixture: Fixture,
+    epic: PublishedEpic,
+    branch: RefinementBranch,
+    collectedBriefs: readonly string[],
+  ): string | null;
+}
+
+/** What the fixture's tracker kind holds a run to. */
+export function epicExpectations(fixture: Fixture): EpicExpectations {
+  const tracker = fixture.tracker;
+  if (tracker.kind === "forge-issues") return FORGE_ISSUE_EXPECTATIONS;
+  return {
+    epicsAt: `under ${tracker.root}/`,
+    specAt: (epic) => `at ${epic.directory}/${tracker.specFile}`,
+    ticketsAt: (epic) => `under ${epic.directory}/${tracker.ticketsDirectory}/`,
+    writerNumbersTickets: true,
+    refinementPushing: "into an in-repository tracker",
+    specLocations: (specPath) => [specPath],
+    refinementShortfall: (_, epic, branch) => epicFilesShortfall(tracker, epic, branch),
+  };
+}
+
+/**
+ * The spec and every ticket, at the paths an in-repository tracker's conventions name.
+ *
+ * The spec's path is built from the fixture's own declaration rather than read off the working
+ * tree, so a spec published under some other name is a failure here and not a match against
+ * itself. The tickets are the ones the working tree holds, since how many there are is the
+ * writer's to decide: one the run wrote and never committed is one the branch does not carry.
+ */
+function epicFilesShortfall(
+  tracker: InRepositoryTracker,
+  epic: PublishedEpic,
+  branch: RefinementBranch,
+): string | null {
+  const directory = epic.directory;
+  const carried = new Set(branch.files);
+  const specPath = `${directory}/${tracker.specFile}`;
+  const ticketsDirectory = `${directory}/${tracker.ticketsDirectory}/`;
+  const underEpic = branch.files.filter((path) => path.startsWith(`${directory}/`));
+  const carriedThere = `Under ${directory}/ it carries ${underEpic.join(", ") || "nothing"}.`;
+
+  if (!carried.has(specPath)) {
+    return (
+      `${branch.name} carries no spec at ${specPath}, which is where this fixture's conventions ` +
+      `put one. ${carriedThere}`
+    );
+  }
+  if (!branch.files.some((path) => path.startsWith(ticketsDirectory))) {
+    return `${branch.name} carries no tickets under ${ticketsDirectory}. ${carriedThere}`;
+  }
+  const uncommitted = epic.tickets
+    .map((ticket) => ticket.path)
+    .filter((path) => !carried.has(path));
+  if (uncommitted.length > 0) {
+    return (
+      `${uncommitted.length} of the ${epic.tickets.length} tickets in the working tree ` +
+      `are not on ${branch.name}: ${uncommitted.join(", ")}. ${carriedThere}`
+    );
+  }
+  return null;
+}
+
+const FORGE_ISSUE_EXPECTATIONS: EpicExpectations = {
+  epicsAt: "on the forge's issues",
+  specAt: (epic) => `as an issue at ${epic.directory}`,
+  ticketsAt: (epic) => `as issues at ${epic.directory}`,
+  writerNumbersTickets: false,
+  refinementPushing: "into the forge's issues whose grilling landed a glossary entry",
+  specLocations: (specPath) => {
+    const number = /\/issues\/(\d+)$/.exec(specPath)?.[1];
+    return number === undefined ? [specPath] : [specPath, `#${number}`];
+  },
+  refinementShortfall: vocabularyShortfall,
+};
+
+/**
+ * The forge-issue counterpart: a branch named from the epic's slug whose commits carry the
+ * glossary term the fixture's brief insists on.
+ *
+ * The term is looked for in the lines the commits added, case aside, and not in a particular
+ * file: where the glossary sits is the fixture's `CLAUDE.md`'s to say and the grilling's to
+ * follow, while the term reaching the branch at all is what tells a refinement that committed its
+ * vocabulary from one that left it in the tree.
+ */
+function vocabularyShortfall(
+  fixture: Fixture,
+  epic: PublishedEpic,
+  branch: RefinementBranch,
+  collectedBriefs: readonly string[],
+): string | null {
+  const slug = epic.slug;
+  if (slug === null) {
+    return (
+      `the run's own slug could not be read off the brief it wrote ` +
+      `(${collectedBriefs.join(", ") || "it collected none"}), so ${branch.name} ` +
+      `cannot be held to a name made from it.`
+    );
+  }
+  if (!namedFromSlug(branch.name, slug)) {
+    return (
+      `${branch.name} is the one new branch, but it is not named from the epic's slug, ${slug}: ` +
+      `it is neither the slug nor a name with the slug as one of its /-separated parts. A ` +
+      `refinement into the forge's issues commits onto the branch named from the slug, which ` +
+      `is the one build looks for.`
+    );
+  }
+  const term = fixture.glossaryTerm;
+  if (term === null) {
+    return (
+      `the fixture ${fixture.name} keeps its tracker on the forge's issues and names no ` +
+      `"glossaryTerm" in fixture.json, so nothing says what ${branch.name} should carry. Its ` +
+      `brief is meant to insist on one term entering the glossary, and the manifest names it.`
+    );
+  }
+  const lowered = term.toLowerCase();
+  const carrying = branch.commits.filter((commit) =>
+    commit.added.some((line) => line.toLowerCase().includes(lowered)),
+  );
+  if (carrying.length === 0) {
+    const changed = [...new Set(branch.commits.flatMap((commit) => commit.files))];
+    return (
+      `no commit on ${branch.name} adds the glossary term "${term}" the brief insisted on. Its ` +
+      `${branch.commits.length} commits change ${changed.join(", ") || "nothing"}.`
+    );
+  }
+  return null;
+}
+
+/**
+ * Whether a branch is named from the slug: the slug itself, or a name styled after the branches
+ * already there that carries the slug as one whole `/`-separated part — a type or an owner in
+ * front of it, as in `feat/` or `<user>/`.
+ *
+ * The style is the model's to read, and a throwaway repo carries only its default branch to read
+ * it from, so a prefix is allowed. Merely CONTAINING the slug is not: `word-wrap` sits inside
+ * `word-wrap-cjk` and `not-word-wrap`, which are other epics' names, and two epics on one branch
+ * is the collision a slug exists to prevent. A whole part rather than any prefix, because a
+ * `-`-joined one cannot be told from another epic's slug that happens to end in this one.
+ */
+function namedFromSlug(name: string, slug: string): boolean {
+  return name.split("/").includes(slug);
 }
 
 // --- in the repository -------------------------------------------------------------------------
@@ -353,10 +571,10 @@ async function listEpicDirectories(
 async function readEpicDirectory(
   cloneDir: string,
   tracker: InRepositoryTracker,
-  slug: string,
+  key: string,
 ): Promise<PublishedEpic> {
-  const directory = posix.join(tracker.root, slug);
-  const absolute = join(cloneDir, tracker.root, slug);
+  const directory = posix.join(tracker.root, key);
+  const absolute = join(cloneDir, tracker.root, key);
   const files = await filesUnder(absolute);
   const inTickets = `${tracker.ticketsDirectory}/`;
 
@@ -391,7 +609,9 @@ async function readEpicDirectory(
   }
 
   return {
-    slug,
+    key,
+    // The directory is named the slug, so the key is it — where there is a directory at all.
+    slug: files.length === 0 ? null : key,
     directory,
     specPath,
     specText,
@@ -441,8 +661,8 @@ async function filesUnder(root: string): Promise<string[]> {
  * Whether an issue is a ticket rather than a spec.
  *
  * A ticket is a sub-issue of its spec, or declares its blocking edges — by the forge's own
- * mechanism or by a `Blocked by:` line, since `tickets-writer` keeps the line where the forge has no
- * way to say "None — can start immediately". A spec is neither: it has no parent and nothing
+ * mechanism or by a `Blocked by:` line, since `tickets-writer` keeps the line where the forge has
+ * no way to say "None — can start immediately". A spec is neither: it has no parent and nothing
  * blocks it.
  */
 function isTicket(issue: ForgeIssue): boolean {
@@ -450,19 +670,20 @@ function isTicket(issue: ForgeIssue): boolean {
 }
 
 /**
- * The epic whose spec is the issue numbered `slug`: its tickets are every ticket that is its
- * sub-issue or nobody's, since a throwaway repo carries one epic and a writer that published no
- * parent link is still a writer that published tickets. A ticket parented on some other issue is
- * someone else's, and is quoted rather than counted.
+ * The epic whose spec is the issue numbered `key`, known as `slug`: its tickets are every ticket
+ * that is its sub-issue or nobody's, since a throwaway repo carries one epic and a writer that
+ * published no parent link is still a writer that published tickets. A ticket parented on some
+ * other issue is someone else's, and is quoted rather than counted.
  */
 function readIssueEpic(
   source: EpicSource,
   fixture: Fixture,
   issues: readonly ForgeIssue[],
-  slug: string,
+  key: string,
+  slug: string | null,
 ): PublishedEpic {
   const directory = `https://github.com/${source.fullName}/issues`;
-  const spec = issues.find((issue) => String(issue.number) === slug && !isTicket(issue));
+  const spec = issues.find((issue) => String(issue.number) === key && !isTicket(issue));
   const tickets: PublishedTicket[] = [];
   const otherFiles: string[] = [];
   for (const issue of issues) {
@@ -482,6 +703,7 @@ function readIssueEpic(
     });
   }
   return {
+    key,
     slug,
     directory,
     specPath: spec?.url ?? null,

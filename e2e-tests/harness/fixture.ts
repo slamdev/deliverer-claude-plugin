@@ -61,7 +61,7 @@ export const FIXTURES_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "..
  */
 export type TrackerConventions = InRepositoryTracker | ForgeIssueTracker;
 
-/** Files in the repository: one directory per epic under a root, its spec and its tickets inside. */
+/** Files in the repository: one directory per epic under a root, its spec and tickets inside. */
 export interface InRepositoryTracker {
   readonly kind: "in-repository";
   /** where an epic's directory sits, relative to the repository's root */
