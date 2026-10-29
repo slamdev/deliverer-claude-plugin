@@ -31,7 +31,7 @@ import {
   type ChangeRequestSummary,
 } from "./change-request.ts";
 import { describeDebriefs, readDebriefs, type Debriefs } from "./debrief.ts";
-import { readEpic, type PublishedEpic } from "./epic.ts";
+import { epicForReading, type PublishedEpic } from "./epic.ts";
 import { DEFAULT_BRANCH } from "./forge.ts";
 import { loadFixture, type Fixture } from "./fixture.ts";
 import { installPluginUnderTest, REVIEW_OPTIONS } from "./install.ts";
@@ -94,7 +94,10 @@ export interface BuildOutcome {
   readonly skill: string;
   /** the human's seat, empty: what a delivery asked that nobody was there to answer */
   readonly seat: ResponderRecord;
-  /** the epic the delivery was handed, read off the clone */
+  /**
+   * The epic the delivery was handed, as it was seeded: off the clone, or off the issues. Its
+   * **slug**, which its **debrief** is filed under, is the fixture's `epicSlug` either way.
+   */
   readonly epic: PublishedEpic;
   /** every change request the repository carries, so "exactly one" is a matcher's to hold */
   readonly changeRequests: readonly ChangeRequestSummary[];
@@ -157,11 +160,18 @@ export function buildRun(fixtureName: string): BuildRunBuilder {
 
       const repo = await createThrowawayRepo(runDirectory, fixture);
       t.diagnostic(
-        `throwaway repo ${repo.fullName} created private, carrying the epic at ` +
-          `${repo.epicLocation} on ${DEFAULT_BRANCH} at ${repo.headAtCreation.slice(0, 12)}`,
+        `throwaway repo ${repo.fullName} created private at ` +
+          `${repo.headAtCreation.slice(0, 12)} on ${DEFAULT_BRANCH}, carrying the epic at ` +
+          `${repo.epicLocation}` +
+          (repo.refinement === null
+            ? ""
+            : `, seeded as a refinement leaves it: ${repo.refinement.branch} at ` +
+              `${repo.refinement.commit.slice(0, 12)} and its draft ${repo.refinement.draft.url}`),
       );
 
-      const epic = await readEpic(runDirectory.cloneDir, fixture.tracker, fixture.epic?.slug ?? "");
+      // Read where it was seeded rather than looked up again: a forge-issue epic's issues were
+      // each read back by number as they were made, and a list taken this soon can lag them.
+      const epic = repo.epic;
       // Read before the run, because a contributor who has the double selected wants telling now
       // rather than after twenty minutes of delivery. What actually reached the session is read off
       // the run once it is over, which is the only place that fact exists.
@@ -284,8 +294,11 @@ export function buildRun(fixtureName: string): BuildRunBuilder {
  *
  * Separate from `start` because the mechanical assertions run first: a verdict on a change request
  * that was never opened costs money to be told what a matcher already said.
+ *
+ * The **verifier** reads files and nothing that reaches the forge, so a forge-issue epic is written
+ * out into the run directory first, as the delivery was handed it (`epicForReading`).
  */
-export function verify(outcome: BuildOutcome): Promise<Verdict> {
+export async function verify(outcome: BuildOutcome): Promise<Verdict> {
   const delivered = outcome.changeRequest;
   const { deliveredDiffPath, adjudicationPath } = outcome;
   if (delivered === null || deliveredDiffPath === null || adjudicationPath === null) {
@@ -296,7 +309,7 @@ export function verify(outcome: BuildOutcome): Promise<Verdict> {
   }
   return verifyDelivery(
     outcome.runDirectory,
-    outcome.epic,
+    await epicForReading(outcome.runDirectory, outcome.fixture, outcome.epic),
     { branch: delivered.branch, diffPath: deliveredDiffPath, adjudicationPath },
     outcome.ceiling,
   );

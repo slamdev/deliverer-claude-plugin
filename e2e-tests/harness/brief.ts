@@ -16,9 +16,16 @@
  *
  * So a run collects its own brief out of the shared directory when it finishes: the evidence moves
  * into the **run directory**, where a run's leavings belong and where a contributor can read it,
- * and the next run finds nothing to resume from. **A brief it did not write is never touched** —
- * only files as new as the run itself are collected, so a contributor's own refinement, on another
- * project on the same machine, is left exactly where they left it.
+ * and the next run finds nothing to resume from. **A brief it did not write is never touched.**
+ * Out of a shared directory, a file is collected only where the run's own **session record**s
+ * show a tool call writing a file of that name, and only where the file is as new as the run. The
+ * age alone was the rule once, and it did not hold: a contribution session elsewhere on the same
+ * machine wrote `repo-linters-brief.md` to `/tmp` while a refinement was running, so it was as
+ * new as the run, and the run took it (refine-commits-its-vocabulary ticket 06). A name the run
+ * merely READ — a listing of the directory it took its bearings from — is no write, so a foreign
+ * brief the run saw is left where it is. The record is the signal, and not the epic's **slug**:
+ * on a forge-issue tracker the brief's filename is where the slug is read from (`./refine-run.ts`),
+ * so the slug cannot also be what picks the file.
  *
  * The run's own temporary directory is collected from for the second of those reasons alone: no
  * other run can reach it, so there is nothing there to prevent, but the brief still belongs at the
@@ -31,7 +38,7 @@
  * it left is listed before the next run starts, so the matcher that catches a skipped stage 1 can
  * name the file that caused it instead of leaving a contributor to guess.
  */
-import { readdir, rename, stat } from "node:fs/promises";
+import { readFile, readdir, rename, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { RunDirectory } from "./run-directory.ts";
@@ -79,8 +86,9 @@ export async function briefsBeforeRun(): Promise<string[]> {
  * The briefs this run wrote, moved into the run directory.
  *
  * `since` is when the run started: a brief older than that belongs to somebody else and stays where
- * it is. A move that fails is not a failure of the test — the run has already happened — so it is
- * reported by its absence from the list rather than by a throw.
+ * it is, and so does one in a shared directory that the run's own records never show it writing,
+ * however new. A move that fails is not a failure of the test — the run has already happened — so
+ * it is reported by its absence from the list rather than by a throw.
  */
 export async function collectBriefs(
   runDirectory: RunDirectory,
@@ -88,10 +96,15 @@ export async function collectBriefs(
 ): Promise<string[]> {
   const collected: string[] = [];
   const seen = new Set<string>();
+  const ownNames = await briefNamesWritten(runDirectory);
   for (const directory of temporaryDirectories(runDirectory)) {
+    // The run's own temporary directory is reachable by no other run, so whatever is there is the
+    // run's; a shared one holds everybody's, and only a name the run wrote is taken out of it.
+    const shared = directory !== runDirectory.tempDir;
     for (const path of await briefsIn(directory)) {
       if (seen.has(path)) continue;
       seen.add(path);
+      if (shared && !ownNames.has(briefName(path))) continue;
       const written = await writtenAt(path);
       if (written === null || written < since) continue;
       // Two of the swept directories can hold the same NAME — the shared one and the run's own —
@@ -110,6 +123,74 @@ export async function collectBriefs(
     }
   }
   return collected.sort();
+}
+
+/** The tools whose `file_path` is a file they write. */
+const WRITING_TOOLS = new Set(["Write", "Edit", "MultiEdit"]);
+
+/** A shell command writing a brief: a redirection into it, or `tee` onto it. */
+const SHELL_WRITE = /(?:>>?|\btee(?:[ \t]+-a)?)[ \t]*['"]?([^\s'"]*-brief\.md)/g;
+
+/**
+ * The name of every brief the run's own session records show it writing, whichever session or
+ * dispatch wrote it: a `Write` or an `Edit` naming the file, or a shell command redirected into
+ * it. Names and not paths, because the same file is reached as `/tmp/<slug>-brief.md` by one
+ * orchestrator and under `TMPDIR` by another, and the directory is the sweep's to say. A record
+ * that cannot be read gives nothing, so a run whose records are gone collects only out of its own
+ * temporary directory and leaves a shared one alone: the next run lists what was left.
+ */
+async function briefNamesWritten(runDirectory: RunDirectory): Promise<Set<string>> {
+  const names = new Set<string>();
+  const root = join(runDirectory.configDir, "projects");
+  let entries: string[];
+  try {
+    entries = await readdir(root, { recursive: true });
+  } catch {
+    return names;
+  }
+  for (const entry of entries) {
+    if (!entry.endsWith(".jsonl")) continue;
+    let text: string;
+    try {
+      text = await readFile(join(root, entry), "utf8");
+    } catch {
+      continue;
+    }
+    for (const line of text.split("\n")) {
+      if (!line.includes("-brief.md")) continue;
+      for (const path of briefPathsWrittenBy(line)) names.add(briefName(path));
+    }
+  }
+  return names;
+}
+
+/** The brief paths one session record line's tool calls write. */
+function briefPathsWrittenBy(line: string): string[] {
+  let record: unknown;
+  try {
+    record = JSON.parse(line);
+  } catch {
+    return [];
+  }
+  const content = (record as { message?: { content?: unknown } }).message?.content;
+  if (!Array.isArray(content)) return [];
+  const paths: string[] = [];
+  for (const block of content as unknown[]) {
+    const call = block as { type?: unknown; name?: unknown; input?: Record<string, unknown> };
+    if (call.type !== "tool_use" || typeof call.name !== "string") continue;
+    const input = call.input ?? {};
+    const filePath = input["file_path"];
+    if (WRITING_TOOLS.has(call.name) && typeof filePath === "string" && BRIEF.test(filePath)) {
+      paths.push(filePath);
+    }
+    const command = input["command"];
+    if (call.name === "Bash" && typeof command === "string") {
+      for (const match of command.matchAll(SHELL_WRITE)) {
+        if (match[1] !== undefined) paths.push(match[1]);
+      }
+    }
+  }
+  return paths;
 }
 
 /** The file's own name, which carries the epic's slug and is what makes it worth keeping. */

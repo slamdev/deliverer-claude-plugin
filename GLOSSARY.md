@@ -119,8 +119,9 @@ follow-up, outstanding item
 ### Delivery
 
 **Epic branch**:
-The one branch an epic is carried on — its spec and tickets where they live in the repository, then every ticket's
-commits — and the branch its change request is opened from. _Avoid_: feature branch, topic branch
+The one branch an epic is carried on — whatever its refinement wrote into the repository (its spec and tickets where
+they live there, and the glossary entries and ADRs its grilling landed), then every ticket's commits — and the branch its
+change request is opened from. _Avoid_: feature branch, topic branch
 
 **Change request**:
 The unit of delivery a human reviews and merges, on whatever forge the repository uses. _Avoid_: PR, MR, pull request,

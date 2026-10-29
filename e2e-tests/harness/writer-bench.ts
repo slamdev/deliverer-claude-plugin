@@ -46,7 +46,7 @@ import { cp, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { CeilingReached, minutes, type Ceilings } from "./ceilings.ts";
 import { execute } from "./command.ts";
-import type { Fixture } from "./fixture.ts";
+import { inRepositoryTracker, type Fixture } from "./fixture.ts";
 import { buildFixtureRepository } from "./forge.ts";
 import { putBack, takeTheSeat, type AnsweredFork } from "./put-back.ts";
 import {
@@ -520,7 +520,7 @@ async function buildClone(
   fixture: Fixture,
   inputs: string,
 ): Promise<void> {
-  await buildFixtureRepository(runDirectory, fixture, null);
+  await buildFixtureRepository(runDirectory, fixture);
   await execute("git", ["clone", "--quiet", runDirectory.fixtureRepoDir, runDirectory.cloneDir], {
     cwd: runDirectory.root,
     env: runEnvironment(runDirectory),
@@ -535,12 +535,13 @@ async function publishedSpec(
   fixture: Fixture,
 ): Promise<{ path: string | null; bytes: number; userStories: number }> {
   const empty = { path: null, bytes: 0, userStories: 0 };
-  const trackerRoot = join(runDirectory.cloneDir, ...fixture.tracker.root.split("/"));
+  const tracker = inRepositoryTracker(fixture, "the spec-writer bench");
+  const trackerRoot = join(runDirectory.cloneDir, ...tracker.root.split("/"));
   let found: string | null = null;
   try {
     const entries = await readdir(trackerRoot, { withFileTypes: true, recursive: true });
     for (const entry of entries) {
-      if (!entry.isFile() || entry.name !== fixture.tracker.specFile) continue;
+      if (!entry.isFile() || entry.name !== tracker.specFile) continue;
       // The first by path, so two runs of one arm name the same file. A bench drives one epic, and
       // a second spec under the tracker root is itself worth seeing in the reading.
       const path = join(entry.parentPath, entry.name);

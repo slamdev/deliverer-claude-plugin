@@ -5,17 +5,18 @@
  * Every repository the harness drives a run against is a **throwaway repo** made from one
  * **fixture**, created per run and destroyed when the test passes. Everything under that — what a
  * fixture's repository is, which branch it lands on, how git authenticates, who the fixture's
- * commit is authored by — lives here, once.
+ * commit is authored by — lives here, once. So do the issues a throwaway repo carries, where a
+ * fixture's tracker is the forge's own (refine-commits-its-vocabulary ticket 03).
  *
  * **Credentials never land in a file.** `gh` already holds the forge token, and
  * `gh auth git-credential` is what it offers git for exactly this; the empty helper ahead of it
  * clears whatever the contributor's own configuration would otherwise have contributed. So nothing
  * here writes a token into a clone's `.git/config`, which outlives the run in the run directory.
  */
-import { chmod, copyFile, mkdir, readdir } from "node:fs/promises";
-import { dirname, join, relative, sep } from "node:path";
+import { chmod, copyFile, mkdir, writeFile } from "node:fs/promises";
+import { dirname, join, relative } from "node:path";
 import { execute } from "./command.ts";
-import type { Fixture, FixtureEpic } from "./fixture.ts";
+import type { Fixture } from "./fixture.ts";
 import { REPOSITORY_ROOT } from "./repository.ts";
 import { runEnvironment, type RunDirectory } from "./run-directory.ts";
 import { listWorkingTree } from "./working-tree.ts";
@@ -83,24 +84,22 @@ export async function forgeAccount(runDirectory: RunDirectory): Promise<string> 
 }
 
 /**
- * The fixture's `repository/` built into a git repository of its own, with the **epic** in it where
- * the caller asked for one.
+ * The fixture's `repository/` built into a git repository of its own, with whatever the caller
+ * seeds into the tree before the fixture's one commit is made.
  *
  * The file list comes from git rather than from a directory walk, exactly as the staged copy does,
  * so `node_modules/` and anything else the fixture ignores stays out — and so the two ideas of
- * "what is in the fixture" cannot drift apart. The epic is copied off disk instead: it lands
- * inside the repository being built rather than being one of the fixture's own files, and a fixture
- * whose epic is untracked is still a fixture.
+ * "what is in the fixture" cannot drift apart.
  *
- * **The epic is what tells the two repositories apart**, and the caller passes it rather than
- * asking for it: a delivery is handed one that was on the default branch from the moment the
- * repository existed, while a refinement publishes its own into an empty tracker root and one
- * already sitting there is one it can publish on top of.
+ * **What the seed is, is the caller's.** A delivery against an in-repository tracker seeds its
+ * **epic** here, so it is on the default branch from the moment the repository exists; a
+ * refinement seeds nothing, because one already sitting under the tracker root is one it can
+ * publish on top of. Which tracker kind wants what is decided in `./epic.ts` and nowhere here.
  */
 export async function buildFixtureRepository(
   runDirectory: RunDirectory,
   fixture: Fixture,
-  epic: FixtureEpic | null,
+  seedTree?: (fixtureRepoDir: string) => Promise<void>,
 ): Promise<void> {
   const inRepository = relative(REPOSITORY_ROOT, fixture.repositoryDir);
   const files = await listWorkingTree(
@@ -122,7 +121,7 @@ export async function buildFixtureRepository(
     // gates are a shell script would otherwise reach the forge unable to run them.
     await chmod(destination, file.mode);
   }
-  if (epic !== null) await copyEpic(runDirectory, fixture, epic);
+  if (seedTree !== undefined) await seedTree(runDirectory.fixtureRepoDir);
 
   const inFixture = git(runDirectory, runDirectory.fixtureRepoDir);
   await inFixture(
@@ -136,32 +135,88 @@ export async function buildFixtureRepository(
   );
 }
 
-/** The epic, at the location the fixture's own tracker conventions put one. */
-async function copyEpic(
-  runDirectory: RunDirectory,
-  fixture: Fixture,
-  epic: FixtureEpic,
-): Promise<void> {
-  const entries = await readdir(epic.directory, { withFileTypes: true, recursive: true });
-  const files = entries.filter((entry) => entry.isFile());
-  if (files.length === 0) {
-    throw new Error(`the fixture ${fixture.name} has an empty epic/ at ${epic.directory}`);
-  }
-  for (const entry of files) {
-    const source = join(entry.parentPath, entry.name);
-    const inEpic = relative(epic.directory, source).split(sep).join("/");
-    const destination = join(runDirectory.fixtureRepoDir, ...epic.location.split("/"), inEpic);
-    await mkdir(dirname(destination), { recursive: true });
-    await copyFile(source, destination);
-  }
-}
-
 /** The fixture pushed over whatever the forge had, which may be nothing at all. */
 export async function forcePushFixture(runDirectory: RunDirectory, url: string): Promise<void> {
   await git(runDirectory, runDirectory.fixtureRepoDir)(
     [...GIT_CREDENTIALS, "push", "--quiet", "--force", url, `HEAD:refs/heads/${DEFAULT_BRANCH}`],
     "pushing the fixture",
   );
+}
+
+/** One file a seeded commit carries: where it lands in the repository, and its fixture copy. */
+export interface SeededFile {
+  /** slash-separated, relative to the repository's root */
+  readonly path: string;
+  readonly source: string;
+}
+
+/**
+ * A branch pushed to the forge carrying one commit on top of the fixture's, and the commit's SHA
+ * (refine-commits-its-vocabulary ticket 05).
+ *
+ * Made in the fixture's own repository, which is switched back to the default branch before this
+ * returns: `readBranch` reads a branch's commits as those beyond that repository's HEAD, so HEAD
+ * has to stay the fixture's commit. The clone is not touched, so a run fetches the branch as it
+ * would fetch one a refinement pushed from somewhere else.
+ */
+export async function pushSeededBranch(
+  runDirectory: RunDirectory,
+  url: string,
+  branch: string,
+  files: readonly SeededFile[],
+  message: string,
+): Promise<string> {
+  const inFixture = git(runDirectory, runDirectory.fixtureRepoDir);
+  await inFixture(["switch", "--quiet", "--create", branch], `creating ${branch} to seed`);
+  for (const file of files) {
+    const destination = join(runDirectory.fixtureRepoDir, ...file.path.split("/"));
+    await mkdir(dirname(destination), { recursive: true });
+    await copyFile(file.source, destination);
+  }
+  const paths = files.map((file) => file.path);
+  await inFixture(["add", "--", ...paths], `staging what ${branch} is seeded with`);
+  await inFixture(
+    [...FIXTURE_AUTHOR, "commit", "--quiet", "--message", message, "--", ...paths],
+    `committing what ${branch} is seeded with`,
+  );
+  const head = await inFixture(["rev-parse", "HEAD"], `reading the commit ${branch} is at`);
+  await inFixture(
+    [...GIT_CREDENTIALS, "push", "--quiet", url, `HEAD:refs/heads/${branch}`],
+    `pushing ${branch}`,
+  );
+  await inFixture(["switch", "--quiet", DEFAULT_BRANCH], `switching back to ${DEFAULT_BRANCH}`);
+  return head.stdout.trim();
+}
+
+/** What a draft change request is opened with. */
+export interface NewDraft {
+  readonly head: string;
+  readonly title: string;
+  readonly body: string;
+}
+
+/**
+ * A **draft** change request opened from a branch onto the default one, its description passed
+ * through a file in the run directory so that nothing in it is read by a shell.
+ */
+export async function openDraftChangeRequest(
+  runDirectory: RunDirectory,
+  fullName: string,
+  draft: NewDraft,
+): Promise<{ readonly number: number; readonly url: string }> {
+  const bodyFile = join(runDirectory.root, `seeded-draft-${draft.head.replace(/\W+/g, "-")}.md`);
+  await writeFile(bodyFile, draft.body);
+  const opened = await gh(runDirectory)(
+    ["pr", "create", "--repo", fullName, "--draft", "--head", draft.head, "--base", DEFAULT_BRANCH,
+      "--title", draft.title, "--body-file", bodyFile],
+    `opening a draft from ${draft.head} on ${fullName}`,
+  );
+  const url = opened.stdout.trim().split("\n").at(-1)?.trim() ?? "";
+  const number = /\/pull\/(\d+)$/.exec(url)?.[1];
+  if (number === undefined) {
+    throw new Error(`opening a draft from ${draft.head} answered no URL: ${opened.stdout}`);
+  }
+  return { number: Number(number), url };
 }
 
 /** The repository cloned into the run directory: the working tree a run is driven in. */
@@ -225,6 +280,11 @@ export interface BranchCommit {
   readonly message: string;
   /** every path it changed, relative to the repository's root */
   readonly files: readonly string[];
+  /**
+   * Every line it added, across every path it changed — so a matcher can say a commit carries a
+   * term without fetching the file it landed in (refine-commits-its-vocabulary ticket 04).
+   */
+  readonly added: readonly string[];
 }
 
 /** What one branch on the forge carries: every file, and every commit beyond the fixture's. */
@@ -266,13 +326,185 @@ export async function readBranch(
       ["diff-tree", "--no-commit-id", "--name-only", "-r", "-m", "-z", sha],
       `listing what ${sha} changed`,
     );
+    const patch = await inFixture(
+      ["show", "--format=", "--unified=0", "--no-color", "--no-ext-diff", sha],
+      `reading what ${sha} added`,
+    );
     commits.push({
       sha,
       message: message.stdout,
       files: [...new Set(changed.stdout.split("\0").filter((path) => path !== ""))],
+      added: patch.stdout
+        .split("\n")
+        .filter((line) => line.startsWith("+") && !line.startsWith("+++"))
+        .map((line) => line.slice(1)),
     });
   }
   return { files, commits };
+}
+
+/**
+ * One issue on a **throwaway repo**, as the forge holds it (refine-commits-its-vocabulary
+ * ticket 03).
+ *
+ * The parent and the blocking edges are the forge's own mechanisms rather than lines in the body:
+ * what `tickets-writer` is told to use on a real tracker "where it has them", and this forge has
+ * both. The body is kept whole beside them, because a writer that puts a `Blocked by:` line there
+ * as well is one a reader of the epic may want to see.
+ */
+export interface ForgeIssue {
+  readonly number: number;
+  /** where a human opens it, which is also what a delivery is handed as an epic's location */
+  readonly url: string;
+  readonly title: string;
+  readonly body: string;
+  readonly state: "OPEN" | "CLOSED";
+  /** every label it carries, the **triage label** among them where it has one */
+  readonly labels: readonly string[];
+  /** the issue it is a sub-issue of, or null */
+  readonly parent: number | null;
+  /** every issue that blocks it — its declared **blocking edges** — by number, ascending */
+  readonly blockedBy: readonly number[];
+}
+
+/** What an issue is created with. The parent and the edges name issues that already exist. */
+export interface NewIssue {
+  readonly title: string;
+  readonly body: string;
+  readonly labels?: readonly string[];
+  readonly parent?: number;
+  readonly blockedBy?: readonly number[];
+}
+
+/** The issue as the REST API returns it, narrowed to what `ForgeIssue` is read from. */
+interface RestIssue {
+  readonly id: number;
+  readonly number: number;
+  readonly html_url: string;
+  readonly title: string;
+  readonly body: string | null;
+  readonly state: string;
+  readonly labels: readonly { readonly name: string }[];
+  readonly parent_issue_url?: string | null;
+  readonly issue_dependencies_summary?: { readonly blocked_by: number } | null;
+  readonly pull_request?: unknown;
+}
+
+/**
+ * An issue created on the repository, then made a sub-issue of its parent and blocked by each issue
+ * it names, in that order — so a failure partway leaves an issue that says how far it got.
+ *
+ * A label the repository does not carry yet is created by the forge with the issue, so a throwaway
+ * repo needs no label set up beforehand.
+ */
+export async function createIssue(
+  runDirectory: RunDirectory,
+  fullName: string,
+  issue: NewIssue,
+): Promise<ForgeIssue> {
+  const forge = gh(runDirectory);
+  const labels = (issue.labels ?? []).flatMap((label) => ["-f", `labels[]=${label}`]);
+  const created = await forge(
+    ["api", `repos/${fullName}/issues`, "-f", `title=${issue.title}`, "-f", `body=${issue.body}`,
+      ...labels],
+    `creating the issue "${issue.title}" on ${fullName}`,
+  );
+  const { id, number } = JSON.parse(created.stdout) as RestIssue;
+  if (issue.parent !== undefined) {
+    await forge(
+      ["api", `repos/${fullName}/issues/${issue.parent}/sub_issues`, "-F", `sub_issue_id=${id}`],
+      `making #${number} a sub-issue of #${issue.parent} on ${fullName}`,
+    );
+  }
+  for (const blocking of issue.blockedBy ?? []) {
+    const blocker = await restIssue(runDirectory, fullName, blocking);
+    await forge(
+      ["api", `repos/${fullName}/issues/${number}/dependencies/blocked_by`,
+        "-F", `issue_id=${blocker.id}`],
+      `marking #${number} blocked by #${blocking} on ${fullName}`,
+    );
+  }
+  return readIssue(runDirectory, fullName, number);
+}
+
+/**
+ * Every issue the repository carries, open or closed, in ascending number — and never a change
+ * request, which this forge's issues endpoint lists among them.
+ */
+export async function listIssues(
+  runDirectory: RunDirectory,
+  fullName: string,
+): Promise<ForgeIssue[]> {
+  const listed = await gh(runDirectory)(
+    ["api", "--paginate", `repos/${fullName}/issues?state=all&per_page=100`, "--jq", ".[]"],
+    `listing the issues on ${fullName}`,
+  );
+  const issues: ForgeIssue[] = [];
+  for (const line of listed.stdout.split("\n")) {
+    if (line.trim() === "") continue;
+    const rest = JSON.parse(line) as RestIssue;
+    if (rest.pull_request !== undefined && rest.pull_request !== null) continue;
+    issues.push(await forgeIssue(runDirectory, fullName, rest));
+  }
+  return issues.sort((left, right) => left.number - right.number);
+}
+
+/** One issue, by number. */
+export async function readIssue(
+  runDirectory: RunDirectory,
+  fullName: string,
+  number: number,
+): Promise<ForgeIssue> {
+  return forgeIssue(runDirectory, fullName, await restIssue(runDirectory, fullName, number));
+}
+
+async function restIssue(
+  runDirectory: RunDirectory,
+  fullName: string,
+  number: number,
+): Promise<RestIssue> {
+  const read = await gh(runDirectory)(
+    ["api", `repos/${fullName}/issues/${number}`],
+    `reading issue #${number} on ${fullName}`,
+  );
+  return JSON.parse(read.stdout) as RestIssue;
+}
+
+/**
+ * The REST issue read into a `ForgeIssue`.
+ *
+ * The parent rides on the issue itself; the blocking edges do not, only their count, so they are
+ * asked for only where the count says there are some.
+ */
+async function forgeIssue(
+  runDirectory: RunDirectory,
+  fullName: string,
+  rest: RestIssue,
+): Promise<ForgeIssue> {
+  const parent = /\/issues\/(\d+)$/.exec(rest.parent_issue_url ?? "")?.[1];
+  let blockedBy: number[] = [];
+  if ((rest.issue_dependencies_summary?.blocked_by ?? 0) > 0) {
+    const listed = await gh(runDirectory)(
+      ["api", "--paginate", `repos/${fullName}/issues/${rest.number}/dependencies/blocked_by`,
+        "--jq", ".[].number"],
+      `reading what blocks #${rest.number} on ${fullName}`,
+    );
+    blockedBy = listed.stdout
+      .split("\n")
+      .filter((line) => line.trim() !== "")
+      .map(Number)
+      .sort((left, right) => left - right);
+  }
+  return {
+    number: rest.number,
+    url: rest.html_url,
+    title: rest.title,
+    body: rest.body ?? "",
+    state: rest.state === "closed" ? "CLOSED" : "OPEN",
+    labels: rest.labels.map((label) => label.name),
+    parent: parent === undefined ? null : Number(parent),
+    blockedBy,
+  };
 }
 
 export async function createPrivateRepository(

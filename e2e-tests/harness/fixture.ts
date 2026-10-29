@@ -16,12 +16,16 @@
  *    what lets a matcher name a location and a label exactly rather than search for either, and it
  *    is why a fixture that lays its tracker out differently is still only a directory. A fixture
  *    that names no label vocabulary is owed no label, which is what the two writers already say
- *    about a project that names none.
+ *    about a project that names none. A tracker is one of two kinds: files in the repository,
+ *    declared by those paths and the default, or the forge's issues, declared as
+ *    `"kind": "forge-issues"` with no paths at all. A fixture whose brief has the human insist on a
+ *    term entering the glossary names that term as `glossaryTerm`.
  *  - `epic/` — the **epic** a delivery is handed: a spec and its **tickets**, laid out the way the
- *    tracker conventions above lay one out. It is copied into the repository at
- *    `<tracker.root>/<epicSlug>/` when the **throwaway repo** is built, so it is on the default
- *    branch from the moment that repository exists rather than seeded by a test afterwards
- *    (`./forge.ts`).
+ *    tracker conventions above lay one out. On an in-repository tracker it is copied into the
+ *    repository at `<tracker.root>/<epicSlug>/` when the **throwaway repo** is built, so it is on
+ *    the default branch from the moment that repository exists rather than seeded by a test
+ *    afterwards; on a forge-issue tracker it is published as issues once the repository exists
+ *    (`./epic.ts`).
  *
  * **Only a delivery gets the epic.** The **throwaway repo** a refinement is driven against is built
  * from the same fixture without it: a tracker root that already carries an epic is one a refinement can
@@ -46,11 +50,20 @@ export const FIXTURES_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "..
 /**
  * Where a repository's conventions put an **epic**.
  *
- * The fixture's, not the plugin's. What the plugin promises is one file per **ticket**, numbered
- * from `01`, each declaring its **blocking edges** — and that is asserted in `./matchers.ts`
- * whatever a fixture calls its directories.
+ * The fixture's, not the plugin's. What the plugin promises is one **ticket** per slice, each
+ * declaring its **blocking edges** — and that is asserted in `./matchers.ts` whatever a fixture
+ * calls its directories or wherever its tracker keeps them.
+ *
+ * Two kinds (refine-commits-its-vocabulary ticket 03), and **the kind branches in one place**:
+ * `./epic.ts`, which reads and seeds an epic. Anything else that needs an in-repository tracker's
+ * paths asks `inRepositoryTracker` for them, which is where a forge-issue fixture handed to
+ * something that only knows files says so by name.
  */
-export interface TrackerConventions {
+export type TrackerConventions = InRepositoryTracker | ForgeIssueTracker;
+
+/** Files in the repository: one directory per epic under a root, its spec and tickets inside. */
+export interface InRepositoryTracker {
+  readonly kind: "in-repository";
   /** where an epic's directory sits, relative to the repository's root */
   readonly root: string;
   /** what the spec is called inside it */
@@ -59,14 +72,27 @@ export interface TrackerConventions {
   readonly ticketsDirectory: string;
 }
 
+/**
+ * The forge's own issues: the spec is one issue and each ticket another, carrying the triage label
+ * and their blocking edges by the forge's own mechanisms. There is no path to declare — the
+ * **throwaway repo** is the whole of where an epic can be.
+ */
+export interface ForgeIssueTracker {
+  readonly kind: "forge-issues";
+}
+
 /** The **epic** a delivery is handed, and where it lands in the repository the fixture builds. */
 export interface FixtureEpic {
   /** the directory in the fixture holding the spec and the tickets, laid out as the tracker does */
   readonly directory: string;
-  /** the epic's **slug**: the directory it lands at under the tracker's root */
+  /** the epic's **slug**: on an in-repository tracker, the directory it lands at under the root */
   readonly slug: string;
-  /** where a delivery is told to find it, relative to the repository's root */
-  readonly location: string;
+  /**
+   * Where a delivery is told to find it, relative to the repository's root — or null on a
+   * forge-issue tracker, where the location is the spec issue's URL and exists only once the epic
+   * has been seeded onto the throwaway repo (`./epic.ts`).
+   */
+  readonly location: string | null;
 }
 
 export interface Fixture {
@@ -80,6 +106,14 @@ export interface Fixture {
   readonly epic: FixtureEpic | null;
   /** what its conventions call work that is ready for an agent, or null where they name nothing */
   readonly readyForAgentLabel: string | null;
+  /**
+   * The term the brief has the human insist on entering the glossary, or null where it insists on
+   * none (refine-commits-its-vocabulary ticket 04). A refinement into the forge's issues commits
+   * only the glossary and ADR paths its grilling landed, so a brief that left that to the model
+   * would leave a run free to land nothing and assert the empty path instead. Named here so the
+   * matcher looking for it on the **epic branch** names a term rather than searching for one.
+   */
+  readonly glossaryTerm: string | null;
   /** the idea a refinement is handed — one line, because it is a command's argument */
   readonly idea: string;
   /** the brief the responder answers from, verbatim */
@@ -91,6 +125,7 @@ interface FixtureManifest {
   readonly tracker?: Record<string, unknown>;
   readonly readyForAgentLabel?: unknown;
   readonly epicSlug?: unknown;
+  readonly glossaryTerm?: unknown;
 }
 
 export async function loadFixture(name: string): Promise<Fixture> {
@@ -110,11 +145,7 @@ export async function loadFixture(name: string): Promise<Fixture> {
   }
 
   const manifest = JSON.parse(await read(root, "fixture.json", name)) as FixtureManifest;
-  const tracker = {
-    root: declared(manifest.tracker, "root", name),
-    specFile: declared(manifest.tracker, "specFile", name),
-    ticketsDirectory: declared(manifest.tracker, "ticketsDirectory", name),
-  };
+  const tracker = trackerConventions(manifest.tracker, name);
 
   // Collapsed to one line because it is handed to `/deliverer:refine` as its argument, and a
   // newline in the middle of a command would end it there.
@@ -126,6 +157,7 @@ export async function loadFixture(name: string): Promise<Fixture> {
   }
 
   const label = manifest.readyForAgentLabel;
+  const term = manifest.glossaryTerm;
   return {
     name,
     root,
@@ -133,6 +165,7 @@ export async function loadFixture(name: string): Promise<Fixture> {
     tracker,
     epic: await loadEpic(root, name, manifest.epicSlug, tracker),
     readyForAgentLabel: typeof label === "string" && label !== "" ? label : null,
+    glossaryTerm: typeof term === "string" && term !== "" ? term : null,
     idea,
     brief: await read(root, "brief.md", name),
   };
@@ -159,17 +192,60 @@ async function loadEpic(
     throw new Error(
       `the fixture ${name} carries ${present ? `an epic/ directory and no "epicSlug"` : `an ` +
         `"epicSlug" and no epic/ directory`} in fixture.json. An epic is both — the directory is ` +
-        `the spec and its tickets, and the slug is where they land under ${tracker.root}/.`,
+        `the spec and its tickets, and the slug is the name the epic goes by.`,
     );
   }
   return {
     directory,
     slug: slug as string,
-    location: posix.join(tracker.root, slug as string),
+    location: tracker.kind === "in-repository" ? posix.join(tracker.root, slug as string) : null,
   };
 }
 
-/** One of the three paths a fixture's tracker conventions are made of. */
+/**
+ * The tracker `fixture.json` declares.
+ *
+ * A declaration naming no `kind` is the in-repository one: it is what every fixture written before
+ * there were two kinds declares, and it keeps meaning that. `"in-repository"` says the same out
+ * loud; `"forge-issues"` takes no paths, because there are none to take.
+ */
+function trackerConventions(
+  tracker: Record<string, unknown> | undefined,
+  name: string,
+): TrackerConventions {
+  const kind = tracker?.["kind"] ?? "in-repository";
+  if (kind === "forge-issues") return { kind };
+  if (kind !== "in-repository") {
+    throw new Error(
+      `the fixture ${name} declares "tracker.kind" as ${JSON.stringify(kind)} in fixture.json. ` +
+        `A tracker is "in-repository" — the default, declaring root, specFile and ` +
+        `ticketsDirectory — or "forge-issues", declaring nothing else.`,
+    );
+  }
+  return {
+    kind,
+    root: declared(tracker, "root", name),
+    specFile: declared(tracker, "specFile", name),
+    ticketsDirectory: declared(tracker, "ticketsDirectory", name),
+  };
+}
+
+/**
+ * The fixture's in-repository tracker, for a caller that reads an epic as files and nothing else.
+ *
+ * A forge-issue fixture handed to such a caller is the harness used where it does not reach yet,
+ * and saying so by name is cheaper than a matcher reporting an empty directory as the plugin's
+ * failure.
+ */
+export function inRepositoryTracker(fixture: Fixture, purpose: string): InRepositoryTracker {
+  if (fixture.tracker.kind === "in-repository") return fixture.tracker;
+  throw new Error(
+    `${purpose} reads an epic as files in the repository, and the fixture ${fixture.name} keeps ` +
+      `its tracker on the forge's issues: it wants a forge-issue counterpart.`,
+  );
+}
+
+/** One of the three paths an in-repository tracker's conventions are made of. */
 function declared(tracker: Record<string, unknown> | undefined, key: string, name: string): string {
   const value = tracker?.[key];
   if (typeof value !== "string" || value === "") {

@@ -26,7 +26,13 @@ import {
 import { briefsBeforeRun, collectBriefs, type Briefs } from "./brief.ts";
 import { listChangeRequests, type ChangeRequestSummary } from "./change-request.ts";
 import { describeDebriefs, readDebriefs, type Debriefs } from "./debrief.ts";
-import { listEpics, readEpic, type PublishedEpic } from "./epic.ts";
+import {
+  epicForReading,
+  listEpics,
+  readEpic,
+  type PublishedEpic,
+  type RefinementBranch,
+} from "./epic.ts";
 import { loadFixture, type Fixture } from "./fixture.ts";
 import {
   DEFAULT_BRANCH,
@@ -34,7 +40,6 @@ import {
   readBranch,
   remoteBranches,
   remoteHead,
-  type BranchCommit,
 } from "./forge.ts";
 import { installPluginUnderTest, REVIEW_OPTIONS } from "./install.ts";
 import { createResponder, type ResponderRecord } from "./responder.ts";
@@ -52,13 +57,7 @@ import { verifyEpic, type Verdict } from "./verifier.ts";
 const TEST_NAME = "refine";
 
 /** A branch the run left on the forge that the repository was not created with. */
-export interface NewBranch {
-  readonly name: string;
-  /** every file it carries, relative to the repository's root */
-  readonly files: readonly string[];
-  /** every commit it carries beyond the default branch the repository was created with */
-  readonly commits: readonly BranchCommit[];
-}
+export type NewBranch = RefinementBranch;
 
 export interface RefineOutcome {
   readonly runDirectory: RunDirectory;
@@ -87,7 +86,14 @@ export interface RefineOutcome {
   /** what the run found in the operating system's temporary directory, and what it took away */
   readonly briefs: Briefs;
   readonly spend: Spend;
-  /** the epic the run published, read off the clone */
+  /**
+   * The epic the run published, read off the clone or off the throwaway repo's issues.
+   *
+   * Its **slug** is the run's own name for the epic, which its **debrief** is filed under and its
+   * **epic branch** is named from: on an in-repository tracker the directory it was published at,
+   * and on a forge-issue tracker the name of the brief the run wrote, which the skill files as
+   * `<slug>-brief.md` so that a later run can find it (refine-commits-its-vocabulary ticket 04).
+   */
   readonly epic: PublishedEpic;
   /** the test's own signal, so a verdict is stopped with the test rather than after it */
   readonly ceiling: AbortSignal;
@@ -133,7 +139,8 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
           `${DEFAULT_BRANCH} at ${repo.headAtCreation.slice(0, 12)}`,
       );
 
-      const epicsBefore = await listEpics(runDirectory.cloneDir, fixture.tracker);
+      const source = { runDirectory, fullName: repo.fullName };
+      const epicsBefore = await listEpics(source, fixture);
       const responder = createResponder(runDirectory, fixture);
 
       // Taken before the run and collected after it, whichever way the run ends: a brief left in
@@ -193,7 +200,7 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
           `$${spend.besideRunUsd.toFixed(2)}.`,
       );
 
-      const epicsAfter = await listEpics(runDirectory.cloneDir, fixture.tracker);
+      const epicsAfter = await listEpics(source, fixture);
       const epicsPublished = epicsAfter.filter((slug) => !epicsBefore.includes(slug));
       const newBranches = await readNewBranches(runDirectory, repo);
       const changeRequests = await listChangeRequests(runDirectory, repo.fullName);
@@ -202,6 +209,15 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
           `(${newBranches.map((branch) => branch.name).join(", ") || "none"}) and ` +
           `${changeRequests.length} change requests ` +
           `(${changeRequests.map(describeChangeRequest).join(", ") || "none"})`,
+      );
+      // Read whichever epic the run published, or an empty one when it published none — the
+      // matcher is what names that as the failure it is. The brief's name is handed along for a
+      // tracker that cannot name the slug itself.
+      const epic = await readEpic(
+        source,
+        fixture,
+        epicsPublished[0] ?? "(nothing published)",
+        slugOfBrief(collected),
       );
       return {
         runDirectory,
@@ -221,13 +237,7 @@ export function refineRun(fixtureName: string): RefineRunBuilder {
         debriefs,
         briefs,
         spend,
-        // Read whichever epic the run published, or an empty one when it published none — the
-        // matcher is what names that as the failure it is.
-        epic: await readEpic(
-          runDirectory.cloneDir,
-          fixture.tracker,
-          epicsPublished[0] ?? "(nothing published)",
-        ),
+        epic,
         ceiling: t.signal,
         cleanUp: () => deleteThrowawayRepo(runDirectory, repo),
       };
@@ -270,6 +280,17 @@ async function readUncommittedMarkdown(runDirectory: RunDirectory): Promise<stri
     .filter((path) => path.endsWith(".md"));
 }
 
+/**
+ * The slug a run's brief is filed under, where it collected exactly one: `<slug>-brief.md`, less
+ * the number `collectBriefs` puts in front of a name it had already taken.
+ */
+function slugOfBrief(collected: readonly string[]): string | null {
+  const only = collected.length === 1 ? collected[0] : undefined;
+  if (only === undefined) return null;
+  const name = only.slice(only.lastIndexOf("/") + 1);
+  return /^(?:\d+-)?(.+)-brief\.md$/.exec(name)?.[1] ?? null;
+}
+
 function describeChangeRequest(changeRequest: ChangeRequestSummary): string {
   return (
     `${changeRequest.url} from ${changeRequest.branch}, ${changeRequest.state}` +
@@ -284,6 +305,9 @@ function describeChangeRequest(changeRequest: ChangeRequestSummary): string {
  * never published costs money to be told what a matcher already said. What it cost rides on the
  * verdict rather than on the run's `Spend`, because by the time this runs the run is over.
  */
-export function verify(outcome: RefineOutcome): Promise<Verdict> {
-  return verifyEpic(outcome.runDirectory, outcome.fixture, outcome.epic, outcome.ceiling);
+export async function verify(outcome: RefineOutcome): Promise<Verdict> {
+  // Handed where its file-reading tools can open it: a forge-issue epic's issues are written out
+  // into the run directory first (`./epic.ts`).
+  const readable = await epicForReading(outcome.runDirectory, outcome.fixture, outcome.epic);
+  return verifyEpic(outcome.runDirectory, outcome.fixture, readable, outcome.ceiling);
 }

@@ -180,6 +180,7 @@ what moved.
 │   ├── README.md                          what a run costs per stage, and how to work that out from its records
 │   ├── harness/                           the run directory, the staged copy, the builder and the matchers
 │   ├── fixtures/typescript-library/       the repository a run is driven against, its brief and its epic
+│   ├── fixtures/typescript-library-forge-issues/   the same repository, its tracker on the forge's issues
 │   ├── tests/                             three tests; CI never runs them, two spend real money
 │   └── bench/                             one writer's stage, driven alone — an instrument, not a test
 ├── hacks/claude.dockerfile              the pinned image
@@ -661,10 +662,13 @@ complete run, only what a human could read afterwards. Three tests, and CI runs 
   the plugin invokes by name. No repository on the forge and no model asked for more than one trivial turn — cheap
   enough to run after any change to a manifest, either hook or the launcher.
 - **The refine happy path.** `/deliverer:refine` against a **throwaway repo** created for the run, carrying no epic,
-  with a **responder** answering the grilling in your place out of the **fixture**'s own **brief**. It asserts a
-  published **spec** and one file per **ticket**, and three facts off the forge: the default branch did not move,
-  exactly one new branch carries the spec and tickets at the paths the fixture's conventions name, and exactly one
-  **change request** is open from it as a **draft**. Then a **verifier** judges whether what came out is any good.
+  with a **responder** answering the grilling in your place out of the **fixture**'s own **brief**. It runs once per
+  fixture: `typescript-library` keeps its tracker as files in the repository, `typescript-library-forge-issues` on
+  the forge's issues. It asserts a published **spec** and its **ticket**s — one file each, or one issue each — and
+  three facts off the forge: the default branch did not move, exactly one new branch carries what the refinement wrote
+  into the repository (the spec and tickets at the paths the fixture's conventions name, or, on the forge's issues, a
+  branch named from the slug carrying the glossary term the brief insists on), and exactly one **change request** is
+  open from it as a **draft**. Then a **verifier** judges whether what came out is any good.
 - **The build happy path.** `/deliverer:build` against a **throwaway repo** created for the run: all ten stages, two
   real **rounds** through the tools server and both **fix waves**. It asserts a commit naming every ticket, a
   **verdict** on every **assumption**, a fix wave's answer to every `improve` among them, and the **change request**
@@ -858,6 +862,8 @@ rather than reproduced. Nothing in it is ever removed, passed or failed:
   `delivered.diff`, the diff a delivery's change request carried, and `adjudication.md`, every **assumption comment**
   on it and every reply under it in full. Those last two are what the **verifier** is given to read, and the second one
   exists because whether the **verdict**s were sound is the subject no assertion settles.
+  **Only a brief the run's own session records show it writing is collected** out of a shared directory, however new:
+  a concurrent session's brief in `/tmp` was once taken for the run's own.
   **Where the brief was written is the orchestrator's choice, so all three temporary directories are swept**:
   `harness/brief.ts` collects out of `os.tmpdir()`, `/tmp` and the run's own `TMPDIR`. Of the pair driven on
   2026-09-13 the first wrote its brief to the shared `/tmp` and the second to `tmp/<slug>-brief.md`, which the sweep
@@ -865,7 +871,10 @@ rather than reproduced. Nothing in it is ever removed, passed or failed:
   assertion covers the collection either way, so the diagnostic naming what was collected is the only sign it happened.
 
 On the forge, each happy path's **throwaway repo** is deleted when the test passes and left standing, with its branch
-and change request, when it fails: the change request is the evidence.
+and change request, when it fails: the change request is the evidence. `DELIVERER_E2E_KEEP_REPO=1` leaves a passing
+refinement's repository standing too, and says so in a diagnostic: it is for re-running `/deliverer:refine` by hand on
+the repository a happy path left, the way ticket 06 of `refine-commits-its-vocabulary` checked stage 5's resume. The
+build path ignores it. Whoever sets it deletes the repository by hand.
 
 ### The bench — one writer's stage, driven alone
 

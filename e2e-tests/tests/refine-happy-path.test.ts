@@ -69,45 +69,68 @@ const CEILINGS = { ...DEFAULT_CEILINGS, spendUsd: 40 };
 const DISPATCHED_WRITERS = 2;
 const WHAT_IT_DISPATCHES = "refinement dispatches a spec writer and a tickets writer";
 
-test("a refinement turns an idea into a published spec and its tickets", {
-  timeout: testTimeout(CEILINGS),
-}, async (t) => {
-  const outcome = await refineRun("typescript-library").withCeilings(CEILINGS).start(t);
+/**
+ * One run per **fixture**, the same assertions for each (refine-commits-its-vocabulary ticket 04):
+ * one fixture keeps its tracker as files in the repository, the other on the forge's issues, and
+ * each matcher that reads an epic chooses its reading by the fixture's tracker kind. The spend
+ * ceiling's evidence above is the in-repository fixture's alone; the forge-issue one shares it
+ * until its own runs say otherwise.
+ *
+ * One of them on its own, from `e2e-tests/`:
+ * `node --test --test-name-pattern=<fixture> tests/refine-happy-path.test.ts`.
+ */
+const FIXTURES = ["typescript-library", "typescript-library-forge-issues"];
 
-  assertRunFinished(outcome);
-  assertGrillingAnswered(outcome);
-  assertEpicPublished(outcome);
-  assertSpecPublished(outcome);
-  assertTicketsPublished(outcome);
-  // Three facts read off the forge, where the run now publishes: the default branch is where the
-  // repository was created at, one branch is new and carries the epic, and one draft is open
-  // from that branch.
-  assertDefaultBranchUnmoved(outcome);
-  assertEpicBranchCarriesEpic(outcome);
-  assertDraftOpenedFromEpicBranch(outcome);
-  assertSessionRecordsKept(outcome, DISPATCHED_WRITERS, WHAT_IT_DISPATCHES);
-  // The run was observed because the plugin observes runs by default and nothing here switched
-  // that off. Shallow on purpose: a debrief exists for this epic and its header names this run.
-  assertDebriefWritten(outcome);
+for (const fixture of FIXTURES) {
+  test(`a refinement turns an idea into a published spec and its tickets (${fixture})`, {
+    timeout: testTimeout(CEILINGS),
+  }, async (t) => {
+    const outcome = await refineRun(fixture).withCeilings(CEILINGS).start(t);
 
-  const verdict = await verify(outcome);
-  t.diagnostic(`the verifier: ${verdict.summary}`);
+    assertRunFinished(outcome);
+    assertGrillingAnswered(outcome);
+    assertEpicPublished(outcome);
+    assertSpecPublished(outcome);
+    assertTicketsPublished(outcome);
+    // Three facts read off the forge, where the run now publishes: the default branch is where the
+    // repository was created at, one branch is new and carries what the refinement wrote into the
+    // repository — the epic, or on the forge's issues the vocabulary its grilling landed — and one
+    // draft is open from that branch.
+    assertDefaultBranchUnmoved(outcome);
+    assertEpicBranchCarriesEpic(outcome);
+    assertDraftOpenedFromEpicBranch(outcome);
+    assertSessionRecordsKept(outcome, DISPATCHED_WRITERS, WHAT_IT_DISPATCHES);
+    // The run was observed because the plugin observes runs by default and nothing here switched
+    // that off. Shallow on purpose: a debrief exists for this epic and its header names this run.
+    assertDebriefWritten(outcome);
 
-  // Reported before the verdict is judged, because ticket 04 publishes measurements where the spec
-  // carried estimates and a run that failed its last assertion still cost what it cost.
-  t.diagnostic(
-    `measured: ${minutes(outcome.run.durationMs)} and ` +
-      `$${totalSpend(outcome.spend).toFixed(2)} for the run (of which the responder ` +
-      `$${outcome.spend.besideRunUsd.toFixed(2)}) against a ceiling of ` +
-      `$${outcome.spend.ceilingUsd}, plus $${verdict.costUsd.toFixed(2)} for the verdict, ` +
-      `for ${outcome.epic.tickets.length} tickets`,
-  );
+    const verdict = await verify(outcome);
+    t.diagnostic(`the verifier: ${verdict.summary}`);
 
-  assertVerdictPassed(verdict);
+    // Reported before the verdict is judged, because ticket 04 publishes measurements where the
+    // spec carried estimates and a run that failed its last assertion still cost what it cost.
+    t.diagnostic(
+      `measured: ${minutes(outcome.run.durationMs)} and ` +
+        `$${totalSpend(outcome.spend).toFixed(2)} for the run (of which the responder ` +
+        `$${outcome.spend.besideRunUsd.toFixed(2)}) against a ceiling of ` +
+        `$${outcome.spend.ceilingUsd}, plus $${verdict.costUsd.toFixed(2)} for the verdict, ` +
+        `for ${outcome.epic.tickets.length} tickets`,
+    );
 
-  // Only here, with every assertion passed. A failing run keeps its repository, its epic branch
-  // and its draft, because they are the evidence — and a cleanup that fails is reported rather
-  // than thrown, because it must never turn a passing test red.
-  const uncleaned = await outcome.cleanUp();
-  if (uncleaned !== null) t.diagnostic(uncleaned);
-});
+    assertVerdictPassed(verdict);
+
+    // Only here, with every assertion passed. A failing run keeps its repository, its epic branch
+    // and its draft, because they are the evidence — and a cleanup that fails is reported rather
+    // than thrown, because it must never turn a passing test red.
+    //
+    // `DELIVERER_E2E_KEEP_REPO=1` leaves a passing run's repository standing too, for the one
+    // procedure that needs it: refine re-run by hand on the repository a happy path left
+    // (refine-commits-its-vocabulary ticket 06). Whoever sets it deletes the repository by hand.
+    if (process.env.DELIVERER_E2E_KEEP_REPO === "1") {
+      t.diagnostic(`DELIVERER_E2E_KEEP_REPO=1: ${outcome.repo.fullName} left standing`);
+      return;
+    }
+    const uncleaned = await outcome.cleanUp();
+    if (uncleaned !== null) t.diagnostic(uncleaned);
+  });
+}

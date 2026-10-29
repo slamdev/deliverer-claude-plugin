@@ -13,8 +13,14 @@ Your argument names the epic; when it names none, report that and stop rather th
 
 **Find the epic before anything else**, and the **epic branch** with it, before any ticket is begun:
 
-- Where the epic location you were handed is on the forge's issues, read the epic there: no branch carries it, and the
-  first `implementer` creates the epic branch.
+- Where the epic location you were handed is on the forge's issues, read the epic there. Its epic branch is the one a
+  refinement left when its grilling landed glossary entries or ADRs, or the one an earlier run of this delivery
+  opened its change request from — `change-request-creator` keeps the spec's location in the description it writes:
+  fetch, and look for an open change request from a branch named from the epic's **slug** in the style of the
+  branches already there — the slug the spec's issue is titled from — whose description names the epic's spec
+  location. Both have to hold: a branch of that name with no such change request is someone else's. Where one does,
+  that branch is the epic branch, found. Where none does, no branch carries the epic, and the first `implementer`
+  creates the epic branch.
 - Where it is in the repository, fetch first. Where the default branch carries it, read the epic there.
 - Where the default branch does not, the epic sits on its epic branch alone — a refinement publishes its spec and
   tickets there and nowhere else — and that branch is the one on the remote carrying the epic location: look first
@@ -38,10 +44,10 @@ an agent — continued or cold — or report it**, never fix.
 branch and the change request are what say how far it got, and nothing else does:
 
 - **A commit carrying a `Ticket:` line names a ticket begun.** One without it is not a ticket's — a refinement's commit
-  of the spec and tickets, or a **fix wave**'s. The last ticket named may be part-delivered with nothing anywhere saying
-  so, because an `implementer` commits each coherent piece as it lands: it is dispatched again, ahead of the tickets
-  carrying no commit at all, and that implementer reads the commits, implements only what they left undone, and reports
-  the commit that covered it where the branch covered it in full already.
+  of what it wrote into the repository, or a **fix wave**'s. The last ticket named may be part-delivered with nothing
+  anywhere saying so, because an `implementer` commits each coherent piece as it lands: it is dispatched again, ahead
+  of the tickets carrying no commit at all, and that implementer reads the commits, implements only what they left
+  undone, and reports the commit that covered it where the branch covered it in full already.
 - **The change request's description says whether stage 1 is over.** One that does not read
   `This description is a placeholder` was written by stage 2, which runs only once every ticket has a report, so no
   `implementer` goes out again. An open change request alone says nothing — a refinement may have opened it before any

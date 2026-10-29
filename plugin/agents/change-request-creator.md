@@ -27,8 +27,8 @@ ticket recorded already carries its comment, so step 6 posts none.
 ## Steps
 
 1. **Check that `mattpocock-skills:pr` is installed.** The description is that skill's: step 4 calls it and writes what
-   it produces, adding nothing of your own. When it is not installed, report the skill as missing and stop, having
-   pushed, opened and edited nothing.
+   it produces, adding nothing of your own but the spec's location. When it is not installed, report the skill as
+   missing and stop, having pushed, opened and edited nothing.
 2. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote. Where it names
    none, take the branch named from the epic's **slug** among the branches already there: that is how the first
    `implementer` named it.
@@ -40,6 +40,12 @@ ticket recorded already carries its comment, so step 6 posts none.
    description up to date rather than opening a second, and put it back to draft where someone took it out (`gh pr
    ready <number> --undo`, `glab mr update <iid> --draft`). A change request stays a draft while a round is still owed,
    and taking it out is the delivery's last stage, not yours.
+
+   **The description names the epic's spec location**, word for word — its path in the repository, or its issue's
+   URL, exactly as the placeholder you are replacing named it where there was one. Where what the skill produced does
+   not, add one line that does: `Spec: <spec location>`. A delivery resuming, and a refinement run again, recognise
+   the epic branch by an open change request whose description names that location, so a description that drops it
+   leaves the branch one neither of them can find.
 5. **Collect the assumption comments already on it**, from every channel the change request has — **Comment channels**
    below, and **Assumption comments** for what counts as one.
 6. **Mirror the entries carrying none**, one at a time — **Which entries** below says which are yours. For each:

@@ -20,13 +20,21 @@
  * of the fixture rather than something seeded afterwards, which is how a delivery finds an epic it
  * was handed the location of. A refinement's repository is built from the same fixture without it:
  * a tracker root that already carries an epic is one a refinement can publish its own on top of
- * (`./fixture.ts`).
+ * (`./fixture.ts`). On a forge-issue tracker there is no tracker root: a delivery's epic is
+ * published as issues once the repository exists, beside the epic branch and draft a refinement
+ * would have left (`./epic.ts`).
  *
  * The name carries the test and the run both, and it is the run directory's own name: a repository
  * left standing by a failure names the directory holding that run's session records, so the two are
  * read together rather than matched up by timestamp.
  */
 import { basename } from "node:path";
+import {
+  seedEpicInTree,
+  seedEpicOnForge,
+  type PublishedEpic,
+  type SeededRefinement,
+} from "./epic.ts";
 import type { Fixture, FixtureEpic } from "./fixture.ts";
 import {
   buildFixtureRepository,
@@ -49,8 +57,18 @@ export interface ThrowawayRepo {
 
 /** A delivery's throwaway repo, which carries the epic it is handed. */
 export interface ThrowawayRepoWithEpic extends ThrowawayRepo {
-  /** where the delivery is told the epic is, relative to the repository's root */
+  /**
+   * where the delivery is told the epic is: relative to the repository's root, or the spec
+   * issue's URL on a forge-issue tracker
+   */
   readonly epicLocation: string;
+  /** the epic as it was seeded, read where it was seeded to (`./epic.ts`) */
+  readonly epic: PublishedEpic;
+  /**
+   * the epic branch and draft seeded as a refinement would have left them, or null where nothing
+   * was — always null on an in-repository tracker, whose epic is on the default branch
+   */
+  readonly refinement: SeededRefinement | null;
 }
 
 /**
@@ -72,7 +90,13 @@ export async function createThrowawayRepo(
     );
   }
   const repo = await createRepository(runDirectory, fixture, epic);
-  return { ...repo, epicLocation: epic.location };
+  const seeded = await seedEpicOnForge({ runDirectory, fullName: repo.fullName }, fixture, epic);
+  return {
+    ...repo,
+    epicLocation: seeded.location,
+    epic: seeded.epic,
+    refinement: seeded.refinement,
+  };
 }
 
 /**
@@ -95,7 +119,11 @@ async function createRepository(
   const fullName = `${owner}/deliverer-e2e-${basename(runDirectory.root)}`;
   const url = `https://github.com/${fullName}.git`;
 
-  await buildFixtureRepository(runDirectory, fixture, epic);
+  await buildFixtureRepository(
+    runDirectory,
+    fixture,
+    epic === null ? undefined : seedEpicInTree(fixture, epic),
+  );
   await createPrivateRepository(runDirectory, fullName);
   // Force, though nothing is there: a repository the forge initialised with a file of its own would
   // otherwise refuse the push, and this repository is a moment old and nobody's.

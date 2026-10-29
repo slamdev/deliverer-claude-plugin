@@ -1,0 +1,9 @@
+{
+  "description": "The same TypeScript library as typescript-library, except that its CLAUDE.md names the repository's GitHub issues as the tracker convention, and names GLOSSARY.md at the root for the project's vocabulary. The tracker kind below is that same declaration in the form a matcher can read; it takes no paths, because a forge-issue epic has none. glossaryTerm is the term the brief has the human insist on entering the glossary, so a refinement reliably has a glossary entry for stage 5 to commit and a matcher can name the term it looks for on the epic branch. epicSlug names the epic in epic/, which a delivery is handed and a refinement never sees. A delivery's throwaway repo gets it as a refinement would have left it: epic/spec.md as an issue titled with the slug, each file in epic/issues/ as a sub-issue of it titled with its heading, a #{NN} in a ticket standing for the issue the ticket file numbered NN became, and epic/vocabulary/ committed at the same paths onto a branch named the slug, with a draft opened from it naming the spec's issue.",
+  "tracker": {
+    "kind": "forge-issues"
+  },
+  "readyForAgentLabel": "ready-for-agent",
+  "glossaryTerm": "hard break",
+  "epicSlug": "column-alignment"
+}
