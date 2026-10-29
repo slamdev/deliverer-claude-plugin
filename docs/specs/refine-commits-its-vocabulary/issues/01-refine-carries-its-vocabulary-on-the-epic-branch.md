@@ -60,3 +60,12 @@ Five tasks are created at run open for both kinds; the report's stage-5 bullet n
 - `implementer`'s step 2 still calls refine's commit "a refinement's commit of the spec and tickets"; for a forge-issue
   epic it carries glossary and ADR files instead. Left alone as build's side (ticket 02); the "no ticket's work" reading
   it encodes still holds.
+
+**Review fixes: the spec's branch rule refined, at the owner's call.** Stories 11 and 12 recognise the epic branch only
+by an open change request naming the spec, so a refinement interrupted after pushing the slug-named branch and before
+opening the draft stopped on every re-run, reading its own branch as someone else's work. Stage 5 now also takes a
+slug-named branch with no open change request as the epic's when the brief is in hand and every commit it carries
+beyond the default branch has no `Ticket:` line and changes only paths the brief marks as landed; it then opens the
+draft. Any other slug-named branch without that change request still stops the stage and is reported. This narrows
+story 12 rather than editing the spec, which stays as written. It also moves the "closed change request" decision above:
+a branch whose draft was closed now reopens one where its commits pass the same test, and still stops where they do not.

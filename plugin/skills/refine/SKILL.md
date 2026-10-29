@@ -122,14 +122,17 @@ re-run.
       - **Spec in the repository**: the branch that carries the epic's spec at its location — look first under that
         name, then across the remote's other branches.
       - **Spec on the forge's issues**: no file names the epic, so it is the branch of that name with an open change
-        request from it whose description names the epic's spec location.
+        request from it whose description names the epic's spec location. One with no open change request is the
+        epic's as well where an earlier run of this refinement pushed it and stopped short of the draft: the brief is
+        in hand, and every commit the branch carries beyond the default branch has no `Ticket:` line and changes only
+        paths the brief marks as landed. Take that branch as found, and open its draft at step 3.
 
       Where the epic branch exists, switch to it and pull. Where none does, create it from the up-to-date default branch
       on the remote, under that name; a branch of that name the remote already carries without the spec, or without
-      that change request, is someone else's work, so report it and stop rather than committing on it. Switch with
-      `--merge`, so the tree's uncommitted changes are carried onto the branch even where a file differs between the
-      two; where that merge conflicts, stop and report the conflicting files as a **hand-off** rather than resolving
-      them.
+      that change request or those commits, is someone else's work, so report it and stop rather than committing on
+      it. Switch with `--merge`, so the tree's uncommitted changes are carried onto the branch even where a file
+      differs between the two; where that merge conflicts, stop and report the conflicting files as a **hand-off**
+      rather than resolving them.
    2. **The commit.** Add exactly the paths, and name the same paths on the commit itself (`git commit -- <paths>`), so
       nothing else the index already held rides in. Every other change in the tree stays as you found it, staged or
       not, and goes into your report. One of those files that already carried uncommitted changes of the human's when
@@ -244,6 +247,9 @@ The human who ran this sat through stage 1, so your report is what came of it ra
 - where stage 5 ran, whatever the tracker: the epic branch, the change request's URL, every change you left
   uncommitted in the tree, one line each, because none of it was this run's to commit, and every file the commit took
   whole with changes of the human's in it
+- where stage 5 had nothing to commit: that it pushed no branch and opened no change request, and which of the two
+  reasons held — the brief marks no glossary or ADR file as landed, or the brief was gone, with its uncommitted
+  glossary and ADR changes among the hand-offs
 - every fork the grilling left open, one line each — those are the human's to close
 - every glossary entry and ADR the session landed
 - what the writers raised for a human — a seam newly proposed, an ADR the spec contradicts, a **claim** of yours a
