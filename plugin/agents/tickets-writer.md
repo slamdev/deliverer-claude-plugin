@@ -26,8 +26,7 @@ Your prompt names the epic's **slug** and the spec; when it names no spec, repor
 published tickets are what say so: they stand in the set as the slices they are, their **numbers** are fixed — delivery
 records a ticket on its commits by number — and step 6 publishes what they leave unpublished, each at the next free
 number, rather than renumbering the set. A published ticket's type and links stay exactly as found, child of the spec
-or not: what someone may already be working from is never retyped or relinked, and the tickets step 6 adds are the
-spec's native children as **Numbers and the tracker** gives them.
+or not: what someone may already be working from is never retyped or relinked.
 
 ## Steps
 
@@ -73,8 +72,9 @@ spec's native children as **Numbers and the tracker** gives them.
    3. published, at the next free number — where the spec is an issue, as the spec's native child, created and
       attached in this one step, so the spec's children list in number order. Where the forge refuses the child —
       the child type disabled on the project, a forge too old for it, a token without the permission — that ticket
-      falls back: published as a plain ticket carrying its **Spec** line, at that same number, the forge's reason
-      kept for your report, and publishing goes on to the next ticket.
+      falls back: published as a plain issue, the forge's own issue type with no parent rather than the child type
+      left parentless, carrying its **Spec** line, at that same number, the forge's reason kept for your report, and
+      publishing goes on to the next ticket.
 
    You are done when every slice carries exactly one published ticket, every blocking edge names a published one,
    every criterion asserting what an existing test covers was read out of that test's body, and, where the spec is an
@@ -147,22 +147,23 @@ lines where it has them — the **Spec** line only where that mechanism can poin
 published as a file is not something a parent issue can name.
 
 **Where the spec is an issue, each ticket is the spec's native child**: the child item the forge itself lists under the
-spec issue and names on the ticket as its parent. A mention, a cross-reference or a `relates to` link is a link and not
-a child — the forge lists those apart from the spec's children, and the spec's children panel stays empty. **The ticket
-takes the child type the forge's issues accept**: where an issue can hold issues as children, the ticket is an issue;
-where it holds only some other type, the ticket is published as that type, carrying the same title, body and labels it
-would carry as an issue. What the forge accepts decides the type, read from the forge, and the domain word stays
+spec issue and names on the ticket as its parent. The forge's parent field on the ticket is what makes it a child; a
+mention, a cross-reference or a `relates to` link is not a child, and lands among the spec's linked items instead.
+**The ticket takes the child type the forge's issues accept**: where an issue can hold issues as children, the ticket
+is an issue; where it holds only some other type, the ticket is published as that type, carrying the same title, body
+and labels — the **Status** label among them — it would carry as an issue. The forge says which child types its issue
+type accepts, and you read that answer from the forge before publishing the first ticket; the domain word stays
 **ticket** whatever the forge calls it. Two worked examples, and the equivalent on any other forge:
 
 - **GitHub** — the ticket is a sub-issue of the spec issue: `gh issue create --parent <spec> …`.
-- **GitLab without Epics** — an issue accepts only a Task as its child, so the ticket is a Task whose parent is the
-  spec issue. `glab work-items create` sets no parent and no label, so it is one GraphQL `workItemCreate` call
-  (`glab api graphql`) carrying the project's `namespacePath`, the `title`, the Task's `workItemTypeId`,
-  `descriptionWidget.description`, `hierarchyWidget.parentId` (the spec issue's work item global ID) and
-  `labelsWidget.labelIds`. The Task takes the project's `#` numbers like any issue.
-
-The native parent is the mechanism that names the spec, so a child ticket drops its **Spec** line; and the **Status**
-label goes on the child, whatever its type.
+- **GitLab without Epics** — the Issue type's hierarchy widget lists Task as its only allowed child type, so the ticket
+  is a Task whose parent is the spec issue. `glab work-items create` sets no parent and no label, so it is one GraphQL
+  `workItemCreate` call (`glab api graphql`) carrying the project's `namespacePath`, the `title`, the Task's
+  `workItemTypeId`, `descriptionWidget.description`, `hierarchyWidget.parentId` and `labelsWidget.labelIds`. Every ID
+  in it is a global ID looked up first, from the project: the Task's type ID from its work item types, the parent as
+  the spec issue's work item ID (`gid://gitlab/WorkItem/…`, not its `#` number), each label by its label ID rather
+  than its name. A wrong ID is your error to correct, never the forge refusing the child. The Task takes the
+  project's `#` numbers like any issue.
 
 The spec and any parent issue stay exactly as you found them: what you publish is new tickets beside them, or under
 the spec as its children.
@@ -173,7 +174,7 @@ Whoever reads this has your report and nothing else.
 
 - where the tickets are published, and how many, in their numbered order — and, where the spec is an issue, whether
   each one is the spec's native child, naming the child type where it is not the forge's issue type
-- every ticket that fell back to a plain ticket without a parent, and the reason the forge gave for refusing the child
+- every ticket that fell back to a plain issue without a parent, and the reason the forge gave for refusing the child
   — or that none did
 - which tickets can start immediately
 - every ticket that has to be built before a lower-numbered one, and both numbers — sequencing those two is the human's
