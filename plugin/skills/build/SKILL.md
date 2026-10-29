@@ -14,11 +14,13 @@ Your argument names the epic; when it names none, report that and stop rather th
 **Find the epic before anything else**, and the **epic branch** with it, before any ticket is begun:
 
 - Where the epic location you were handed is on the forge's issues, read the epic there. Its epic branch is the one a
-  refinement left when its grilling landed glossary entries or ADRs: fetch, and look for an open change request from
-  a branch named from the epic's **slug** in the style of the branches already there — the slug the spec's issue is
-  titled from — whose description names the epic's spec location. Both have to hold: a branch of that name with no
-  such change request is someone else's. Where one does, that branch is the epic branch, found. Where none does, no
-  branch carries the epic, and the first `implementer` creates the epic branch.
+  refinement left when its grilling landed glossary entries or ADRs, or the one an earlier run of this delivery
+  opened its change request from — `change-request-creator` keeps the spec's location in the description it writes:
+  fetch, and look for an open change request from a branch named from the epic's **slug** in the style of the
+  branches already there — the slug the spec's issue is titled from — whose description names the epic's spec
+  location. Both have to hold: a branch of that name with no such change request is someone else's. Where one does,
+  that branch is the epic branch, found. Where none does, no branch carries the epic, and the first `implementer`
+  creates the epic branch.
 - Where it is in the repository, fetch first. Where the default branch carries it, read the epic there.
 - Where the default branch does not, the epic sits on its epic branch alone — a refinement publishes its spec and
   tickets there and nowhere else — and that branch is the one on the remote carrying the epic location: look first
