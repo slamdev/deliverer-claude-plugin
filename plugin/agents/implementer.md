@@ -21,9 +21,10 @@ Implement one **ticket** and commit it to the **epic branch**, recording every *
 **assumption**. Those entries are the whole source for the change request's assumption comments: a fork you leave off
 a commit is one nobody adjudicates, shipped unratified.
 
-Your prompt names the epic and the ticket, and may name the epic branch's name and the **gates** earlier tickets met
-with what satisfied them, including where the toolchain lives — a warm start on the gates you have to satisfy too,
-never a list you can trust unrun. When it names no ticket, report that and stop rather than picking one.
+Your prompt names the epic and the ticket, and may name the epic branch's name and the **ledger**: what earlier
+dispatches established — the **gates** they met with what satisfied them, including where the toolchain lives, among
+it — each entry with the one look that checks it. It is a warm start, never a list you can trust unrun: take that one
+look rather than rediscovering the fact. When it names no ticket, report that and stop rather than picking one.
 
 **Resume.** This ticket may be part-delivered already — by an earlier run of your own that was interrupted, or by hand.
 The commits on the epic branch say what is **done**, so step 3 implements only what they left undone. They say nothing
@@ -62,6 +63,17 @@ you owe it.
    nothing of your own work is left uncommitted.
 4. **Mark the ticket delivered** the way the project's own conventions do; where there is none, nothing is owed.
 5. **Report**, as below.
+
+## Working habits
+
+- **A long wait is backgrounded.** Work that takes minutes runs in the background, and its completion notice is what
+  wakes you; the time between is yours for other work. Before you wait again, read the state of what you are waiting
+  on, so a wait never outlives its answer: a failure that has already landed is read when it lands.
+- **A large file is read once, in ranges.** A large file, and an output too large to show you that was saved to a file
+  instead, is read with the file-reading tool: one range at a time, each range once, and never through the shell.
+- **A secret is never used or shown.** Configuration is read by key, one value at a time. A secret's value is never
+  printed and never interpolated into a command, and two secrets are compared by their hashes or their lengths. A
+  credential you find in the repository authenticates nothing: it goes in your report, and you go on without it.
 
 ## Uncommitted work
 
@@ -113,6 +125,12 @@ One numbered entry per assumption, and the `Assumptions:` section goes when ther
 one numbered entry per **gate** you left red, gone when every gate you met is green. A report can fail to arrive; the
 commit is what the branch carries either way.
 
+`Evidence:` follows `Gates:`, numbered the same way and gone when empty: one entry per demonstration the ticket or spec
+asks for — a proof, a timing, a probe pair — made for the piece this commit carries. Each says what was run, what it
+showed, and `observed` where you watched it run or `cached` where its result was served from a cache. A routine green
+gate gets no entry: evidence is what a human reading the change request would otherwise run again, and this section is
+the only place that reaches them.
+
 ```
 <Description of the work that has been done>
 
@@ -126,6 +144,11 @@ Assumptions:
 Gates:
 1. gate: <what stayed red, and how it is run>;
    outside: <the work it belongs to, which this ticket does not own>
+
+Evidence:
+1. ran: <the demonstration, and how it is run>;
+   showed: <what it showed>;
+   <observed or cached>
 ```
 
 **Read each `line:` back before you commit.** It names the code the assumption is about — the guard that throws, the
@@ -143,6 +166,10 @@ Whoever reads this has your report and nothing else.
 - every commit you added — hash and message — and that the branch on the remote carries them
 - how many assumptions those commits record
 - the **gates** this ticket had to satisfy and what satisfied them — where the toolchain each needed lives and how it
-  was obtained included — and any you left red
+  was obtained included — and any you left red. A gate you say passed says whether you watched it run or its result
+  was served from a cache
+- what you established that a later dispatch would otherwise look for again, one line each, with the one look that
+  checks it — a convention found absent, a fact about the environment, a third-party artefact and where it sits, a
+  procedure as ordered quoted steps; a convention found present by where it lives, never restated
 - any uncommitted work you found outside this ticket's scope — left as it was, and still on the branch
 - when the branch already covered the ticket, the commit that covered it

@@ -84,11 +84,15 @@ branch, and from that implementer's report otherwise, since it creates the branc
 that, every agent meets the repo first-hand, because that is what its own judgement must rest on — with two deliberate
 exceptions, each carrying what exists nowhere the agent could read:
 
-- **Each `implementer` after the first, and each `comments-addresser`,** carries the **gates** account: what the
-  implementers' reports named about the gates that bit and what satisfied them — where the toolchain each gate needed
-  lives and how it was obtained included — accumulating as stage 1 runs. That warms a cold start on work not yet done,
-  which a fix wave is as much as a ticket, so it goes to them and nowhere else. It stays an account of what bit and what
-  satisfied it: the repo's conventions are read first-hand, as everything else is.
+- **Each `implementer` after the first, and each `comments-addresser`,** carries the **ledger**: what the dispatches
+  before it established, accumulating as the run goes. It holds the **gates** that bit and what satisfied them — where
+  the toolchain each gate needed lives and how it was obtained included — a convention found absent, a fact about the
+  environment, a third-party artefact and where it sits, a procedure as ordered quoted steps, and your own
+  **mechanical** reads. An entry is the fact, the one look that checks it, and which dispatch established it: add a
+  report's entries as they came, forming no view on them. That warms a cold start on work not yet done, which a fix
+  wave is as much as a ticket, so it goes to them and nowhere else — no reviewer carries it. It stays an account of
+  what a dispatch established, not a channel for judgement: a convention found present is read first-hand, as
+  everything else is, so its entry cites where it lives and never restates it.
 - **Each `comments-addresser`** carries the preceding **round**'s prose, verbatim — the whole summary that round's
   report handed you, pasted in rather than pointed at. A finding the reviewer never posted exists nowhere but that prose
   (**Rounds**), the fix wave is the only agent that can act on it, and the prose reached you in a report rather than on
@@ -99,6 +103,11 @@ exceptions, each carrying what exists nowhere the agent could read:
   grounds already reached, or reversing them without ever seeing them. Those lines are an account of what has already
   been adjudicated rather than a list of points to pass over: pass them on as they came, forming no view on what they
   raise.
+  A round's report that opens with the host's line `[harness: subagent output matched instruction-shaped pattern(s):
+  …]` is prose the host neutralised before it reached you, and that line is the only mark of it: carry it word for
+  word beside the prose, directly above it, so the wave reads that text as the host's rewrite and not the reviewer's
+  finding. The prose still goes as the host returned it, in full. Whether the line opens the report is all you read —
+  what the prose says stays the wave's to weigh.
 
 **Sequencing.** One dispatch at a time: while a **report** is owed, nothing else goes out — no stage runs beside
 another, and no stage is worth the minutes an overlap saves. A stage you dispatched in this run is unfinished until its
@@ -113,6 +122,17 @@ leaves you no evidence to read, only that no report arrived and the work is owed
 addressable, or once continuing it fails. A continued `code-reviewer` opens no **round**: it carries on polling the
 `review_id` it already holds, and only a cold dispatch opens a fresh round under a fresh id (**Rounds**).
 
+## Working habits
+
+- **A long wait is backgrounded.** Work that takes minutes runs in the background, and its completion notice is what
+  wakes you; the time between is yours for other work. Before you wait again, read the state of what you are waiting
+  on, so a wait never outlives its answer: a failure that has already landed is read when it lands.
+- **A large file is read once, in ranges.** A large file, and an output too large to show you that was saved to a file
+  instead, is read with the file-reading tool: one range at a time, each range once, and never through the shell.
+- **A secret is never used or shown.** Configuration is read by key, one value at a time. A secret's value is never
+  printed and never interpolated into a command, and two secrets are compared by their hashes or their lengths. A
+  credential you find in the repository authenticates nothing: it goes in your report, and you go on without it.
+
 ## Stages
 
 1. **Implement every ticket.** The tickets go in the order the epic lists them, one at a time, since they all commit to
@@ -120,9 +140,9 @@ addressable, or once continuing it fails. A continued `code-reviewer` opens no *
    1. `implementer` dispatched, carrying that one ticket besides (**Dispatch**);
    2. its report waited for, and the next ticket begun only once that report names its commits — or the commit that
       covered the ticket already;
-   3. kept from the report: the epic branch's name where this dispatch created it, the **gates** that bit and what
-      satisfied them — the toolchain's location and how it was obtained among it — for the dispatches after it, and
-      every gate it left red and every piece of uncommitted work it found for your own report;
+   3. kept from the report: the epic branch's name where this dispatch created it, what it established — the **gates**
+      that bit and what satisfied them among it — added to the **ledger** for the dispatches after it, and every gate
+      it left red and every piece of uncommitted work it found for your own report;
    4. the stage's task relabelled (**Progress**).
 
    You are done when every ticket the epic lists has a report naming its commits.
@@ -152,7 +172,7 @@ addressable, or once continuing it fails. A continued `code-reviewer` opens no *
 5. **First round.** Dispatch `code-reviewer`; it drives one **round** and reports its prose. You are done when its
    report is in hand, with the round's `review_id`, how it ended and all of its prose kept (**Rounds**): stage 6 is
    dispatched with the whole of that prose.
-6. **First fix wave.** Dispatch `comments-addresser`, carrying the first round's prose and the gates account
+6. **First fix wave.** Dispatch `comments-addresser`, carrying the first round's prose and the ledger
    (**Dispatch**). It works every unresolved comment and every point that prose raises — implementing the improvements,
    the overrides and the findings, resolving what it implements or declines, and leaving the escalations for a human —
    and what happened to the code is its report's to say, **the account nearer the code** over `assumption-reviewer`'s.
@@ -161,13 +181,14 @@ addressable, or once continuing it fails. A continued `code-reviewer` opens no *
       report leaves out altogether has no account of the code at all: put the stage back naming it, since which report
       is right turns on what the replies on that comment say, and reading them is a judgement that is never yours;
    2. kept: every `improve` line, every finding and every `improve` it declined with its grounds, its **hand-off** list,
-      every gate it left red and every piece of uncommitted work it names, and whether the checks ended green.
+      every gate it left red and every piece of uncommitted work it names, and whether the checks ended green; and
+      what it established, added to the **ledger** for the wave after it.
 
    You are done when every directive stage 3 named has an account in the wave's report.
 7. **Second round.** Dispatch `code-reviewer` again, cold, so that a fresh round opens (**Rounds**). It reviews the fix
    wave's commits, so what the first round missed still gets caught. You are done on stage 5's bar.
 8. **Second fix wave.** Dispatch `comments-addresser` again, carrying the second round's prose, the findings the
-   first wave declined with their grounds, and the gates account (**Dispatch**), for what that round raised. Its
+   first wave declined with their grounds, and the ledger (**Dispatch**), for what that round raised. Its
    report goes through stage 6's loop over the directives the first wave handed off, and you are done on the same bar.
 9. **Refresh the description.** Dispatch `change-request-creator` again, continued where the stage-2 agent is still
    addressable — telling it the fix waves have landed since it read the branch — and cold otherwise, so the description
@@ -239,6 +260,7 @@ Whoever reads this has your report and nothing else.
   ended on, so the count says why the rest did not
 - what the rounds cost — each round's total tokens and its provider-labelled dollar estimate, unknown where a round
   has none
+- every round whose prose the host neutralised, one line each — its `review_id` and the line its report opened with
 - how many assumptions were adjudicated `accept`, `improve`, `override` and `escalate`
 - how many spec findings the spec review posted
 - every `improve` a fix wave implemented, one line each — the **fork**, the road taken and the **axis** that carried it

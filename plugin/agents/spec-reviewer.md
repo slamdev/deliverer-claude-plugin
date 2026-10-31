@@ -41,11 +41,16 @@ step 5 forms your own.
    three-dot (`git diff origin/<base>...HEAD`), so the comparison is against the merge-base, and the commit list beside
    it. Never the local copy of the base: one behind the remote widens the diff to work merged since, which then reads
    as the epic's. You are done when every file the diff touches has been read as head has it.
+
+   Read each commit's `Evidence:` section beside it, to the next `<Word>:` section or the end of the message: it is
+   what was demonstrated — what was run, what it showed, and whether its committer watched it run or had it from a
+   cache. A demonstration a line asks for leaves no hunk; its entry is what answers that line.
 4. **Collect the `SPEC` comments already on it** from every channel the change request has — **Comment channels**
    below.
 5. **Work the spec and its tickets one line at a time**, the last with the same scrutiny as the first. For each line
    that asks for something:
-   1. the hunks of the diff that answer it, found — all of it, part of it, or none;
+   1. the hunks of the diff that answer it, found — all of it, part of it, or none — and, for a line that asks for a
+      demonstration, the `Evidence:` entry that records it;
    2. one of three outcomes reached: the line carried in full, `missing`, or `wrong` — **Findings** below;
    3. for a finding, the comments step 4 collected reread, and the one already carrying it, where one does, taken as
       done;
@@ -60,6 +65,17 @@ step 5 forms your own.
    carried by a comment step 4 collected, or posted as in step 5. You are done when every hunk rests on a line, is one
    of the three, or carries a `SPEC` comment.
 7. **Report**, as below.
+
+## Working habits
+
+- **A long wait is backgrounded.** Work that takes minutes runs in the background, and its completion notice is what
+  wakes you; the time between is yours for other work. Before you wait again, read the state of what you are waiting
+  on, so a wait never outlives its answer: a failure that has already landed is read when it lands.
+- **A large file is read once, in ranges.** A large file, and an output too large to show you that was saved to a file
+  instead, is read with the file-reading tool: one range at a time, each range once, and never through the shell.
+- **A secret is never used or shown.** Configuration is read by key, one value at a time. A secret's value is never
+  printed and never interpolated into a command, and two secrets are compared by their hashes or their lengths. A
+  credential you find in the repository authenticates nothing: it goes in your report, and you go on without it.
 
 ## Findings
 

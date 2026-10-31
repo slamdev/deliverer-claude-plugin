@@ -1,6 +1,6 @@
 # 04 — A fix wave reads verdicts first and commits each piece as it lands
 
-Status: ready-for-agent
+Status: resolved
 
 **Blocked by:** None — can start immediately.
 
@@ -10,14 +10,14 @@ and pushed a fix a standing `accept` had ruled out, then reverted it, at about 1
 once every comment is worked, so an interruption lost the whole of a wave and left its edits in the tree. Settled as
 change 4 in `../spec.md` § Solution and under § The fix wave.
 
-- [ ] Before working a finding, `comments-addresser` reads every verdict on the lines it would touch, resolved
+- [x] Before working a finding, `comments-addresser` reads every verdict on the lines it would touch, resolved
       `accept`s included. A finding a standing verdict already ruled out is declined on that verdict's **grounds**, or
       handed off where the finding argues the verdict is wrong.
-- [ ] The verdict read sits at the front of the per-comment loop; the existing rule for a verdict a fix outdates is
+- [x] The verdict read sits at the front of the per-comment loop; the existing rule for a verdict a fix outdates is
       unchanged.
-- [ ] The steps that work the comments, work the prose's points and commit interleave as the implementer's do — each
+- [x] The steps that work the comments, work the prose's points and commit interleave as the implementer's do — each
       comment's fix, its gates, its commit — and one push follows once the comments are worked.
-- [ ] The mark step stays after the push, because a mark names the commit that did the work.
-- [ ] Each step's "you are done when" still states a bar the wave can check, including nothing of its own work left
+- [x] The mark step stays after the push, because a mark names the commit that did the work.
+- [x] Each step's "you are done when" still states a bar the wave can check, including nothing of its own work left
       uncommitted.
-- [ ] The file is read against `/mattpocock-skills:writing-for-agents`, and its register and 120-column wrap are kept.
+- [x] The file is read against `/mattpocock-skills:writing-for-agents`, and its register and 120-column wrap are kept.
