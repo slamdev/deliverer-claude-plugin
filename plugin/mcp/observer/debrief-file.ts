@@ -1305,10 +1305,17 @@ function tiers(judging: Judging): string {
       ? undefined
       : `${plural(judging.notes.attempted, "dispatch note", "dispatch notes")} on ` +
         `\`${judging.notes.model}\``;
+  // A run read again after it resumed paid for every reading, the replaced and the failed ones
+  // with this one (observer-debrief-defects ticket 10), so "one synthesis" is said only of a run
+  // that never resumed, which keeps its debrief byte for byte what it was.
+  const readings =
+    judging.kind === "judged"
+      ? 1 + (judging.replaced?.length ?? 0) + (judging.failedReread === undefined ? 0 : 1)
+      : 0;
   const synthesis =
     judging.kind === "judged"
-      ? `one synthesis over the whole run on ${askedFor(judging.model)}` +
-        servedClause(judging.servedBy)
+      ? `${readings === 1 ? "one synthesis" : `${readings} syntheses`} over the whole run on ` +
+        `${askedFor(judging.model)}${servedClause(judging.servedBy)}`
       : "no synthesis: nothing read the whole run";
   return notes === undefined ? synthesis : `${notes}, and ${synthesis}`;
 }
