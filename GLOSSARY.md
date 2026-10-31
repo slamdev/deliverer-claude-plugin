@@ -211,6 +211,11 @@ pre-commit, local checks
 Whatever the forge runs on a change request; **green** is all of them passing. A fix wave owns them whether or not it
 was what made them red. _Avoid_: CI, build, pipeline, gate
 
+**Evidence**:
+A demonstration a ticket or spec asks for, recorded on the commit that made it: what was run, what it showed, and
+whether it was observed or served from cache. Whoever did not watch it run reports it as reported, not observed.
+_Avoid_: proof, verification, test results
+
 ### The run
 
 **Run**:
@@ -232,8 +237,16 @@ next — is not one, however cheap each step of it looks. _Avoid_: factual, obje
 
 **Dispatch**:
 One agent invocation. It carries paths rather than contents, so the agent opens the document for itself and meets the
-repository first-hand — with one deliberate exception: a **fix wave**'s dispatch carries the preceding **round**'s
-prose, because that is the only form a finding the reviewer did not post exists in. _Avoid_: call, delegation, spawn
+repository first-hand — with two deliberate exceptions: a **fix wave**'s dispatch carries the preceding **round**'s
+prose, because that is the only form a finding the reviewer did not post exists in; and every dispatch that runs
+commands carries the **ledger**, because what an earlier dispatch established lives nowhere else. _Avoid_: call,
+delegation, spawn
+
+**Ledger**:
+The **mechanical** facts a run's dispatches have established so far — the **gates** that bit and what satisfied them,
+a convention found or found absent, a fact about the environment — each carried as a **claim** with the one look that
+checks it. It grows as the run goes, and a convention found present is cited by where it lives, never restated.
+_Avoid_: gates account, context, notes, memory
 
 **Report**:
 The only thing a dispatch returns. What it names is what the orchestrator knows, so what it leaves out is invisible.
