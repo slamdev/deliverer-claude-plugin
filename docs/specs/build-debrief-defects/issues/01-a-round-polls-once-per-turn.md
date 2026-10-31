@@ -1,6 +1,6 @@
 # 01 — A round polls once per turn
 
-Status: ready-for-agent
+Status: resolved
 
 **Blocked by:** None — can start immediately.
 
@@ -10,7 +10,7 @@ second wait for nothing. `code-reviewer`'s poll step says one status call at a t
 each one holds. Settled as change 1 in `../spec.md` § Solution, and sized under **Modules touched** there: the agent
 runs at low effort, so the rule is one plain sentence.
 
-- [ ] `code-reviewer`'s poll step carries the rule as one plain sentence, with its reason: each poll holds.
-- [ ] Nothing else in `code-reviewer` moves, and it gains no working-habits block (`../spec.md` § The working-habits
+- [x] `code-reviewer`'s poll step carries the rule as one plain sentence, with its reason: each poll holds.
+- [x] Nothing else in `code-reviewer` moves, and it gains no working-habits block (`../spec.md` § The working-habits
       block).
-- [ ] The file is read against `/mattpocock-skills:writing-for-agents`, and its register and 120-column wrap are kept.
+- [x] The file is read against `/mattpocock-skills:writing-for-agents`, and its register and 120-column wrap are kept.

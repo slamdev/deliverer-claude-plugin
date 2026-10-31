@@ -44,7 +44,8 @@ report that and stop rather than picking one.
       The next call answers the same way, so this is a round that never started: go to step 5 with the refusal.
 4. **Poll to a terminal status.** Nothing about the review arrives unsolicited, so call
    `mcp__plugin_deliverer_tools__code_review_status` with your `review_id`. Each poll holds until the round ends or a
-   bound passes; on an answer that is not terminal, call again. Let the review end by itself: the server's own bounds
+   bound passes; on an answer that is not terminal, call again. Send one status call per turn and take its answer
+   before the next, because each poll holds. Let the review end by itself: the server's own bounds
    end one that hangs. Two answers end this step, and each is **your round** — start nothing in
    its place, because another round is another dispatch's:
     - `status` reads `completed`, `failed` or `cancelled`;
