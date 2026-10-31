@@ -354,6 +354,47 @@ export function readNote(text: string): NoteAnswer {
   return { kind: "read", body };
 }
 
+/**
+ * The most a **dispatch note** may hand the synthesis, in characters of its own output
+ * (observer-debrief-defects ticket 03; the spec's Solution item 8 and **The note cap**).
+ *
+ * **The synthesis's input is bounded by the plugin's choice, not by a cheap tier's.** The input
+ * side was bounded from the start — `NOTE_BUDGET_CHARS` — and the output side was held by "under
+ * 400 words" in the prompt alone, so up to thirteen notes could each hand the one long-context
+ * reading whatever a haiku-class model chose to write. The prompt still asks for 400 words, which is
+ * what a healthy note needs; this is the ceiling under it, stated in the prompt as well so that the
+ * model is told the bound it is held to. About three times the longest note on this machine when
+ * it was set (3,778 characters with its header), so a note that reaches it has stopped being one.
+ */
+export const NOTE_OUTPUT_CHARS = 8_000;
+
+/**
+ * A note held to `NOTE_OUTPUT_CHARS`, cut where it runs over.
+ *
+ * **Cut at a line boundary, with a mark naming what was cut** — the trace's own `…(+N)` device,
+ * spelled out because it ends a piece of prose rather than an excerpt, so that the synthesis reading
+ * it knows the note stopped rather than ended. The mark is counted inside the cap: what reaches the
+ * notes file is never longer than the figure the prompt stated. A note with no line break under the
+ * cap is cut at the cap itself, because a ceiling that holds only for well-wrapped answers is not one.
+ *
+ * **It is never sent back to the model for a shorter one.** A second call is a second price for a
+ * note the run already paid for, and it is the same cheap tier that ignored the bound once; the
+ * cut costs the synthesis the note's tail, and that tail is what a note running past its bound was
+ * least likely to have needed.
+ */
+export function capNote(body: string, cap: number = NOTE_OUTPUT_CHARS): string {
+  if (body.length <= cap) return body;
+  const mark = (cut: number): string =>
+    `\n…(+${cut} characters cut: this note ran past the ${cap}-character cap it was given, and ` +
+    `was not asked again)`;
+  // The mark's own length depends on the count it names, so it is sized at the widest count it
+  // could carry — the whole body — and the cut is made under what is left.
+  const room = cap - mark(body.length).length;
+  const boundary = body.lastIndexOf("\n", room);
+  const kept = body.slice(0, boundary > 0 ? boundary : Math.max(0, room)).trimEnd();
+  return `${kept}${mark(body.length - kept.length)}`;
+}
+
 /* ────────────────────────────────────── the instruction ────────────────────────────────────── */
 
 /**
@@ -533,6 +574,10 @@ otherwise.
 
 One line carrying the marker, then the note. Nothing before the marker. Plain prose in short
 paragraphs — no headings, no bullet list of figures, and under 400 words. Wrap at 120 columns.
+
+**Never past ${NOTE_OUTPUT_CHARS} characters, whatever you have to say.** That is a hard cap on what
+you write, not a target. A note that runs past it is cut at the last line that fits, marked as cut,
+and passed on that way — you will not be asked for a shorter one, so what matters most goes first.
 
 ${NOTE_MARKER}
 
@@ -778,7 +823,8 @@ async function call(query: Query, input: NoteInput): Promise<NoteOutcome> {
   const served = servedBy(result);
   return {
     kind: "written",
-    body: answer.body,
+    // Held to its output cap here, once, and never re-asked (ticket 03): `capNote` carries why.
+    body: capNote(answer.body),
     readBy:
       `\`${NOTE_MODEL}\`${served === undefined ? "" : ` (served by ${served})`} at ` +
       `${NOTE_EFFORT} effort, over ${slice.text.length} characters of this dispatch's record`,

@@ -8,10 +8,10 @@ Solution item 9 and under **Stopped early** in `../spec.md`.
 
 **Status:** ready-for-agent
 
-- [ ] On the observer's exit because a record could not be read, the debrief's state is "observation stopped early",
+- [x] On the observer's exit because a record could not be read, the debrief's state is "observation stopped early",
       with the last entry read and the reason: neither final nor live.
-- [ ] A later re-armed observer whose reading succeeds replaces it as it would any non-final debrief.
-- [ ] A process killed with its container and never touched again stays out of scope.
-- [ ] Free replay of a record truncated mid-line gives a debrief that says it stopped early at that entry.
-- [ ] Free replay of an intact record is byte for byte as before.
-- [ ] `npm run typecheck && npm run lint` pass in the plugin's Node package.
+- [x] A later re-armed observer whose reading succeeds replaces it as it would any non-final debrief.
+- [x] A process killed with its container and never touched again stays out of scope.
+- [x] Free replay of a record truncated mid-line gives a debrief that says it stopped early at that entry.
+- [x] Free replay of an intact record is byte for byte as before.
+- [x] `npm run typecheck && npm run lint` pass in the plugin's Node package.

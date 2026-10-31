@@ -33,6 +33,13 @@
 # the observer's `.lock`, which `mcp/observe.mjs` writes and removes; a crashed observer leaves a
 # pid nothing answers to, which reads as not alive.
 #
+# An observer that STOPPED EARLY — a record it could not read, its debrief rewritten to say so
+# (observer-debrief-defects ticket 06) — is re-armed on the same two events, with no final reading
+# needed: nothing was finalised, so the fresh one has nothing to tell "moved past" by and needs
+# nothing. It watches as any observer does, and its first reading replaces the stopped-early debrief
+# as it would any non-final one. A record still unreadable leaves it failing as before, and the
+# marker it writes on starting is no longer a stopped-early one, so nothing re-arms it twice.
+#
 # THE SWITCH IS READ FROM THE ENVIRONMENT, NEVER FROM `${user_config.*}` (D26, claim C1). A hook
 # reads the SAVED option values, where the MCP path merges the manifest's defaults first — so an
 # option sitting at its default is absent to a hook by either route, and only the environment
@@ -135,6 +142,13 @@ finalised_with_a_reading() {
   [[ "$marker" == *'"state": "finalised — '* ]]
 }
 
+stopped_early() {
+  [[ -f "$MARKER" ]] || return 1
+  local marker
+  marker="$(cat "$MARKER" 2>/dev/null)" || return 1
+  [[ "$marker" == *'"state": "stopped early — '* ]]
+}
+
 observer_alive() {
   [[ -f "$LOCK" ]] || return 1
   local pid
@@ -145,6 +159,15 @@ observer_alive() {
 
 rearm() {
   [[ -f "$RECORD" ]] || return 0
+  if stopped_early; then
+    observer_alive && return 0
+    # The debrief on disk is not final, so a final reading left from before it is stale and would
+    # set the fresh observer probing a finalise that no longer stands; and a `SessionEnd` signal is
+    # stale for the reason the branch below gives.
+    rm -f "$FINAL_READING" "$SESSIONS/$SESSION_ID.finalise" 2>/dev/null
+    start_observer "re-armed by the $EVENT hook: the observer had stopped early on a record it could not read"
+    return 0
+  fi
   finalised_with_a_reading || return 0
   observer_alive && return 0
   # A `SessionEnd` signal still on disk here is the end of this session BEFORE it was resumed:

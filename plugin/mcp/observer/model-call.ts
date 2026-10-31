@@ -19,7 +19,7 @@
  * re-implements `e2e-tests`' token rule.
  */
 import { NO_TOKENS, addTokens, type RequestUsage } from "./records.ts";
-import { pricingOf } from "./rates.ts";
+import { pricedByPromptLength, pricingOf } from "./rates.ts";
 import type { CostBasis, ObservationCost } from "./debrief-file.ts";
 
 /* ────────────────────────────────────── the SDK ────────────────────────────────────── */
@@ -254,7 +254,14 @@ export function costFromResult(message: QueryMessage, assistantTurns: number): O
   // needs the model, which the per-model usage is the only carrier of — a result with the aggregate
   // counters alone names none, so that one stays unknown rather than being priced at a rate nothing
   // in it chose.
-  const priced = reported !== undefined ? undefined : pricingOf(usagesOf(perModel)).usd;
+  //
+  // Nor is a model priced by prompt length (observer-debrief-defects ticket 02): `modelUsage` sums a
+  // call's turns per model, so no single request's prompt survives in it, and pricing that sum as
+  // one prompt would put a call of many short turns in the long-prompt tier. Unknown, not overstated.
+  const priced =
+    reported !== undefined || Object.keys(perModel).some(pricedByPromptLength)
+      ? undefined
+      : pricingOf(usagesOf(perModel)).usd;
   return {
     modelCalls: 1,
     tokens: nothingMeasured
