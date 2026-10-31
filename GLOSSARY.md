@@ -9,8 +9,8 @@ catches them.
 ### The work
 
 **Epic**:
-One feature's whole unit of delivery — a spec and its numbered tickets, sitting together at one location. _Avoid_:
-feature, project, initiative
+One feature's whole unit of delivery — a spec and its numbered tickets, sitting together at one location, and
+delivered into one repository on one **epic branch**. _Avoid_: feature, project, initiative
 
 **Idea**:
 The rough intent a refinement starts from, in the user's own terms, before anything has been decided. _Avoid_: request,
@@ -243,6 +243,13 @@ _Avoid_: output, result, summary
 A dispatched agent that meets the codebase first-hand but never the conversation — which is what makes the brief
 load-bearing. _Avoid_: author, generator
 
+**Put-back**:
+A stage handed back to the agent that ran it, carrying what its **report** or document got wrong or the human's answers
+to the **fork**s it raised. It is the same stage's work rather than a new stage, and counted as the run's own. The agent
+is continued while it can still be addressed, picking up the conversation it was holding, and a **writer** so continued
+patches its published document in place; only a cold **dispatch**, starting over from the paths, writes it whole.
+_Avoid_: retry, redo, follow-up, re-dispatch
+
 **Bearings**:
 What a resumed run reads its position from: the artifacts on disk, the commits on the branch, and whether a change
 request is open. Never a task list, never what a finding says, and never a comment's replies — a stage whose only
@@ -254,8 +261,14 @@ confirms a shared understanding. _Avoid_: backlog, queue, open items
 
 **Sweep**:
 A fact-finding dispatch a grilling makes to settle a question of fact, carrying the subject it was asked to settle — one
-subject each, and more than one may be in flight at once. A question on the frontier that turns on that subject waits
-for the sweep; every other question is asked now. _Avoid_: sub-agent, exploration, lookup, research
+subject each, a subject being one question of fact, and more than one may be in flight at once. A question on the
+frontier that turns on that subject waits for the sweep; every other question is asked now. _Avoid_: sub-agent,
+exploration, lookup, research
+
+**Question round**:
+One set of questions put to the human at once — every question on the **frontier** that no **sweep** in flight is
+holding — and the one wait for their answers. A frontier wider than a single ask can carry is still one question round.
+_Avoid_: bare "round", which is a code review's, batch
 
 ### Observation
 
