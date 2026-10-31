@@ -54,19 +54,25 @@ background burned 26 turns (#12); a blocking wait ran on after the completion no
 unread for nine minutes (#24); two 600-second blind waits happened twice (#25). Whole files were dumped through the
 shell and then read again (#8, #9), and a 44 KB spec was read three times because the first output was persisted rather
 than shown (#25). Agents re-measured line widths while still editing (#11, #13). Credentials found in a repository were
-used literally in commands, twice, and now sit in the run's record (#15) — and refine has the same gap.
+used literally in commands, twice, and now sit in the run's record (#15).
+
+**A round's prose can reach a fix wave rewritten, and nobody says so.** The host guards against instruction-shaped
+subagent output by rewriting it, and it did so to **round** prose the build skill carries verbatim into a fix wave
+(#3, #9, #24). The fix wave read the rewritten prose as the reviewer's, and nothing in the brief or the report said it
+had been altered.
 
 ## Solution
 
-Seven changes, all of them prose in the plugin's agents and skills. No Node code moves.
+Eight changes, all of them prose in the build skill and the agents it dispatches. No Node code moves.
 
 ### 1. A round polls once per turn
 
 `code-reviewer`'s poll step says one status call at a time: never two in one turn, because each one holds.
 
-### 2. One working-habits rule, in every agent and both skills
+### 2. One working-habits rule, in the build skill and every agent it dispatches
 
-One wording, repeated verbatim in all nine agent definitions and both skills:
+One wording, repeated verbatim in the build skill and its six agents. The refine skill and its two writers carry the
+same block word for word, under [refine-debrief-defects](../refine-debrief-defects/spec.md):
 
 - **A long wait is backgrounded.** Work that takes minutes runs in the background and its completion notice wakes the
   agent; before waiting again, it reads the state of what it is waiting on, so a wait never outlives its answer.
@@ -74,8 +80,9 @@ One wording, repeated verbatim in all nine agent definitions and both skills:
   tool in ranges, never dumped through the shell and then read again.
 - **Measure once, after the last edit.** Widths, counts and conformance are measured once the text is final, never
   between edits.
-- **A secret is never used or shown.** A credential found in the repository is never printed, never interpolated into a
-  command and never used to authenticate: it is reported, and the agent goes on without it.
+- **A secret is never used or shown.** Configuration is read by key. A secret's value is never printed and never
+  interpolated into a command; two secrets are compared by hash or by length. A credential found in the repository is
+  never used to authenticate against anything: it is reported, and the agent goes on without it.
 
 ### 3. Every assumption comment lands, on GitLab too
 
@@ -134,6 +141,12 @@ One wording, repeated verbatim in all nine agent definitions and both skills:
 - Every one of those agents' reports gains a slot for the facts it established, in that shape, which is what the
   orchestrator adds to the ledger.
 
+### 8. A round's prose the host altered is said to be altered
+
+The build skill's account of a round says that when the host marks a dispatch's output as rewritten (instruction-shaped
+output neutralised), the prose it carries into a fix wave is not verbatim. The flag is carried with that prose, and
+named in the run's report.
+
 ## User Stories
 
 1. As a human paying for a delivery, I want a review round to hold one poll at a time, so that no round pays for a
@@ -153,8 +166,8 @@ One wording, repeated verbatim in all nine agent definitions and both skills:
 8. As a human whose repository holds a credential, I want no agent ever to use, print or interpolate it, so that it
    never lands in a command, a commit or the run's record.
 9. As a human, I want a credential an agent found reported to me, so that I know it is there and can deal with it.
-10. As a maintainer, I want the working-habits rule worded identically in every agent and both skills, so that one
-    change to it is one wording to change.
+10. As a maintainer, I want the working-habits rule worded identically in the build skill, every agent it dispatches
+    and the refine side's copy, so that one change to it is one wording to change.
 11. As a human delivering into GitLab, I want an assumption comment that cannot sit on head's diff anchored at the
     commit that recorded it, in a form GitLab stores, so that it sits on that commit's code rather than nowhere.
 12. As a `change-request-creator`, I want a GitLab example for the commit anchor that works, so that I do not post,
@@ -235,13 +248,17 @@ One wording, repeated verbatim in all nine agent definitions and both skills:
     the work from one agent to another.
 51. As a maintainer, I want `code-reviewer` and `change-request-creator` left without the ledger, so that the two agents
     that run no gate are not carried what they never use.
+52. As a fix wave, I want to be told when the round prose I carry was rewritten by the host, so that I do not read the
+    host's neutralised text as the reviewer's finding.
+53. As a human reading a build run's report, I want a rewritten round named in it, so that I know which carry-forward
+    was not verbatim.
 
 ## Implementation Decisions
 
 ### Modules touched
 
 - **`code-reviewer`** — the poll step.
-- **Every agent definition and both skills** — the working-habits rule.
+- **The build skill and the six agents it dispatches** — the working-habits rule.
 - **`change-request-creator`** — the anchoring ladder and its GitLab examples; the evidence mirror; the description it
   writes in stage 2 and stage 9.
 - **`comments-addresser`** — its steps (per-piece commits, the verdict read moved ahead of the work, the outside-cause
@@ -250,7 +267,8 @@ One wording, repeated verbatim in all nine agent definitions and both skills:
 - **`assumption-reviewer` and `spec-reviewer`** — the ledger in what their prompt may carry, and their reports' ledger
   slot. `spec-reviewer` also reads the evidence section as the record of what was demonstrated.
 - **The build skill** — Dispatch (the ledger replaces the gates account), stage 2 (the mergeability read and the
-  conflict dispatch), stage 10 (mergeability in the bar), and What to report.
+  conflict dispatch), stage 10 (mergeability in the bar), the round carry-forward (the host's rewrite flag), and What
+  to report.
 - **The glossary** — **Ledger** and **Evidence** are added, and **Dispatch** names its two exceptions; all three are
   already in place.
 
@@ -266,7 +284,14 @@ One wording, repeated verbatim in all nine agent definitions and both skills:
 - It names no host, no tool timeout and no command. "The file-reading tool in ranges" is the instruction; the host's
   tool name is not.
 - The secrets line covers what the agent finds in the repository, its environment files included, and binds every
-  agent of both phases.
+  agent of the build phase. The refine phase carries the same block, so the wording is one across all eleven files.
+  The refine side's host bounds — scratch copies under the temporary directory, nothing written to a live system — are
+  its own and stay out of this block: an implementer works in the workspace and drives gates that may touch a cluster.
+
+### The rewrite flag
+
+- The carry-forward stays verbatim: the prose goes to the fix wave exactly as the host returned it. What is added is
+  the flag, stated beside it, and a line in What to report naming the round whose prose was rewritten.
 
 ### The anchoring ladder
 
@@ -336,9 +361,9 @@ brief's contents, a debrief's figures — never how an agent phrased its reasoni
   read after stage 2 and at the flip; fix-wave commits per piece. The fixture runs on GitHub, so it does not exercise
   the GitLab anchors; it will not conflict, so it exercises the read and not the conflict dispatch.
 - **Every touched prose file read against `/mattpocock-skills:writing-for-agents`**, and the working-habits block
-  diffed across all eleven files to confirm it is identical.
+  diffed across the seven files here and against the refine side's four copies to confirm it is identical.
 - **The next observed deliveries' debriefs** are the remaining seam — for the conflict dispatch, the outside-cause
-  hand-off and the GitLab rungs on a real delivery.
+  hand-off, the GitLab rungs on a real delivery, and the rewrite flag on the next round the host rewrites.
 
 ## Out of Scope
 
@@ -383,4 +408,5 @@ and keeps it for one found present, which is still cited and read rather than re
 - The plugin names no forge ([ADR 0012](../../adrs/0012-the-plugin-names-no-forge.md)): the GitLab and GitHub forms
   stay worked examples of one mechanism, and the working-habits rule names no host.
 - A fix wave's forks are still not mirrored and not adjudicated; only its evidence is.
-- A round's prose still reaches a fix wave verbatim, and the declined findings with their grounds still travel.
+- A round's prose still reaches a fix wave as the host returned it, and the declined findings with their grounds
+  still travel. The rewrite flag is added beside the prose, never in place of it.
