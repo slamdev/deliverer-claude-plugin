@@ -11,10 +11,10 @@ stories 25, 26.
 
 **Status:** ready-for-agent
 
-- [ ] Step 5's per-story check produces a mapping from every user story number to the ticket numbers that cover it.
-- [ ] The report carries that mapping in place of the one-line coverage assertion, and still names an uncovered story
+- [x] Step 5's per-story check produces a mapping from every user story number to the ticket numbers that cover it.
+- [x] The report carries that mapping in place of the one-line coverage assertion, and still names an uncovered story
       with why.
-- [ ] A blocker outside the ticket set is named in the ticket body by its link, never as a native blocking link and
+- [x] A blocker outside the ticket set is named in the ticket body by its link, never as a native blocking link and
       never as a blocking edge; step 4's rule that every blocking edge names a slice in the set still holds.
-- [ ] The report lists every external blocker, by ticket.
-- [ ] `tickets-writer` is read against `/mattpocock-skills:writing-for-agents`.
+- [x] The report lists every external blocker, by ticket.
+- [x] `tickets-writer` is read against `/mattpocock-skills:writing-for-agents`.

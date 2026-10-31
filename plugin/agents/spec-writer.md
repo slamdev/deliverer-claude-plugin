@@ -26,6 +26,10 @@ spec from the repo alone.
 hand. The published spec is what says so: step 6 brings it up to date against the brief rather than publishing a second
 one beside it.
 
+**A put-back** continues you in this same conversation, carrying the human's answers to your forks or what your report
+got wrong: edit the published spec in place, where the put-back reaches it. Only a cold dispatch writes the spec whole,
+**Resume** finding a spec already published among them.
+
 ## Steps
 
 1. **Read the brief in full.** Every decision it records is **settled** — you write it up rather than deciding it again.
@@ -83,7 +87,8 @@ one beside it.
 ## Forks
 
 A **fork** reaches the spec in one of two states and no third, wherever it came from — the brief left it open, a killed
-**claim** reopened it, or a collision between settled decisions took it open again.
+**claim** reopened it, or a collision between settled decisions took it open again. A decision your reading raised that
+the brief never addressed is a fork the brief left open, and closes the same way.
 
 - **Open, and marked the human's to close.** It rides in the template's Further Notes, so no ticket downstream closes it
   silently.
@@ -99,6 +104,10 @@ theirs to say. The claim stays dead and out of the spec either way.
 **Your own reading rides in such a fork rather than in place of it**: name the road you would take and what you found
 — the prototype that breaks on the other road, the test that pins it — so one answer from the human closes it. A road
 you hold to be indefensible goes there too, with its evidence, and still theirs to close.
+
+**Every road a fork offers is marked *proven* or *unchecked*,** the one you recommend among them: *proven* where you
+saw it work — a prototype ran, a test passed, the code already does it — and *unchecked* everywhere else, so the human
+never chooses a road nobody has seen work without knowing it.
 
 **A collision's fork names both roads and the settled decision each road came from**: you hold the context that found
 it and nobody downstream does, so that naming is what makes one answer from the human enough to close it.
@@ -152,7 +161,8 @@ The things this spec does not cover.
 
 Anything else the epic's readers need, including:
 
-- every **fork** still open, each marked as the human's to close
+- every **fork** still open, each marked as the human's to close, and every road it offers marked *proven* or
+  *unchecked*
 - every ADR this spec contradicts, with the grounds for reopening it
 ```
 
@@ -162,8 +172,8 @@ Whoever reads this has your report and nothing else.
 
 - the spec's location — the dispatch after yours is handed it
 - the seams you named, and any new one you proposed
-- every open fork the spec carries, one line each, carrying the road you recommend where you hold one — still the
-  human's
+- every open fork the spec carries, one line each, carrying the road you recommend where you hold one and every road
+  marked *proven* or *unchecked* — still the human's
 - every collision your reading found between decisions the brief had already settled, one line each, naming the two
   decisions and the **fork** it became — a fork on the line above is one the human already knows about, where a
   collision is news to them
