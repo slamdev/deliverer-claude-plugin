@@ -133,6 +133,8 @@ gh api --method POST 'repos/{owner}/{repo}/pulls/<number>/comments' -F body=@<th
 gh api --method POST 'repos/{owner}/{repo}/pulls/<number>/comments' -F body=@<the body file> \
   -f commit_id=<the hash the prefix names> -f path=<the file> -F line=<the line as that commit left it> \
   -f side=RIGHT
+# post one nothing above would anchor, on the change request itself — the entry's file and line ride in the body
+gh api --method POST 'repos/{owner}/{repo}/issues/<number>/comments' -F body=@<the body file>
 ```
 
 `--paginate` on a GraphQL query does nothing unless the query takes `$endCursor` and asks for the `pageInfo` fields
@@ -160,14 +162,22 @@ glab api --method POST 'projects/:fullpath/merge_requests/<iid>/discussions' -F 
 glab api --method POST 'projects/:fullpath/merge_requests/<iid>/discussions' -F body=@<the body file> \
   -F 'position={"position_type":"file","new_path":"<the file>","old_path":"<the file>",
                 "base_sha":"<base_commit_sha>","start_sha":"<start_commit_sha>","head_sha":"<head_commit_sha>"}'
-# post one you could not translate, anchored at the commit that recorded it
+# post one you could not translate, against the diff of the commit that recorded it — base and start at its parent
 glab api --method POST 'projects/:fullpath/merge_requests/<iid>/discussions' -F body=@<the body file> \
-  -f commit_id=<the hash the prefix names>
+  -F 'position={"position_type":"text","new_path":"<the file>","old_path":"<the file>",
+                "new_line":<the line as that commit left it>,"old_line":<that line before it, omitted where new>,
+                "base_sha":"<its parent>","start_sha":"<its parent>","head_sha":"<the hash the prefix names>"}'
+# post one nothing above would anchor, on the change request itself — the entry's file and line ride in the body
+glab api --method POST 'projects/:fullpath/merge_requests/<iid>/discussions' -F body=@<the body file>
 ```
 
 A `text` position wants both line numbers on a line the branch left unchanged, `new_line` alone on one it added, and
 `old_line` alone on one it deleted. Give it one number where it needs two and the position matches nothing, which comes
 back as a rejection rather than as a comment somewhere odd.
+
+The commit's own position is the same form read against one commit instead of the whole branch: the line numbers are
+that commit's, and `<its parent>` is `git rev-parse <the hash the prefix names>^`. The position is what stores the
+anchor: a `commit_id` on its own is accepted and stores none.
 
 ## Assumption comments
 
@@ -220,13 +230,20 @@ hash>:<the file>` — and find that text in the file as head has it. Exactly one
 no match, or several, is a translation you cannot make. Then anchor at the first of these that holds:
 
 1. **The translated line on head**, where the change request's diff carries that line. The ordinary case.
-2. **The file, with no line at all**, where the translation held but the diff does not carry the line. An assumption
-   about a caller the branch never touched is an ordinary entry rather than a mistake, and the mechanism has a
-   file-level form for exactly this — a line outside the diff is refused, not placed.
-3. **The commit the prefix already names** — the file and line as that commit left them, or the commit on its own where
-   that is what the mechanism takes — where the line is gone, or the translation could not be made.
+2. **The file, with no line at all**, where the translation held and the diff carries the file but not that line. An
+   assumption about a caller the branch never touched, in a file it did, is an ordinary entry rather than a mistake,
+   and the mechanism has a file-level form for exactly this — a line outside the diff is refused, not placed. A file the
+   diff never touched is not this rung: there the form is refused, or stored against a file no reviewer of the diff
+   opens.
+3. **The commit the prefix already names** — the file and line as that commit left them, posted against that commit's
+   own diff — where the line is gone, or the translation could not be made.
+4. **The change request itself**, where none of the three takes it. This rung always holds: the body is the one
+   **Comment format** gives, opening with the same `ASSUMPTION (<hash>)` prefix, and the entry it carries over names
+   its `file:` and `line:`, so the anchor rides in the body. On a forge that resolves a comment opened here, it goes on
+   that channel; on one that resolves only comments on a file, it is a general comment, and the reply that answers it
+   is its mark.
 
-Each of the three is an anchor the entry can be held to, which the nearest surviving line is not: that one puts the
+Each of the four is an anchor the entry can be held to, which the nearest surviving line is not: that one puts the
 comment somewhere misleading. Where the mechanism distinguishes the two versions of a line, say which one you mean: the
 version the branch left in place, or the version it deleted.
 
@@ -249,4 +266,5 @@ Whoever reads this has your report and nothing else.
 - how many assumption comments it now carries, and how many of those you posted
 - every comment you anchored anywhere but at a translated line on head, one line each — the assumption, the anchor you
   fell back to and why: the diff does not carry that line, or the entry's text could not be translated. One anchored at
-  the recording commit sits off the diff a human reviews, so this line is the only thing that says the fork is there
+  the recording commit, or on the change request itself, sits off the diff a human reviews, so this line is the only
+  thing that says the fork is there

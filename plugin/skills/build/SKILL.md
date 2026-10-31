@@ -163,7 +163,8 @@ addressable, or once continuing it fails. A continued `code-reviewer` opens no *
    recorded is this stage doing its job. A report naming `pr` missing is a stage that cannot be completed: report it as
    a **hand-off** and dispatch nothing further. You are done when the URL is in hand, with every comment the report
    names **anchored anywhere but at a translated line on head** kept — the agent's own wording, and wider than the
-   diff: an assumption about a caller the branch never touched is anchored at the file on purpose, and is one of these.
+   diff: an assumption about a file the branch never touched is posted on the change request itself on purpose, and is
+   one of these.
 3. **Adjudicate the assumptions.** Dispatch `assumption-reviewer`. For each `ASSUMPTION` comment it compares the roads
    the **fork** left open and replies one verdict — `accept`, `improve`, `override` or `escalate`. An `improve` is a
    road that beat the one the code took on a named **axis**, so it carries a **directive** stage 6 implements, and code

@@ -30,3 +30,32 @@ comment** is posted at each rung, every discussion is read back to confirm what 
       rung 4 too, in the agent and wherever the build skill restates it.
 - [ ] The GitLab and GitHub forms stay worked examples of one mechanism (ADR 0012).
 - [ ] The file is read against `/mattpocock-skills:writing-for-agents`, and its register and 120-column wrap are kept.
+
+## Comments
+
+### The anchor probe, 2026-10-31
+
+A private project under the owner's namespace on `gitlab.audienzz.ch`, deleted afterwards (permanently: a plain delete
+only schedules it, so a second `DELETE` with `permanently_remove=true` followed, and a read of the project then came
+back `404`). `main` carried `a.txt` (ten lines) and `untouched.txt` at `C0`. The change request held two commits: `C1`
+added `ALPHA` at line 3 and `BETA` at line 4; `C2` inserted five lines above `ALPHA`, moving it to line 8, and deleted
+`BETA`. Its one diff version had base and start at `C0` and head at `C2`. Each body opened `ASSUMPTION (<C1>)`, and
+every discussion was read back from `merge_requests/:iid/discussions`. Every one stored `resolvable: true` and
+`individual_note: false`, and none stored a note `commit_id`.
+
+| Rung                    | Request posted                                   | What GitLab stored                             |
+|-------------------------|--------------------------------------------------|------------------------------------------------|
+| 1                       | `text`, `new_line` 8, the version's shas         | `DiffNote`, `text`, `new_line` 8, head `C2`    |
+| 2                       | `file` on `a.txt`, the version's shas            | `DiffNote`, `file`, `a.txt`, head `C2`         |
+| 2, file off the diff    | `file` on `untouched.txt`, the version's shas    | `DiffNote`, `file`, `untouched.txt`: accepted  |
+| 3, as shipped           | a bare `commit_id=<C1>`                          | `DiscussionNote`, `position: null`             |
+| 3, `BETA`, gone on head | `text`, `new_line` 4; base, start `C0`; head `C1` | `DiffNote`, `text`, `new_line` 4, head `C1`   |
+| 3, `ALPHA`, on head     | `text`, `new_line` 3; base, start `C0`; head `C1` | `DiffNote`, `text`, `new_line` 8, head `C2`   |
+| 4                       | no position, the body alone                      | `DiscussionNote`, `position: null`             |
+
+The positional form against the recording commit's own diff is stored, so rung 3's GitLab example ships as that form
+rather than falling back to the general comment. Where the line survives to head, GitLab carries the position forward
+itself: the `ALPHA` post came back at line 8 against `C2`. The bare `commit_id` is confirmed to store nothing
+positional — a general comment with its anchor lost. GitLab did not refuse a file-level position on a file outside the
+diff: it stored one against a file the change request's changes never show, which is why the ladder sends that case to
+rung 4 rather than to rung 2.
