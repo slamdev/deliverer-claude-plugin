@@ -9,7 +9,7 @@ Settled under **The run's last act** in `../spec.md`.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] The test inverts to "nothing counts but the run's own turns", reusing the existing definition of what the human
       typed rather than a new list of entry kinds; no timestamp test is introduced.

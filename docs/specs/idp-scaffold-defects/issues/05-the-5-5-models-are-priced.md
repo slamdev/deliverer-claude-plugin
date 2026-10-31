@@ -7,7 +7,7 @@ source it already takes every rate from, with its as-of date moved to match. Set
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] Both models are in the table at the rates the `claude-api` skill's model table gives, read at the time of the
       change rather than recalled.

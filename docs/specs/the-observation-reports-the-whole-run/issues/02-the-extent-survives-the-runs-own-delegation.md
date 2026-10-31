@@ -1,6 +1,6 @@
 # 02 — The extent survives the run's own delegation
 
-Status: ready-for-agent
+Status: resolved
 
 **Blocked by:** 01 — a sequencing edge and a verification one, not a reuse edge. Nothing in this ticket reads a line 01
 lands; 01 is what lets this ticket be checked at all, because the failure it fixes is visible only in a reading taken

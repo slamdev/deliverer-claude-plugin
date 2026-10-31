@@ -7,7 +7,7 @@ they contradict the decision above them. Settled as D6 in `../spec.md`.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] ADR-0012 states that naming a forge to illustrate a mechanism is permitted.
 - [x] It states that conditioning behaviour on a host — a check for which forge is in play — remains forbidden.

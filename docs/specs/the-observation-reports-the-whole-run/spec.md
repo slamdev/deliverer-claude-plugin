@@ -1,6 +1,6 @@
 # The observation reports the whole run, and prices it
 
-Status: ready-for-agent
+Status: resolved
 
 ## Problem Statement
 

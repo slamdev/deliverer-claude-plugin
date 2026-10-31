@@ -7,7 +7,7 @@ every other fact is met first-hand stays as written. Settled under **The gates a
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] What satisfied a gate explicitly includes where the toolchain the gate needed lives and how it was obtained.
 - [x] The accumulated gates account goes to each `comments-addresser` as well as to each implementer after the first.

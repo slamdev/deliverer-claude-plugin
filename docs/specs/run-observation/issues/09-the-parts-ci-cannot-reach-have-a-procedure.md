@@ -1,6 +1,6 @@
 # 09 — The parts CI cannot reach have a procedure
 
-Status: ready-for-agent
+Status: resolved
 
 **Blocked by:** 06, 07, 08
 
