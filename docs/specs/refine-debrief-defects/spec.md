@@ -70,7 +70,7 @@ the one-repository bound.
   - sends sweeps that each carry one question of fact, know their siblings and the environment, keep their checkout
     for the writers, and work inside one shared set of bounds;
   - gives stage 4 the loop stage 3 has.
-- **The two writers** share those bounds and the build side's working-habits block, and patch in place when continued.
+- **The two writers** share those bounds and one working-habits block, and patch in place when continued.
   The spec writer marks every road it offers as proven or unchecked; the tickets writer reports the forks its reading
   forced against the spec, maps every story to its tickets, and puts an external blocker in the ticket body.
 
@@ -117,8 +117,8 @@ the one-repository bound.
     key, never print a secret's value, compare secrets by hash or length, and never use a credential they find, so that
     no credential lands in a dispatch record, a trace or the notes, or authenticates against anything.
 16. As a human, I want every sweep and both writers to background a long wait, read a large file once in ranges and
-    measure text once after the last edit, worded as the build side words it, so that a refinement pays for none of
-    that twice and one wording changes in one review.
+    measure text once after the last edit, worded the same in every file, so that a refinement pays for none of that
+    twice and one wording changes in one review.
 
 ### Put-backs
 
@@ -202,8 +202,7 @@ falls back to a cold dispatch.
 Two blocks, each in the refine skill once, in `spec-writer` and in `tickets-writer`. The sweep dispatch passes the
 skill's copy on by reference.
 
-- **The working-habits block**, word for word. The build skill and its six agents carry the same block under the build
-  side's own spec, so the wording is one across ten files and changes in one review:
+- **The working-habits block**:
   - **A long wait is backgrounded.** Work that takes minutes runs in the background and its completion notice wakes
     the agent; before waiting again, it reads the state of what it is waiting on, so a wait never outlives its answer.
   - **A large file is read once, in ranges.** A file or a persisted output too big to show is read with the
@@ -215,8 +214,7 @@ skill's copy on by reference.
     never used to authenticate against anything: it is reported, and the agent goes on without it.
 
   The brief's existing redaction line stays as it is.
-- **Host bounds**, the refine side's own, since an implementer works in the workspace and drives gates that may touch a
-  live system:
+- **Host bounds**:
   - Work in your own scratch copy under the OS temporary directory, never in a shared or named path, and never in the
     workspace root.
   - Report with nothing of yours still running.
@@ -263,8 +261,8 @@ calls in one message, the paths in the brief, a wave's output tokens, a report's
 prose reads as intended. No new seam is proposed. The three existing ones:
 
 - **The writing-for-agents read.** The refine skill, `spec-writer` and `tickets-writer` are each read against
-  `/mattpocock-skills:writing-for-agents` before merge. The read also diffs the host bounds across the three files, and
-  the working-habits block against the build side's seven copies.
+  `/mattpocock-skills:writing-for-agents` before merge. The read also diffs both blocks across the three files to
+  confirm each is identical.
 - **The bench** (CONTRIBUTING.md § The bench). Two arms, `current` against `before=<main>:plugin/agents/spec-writer.md`,
   with `--waves 1` on the existing fixture. Two things are read off the arms: the put-back wave's output tokens in each
   arm's `wave-1.md` and `reading.json` — the current arm should patch, and come in well under its own first-dispatch
