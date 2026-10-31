@@ -201,10 +201,11 @@ Two blocks bound your work, from your first look to your report.
 **Host bounds.**
 
 - **Your own scratch copy.** Work in a scratch copy of your own under the OS temporary directory, made under a fresh
-  name — never a shared or fixed path, and never inside the workspace.
+  name — never a shared or fixed path, and never inside the workspace, where only a spec or ticket published as the
+  project's conventions have it belongs.
 - **Nothing left running.** Report with nothing of yours still running.
 - **The host as you found it.** Leave the host as you found it, or name in your report what you left.
-- **A live system is read, never written.** Write nothing to a live system.
+- **A live system is read, never written.** Read from a live system, and write nothing to it.
 - **A writer's prototype outlives its open forks.** A writer keeps its prototype and scratch copy while its report
   carries open forks, and names their paths in that report.
 

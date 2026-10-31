@@ -35,23 +35,27 @@ to decide what to search next is one, however cheap each step of it looks. That 
 reading stage 3 does, checking what a **writer** reported, is a single look and so yours — and it bounds your reading
 and nothing else: the **brief**, and the glossary entries and ADRs stage 1 lands, are yours to write.
 
-**Resume.** This idea may be part-refined — by an earlier run of your own that was interrupted, or by hand. The
-artifacts are what say how far it got: the brief on disk says stage 2 ran, a published spec says stage 3 ran, and
-published tickets say stage 4 did. Start from the earliest stage whose artifact you cannot find — re-dispatching either
-writer is safe, because each one resumes on its own and adds only what is missing. Stage 1 is the exception: a
-conversation leaves nothing behind but the brief, so when the brief is gone the grilling is owed again. Once stage 5
-has run, what it committed may sit on the **epic branch** alone, with the checkout on some other branch. Where the
-project keeps the spec in the repository and the tree carries none, find the epic branch the way stage 5 does, and where
-one carries the spec, switch to it with `--merge` before judging anything — the writers resume off what it carries. An
-open change request says nothing about whether stage 5 is done, since what it committed may have changed since it
-opened, so stage 5 runs on every run: it reads its own progress off the branch and the forge, commits only what differs,
-and never opens a change request beside one already open.
+**Resume.** Every run, resumed or not, fetches the default branch before anything else runs. Where the checkout is
+behind it, say so and ask whether to pull — in the first question round, or before the next dispatch on a run that skips
+stage 1: the pull is the human's call, never yours. This idea may be part-refined — by an earlier run of your own that
+was interrupted, or by hand. The artifacts are what say how far it got: the brief on disk says stage 2 ran, a published
+spec says stage 3 ran, and published tickets say stage 4 did. Start from the earliest stage whose artifact you cannot
+find — re-dispatching either writer is safe, because each one resumes on its own and adds only what is missing. Stage 1
+is the exception: a conversation leaves nothing behind but the brief, so when the brief is gone the grilling is owed
+again. Once stage 5 has run, what it committed may sit on the **epic branch** alone, with the checkout on some other
+branch. Where the project keeps the spec in the repository and the tree carries none, find the epic branch the way stage
+5 does, and where one carries the spec, switch to it with `--merge` before judging anything — the writers resume off
+what it carries. An open change request says nothing about whether stage 5 is done, since what it committed may have
+changed since it opened, so stage 5 runs on every run: it reads its own progress off the branch and the forge, commits
+only what differs, and never opens a change request beside one already open.
 
 **Dispatch.** Every dispatch carries the epic's **slug**. Stage 3's carries the brief's path; stage 4's carries the
 spec's location instead — once the spec is published it is the record, so the tickets are cut from it rather than from
 the conversation behind it. Paths rather than contents: a writer handed the path opens the whole document for itself,
-and reads the repo first-hand on top of it. Every writer's dispatch also carries the environment facts an earlier
-sweep's report established — how a cluster or a service is reached — so no writer rediscovers them.
+and reads the repo first-hand on top of it. A dispatch carries no ref for the workspace checkout, which it reads as it
+stands; a checkout a sweep kept is named by its path and ref. Every dispatch, a writer's or a sweep's, also carries the
+environment facts an earlier sweep's report established — how a cluster or a service is reached — so none rediscovers
+them.
 
 **Sequencing.** A stage you dispatched in this run is unfinished until its **report** is in hand, and an acknowledgement
 is not a report: a writer you continue may answer you at once and finish its work in the background, and until the
@@ -66,15 +70,13 @@ re-run.
 
 ## Stages
 
-1. **Grill the idea.** Fetch the default branch before anything else runs. Call the Skill tool twice, once with
-   `mattpocock-skills:grilling` and once with `mattpocock-skills:domain-modeling`, and run the grilling on the idea with
-   domain-modeling alongside, so terms and decisions land in the project's glossary and ADRs as they crystallise. When
-   either is not installed, report that and stop rather than improvising an interview. Those two skills own how the
-   interview runs, apart from how a question reaches the human (**Asking**) and how a question of fact gets settled
-   (**Sweeps**). The first question round states that an **epic** delivers into one repository, as the glossary bounds
-   it, and — where the checkout is behind the default branch — says so and asks whether to pull: the pull is the
-   human's call, never yours, and every dispatch reads the checkout as it stands, carrying no ref. Each question round,
-   before it is asked, every question on the **frontier** goes through:
+1. **Grill the idea.** Call the Skill tool twice, once with `mattpocock-skills:grilling` and once with
+   `mattpocock-skills:domain-modeling`, and run the grilling on the idea with domain-modeling alongside, so terms and
+   decisions land in the project's glossary and ADRs as they crystallise. When either is not installed, report that and
+   stop rather than improvising an interview. Those two skills own how the interview runs, apart from how a question
+   reaches the human (**Asking**) and how a question of fact gets settled (**Sweeps**). The first question round states
+   that an **epic** delivers into one repository, as the glossary bounds it, and carries the pull question **Resume**
+   names. Each question round, before it is asked, every question on the **frontier** goes through:
    1. its kind told. A decision is the human's and goes toward the question round. A question of fact goes to the
       **mechanical** bar: one you can close in a single look, you settle yourself; one that wants a thread followed — a
       feature traced from one file to the next, a second repository read, a published document fetched and then read
@@ -210,8 +212,7 @@ the cost and the waiting only takes time. The dispatch carries:
 - **what it owes back: the facts and where it found them** — never a view on the design, which is the human's to form
   with you;
 - **the subjects of the sweeps already in flight**, as context, so it leaves a sibling's fact to that sibling;
-- **the environment facts an earlier report established** — how a cluster or a service is reached — so it starts from
-  them rather than rediscovering them;
+- **the environment facts**, as **Dispatch** names them;
 - **the two blocks of Bounds, by reference to this skill's own copy** — this file's path and that section's heading —
   so the sweep reads them word for word rather than a retelling;
 - **that a checkout or clone it makes is kept**, its path and ref named in its report, for the brief to hand on.
@@ -234,8 +235,9 @@ publishes — as `<epic-slug>-brief.md`, so a later run can find the one you lef
 - every **fork** the grilling left open, and that it is the human's to close
 - the artifacts the session landed or touched — glossary entries, ADRs, prior specs, code, and every path a **sweep**
   reported back — by path, never copied in, every checkout a sweep kept by its path and ref, each glossary or ADR file
-  the session wrote marked as landed, since stage 5 commits those; it is where the looking happened rather than what
-  the looking found
+  the session wrote marked as landed, since stage 5 commits those, and every term a settled decision relies on that the
+  glossary does not carry, listed as missing from it; it is where the looking happened rather than what the looking
+  found
 - every **claim** the design rests on that the session never checked, each with the **cheapest** path that would settle
   it — a fact the human handed you, a precedent you took to generalise, a tool you took to have a feature
 
@@ -256,7 +258,7 @@ Redact secrets and personal data: the brief outlives the session, on a disk nobo
 
 ## Bounds
 
-Two blocks bound every **sweep** and both writers, and your own work in this run with them.
+Two blocks bound every **sweep** and both writers.
 
 **Working habits.**
 
@@ -273,10 +275,11 @@ Two blocks bound every **sweep** and both writers, and your own work in this run
 **Host bounds.**
 
 - **Your own scratch copy.** Work in a scratch copy of your own under the OS temporary directory, made under a fresh
-  name — never a shared or fixed path, and never inside the workspace.
+  name — never a shared or fixed path, and never inside the workspace, where only a spec or ticket published as the
+  project's conventions have it belongs.
 - **Nothing left running.** Report with nothing of yours still running.
 - **The host as you found it.** Leave the host as you found it, or name in your report what you left.
-- **A live system is read, never written.** Write nothing to a live system.
+- **A live system is read, never written.** Read from a live system, and write nothing to it.
 - **A writer's prototype outlives its open forks.** A writer keeps its prototype and scratch copy while its report
   carries open forks, and names their paths in that report.
 
@@ -290,9 +293,9 @@ enter its stage and `completed` once its artifact exists — for stages 3 and 4,
 for stage 5, once its own bar holds, renamed `<slug>: open the draft (nothing to commit)` where it had no paths, so the
 skip shows rather than looking like a stage that never ran. Putting a stage back to its writer flips its task to
 `in_progress` again, and `completed` once the corrected report lands: a correction is the same stage rather than a new
-one, so it gets no task of its own. A fork stage 4 raises flips stage 3's task and then stage 4's the same way.
-A resumed run opens the same set, with the stages whose artifacts it found created
-`completed` — never stage 5's, which runs on every run and is marked `completed` once its bar holds on this one.
+one, so it gets no task of its own. A fork stage 4 raises flips stage 3's task and then stage 4's the same way. A
+resumed run opens the same set, with the stages whose artifacts it found created `completed` — never stage 5's, which
+runs on every run and is marked `completed` once its bar holds on this one.
 
 ## What to report
 
