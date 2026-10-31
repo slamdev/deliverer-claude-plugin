@@ -238,15 +238,15 @@ next — is not one, however cheap each step of it looks. _Avoid_: factual, obje
 **Dispatch**:
 One agent invocation. It carries paths rather than contents, so the agent opens the document for itself and meets the
 repository first-hand — with two deliberate exceptions: a **fix wave**'s dispatch carries the preceding **round**'s
-prose, because that is the only form a finding the reviewer did not post exists in; and every dispatch that runs
-commands carries the **ledger**, because what an earlier dispatch established lives nowhere else. _Avoid_: call,
-delegation, spawn
+prose, because that is the only form a finding the reviewer did not post exists in; and every implementer after the
+first and every fix wave carries the **ledger**, because what an earlier dispatch established lives nowhere else.
+_Avoid_: call, delegation, spawn
 
 **Ledger**:
 The **mechanical** facts a run's dispatches have established so far — the **gates** that bit and what satisfied them,
 a convention found or found absent, a fact about the environment — each carried as a **claim** with the one look that
-checks it. It grows as the run goes, and a convention found present is cited by where it lives, never restated.
-_Avoid_: gates account, context, notes, memory
+checks it. It grows as the run goes, reaches only the dispatches that build, and cites a convention found present by
+where it lives, never restating it. _Avoid_: gates account, context, notes, memory
 
 **Report**:
 The only thing a dispatch returns. What it names is what the orchestrator knows, so what it leaves out is invisible.
