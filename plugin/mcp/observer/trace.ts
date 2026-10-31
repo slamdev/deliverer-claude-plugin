@@ -221,6 +221,17 @@ export interface TraceCounts {
 /** The stand-in a run that created no task is keyed by. Never a guess at what the slug was. */
 export const UNKNOWN_SLUG = "unknown-slug";
 
+/**
+ * The slug a task subject opens with, or `undefined` where it opens with none. Both skills write
+ * `<slug>: implement every ticket (4/21)`; nothing past the colon is ever read here (ADR-0018).
+ * One reading for the trace's key and the run facts' last slug, so the two can never disagree on
+ * what counts as one.
+ */
+export function slugIn(subject: string | undefined): string | undefined {
+  if (subject === undefined) return undefined;
+  return /^([A-Za-z0-9][A-Za-z0-9._-]*):\s/.exec(subject)?.[1];
+}
+
 /** The stand-in for a record with no timestamped entry at all. */
 export const UNKNOWN_STAMP = "unknown-start";
 
@@ -229,9 +240,21 @@ export interface Trace {
   readonly sessionId: string | undefined;
   /** the plugin skills that produced entries here, in first-seen order */
   readonly skills: readonly string[];
+  /**
+   * The run's KEY: the first task update's slug, which names the observation directory, the
+   * identity file and every later run's lookup of this one. Never moved by a rename.
+   */
   readonly slug: string;
   /** false when no task update carried one, and `slug` is therefore the stand-in */
   readonly slugRead: boolean;
+  /**
+   * The last task update's slug in the whole record, and `slug` itself where none ever differed
+   * (observer-debrief-defects ticket 05). A renamed epic's debrief carried the name it was opened
+   * under and no other (refine #9), so a human looking for it by the name it ended with found
+   * nothing. It is carried and printed, never keyed by: the debrief's headline reads the RUN's
+   * last, `RunFacts.lastSlug`, because a record can go on past the run into another epic's tasks.
+   */
+  readonly lastSlug: string;
   readonly startedAt: string | undefined;
   readonly endedAt: string | undefined;
   readonly durationMs: number | undefined;
@@ -422,6 +445,7 @@ export function buildTrace(input: DistilInput): Trace {
   let taskUpdates = 0;
   let toolCalls = 0;
   let slug: string | undefined;
+  let lastSlug: string | undefined;
 
   for (const entry of own) {
     const at = stringField(entry, "timestamp");
@@ -518,10 +542,12 @@ export function buildTrace(input: DistilInput): Trace {
             const subject = stringField(toolInput, "subject");
             // The slug: both skills prefix every task subject with it — `<slug>: implement every
             // ticket (4/21)`. Checked against all eight runs on disk, refinements and deliveries
-            // alike. The FIRST subject that carries one wins, so a later task cannot move the key.
-            if (slug === undefined && subject !== undefined) {
-              const prefix = /^([A-Za-z0-9][A-Za-z0-9._-]*):\s/.exec(subject);
-              if (prefix?.[1] !== undefined) slug = prefix[1];
+            // alike. The FIRST subject that carries one wins, so a later task cannot move the key;
+            // the last is kept beside it for the headline alone (ticket 05).
+            const named = slugIn(subject);
+            if (named !== undefined) {
+              slug ??= named;
+              lastSlug = named;
             }
             lines.push({
               at,
@@ -652,6 +678,7 @@ export function buildTrace(input: DistilInput): Trace {
     skills: attributionOf(own),
     slug: slug ?? UNKNOWN_SLUG,
     slugRead: slug !== undefined,
+    lastSlug: lastSlug ?? UNKNOWN_SLUG,
     startedAt,
     endedAt,
     durationMs: elapsed(startedAt, endedAt),
