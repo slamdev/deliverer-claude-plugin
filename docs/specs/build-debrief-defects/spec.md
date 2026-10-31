@@ -1,6 +1,6 @@
 # What twenty-five build debriefs exposed: a delivery that learns nothing between dispatches
 
-Status: ready-for-agent
+Status: resolved
 
 ## Problem Statement
 
