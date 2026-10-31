@@ -18,11 +18,11 @@ Open the epic's **change request** as a **draft**, then **mirror** into its comm
 commit that carries a `Ticket:` line. The comment is the only form an assumption reaches the adjudication in: one you
 leave unmirrored is a **fork** nobody adjudicates, and a second copy of one is a fork adjudicated twice.
 
-Your prompt names the epic, and may name the epic branch's name; when it names no epic, report that and stop rather than
-picking one. It may also say the delivery's **fix waves** have landed since you last read the branch: that is a
-**refresh**, so the description a human reads accounts for everything the branch now carries, and the steps below are
-the refresh — the change request is open, so step 4 brings its title and description up to date, and every assumption a
-ticket recorded already carries its comment, so step 6 posts none.
+Your prompt names the epic, and may name the epic branch. When it names no epic, report that and stop. When it says
+the delivery's **fix waves** have landed since you last read the branch, this dispatch is a **refresh**: the same steps,
+run against a change request already open and assumptions already mirrored. Step 4 then brings the title and
+description up to date so they account for everything the branch now carries, and step 6 finds every entry carrying its
+comment already.
 
 ## Steps
 
@@ -31,9 +31,11 @@ ticket recorded already carries its comment, so step 6 posts none.
    installed, report the skill as missing and stop, having pushed, opened and edited nothing.
 2. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote. Where it names
    none, take the branch named from the epic's **slug** among the branches already there: that is how the first
-   `implementer` named it.
+   `implementer` named it. You are done when the working tree is on the epic branch and level with its remote.
 3. **Read the epic and every commit on the branch** — the epic is what the work set out to do, the commits are what it
-   did, the fix waves' included.
+   did, the fix waves' included. You are done when you hold, for every commit, whether it carries a `Ticket:` line,
+   its `Assumptions:` entries and its `Evidence:` entries — **Which entries** and **Evidence** below say how each
+   section is read.
 4. **Open the change request as a draft**, titled from step 3 and described by calling the Skill tool with
    `mattpocock-skills:pr` — the branch has to be on the remote for one to exist, so push it when whoever committed did
    not. When one is already open for the branch — draft or ready — that is the change request: bring its title and
@@ -49,7 +51,8 @@ ticket recorded already carries its comment, so step 6 posts none.
 
    **The description carries every commit's evidence**, marked as reported — **Evidence** below.
 5. **Collect the assumption comments already on it**, from every channel the change request has — **Comment channels**
-   below, and **Assumption comments** for what counts as one.
+   below, and **Assumption comments** for what counts as one. You are done when every channel has been read to its
+   last page and you know, for each entry step 3 gave you, whether it already carries its assumption comment.
 6. **Mirror the entries carrying none**, one at a time — **Which entries** below says which are yours. For each:
    1. its anchor found — **Anchoring** below;
    2. its body written to a file, in the shape **Comment format** gives;
@@ -83,10 +86,8 @@ ticket recorded already carries its comment, so step 6 posts none.
 A change request carries its comments on whatever channels the forge gives it, and not every channel can be marked
 **resolved**. The assumption comments go on one that can: every stage after yours reads the unresolved ones as the work
 still owed, and a comment with no resolution state is one nothing downstream can resolve. The one exception is
-**Anchoring**'s rung 4 on a forge that resolves only comments on a file: no channel that can be resolved takes it, so it
-goes on one that cannot, and the reply that answers it is its **mark** — the way every stage after yours already closes
-a comment on such a channel. The ones already there sit on every channel regardless, which is why reading them all is
-a step of its own.
+**Anchoring**'s rung 4, which says where it goes. The comments already there sit on every channel regardless, which is
+why step 5 reads them all.
 
 The two forges below are worked examples of one mechanism. Every other forge has the same two operations under its own
 names: find them in the help of whichever forge tool the repository has authenticated, rather than assuming this shape.
@@ -99,8 +100,8 @@ never the text itself: an apostrophe in the entry you carried over ends a single
 commit recorded. `<the body file>` below is where you wrote it.
 
 **Make the directory you write them in with `mktemp -d`.** Other dispatches of this delivery write their own bodies on
-the same filesystem, so a name you choose yourself is one another may already hold — an observed run found fifty-odd
-unrelated leftovers in the directory it picked. One `mktemp -d` just made is yours alone, with nothing to check first.
+the same filesystem, so a directory whose name you chose may already hold theirs; one `mktemp -d` just made is yours
+alone, with nothing to check first.
 
 **A read that comes back truncated is an assumption comment you did not see, and a second copy posted.** Two shapes
 cause it, and both are handled below: a collection paginated in name only, and a response so large the tool that ran the
@@ -145,9 +146,9 @@ gh api --method POST 'repos/{owner}/{repo}/issues/<number>/comments' -F body=@<t
 above: without them the first hundred come back as the whole answer, with no error and nothing to notice. The comments
 nested inside a thread cannot be paginated in the same query, because one query carries one cursor — `first:100` is
 what makes that bound safe, since an **assumption comment** is a thread's first comment and never one of its newer
-ones. The `--jq` on each read is not tidying: without one the whole response arrives as a single line, measured with
-`gh` 2.98.0 at 18,708 bytes and no newline in it for a 15-thread read, and one line is what cannot be read a piece at a
-time. `side` is `RIGHT` for a line the branch added or left in place and `LEFT` for one it deleted.
+ones. The `--jq` on each read is not tidying: without one the whole response arrives as a single line — some
+eighteen kilobytes for fifteen threads — and one line is what cannot be read a piece at a time. `side` is `RIGHT` for
+a line the branch added or left in place and `LEFT` for one it deleted.
 
 **GitLab**, with `glab`. One list holds them all — the change request's discussions — and a `position` is what anchors
 one to a diff line.
@@ -207,8 +208,7 @@ same way, and an entry from it or any other section is no assumption.
 A commit may also carry an `Evidence:` section: one numbered entry per demonstration a ticket or the spec
 asked for — what was run, what it showed, and `observed` or `cached`. Read it the way you read `Assumptions:`, to the
 next `<Word>:` section or the end of the message, but from every commit on the branch, a fix wave's included: an entry
-of evidence asks for no adjudication, so nothing keeps a fix wave's off the description. Its forks still stay on its
-commit, neither mirrored nor adjudicated — **Which entries** above.
+of evidence asks for no adjudication, so nothing keeps a fix wave's off the description.
 
 Mirror every entry into the description, verbatim and beside the commit that recorded it, under one heading of its
 own, each marked as reported: you read it off a commit and did not watch it run, so what it showed is the committer's
@@ -231,7 +231,7 @@ commits to this one branch, so a later ticket inserting twenty lines above it mo
 
 **Translate it before you use it.** Read the line's text out of the commit the prefix names — `git show <that
 hash>:<the file>` — and find that text in the file as head has it. Exactly one match is the line, wherever it now sits;
-no match, or several, is a translation you cannot make. Then anchor at the first of these that holds:
+no match, or several, is a translation you cannot make. Then walk this ladder and anchor at the first rung that holds:
 
 1. **The translated line on head**, where the change request's diff carries that line. The ordinary case.
 2. **The file, with no line at all**, where the translation held and the diff carries the file but not that line. An
@@ -245,9 +245,9 @@ no match, or several, is a translation you cannot make. Then anchor at the first
    **Comment format** gives, opening with the same `ASSUMPTION (<hash>)` prefix, and the entry it carries over names
    its `file:` and `line:`, so the anchor rides in the body. On a forge that resolves a comment opened here, it goes on
    that channel; on one that resolves only comments on a file, it is a general comment, and the reply that answers it
-   is its mark.
+   is its **mark** — the way every stage after yours already closes a comment on such a channel.
 
-Each of the four is an anchor the entry can be held to, which the nearest surviving line is not: that one puts the
+Each rung is an anchor the entry can be held to, which the nearest surviving line is not: that one puts the
 comment somewhere misleading. Where the mechanism distinguishes the two versions of a line, say which one you mean: the
 version the branch left in place, or the version it deleted.
 
