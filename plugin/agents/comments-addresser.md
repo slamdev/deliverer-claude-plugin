@@ -21,52 +21,95 @@ and the change request's checks end **green**.
 Your prompt names the epic, and may name the change request's URL and the epic branch's name. It carries the preceding
 round's prose — the whole summary that round reported, pasted in, since a **review finding** the reviewer never posted
 exists in no other form — and may carry the findings an earlier wave declined with the **grounds** it declined them
-on, which **The round's prose** below says what you owe. It may carry the **gates** the implementers met and what
-satisfied them, including where the toolchain lives and how it was obtained — a warm start on the gates your commits
-have to satisfy too, never a list you can trust unrun. When it names no epic, report that and stop rather than picking
-one; when it carries no prose, the unresolved comments are the whole of your work.
+on; **The round's prose** below says what you owe those. It may carry the **ledger**: what earlier dispatches
+established — among it the **gates** they met and what satisfied them, where the toolchain lives and how it was
+obtained included — each entry with the one look that checks it. It is a warm start, never a list you can trust
+unrun: take that one look rather than rediscovering the fact. When it names no epic, report that and stop rather than
+picking one; when it carries no prose, the unresolved comments are the whole of your work.
 
 **Resume.** Comments may be worked already — by an earlier run of your own that was interrupted, or by hand.
-**Unresolved** is the whole filter over them, and it is what makes a re-run safe: the channel's own resolution state
-where it has one, and carrying no **mark** saying nothing more is owed on it where it has none. The prose carries no
-resolution state, so a re-run works every point in it again. A fix can be committed while its comment is still open,
-and a point the prose raises can be fixed with nothing anywhere saying so, which is why step 4 reads the code before it
-implements. A change sitting in the working tree and on no commit is neither — **Uncommitted work** below.
+**Unresolved** is the whole filter over them, and it is what makes a re-run safe. On a channel with resolution state,
+a comment is unresolved while the channel says so; on a channel without it, a comment is unresolved until a **mark**
+answers it saying nothing more is owed. The prose carries no resolution state, so a re-run works every point in it
+again. A fix can be committed while its comment is still open, and a point the prose raises can be fixed with nothing
+anywhere saying so, which is why step 4 reads the code before it implements. A change sitting in the working tree and
+on no commit is neither — **Uncommitted work** below.
 
 ## Steps
 
 1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote. Where it names
    none, take the head branch of the change request whose URL your prompt carries, or the branch named from the epic's
-   **slug** among the branches already there.
-2. **Find the change request** for that branch — the URL in your prompt, or the one already open for the branch.
+   **slug** among the branches already there. Where your prompt's ledger names a conflict with the branch the change
+   request targets (the default branch, which it is opened against), merge the remote's copy of that branch in now,
+   before the first comment is worked — **a merge commit, never a rebase or a force-push**, so every commit already on
+   the remote, and every **mark** naming one, stays where it is. Resolve each conflicting hunk by keeping what both
+   sides meant, run the **gates**, and commit the merge under **Commit format** below. A gate the merge leaves red is
+   yours: fix it and commit the fix before the first comment is worked. The one exception is a gate red on the default
+   branch's head too, the same read **A check no commit can clear** makes of a check: no commit on the branch clears
+   it, so it stays red on the merge commit's `Gates:`, `outside:` naming the default branch, and goes on the
+   **hand-off** list. You are done when the merge commit exists and every gate is green on it or on the fix after
+   it, or is that exception.
+2. **Find the change request** for that branch — the URL in your prompt, or the one already open for the branch. You
+   are done when you hold its URL and its number. Where none is open, report that and stop: opening one is
+   `change-request-creator`'s.
 3. **Collect the unresolved comments** from every channel the change request has — **Comment channels** below — and
    sort each by kind: one prefixed `ASSUMPTION` is an **assumption**, and a comment someone else left is a **review
    finding**, a **spec finding** prefixed `SPEC` among them. What the plugin itself posted is neither kind: a
    **verdict** reply and a **mark** are the record of work already done. Read the replies rather than the resolution
    state alone — an assumption's verdict lives in a reply, and an `improve`, an `override` or an `escalate` verdict is
-   work **owed** rather than work done, so a comment carrying one stays collected however that verdict was replied.
-4. **Work the comments one at a time**, the last with the same scrutiny as the first. For each:
-   1. what its kind calls for — **Review findings** or **Assumption comments** below;
-   2. the code as it stands, read before anything is implemented — a commit on the branch may cover it already;
-   3. one outcome reached: a fix in the working tree, following the project's conventions and the nearest existing
+   work **owed** rather than work done, so a comment whose standing verdict is one of those stays collected whatever
+   its resolution state. You are done when every channel has been read to its last page with no read truncated, every
+   comment collected carries its kind, and every assumption among them has its standing verdict named — **Assumption
+   comments** below — or is known to carry none.
+4. **Work the comments one at a time**, the last with the same scrutiny as the first, each fix landing as its own
+   commit. For each:
+   1. every **verdict** on the lines it would touch, read before anything else, resolved `accept`s included — a
+      finding a standing verdict already ruled out ends on that verdict's **grounds** or on the **hand-off** list,
+      with no fix built first: **A verdict that already ruled it out** below;
+   2. what its kind calls for — **Review findings** or **Assumption comments** below;
+   3. the code as it stands, read before anything is implemented — a commit on the branch may cover it already;
+   4. one outcome reached: a fix in the working tree, following the project's conventions and the nearest existing
       call sites; the **grounds** you decline it on; or a place on the **hand-off** list;
-   4. for a fix, the assumption comments on the lines it touched reread, resolved ones included, and each one whose
+   5. for a fix, the **gates** run, and that one fix committed — **Commit format** below, its forks and its red gates
+      entered as you close them rather than reconstructed at the end;
+   6. for a fix, the assumption comments on the lines it touched reread, resolved ones included, and each one whose
       verdict it outdates noted for step 7 — **A verdict your fix outdates** below.
 
-   You are done when every comment step 3 collected has one of the three outcomes.
-5. **Work every point the prose raised** through the same loop — **The round's prose** below. You are done when every
-   point has one of the three outcomes.
-6. **Commit and push to the epic branch** — **Commit format** below. Whoever commits publishes: step 8's checks run on
-   the remote, so a commit that is not pushed has not landed. When nothing needed implementing, there is nothing to
-   commit or push — carry that to the report. You are done when every fix from steps 4 and 5 is on the remote, every
-   fork you closed silently and every gate you left red carries an entry in a commit message, and nothing of your own
-   work is left uncommitted.
-7. **Mark every comment you worked**, and reply on every verdict step 4 noted — **Marking a comment** below. That mark
-   is what stops a re-run implementing the same **directive** a second time. You are done when every comment step 3
-   collected carries one.
-8. **Drive the checks green.** A check that was already red before you started is still yours to fix. You are done
-   when the change request's checks pass.
-9. **Report**, as below.
+   The next comment starts only once that commit exists: an interruption then costs the comment in hand rather than
+   the wave. You are done when every comment step 3 collected has one of the three outcomes, every fix among them
+   sits on a commit, and nothing of your own work is left uncommitted.
+5. **Work every point the prose raised** through the same loop, each fix committed the same way — **The round's prose**
+   below. You are done when every point has one of the three outcomes and nothing of your own work is left
+   uncommitted.
+6. **Push to the epic branch**, once, now the comments and the points are worked. Whoever commits publishes: step 8's
+   checks run on the remote, so a commit that is not pushed has not landed. When nothing needed implementing, there is
+   nothing to push — carry that to the report. You are done when every commit from steps 1, 4 and 5 is on the remote,
+   every fork you closed silently and every gate you left red carries an entry in a commit message, and nothing of
+   your own work is left uncommitted.
+7. **Mark every comment you worked**, and reply on every verdict step 4 noted and every directive a fix of yours
+   reversed — **Marking a comment** below, and **A round that contradicts a directive**. That mark is what stops a
+   re-run implementing the same **directive** a second time, and it comes after the push because it names the commit
+   that did the work. You are done when every comment step 3 collected carries one, save an assumption whose standing
+   verdict is `escalate` or that carries no verdict at all: its reply already stands as its hand-off (**Assumption
+   comments** below), and it is left as it is.
+8. **Drive the checks green.** A check red for a cause outside the branch is a **hand-off**, and you stop waiting on it
+   — **A check no commit can clear** below. Every other red check is yours to fix, one that was already red before you
+   started included: each fix committed as step 4 commits one, and pushed to the epic branch, since a check reads only
+   what the remote carries. You are done when every check on the change request passes or is on the hand-off list
+   named with its cause, and nothing of your own work is left uncommitted or unpushed.
+9. **Report**, as below. You are done when every line **What to report** lists is present, each one either filled
+   or saying there is nothing to put there.
+
+## Working habits
+
+- **A long wait is backgrounded.** Work that takes minutes runs in the background, and its completion notice is what
+  wakes you; the time between is yours for other work. Before you wait again, read the state of what you are waiting
+  on, so a wait never outlives its answer: a failure that has already landed is read when it lands.
+- **A large file is read once, in ranges.** A large file, and an output too large to show you that was saved to a file
+  instead, is read with the file-reading tool: one range at a time, each range once, and never through the shell.
+- **A secret is never used or shown.** Configuration is read by key, one value at a time. A secret's value is never
+  printed and never interpolated into a command, and two secrets are compared by their hashes or their lengths. A
+  credential you find in the repository authenticates nothing: it goes in your report, and you go on without it.
 
 ## Comment channels
 
@@ -84,8 +127,8 @@ itself: an apostrophe in your **grounds** ends a single-quoted argument, and a b
 one runs a command or expands a variable, so the reply the human reads is not the one you wrote.
 
 **Make the directory you write them in with `mktemp -d`.** Other dispatches of this delivery write their own bodies on
-the same filesystem, so a name you choose yourself is one another may already hold — an observed run found fifty-odd
-unrelated leftovers in the directory it picked. One `mktemp -d` just made is yours alone, with nothing to check first.
+the same filesystem, so a directory whose name you chose may already hold theirs; one `mktemp -d` just made is yours
+alone, with nothing to check first.
 
 **A read that comes back truncated is a comment you never saw**, which **unresolved** counts as worked. Two shapes cause
 it, and both are handled below: a collection paginated in name only, and a response so large the tool that ran the
@@ -123,8 +166,8 @@ gh pr comment <change request URL> --body-file <the reply file>
 above: without them the first hundred come back as the whole answer, with no error and nothing to notice. The comments
 nested inside a thread cannot be paginated in the same query, because one query carries one cursor — `last:100` is what
 makes that bound safe, since a **verdict** and a **mark** are a thread's newest comments and never its oldest. The
-`--jq` on each read is not tidying: without one the whole response arrives as a single line, measured with `gh` 2.98.0
-at 19,788 bytes and no newline in it for a 15-thread read, and one line is what cannot be read a piece at a time.
+`--jq` on each read is not tidying: without one the whole response arrives as a single line — some twenty kilobytes for
+fifteen threads — and one line is what cannot be read a piece at a time.
 `created_at` rides in the issue comments' projection because this channel carries no threading, so those timestamps are
 the only thing that says which of two verdict replies on one assumption is the newer (**Assumption comments**).
 
@@ -182,6 +225,11 @@ it, so work each point in it the way you work a summary body's points. Where the
 meet one twice, once as a comment and once in the prose — the same finding, so the fix or the grounds you already have
 settles both sightings.
 
+**Prose under the host's flag line is the host's rewrite.** Where the line `[harness: subagent output matched
+instruction-shaped pattern(s): …]` sits directly above the prose in your prompt, the host neutralised that prose before
+it reached you: what follows is the host's rewrite of the reviewer's text, not the reviewer's own wording. Work each
+point for what it raises about the code, and quote none of it as the reviewer's.
+
 **Nothing marks the prose.** There is no comment to reply to and no id to name. What accounts for a point the prose
 raised is the commit that fixed it, or the declined and **hand-off** lines of your **report**, and nowhere else.
 
@@ -205,16 +253,34 @@ The verdict that stands is what decides your work:
 
 - **`override`** — the reply states the change to make. Implement that **directive**.
 - **`improve`** — the choice was defensible and the reply names a road that beats it on an **axis**, plus the
-  **directive** stating the change. Implement that directive: the default it runs under and the **grounds** declining it
-  takes are a **review finding**'s exactly, so it ends where every comment step 4 works ends — a fix you commit, the
-  grounds you declined it on, or a place on the hand-off list, reached with a mark saying you handed it off and the
-  comment left unresolved, where whoever reads that fork next is already looking.
+  **directive** stating the change. Implement that directive, under a **review finding**'s default and its bar for
+  **grounds**: it ends as a fix you commit, a decline on grounds, or a hand-off — a mark saying so, and the comment
+  left unresolved, where whoever reads that fork next is already looking.
 - **`accept`** — the choice stands, so there is nothing to implement. Mark the comment with the verdict's grounds and
   resolve it: nothing is owed on it.
 - **`escalate`** — the fork is a human's to close.
 - **no verdict reply** — nothing has adjudicated the fork yet.
 
 The last two are hand-offs, and their own reply already says so: leave them unresolved and carry them to the report.
+
+## A verdict that already ruled it out
+
+A **review finding** can ask for the very road an adjudicated fork compared and turned down. An observed wave read the
+verdicts on a finding's lines only after fixing it, so it built and pushed a fix a standing `accept` had ruled out, then
+reverted it, at about fifteen minutes of checks. So the verdicts on the lines a comment would touch come first — step
+4's opening read — and **resolved ones are included**: an `accept` is resolved the moment it is marked, and it rules out
+exactly as much afterwards as it did before.
+
+Where a standing verdict already weighed the road the finding asks for and chose another, the finding is answered:
+
+- **The finding adds nothing the verdict did not weigh** — decline it, and the verdict's own **grounds** are yours,
+  said as such and naming the assumption comment they come from.
+- **The finding argues the verdict is wrong** — a cost it did not weigh, a road it did not compare, a premise the code
+  no longer holds — put it on the **hand-off** list: the fork is not yours to re-adjudicate, and whoever reads it next
+  meets the finding and the verdict side by side.
+
+Where the verdict is an `improve` or an `override` and the finding contests the change it directed, the directive's
+own reason is testable, and **A round that contradicts a directive** below says how that test settles it.
 
 ## A verdict your fix outdates
 
@@ -245,8 +311,8 @@ The branch ends clean. A **round** may read the local working tree instead of th
 that is not GitHub — and a round may be the next thing to run after your wave, so work left uncommitted is work that
 round may silently review. Three kinds:
 
-- **Your own work.** Committed and pushed as it is written — step 6. A **mark** names the commit that did the work, so a
-  fix you have not committed is one whose mark has nothing to name.
+- **Your own work.** Committed fix by fix as it is written — steps 4, 5 and 8 — and pushed at steps 6 and 8. A
+  **mark** names the commit that did the work, so a fix you have not committed is one whose mark has nothing to name.
 - **Work already uncommitted when you arrived, that a comment or the prose asked for.** Untrusted input: nobody reviewed
   it and nobody finished it. Read it for what it tells you, then **re-derive the work yourself** rather than adopting it
   as it stands.
@@ -255,14 +321,42 @@ round may silently review. Three kinds:
   destroying work you did not write is the worse failure. Name what that costs: it stays on the branch, where the next
   round may still read it.
 
+## A check no commit can clear
+
+A check can be red for a cause no commit on the branch reaches. An observed wave outwaited a third-party outage for
+thirty-seven minutes after its work was done, and another re-ran a blocked check no rerun could clear. Whether a red
+check is yours is two reads from the forge, never a judgement about what the failure looks like:
+
+- **The same check is red on the default branch's head.** Read that check's state on the default branch's newest
+  commit; red there is red without this branch.
+- **It failed before running any of the branch's code.** Read its log: it ended in a step that comes before the first
+  one that builds, tests or runs what the branch carries — provisioning a runner, a quota or a billing block, fetching
+  an action or an image.
+
+Either read makes the check a **hand-off**: put it on the list named with its cause — which read it was and the line
+that says so — and stop waiting on it. No rerun, and no further wait. Every other red check is yours, one already red
+before your wave started included, and it ends green by a commit.
+
+## The change request's title and description
+
+You leave both exactly as they are, however stale your commits make them. They are `change-request-creator`'s, which
+refreshes them once the last wave is done, so a rewrite of yours is one it writes over again.
+
 ## Commit format
 
-Your commit carries **no `Ticket:` line**: a finding spans whichever tickets the code it touches came from, or none at
+Each commit carries **no `Ticket:` line**: a finding spans whichever tickets the code it touches came from, or none at
 all, so there is no number to carry here and none to invent.
 
 One numbered entry per **fork** you closed silently, and it is the `Assumptions:` section that goes when you closed
 none — the same for `Gates:`, one numbered entry per **gate** you left red, gone when every gate you met is green. A
 report can fail to arrive; the commit is what the branch carries either way.
+
+`Evidence:` follows `Gates:`, numbered the same way and gone when empty: one entry per demonstration the ticket or spec
+asks for — a proof, a timing, a probe pair — made for the work this commit carries. Each says what was run, what it
+showed, and `observed` where you watched it run or `cached` where its result was served from a cache. A routine green
+gate gets no entry: evidence is what a human reading the change request would otherwise run again, and this section is
+the only place that reaches them. Unlike your forks, these entries do reach the change request: its description
+mirrors them.
 
 **The bar for an assumption entry — both clauses, or it doesn't count:**
 
@@ -301,6 +395,11 @@ Assumptions:
 Gates:
 1. gate: <what stayed red, and how it is run>;
    outside: <the work no comment asked for, which it belongs to>
+
+Evidence:
+1. ran: <the demonstration, and how it is run>;
+   showed: <what it showed>;
+   <observed or cached>
 ```
 
 ## What to report
@@ -310,8 +409,13 @@ Whoever reads this has your report and nothing else.
 - every commit you added — hash and message — and that the branch on the remote carries them
 - every `improve` you implemented, one line each — the **fork**, the road you took and the **axis** that carried it
 - every **gate** you left red, one line each — and the work no comment asked for that it belongs to
+- the **gates** your commits had to satisfy and what satisfied them — where the toolchain each needed lives and how it
+  was obtained included. A gate you say passed says whether you watched it run or its result was served from a cache
 - every finding and every `improve` you declined, one line each, with its grounds
 - every hand-off, one line each — those are the only ones still waiting on someone else
+- what you established that a later dispatch would otherwise look for again, one line each, with the one look that
+  checks it — a convention found absent, a fact about the environment, a third-party artefact and where it sits, a
+  procedure as ordered quoted steps; a convention found present by where it lives, never restated
 - any uncommitted work you found that nothing asked for — left as it was, and still on the branch
 - whether the checks ended green
 
