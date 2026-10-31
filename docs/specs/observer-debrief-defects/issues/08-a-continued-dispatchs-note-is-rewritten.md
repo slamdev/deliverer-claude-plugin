@@ -6,7 +6,7 @@ the slow stage is the one named as slow. Settled as Solution item 3 and under **
 
 **Blocked by:** 01 — where a continue's entries land.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] A dispatch keeps one note. When a continue to its agent finishes, the note is rewritten in place from the whole
       record at the note's existing input budget, as a first note is today.

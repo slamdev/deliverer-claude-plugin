@@ -6,7 +6,7 @@ over is cut, marked, and never sent back. Settled as Solution item 8 and under *
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] The note's prompt states a cap of about 8,000 characters of output. Its input budget is unchanged.
 - [x] A note over the cap is cut at a line boundary under it, with an elision mark naming the characters cut.

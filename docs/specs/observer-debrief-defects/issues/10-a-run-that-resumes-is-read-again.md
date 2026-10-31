@@ -7,7 +7,7 @@ resumption. Settled as Solution item 5 and under **The extra reading** in `../sp
 
 **Blocked by:** 09 — a put-back is the resumption this is verified with.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] The trigger is an un-finalise caused by the extent gaining an own signal past the extent of the reading the
       debrief holds. A finalise of the same extent does not trigger it.

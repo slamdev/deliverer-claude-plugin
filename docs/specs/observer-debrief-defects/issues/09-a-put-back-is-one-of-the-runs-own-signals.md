@@ -7,7 +7,7 @@ Solution item 4 and under **The own signal** in `../spec.md`.
 
 **Blocked by:** 01 — where a continue's entries land, and how a target is named.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] An own agent is identified by the id its dispatch's result named, and by the name the dispatch gave it if it gave
       one. A `SendMessage` counts only when its target resolves to one of those, as 01 established it is named.

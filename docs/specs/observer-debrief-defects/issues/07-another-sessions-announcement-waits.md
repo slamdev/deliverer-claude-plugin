@@ -6,7 +6,7 @@ Settled as Solution item 7 and under **Holding announcements** in `../spec.md`.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] **Live** is the session's own observation marker present and its observer alive, the liveness test the re-arm
       already uses.

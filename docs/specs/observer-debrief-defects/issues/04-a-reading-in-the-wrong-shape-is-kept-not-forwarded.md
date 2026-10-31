@@ -7,7 +7,7 @@ under **The unparsed reading** in `../spec.md`.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] The cases recognised are those the judge already distinguishes: either marker missing, or the two out of order.
 - [x] The raw answer goes into the notes file under a heading of its own, after the dispatch notes.

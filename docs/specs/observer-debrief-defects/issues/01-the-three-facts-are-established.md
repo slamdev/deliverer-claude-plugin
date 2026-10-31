@@ -7,7 +7,7 @@ before the first ticket** in `../spec.md`.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] **Where a continue's entries land**: read off real session records of a run with a put-back. Either the continue
       appends to the continued agent's existing record, as the replaced note and the duration assume, or it starts a

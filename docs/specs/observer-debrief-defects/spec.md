@@ -1,6 +1,6 @@
 # What fifty-one debriefs exposed in the observer: put-backs it never saw, and readings it never took
 
-Status: ready-for-agent
+Status: resolved
 
 ## Problem Statement
 

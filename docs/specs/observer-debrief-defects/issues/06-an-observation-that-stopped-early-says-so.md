@@ -6,7 +6,7 @@ Solution item 9 and under **Stopped early** in `../spec.md`.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] On the observer's exit because a record could not be read, the debrief's state is "observation stopped early",
       with the last entry read and the reason: neither final nor live.

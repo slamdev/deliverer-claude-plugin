@@ -7,7 +7,7 @@ it gave. Settled as Solution item 1 and under **The tier** in `../spec.md`.
 
 **Blocked by:** 01 — what counts as a prompt for the tier.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] A row may carry one prompt-length threshold and an input and output rate above it. Every existing row carries
       none and prices exactly as today.

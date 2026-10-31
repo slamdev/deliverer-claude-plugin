@@ -6,7 +6,7 @@ Settled as Solution item 6 and under **The slug** in `../spec.md`.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] The trace keeps the first task update's slug as the key and also carries the last.
 - [x] The debrief's headline takes the last slug, and names the first beside it whenever they differ.
