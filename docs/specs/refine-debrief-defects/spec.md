@@ -202,10 +202,19 @@ falls back to a cold dispatch.
 Two blocks, each in the refine skill once, in `spec-writer` and in `tickets-writer`. The sweep dispatch passes the
 skill's copy on by reference.
 
-- **The working-habits block**, word for word as [build-debrief-defects](../build-debrief-defects/spec.md) gives it — a
-  long wait backgrounded, a large file read once in ranges, measuring once after the last edit, and a secret never used
-  or shown. That spec owns the wording; with the build skill and its six agents the block spans ten files. The brief's
-  existing redaction line stays as it is.
+- **The working-habits block**, word for word. The build skill and its six agents carry the same block under the build
+  side's own spec, so the wording is one across ten files and changes in one review:
+  - **A long wait is backgrounded.** Work that takes minutes runs in the background and its completion notice wakes
+    the agent; before waiting again, it reads the state of what it is waiting on, so a wait never outlives its answer.
+  - **A large file is read once, in ranges.** A file or a persisted output too big to show is read with the
+    file-reading tool in ranges, never dumped through the shell and then read again.
+  - **Measure once, after the last edit.** Widths, counts and conformance are measured once the text is final, never
+    between edits.
+  - **A secret is never used or shown.** Configuration is read by key. A secret's value is never printed and never
+    interpolated into a command; two secrets are compared by hash or by length. A credential found in the repository is
+    never used to authenticate against anything: it is reported, and the agent goes on without it.
+
+  The brief's existing redaction line stays as it is.
 - **Host bounds**, the refine side's own, since an implementer works in the workspace and drives gates that may touch a
   live system:
   - Work in your own scratch copy under the OS temporary directory, never in a shared or named path, and never in the
