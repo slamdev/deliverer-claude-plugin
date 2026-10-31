@@ -13,22 +13,22 @@ round says so and asks whether to pull. Settled under **The refine skill** in `.
 
 **Status:** ready-for-agent
 
-- [ ] Stage 1's step 1 takes, for a decision, the premise its recommended answer rests on through the mechanical bar,
+- [x] Stage 1's step 1 takes, for a decision, the premise its recommended answer rests on through the mechanical bar,
       with the reach of a removal as the example; a thread goes out as a sweep and the decision waits under step 2's
       existing hold.
-- [ ] A question that does not turn on a sweep's subject is still asked now: the premise check holds only the question
+- [x] A question that does not turn on a sweep's subject is still asked now: the premise check holds only the question
       whose premise is in flight.
-- [ ] **Asking** says every call of a question round goes out in the same message, before any answer is waited on,
+- [x] **Asking** says every call of a question round goes out in the same message, before any answer is waited on,
       replacing "the human answers in batches".
-- [ ] The skill says "question round" wherever it meant a round of the human's questions, and "round" nowhere else
+- [x] The skill says "question round" wherever it meant a round of the human's questions, and "round" nowhere else
       for them.
-- [ ] The first question round states the glossary's one-repository bound.
-- [ ] Stage 1's done bar requires every term a settled decision relies on to be in the glossary or listed in the brief
+- [x] The first question round states the glossary's one-repository bound.
+- [x] Stage 1's done bar requires every term a settled decision relies on to be in the glossary or listed in the brief
       as missing.
-- [ ] The run fetches the default branch before stage 1; a checkout behind it is put to the human in the first question
+- [x] The run fetches the default branch before stage 1; a checkout behind it is put to the human in the first question
       round, asking whether to pull, and the run never pulls on its own. Dispatches carry no ref.
-- [ ] Each change is one clause or one bullet in an existing place: no new step, file or term.
-- [ ] The refine skill is read against `/mattpocock-skills:writing-for-agents`.
+- [x] Each change is one clause or one bullet in an existing place: no new step, file or term.
+- [x] The refine skill is read against `/mattpocock-skills:writing-for-agents`.
 - [ ] Recorded for the hand-driven refine run (`../spec.md` § Testing Decisions): the default branch fetched before
       stage 1, and every question round wider than four questions sent as several calls in one message — or that the
       fixture raised no such frontier.

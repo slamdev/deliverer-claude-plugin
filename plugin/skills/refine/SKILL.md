@@ -64,35 +64,42 @@ re-run.
 
 ## Stages
 
-1. **Grill the idea.** Call the Skill tool twice, once with `mattpocock-skills:grilling` and once with
-   `mattpocock-skills:domain-modeling`, and run the grilling on the idea with domain-modeling alongside, so terms and
-   decisions land in the project's glossary and ADRs as they crystallise. When either is not installed, report that and
-   stop rather than improvising an interview. Those two skills own how the interview runs, apart from how a question
-   reaches the human (**Asking**) and how a question of fact gets settled (**Sweeps**). Each round, before it is asked,
-   every question on the **frontier** goes through:
-   1. its kind told. A decision is the human's and goes toward the round. A question of fact goes to the **mechanical**
-      bar: one you can close in a single look, you settle yourself; one that wants a thread followed — a feature traced
-      from one file to the next, a second repository read, a published document fetched and then read for what to fetch
-      after it — goes out as a **sweep**, dispatched the moment its subject is clear;
+1. **Grill the idea.** Fetch the default branch before anything else runs. Call the Skill tool twice, once with
+   `mattpocock-skills:grilling` and once with `mattpocock-skills:domain-modeling`, and run the grilling on the idea with
+   domain-modeling alongside, so terms and decisions land in the project's glossary and ADRs as they crystallise. When
+   either is not installed, report that and stop rather than improvising an interview. Those two skills own how the
+   interview runs, apart from how a question reaches the human (**Asking**) and how a question of fact gets settled
+   (**Sweeps**). The first question round states that an **epic** delivers into one repository, as the glossary bounds
+   it, and — where the checkout is behind the default branch — says so and asks whether to pull: the pull is the
+   human's call, never yours, and every dispatch reads the checkout as it stands, carrying no ref. Each question round,
+   before it is asked, every question on the **frontier** goes through:
+   1. its kind told. A decision is the human's and goes toward the question round. A question of fact goes to the
+      **mechanical** bar: one you can close in a single look, you settle yourself; one that wants a thread followed — a
+      feature traced from one file to the next, a second repository read, a published document fetched and then read
+      for what to fetch after it — goes out as a **sweep**, dispatched the moment its subject is clear. For a decision,
+      the premise its recommended answer rests on goes to the same bar — the reach of a removal above all, since
+      "nothing else depends on this" is a fact to find before the question is asked — and where it goes out as a sweep,
+      that decision alone waits on it, under step 2's hold;
    2. for a decision, every sweep in flight tested against it. A question that turns on a sweep's subject — one you
-      cannot ask well without what the sweep is out to find — waits for that sweep; every other question goes into the
-      round now, since a sweep never holds up the questions it does not touch;
-   3. the round asked (**Asking**) — or, where the holds took every question out of it, the sweep waited for rather
-      than asking anyway.
+      cannot ask well without what the sweep is out to find, its premise among it — waits for that sweep; every other
+      question goes into the question round now, since a sweep never holds up the questions it does not touch;
+   3. the question round asked (**Asking**) — or, where the holds took every question out of it, the sweep waited for
+      rather than asking anyway.
 
-   Each sweep that lands releases its subject: every question it was holding goes into the next round, with its premise
-   corrected where the sweep's facts changed it, and a settled decision whose premise those facts undercut goes back to
-   the human as a **fork**, saying what changed — an answer carried on a premise that turned out false is a decision
-   silently assumed, the one thing this stage exists to prevent. The hold lasts as long as the sweep is in flight and
-   no longer. You are done on grilling's own bar: the frontier empty — a question a sweep is holding is still on it —
-   and the user's confirmation that you have reached a shared understanding.
+   Each sweep that lands releases its subject: every question it was holding goes into the next question round, with
+   its premise corrected where the sweep's facts changed it, and a settled decision whose premise those facts undercut
+   goes back to the human as a **fork**, saying what changed — an answer carried on a premise that turned out false is a
+   decision silently assumed, the one thing this stage exists to prevent. The hold lasts as long as the sweep is in
+   flight and no longer. You are done on grilling's own bar — the frontier empty, a question a sweep is holding still
+   on it, and the user's confirmation that you have reached a shared understanding — and once every term a settled
+   decision relies on is in the glossary or listed in the brief as missing from it.
 2. **Write the brief** — as **The brief** below. You are done when every one of the five things it carries is written
    out of the conversation or stated to hold nothing, and a fresh agent could carry the design forward from it alone.
 3. **Write the spec.** Dispatch `spec-writer`; it publishes the spec to the project's issue tracker, and its **report**
    raises the **fork**s its reading forced — among them the decision a killed **claim** took down with it. Every one is
-   yours to hold, and **one report, one round, one put-back** is the loop each report goes through:
+   yours to hold, and **one report, one question round, one put-back** is the loop each report goes through:
    1. the spec's location it names kept;
-   2. every fork it raises closed with the human in one round of questions (**Asking**), saying what the writer found.
+   2. every fork it raises closed with the human in one question round (**Asking**), saying what the writer found.
       The forks a report raised are the whole set, and you hold them all the moment it lands;
    3. the stage put back once, carrying every answer — the writer continued where it is addressable, a cold dispatch
       otherwise — since an answer that reaches stage 4 any other way is one the record does not carry;
@@ -102,9 +109,10 @@ re-run.
    You are done when the spec's location is in hand and no decision a killed claim took down is still open.
 4. **Break it into tickets.** Dispatch `tickets-writer`, carrying the spec's location. It publishes one ticket per
    slice, numbered in dependency order, and its report raises the **fork**s its reading found against the spec. Those
-   go through stage 3's **one report, one round, one put-back**, the put-back going to `spec-writer`; stage 4 is then
-   put back carrying the corrected spec's location, and its corrected report goes through the same. You are done when
-   its report is in hand, with the count and the locations it names kept, and no fork it raised is still open.
+   go through stage 3's **one report, one question round, one put-back**, the put-back going to `spec-writer`; stage 4
+   is then put back carrying the corrected spec's location, and its corrected report goes through the same. You are
+   done when its report is in hand, with the count and the locations it names kept, and no fork it raised is still
+   open.
 5. **Open the draft** — for both tracker kinds: what this refinement wrote into the repository, committed onto the
    **epic branch**. It is **mechanical** throughout — every step a git or forge operation, with no wording to choose.
    First **the paths**, read off the project's tracker conventions, the same ones the writers published to:
@@ -169,17 +177,18 @@ Every question you put to the human — the grilling's above all, and the forks 
 then picked**, both in the same turn. The tool's fields are too narrow to carry a question, so the text carries it and
 the tool takes the answer:
 
-1. **Written.** The whole round as text first, in grilling's own numbered format: each question's title, a body carrying
-   the context the human needs to decide — what raised it, what hangs on it — every plausible answer with what follows
-   from choosing it, and your recommended answer.
-2. **Picked.** Then the `AskUserQuestion` tool on the same round, as the answer pad: each question named by its number
-   and title, each option a short label pointing back at an answer the text spelled out (`Q2 · B: one queue per
-   tenant`), your recommended answer leading the list. Open-ended is not an exemption: the plausible answers become the
-   options, and the free-text escape carries anything else.
+1. **Written.** The whole question round as text first, in grilling's own numbered format: each question's title, a
+   body carrying the context the human needs to decide — what raised it, what hangs on it — every plausible answer
+   with what follows from choosing it, and your recommended answer.
+2. **Picked.** Then the `AskUserQuestion` tool on the same question round, as the answer pad: each question named by
+   its number and title, each option a short label pointing back at an answer the text spelled out (`Q2 · B: one queue
+   per tenant`), your recommended answer leading the list. Open-ended is not an exemption: the plausible answers become
+   the options, and the free-text escape carries anything else.
 
 Four questions is one call's limit and a frontier is often wider. Carry the rest into further calls rather than trimming
-the frontier to fit — the human answers in batches, and every question the round holds still reaches them. The text is
-written once, at the head of the round, and every call points back into it.
+the frontier to fit, and send every call of the question round in the same message, before any answer is waited on: one
+frontier costs the human one wait, and every question the question round holds reaches them at once. The text is
+written once, at the head of the question round, and every call points back into it.
 
 ## Sweeps
 
