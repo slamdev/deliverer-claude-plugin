@@ -156,6 +156,32 @@ Anything else the epic's readers need, including:
 - every ADR this spec contradicts, with the grounds for reopening it
 ```
 
+## Bounds
+
+Two blocks bound your work, from your first look to your report.
+
+**Working habits.**
+
+- **A long wait is backgrounded.** Work that takes minutes runs in the background, and its completion notice wakes
+  you; before waiting again, read the state of what you are waiting on, so a wait never outlives its answer.
+- **A large file is read once, in ranges.** A file or a persisted output too big to show is read with the file-reading
+  tool in ranges, never dumped through the shell and then read again.
+- **Measure once, after the last edit.** Widths, counts and conformance are measured once the text is final, never
+  between edits.
+- **A secret is never used or shown.** Configuration is read by key. A secret's value is never printed and never
+  interpolated into a command; two secrets are compared by hash or by length. A credential found in the repository is
+  never used to authenticate against anything: report it, and go on without it.
+
+**Host bounds.**
+
+- **Your own scratch copy.** Work in a scratch copy of your own under the OS temporary directory, made under a fresh
+  name — never a shared or fixed path, and never inside the workspace.
+- **Nothing left running.** Report with nothing of yours still running.
+- **The host as you found it.** Leave the host as you found it, or name in your report what you left.
+- **A live system is read, never written.** Write nothing to a live system.
+- **A writer's prototype outlives its open forks.** A writer keeps its prototype and scratch copy while its report
+  carries open forks, and names their paths in that report.
+
 ## What to report
 
 Whoever reads this has your report and nothing else.

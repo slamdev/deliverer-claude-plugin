@@ -12,13 +12,13 @@ scratch copy kept while its report carries open forks — each sit once in the r
 
 **Status:** ready-for-agent
 
-- [ ] The working-habits block carries the four rules **The shared bounds** names, the secret rule including read by
+- [x] The working-habits block carries the four rules **The shared bounds** names, the secret rule including read by
       key, never printed or interpolated, compared by hash or length, and a found credential reported and never used.
-- [ ] The host bounds carry the five rules **The shared bounds** names, the last binding a writer's prototype and
+- [x] The host bounds carry the five rules **The shared bounds** names, the last binding a writer's prototype and
       scratch copy to its open forks.
-- [ ] Each block appears once in each of the three files, and a diff of each block across the three shows them
+- [x] Each block appears once in each of the three files, and a diff of each block across the three shows them
       identical.
-- [ ] The brief's existing redaction line is unchanged.
-- [ ] Stage 5 still commits only the paths the refinement wrote; nothing in the bounds puts a scratch path in the
+- [x] The brief's existing redaction line is unchanged.
+- [x] Stage 5 still commits only the paths the refinement wrote; nothing in the bounds puts a scratch path in the
       workspace.
-- [ ] The three files are read against `/mattpocock-skills:writing-for-agents`.
+- [x] The three files are read against `/mattpocock-skills:writing-for-agents`.
