@@ -14,7 +14,7 @@ reference).
 
 **Status:** resolved
 
-- [x] **Sweeps** says a dispatch that would list several numbered points is several sweeps.
+- [x] **Sweeps** says a dispatch that would list several numbered points is several sweeps. *Superseded by 08.*
 - [x] A sweep's dispatch carries the subjects of the sweeps in flight as context, the environment facts an earlier
       report established, the host bounds and working-habits block by reference to the skill's copy, and that a
       checkout or clone it makes is kept with its path and ref named in its report.
@@ -26,7 +26,8 @@ reference).
       orchestrator ends its turn and the notifications wake it.
 - [x] **What to report** gains a line listing every scratch path the sweeps and writers kept.
 - [x] The refine skill and `spec-writer` are read against `/mattpocock-skills:writing-for-agents`.
-- [ ] Recorded for the hand-driven refine run (`../spec.md` § Testing Decisions): every sweep carrying one question,
+- [ ] *Superseded by 08 for its one-question half.* Recorded for the hand-driven refine run (`../spec.md` § Testing
+      Decisions): every sweep carrying one question,
       every checkout a sweep made listed in the brief by path and ref, and the run's report listing the scratch paths
       kept.
 

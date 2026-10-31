@@ -34,7 +34,8 @@ got wrong: edit the published spec in place, where the put-back reaches it. Only
 
 1. **Read the brief in full.** Every decision it records is **settled** — you write it up rather than deciding it again.
    Every **fork** it leaves open stays open, and is the human's to close (**Forks**). Every **claim** it marks is
-   step 3's.
+   step 3's. A glossary entry or ADR the brief marks *landed* is the refinement's own, committed before any ticket
+   starts: the spec records it as done and gives the epic no work on it.
 2. **Explore the repo** for the state of the code the spec lands on, reading the project's glossary and the ADRs that
    touch the area first. Use the glossary's own vocabulary throughout the spec. Where the spec has to contradict an ADR,
    say so with the grounds for reopening it rather than overriding it silently. You are done when every path the brief

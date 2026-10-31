@@ -161,6 +161,10 @@ the one-repository bound.
 28. As a human paying for a refinement, I want every sweep to take the cheapest look that settles its fact and to build
     only for a fact no reading shows, naming that fact when it does, so that a sweep costs a reading and not a
     prototype.
+29. As an orchestrator, I want the facts that different frontier questions turn on sent as different sweeps, and the
+    points one held question needs kept in one, so that no sweep reports late on another question's account.
+30. As a spec writer, I want to know that a glossary entry or ADR the brief marks landed is the refinement's own to
+    commit, so that the spec never gives the epic work that stage 5 has already done.
 
 ## Implementation Decisions
 
@@ -197,6 +201,10 @@ written to be held without deliberation; none adds a step, a file or a term.
   primary source, a run of what is already installed — installing, cloning or writing a probe program only for a fact
   no reading shows; the owes-back bullet gains, for anything it built, the fact that needed building. Sweeps only: the
   writers' prototypes are what make a road *proven*. Two sweeps installing the same thing is left to the sibling rule.
+- **A sweep is cut by the questions it holds** (story 29). **Sweeps**' numbered-points sentence failed in both
+  hand-driven runs — each dispatch listed five points under one question — while in the second the five all served one
+  held question and the sweep came back in 3.8m. The sentence becomes: facts that different frontier questions turn on
+  go out as different sweeps, and the points one held question needs stay in one.
 - **The brief lists a sweep's checkout** through its existing artifacts bullet, by path and ref. Nothing else about the
   brief changes: it still carries claims and no section of established facts, and what a sweep settled still rides as
   a decision's **grounds**.
@@ -248,6 +256,10 @@ skill's copy on by reference.
 - **An unaddressed decision.** One sentence in **Forks**: a decision the reading raised that the brief never addressed
   is a fork the brief left open, and closes the same way. **Forks** keeps its two states and no third.
 - The shared bounds apply, and so do the checkout paths the brief lists.
+- **Landed files are the refinement's** (story 30). Step 1 gains: a glossary entry or ADR the brief marks landed is the
+  refinement's own, committed before any ticket starts, so the spec records it as done and gives the epic no work on
+  it. The second hand-driven run's spec gave the epic `GLOSSARY.md` and the ADR to commit; only the tickets writer
+  caught it, at a question round and two put-backs. `tickets-writer` is unchanged: it already refused the ticket.
 
 ### `tickets-writer`
 
@@ -347,6 +359,13 @@ ground a finding on their own. The runs this spec cites:
 Run 20's claim that it "stopped with eight questions never asked" is not used as grounds: its debrief saw seven minutes
 of the run, which is the observer defect `idp-scaffold-defects` fixed, and the run went on to ask eight more question
 rounds. The overflow that run planned as a separate question round still holds as evidence.
+
+### What the two hand-driven runs ground
+
+Stories 27–30 are grounded in the two hand-driven refine runs of 2026-10-31 on the `typescript-library` fixture, not in
+the 28 debriefs. Both runs' debriefs also show every agent writing literal escape bytes and repairing them; that is
+left out, since it is seen only on a fixture whose subject is terminal escapes. A question worded against a decision the
+human had already confirmed, seen once in the second run and caught by the spec writer, is left out too.
 
 ### Load-bearing behaviour this change must not disturb
 

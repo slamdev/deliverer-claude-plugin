@@ -197,12 +197,12 @@ written once, at the head of the question round, and every call points back into
 ## Sweeps
 
 A **sweep** is a fact-finding dispatch, one subject each, and several run at once so two questions of fact never queue
-behind one another. A dispatch that would list several numbered points is several sweeps, one question of fact each — a
-checklist of points to close under one question included, since the slowest point still sets when it reports. Whatever
-general-purpose agent your host offers is what it goes to: this plugin ships no sweeper of its own. Send each the moment
-its subject is clear, and **send it even where dispatching makes you wait for the report**: on a host where that blocks,
-the interview serialises — send, wait, ask, send — and the sweep still goes out, because the reading is the cost and the
-waiting only takes time. The dispatch carries:
+behind one another. Facts that different frontier questions turn on go out as different sweeps, so one never reports
+late on another's account; the points one held question needs stay in one sweep. Whatever general-purpose agent your
+host offers is what it goes to: this plugin ships no sweeper of its own. Send each the moment its subject is clear, and
+**send it even where dispatching makes you wait for the report**: on a host where that blocks, the interview serialises
+— send, wait, ask, send — and the sweep still goes out, because the reading is the cost and the waiting only takes time.
+The dispatch carries:
 
 - **the subject, named as the question of fact the sweep is out to close — never the next file to open — and the
   questions on the frontier it holds**, worded as the human will be asked them. A sweep follows the thread itself,
