@@ -41,7 +41,9 @@ is that a sweep's facts ride only as a decision's **grounds**, so a fact with no
 Every dispatch in one run read a stale checkout, and the human answered a fork on outdated counts (#24).
 
 **Live credentials landed in dispatch records** (#17, #19; also #13, #18). From there they reached the **trace** and
-the notes: passwords, private keys, storage keys, webhook tokens. The plugin's only redaction rule binds the brief.
+the notes: passwords, private keys, storage keys, webhook tokens. The plugin's only redaction rule binds the brief. The
+same dispatches dumped large files whole through the shell and read them again (§9), and the build side's debriefs show
+every agent there doing the same.
 
 **A put-back paid for the whole write again.** A continued spec writer rewrote its document whole instead of patching
 it (#24). A cold writer was dispatched where continuing the old one would have worked, and spent 17 minutes rebuilding
@@ -67,7 +69,8 @@ Three files change: the refine skill, `spec-writer` and `tickets-writer`. All th
     the brief names, and work inside one shared set of bounds;
   - puts writers back by continuing them, so the put-back is a patch;
   - gives stage 4 the same loop stage 3 has.
-- **The two writers** share the same bounds, and both patch in place when continued.
+- **The two writers** share the same bounds and the build side's working-habits block, and both patch in place when
+  continued.
 - **The spec writer** marks every road it offers as proven or unchecked, and names a fourth kind of fork.
 - **The tickets writer** maps every story to its tickets, reports where the spec is wrong, and puts an external blocker
   in the ticket body.
@@ -123,7 +126,7 @@ Three files change: the refine skill, `spec-writer` and `tickets-writer`. All th
 22. As a human whose live systems a sweep can reach, I want every sweep and writer to write nothing to a live system,
     so that fact-finding never changes production.
 
-### Secrets
+### Working habits and secrets
 
 23. As a human whose repository and environment hold credentials, I want every sweep and both writers to read config by
     key and never print a secret's value, so that no credential lands in a dispatch record, a trace or the notes.
@@ -131,75 +134,77 @@ Three files change: the refine skill, `spec-writer` and `tickets-writer`. All th
     without the value ever appearing.
 25. As a human, I want no dispatch to use a credential it finds, so that a key found in a repository never
     authenticates against a device.
-26. As a maintainer, I want the secrets rule worded the same way in the sweep dispatch and in both writer contracts, so
-    that one wording changes in one review.
+26. As a maintainer, I want the working-habits block, its secrets line included, worded the same way in the refine
+    skill, both writer contracts and every build agent, so that one wording changes in one review.
+27. As a human, I want every sweep and both writers to background a long wait, read a large file once in ranges and
+    measure text once after the last edit, so that a refinement pays for none of that twice.
 
 ### The brief and the base ref
 
-27. As an orchestrator opening a run, I want to fetch the default branch first, so that every reading starts from the
+28. As an orchestrator opening a run, I want to fetch the default branch first, so that every reading starts from the
     remote's current state.
-28. As a sweep or a writer, I want my dispatch to name the base ref I read at, so that I read at the same point as
+29. As a sweep or a writer, I want my dispatch to name the base ref I read at, so that I read at the same point as
     every other dispatch.
-29. As a resumed run, I want the sweep report files the brief lists to still be on disk where it says, so that resume
+30. As a resumed run, I want the sweep report files the brief lists to still be on disk where it says, so that resume
     works as well as a first run.
 
 ### Put-backs
 
-30. As an orchestrator putting a stage back, I want the skill to name continuing the writer as the mechanism, so that I
+31. As an orchestrator putting a stage back, I want the skill to name continuing the writer as the mechanism, so that I
     do not dispatch a cold writer where the old one is still addressable.
-31. As an orchestrator, I want a cold dispatch only where continuing fails or brings no report, so that a put-back's
+32. As an orchestrator, I want a cold dispatch only where continuing fails or brings no report, so that a put-back's
     cost stays a patch.
-32. As a continued spec writer, I want to edit the published spec in place, so that a put-back costs the change and not
+33. As a continued spec writer, I want to edit the published spec in place, so that a put-back costs the change and not
     the whole document.
-33. As a continued tickets writer, I want to edit the published tickets in place, so that a put-back keeps their
+34. As a continued tickets writer, I want to edit the published tickets in place, so that a put-back keeps their
     numbers and costs the change alone.
-34. As a cold writer, I want to be told that writing the document whole is what a cold dispatch does, so that I know
+35. As a cold writer, I want to be told that writing the document whole is what a cold dispatch does, so that I know
     when a whole write is the right move.
-35. As a writer whose report still carries open forks, I want to keep my prototype until those forks close, so that the
+36. As a writer whose report still carries open forks, I want to keep my prototype until those forks close, so that the
     put-back does not pay to build it again.
 
 ### The spec writer's forks
 
-36. As a human answering a fork, I want every road it offers marked as proven or unchecked, so that I never choose an
+37. As a human answering a fork, I want every road it offers marked as proven or unchecked, so that I never choose an
     untried road without knowing it.
-37. As a spec writer, I want a decision my reading raised that the brief never addressed to count as a fork, so that I
+38. As a spec writer, I want a decision my reading raised that the brief never addressed to count as a fork, so that I
     know how to carry it.
-38. As a spec writer, I want such a fork to close on grounds I hold, or else stay open, the same as a fork the brief
+39. As a spec writer, I want such a fork to close on grounds I hold, or else stay open, the same as a fork the brief
     left open, so that I neither escalate a decision I can ground nor close one I cannot.
 
 ### Stage 4
 
-39. As a tickets writer, I want a report line for every place the spec is wrong, so that a spec defect reaches a human
+40. As a tickets writer, I want a report line for every place the spec is wrong, so that a spec defect reaches a human
     instead of being worked around in silence.
-40. As an orchestrator holding a tickets report that names a spec defect, I want to close any fork it raises with the
+41. As an orchestrator holding a tickets report that names a spec defect, I want to close any fork it raises with the
     human in one question round, so that stage 4 holds forks the same way stage 3 does.
-41. As an orchestrator, I want to put stage 3 back with the answers and then stage 4 back with the corrected spec, so
+42. As an orchestrator, I want to put stage 3 back with the answers and then stage 4 back with the corrected spec, so
     that the spec stays the record and the tickets are cut from it.
-42. As a human, I want the epic handed over only once no spec defect the tickets writer named is still open, so that I
+43. As a human, I want the epic handed over only once no spec defect the tickets writer named is still open, so that I
     never receive an epic whose tickets disagree with its spec.
-43. As a human reading the task list, I want a stage 4 put-back to flip its task back to `in_progress` the same way a
+44. As a human reading the task list, I want a stage 4 put-back to flip its task back to `in_progress` the same way a
     stage 3 put-back does, so that the window shows what is running.
-44. As an orchestrator, I want the corrected tickets report taken through the same loop, as often as the writing needs,
+45. As an orchestrator, I want the corrected tickets report taken through the same loop, as often as the writing needs,
     so that a correction that raises a new defect is held like the first one.
 
 ### The tickets writer's coverage and blockers
 
-45. As a human, I want the tickets writer's report to map every user story to the tickets that cover it, so that "every
+46. As a human, I want the tickets writer's report to map every user story to the tickets that cover it, so that "every
     story covered" can be checked in one look.
-46. As a tickets writer, I want that mapping to be the output of step 3's per-story check, so that the report line is
+47. As a tickets writer, I want that mapping to be the output of step 3's per-story check, so that the report line is
     never asserted without the check behind it.
-47. As a tickets writer meeting a blocker outside the ticket set, such as a pending change request, I want to name it in
+48. As a tickets writer meeting a blocker outside the ticket set, such as a pending change request, I want to name it in
     the ticket body by its link and never as a native blocking edge, so that the forge never refuses the ticket.
-48. As a human, I want every external blocker named in the tickets writer's report, so that I know what the set waits
+49. As a human, I want every external blocker named in the tickets writer's report, so that I know what the set waits
     on beyond itself.
 
 ### Maintainers
 
-49. As a maintainer, I want every touched skill and agent file read against the writing-for-agents guidance before
+50. As a maintainer, I want every touched skill and agent file read against the writing-for-agents guidance before
     merge, so that the new prose holds the register the files are written in.
-50. As a maintainer, I want the spec writer's changes measured on the bench against the current agent, so that I can
+51. As a maintainer, I want the spec writer's changes measured on the bench against the current agent, so that I can
     see whether a put-back wave now patches.
-51. As a maintainer, I want one hand-driven refine happy-path run after the skill changes, so that the question calls,
+52. As a maintainer, I want one hand-driven refine happy-path run after the skill changes, so that the question calls,
     the sweep report files and the brief's paths are seen working end to end.
 
 ## Implementation Decisions
@@ -227,7 +232,7 @@ Three files change: the refine skill, `spec-writer` and `tickets-writer`. All th
   - the subjects of the sweeps already in flight, with the rule to report a collision rather than close it;
   - the environment facts an earlier report established, such as how a cluster or service is reached;
   - the host bounds;
-  - the secrets rule.
+  - the working-habits block.
 
   Writers' dispatches carry the environment facts too.
 - **A sweep's report is a file.** The sweep writes it to the OS temporary directory as
@@ -252,12 +257,24 @@ Three files change: the refine skill, `spec-writer` and `tickets-writer`. All th
 
 ### The shared bounds
 
-There are two rules, each written once and copied word for word into the sweep dispatch's carry-list, `spec-writer`
+There are two rules, each copied word for word into the refine skill (whose sweep dispatch carries both), `spec-writer`
 and `tickets-writer`.
 
-- **Secrets.** Read configuration by key and never print a secret's value. Compare a secret by hash or by length. Never
-  use a credential you find to authenticate against anything. The brief's existing redaction line stays as it is.
-- **Host bounds.**
+- **The working-habits block.** The block [build-debrief-defects](../build-debrief-defects/spec.md) puts in the build
+  skill and its six agents, word for word, so that one wording spans all eleven files:
+  - **A long wait is backgrounded.** Work that takes minutes runs in the background and its completion notice wakes
+    the agent; before waiting again, it reads the state of what it is waiting on, so a wait never outlives its answer.
+  - **A large file is read once, in ranges.** A file or a persisted output too big to show is read with the
+    file-reading tool in ranges, never dumped through the shell and then read again.
+  - **Measure once, after the last edit.** Widths, counts and conformance are measured once the text is final, never
+    between edits.
+  - **A secret is never used or shown.** Configuration is read by key. A secret's value is never printed and never
+    interpolated into a command; two secrets are compared by hash or by length. A credential found in the repository is
+    never used to authenticate against anything: it is reported, and the agent goes on without it.
+
+  The brief's existing redaction line stays as it is.
+- **Host bounds**, the refine side's own, since an implementer works in the workspace and drives gates that may
+  touch a live system:
   - Work in your own scratch copy under the OS temporary directory, never in a shared or named path, and never in the
     workspace root.
   - Report with nothing of yours still running.
@@ -297,6 +314,8 @@ and `tickets-writer`.
 ### The glossary
 
 **Question round** and **Put-back** are already landed, and **Sweep** now says that a subject is one question of fact.
+**Put-back** is written for both sides of its use: what the skill does with one here, and what the observer counts in a
+run's **extent** under [observer-debrief-defects](../observer-debrief-defects/spec.md).
 No ADR changes. The orchestrator still forms no judgement (ADR 0015): checking a premise is settling a question of
 fact, and a put-back is still one move whether continued or cold. A sweep's report file is not a state file
 (ADR 0013), because no run reads its position from it.
@@ -308,8 +327,8 @@ such as the calls in one message, the files on disk, a wave's output tokens or a
 the prose reads as intended. No new seam is proposed. The three existing ones are:
 
 - **The writing-for-agents read.** The refine skill, `spec-writer` and `tickets-writer` are each read against
-  `/mattpocock-skills:writing-for-agents` before merge. That read checks that the copied secrets and host-bounds rules
-  are identical across the three files.
+  `/mattpocock-skills:writing-for-agents` before merge. That read checks that the host-bounds rule is identical across
+  the three files, and the working-habits block identical to the build side's copies.
 - **The bench** (CONTRIBUTING.md § The bench). Two arms, `current` against `before=<main>:plugin/agents/spec-writer.md`,
   with `--waves 1` on the existing fixture. Two things are read off the arms. First, the put-back wave's output tokens
   in each arm's `wave-1.md` and `reading.json`: the current arm should patch, and come in well under its own
@@ -339,8 +358,8 @@ and confirming them in the next observed run.
   on current code showed the loop. It waits for one that does.
 - **The task-list findings (§7).** They are seen only in old runs, and the phantom stage 5 task in #19 is now stage 5's
   own task.
-- **Host-level waste (§9)**: large files dumped whole, the 120-second tool timeout, and `disable-model-invocation`
-  making the human re-type the command. No plugin file owns them.
+- **Host-level waste (§9)**: the 120-second tool timeout, and `disable-model-invocation` making the human re-type the
+  command. No plugin file owns them. Large files dumped whole are the working-habits block's.
 - **The observer's own defects** in `debrief-findings.md`. They are worked separately.
 - **A mechanical guard for secrets or for writes to live systems**, such as a hook. This change states the rule in
   prose, and a guard would come only if the prose fails again.

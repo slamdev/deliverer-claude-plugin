@@ -244,10 +244,11 @@ A dispatched agent that meets the codebase first-hand but never the conversation
 load-bearing. _Avoid_: author, generator
 
 **Put-back**:
-A stage returned to its **writer**, carrying what its document got wrong or the human's answers to the **fork**s its
-report raised. It is the same stage rather than a new one, and it patches the published document in place: the writer is
-continued while it can still be addressed, and only a cold writer writes the document whole. _Avoid_: redo, retry,
-re-dispatch
+A stage handed back to the agent that ran it, carrying what its **report** or document got wrong or the human's answers
+to the **fork**s it raised. It is the same stage's work rather than a new stage, and counted as the run's own. The agent
+is continued while it can still be addressed, picking up the conversation it was holding, and a **writer** so continued
+patches its published document in place; only a cold **dispatch**, starting over from the paths, writes it whole.
+_Avoid_: retry, redo, follow-up, re-dispatch
 
 **Bearings**:
 What a resumed run reads its position from: the artifacts on disk, the commits on the branch, and whether a change
