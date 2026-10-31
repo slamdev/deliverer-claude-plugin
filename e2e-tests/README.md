@@ -507,6 +507,67 @@ still the most expensive dispatch, at $0.98 against the $1.34 to $2.57 of 2026-0
 no `improve`. The **spec-reviewer** is a stage none of the four deliveries above had. Each observation was read before
 its **debrief** was final, so its line is a floor.
 
+## What the build-debrief-defects pair cost, against the pair before it
+
+From `build-typescript-library-2026-10-31T20-44-57-sZT16T` and
+`build-typescript-library-forge-issues-2026-10-31T21-08-37-Q9CeWp`, driven together for ticket 10 of
+`docs/specs/build-debrief-defects/`, both passing. **This is the first before-and-after a delivery has had on one
+model**: the same two fixtures were driven on 2026-10-28 — `…-2026-10-28T23-08-45-i3j5x4` and
+`…-forge-issues-2026-10-28T23-31-41-T7rdmi` — and every line of all four is `claude-opus-5-5`, `claude-sonnet-5-5` or
+`claude-haiku-5-5`. The earlier pair staged `85067f7`, which differs from the change's base by a few lines of resume
+wording in five files; the later pair staged `c58a88f`, the change itself. Priced at the SDK's rates, as the section
+above found reproduces its figure, and so read as reconstructions: the later pair reconstructs to $6.94 and $8.10
+against the $8.10 and $9.16 the harness reported, the same 12–14% under. Compare reconstructions with each other and
+not with a reported figure.
+
+**One record can hold two stages.** The **orchestrator** resumes the stage-3 `change-request-creator` at stage 9 rather
+than dispatching a new one, so its record spans the whole run while it worked for under three minutes of it. Split a
+record at any gap over ninety seconds between consecutive timestamps and price each segment on its own, or stage 3
+reads as fifteen minutes and carries stage 9's money.
+
+| stage | `i3j5x4` before | `sZT16T` after | `T7rdmi` before | `Q9CeWp` after |
+|---|---:|---:|---:|---:|
+| **orchestrator, its own turns** | **$1.52 · 2.5m** | **$1.99 · 3.5m** | **$1.35 · 2.5m** | **$2.15 · 3.2m** |
+| implementers, three | $1.38 · 4.4m | $1.29 · 4.5m | $1.23 · 5.9m | $1.39 · 7.6m |
+| change-request-creator, stage 3 | $0.66 · 2.3m | $0.51 · 1.8m | $0.34 · 1.7m | $0.49 · 1.7m |
+| assumption-reviewer | $1.10 · 3.7m | $1.02 · 3.8m | $1.33 · 4.2m | $1.57 · 5.0m |
+| spec-reviewer | $0.44 · 0.8m | $0.47 · 0.9m | $0.35 · 0.7m | $0.44 · 0.9m |
+| code-reviewer pollers, two | $0.33 · 1.6m | $0.33 · 1.5m | $0.20 · 1.6m | $0.31 · 1.6m |
+| fix wave 1 | $0.76 · 2.4m | $0.64 · 2.6m | $0.84 · 3.1m | $0.67 · 1.8m |
+| fix wave 2 | $0.63 · 2.3m | $0.60 · 2.3m | $0.72 · 2.5m | $0.86 · 3.1m |
+| change-request-creator, stage 9 | $0.28 · 0.9m | $0.11 · 0.5m | $0.21 · 0.8m | $0.22 · 0.7m |
+| **reconstructed** | **$7.10 · 20.9m** | **$6.94 · 21.4m** | **$6.57 · 23.1m** | **$8.10 · 25.6m** |
+| the two **rounds**, outside the run | $0.37 | $0.28 | $0.28 | $0.28 |
+| the verifier | $0.56 | $0.56 | $0.44 | $0.48 |
+| the observation | $1.75 | $1.87 | $1.61 | $1.81 |
+
+**The orchestrator is the one line that moved, and it moved on both fixtures**: +$0.47 and +$0.80, where every earlier
+reading of it — $1.39 to $1.52 on 2026-09-13, $1.40 on 2026-10-26, $1.35 and $1.52 here — sits within thirteen cents
+of the others. What the change gave it to do accounts for it. Its requests went from 22 and 20 to 27 and 34, its shell
+calls from 7 and 5 to 12 and 8 — the mergeability read before each **fix wave** and before the flip — and every extra
+request re-reads the whole session from cache: 0.84–0.94M tokens read became 1.2–1.8M. The build skill grew 17%, to
+25.9k characters, and the briefs it writes grew half again, 13.4k and 15.1k characters to 20.4k and 22.6k in
+total: the **ledger**, which goes to every implementer after the first and every fix wave, and doubled the second wave's
+brief to 6.6k.
+
+**The dispatches did not move with their prompts.** `comments-addresser` grew 34% and `change-request-creator` 32%,
+and the waves cost $1.39 and $1.56 before against $1.24 and $1.53 after, the creator's stage 3 $0.66 and $0.34 against
+$0.51 and $0.49 — a longer agent file is cached reading, which is the cheapest class there is. Of the forge-issues
+fixture's $1.53, the orchestrator is $0.80 and the rest is spread across the stages that always spread, the
+**adjudication** first among them at +$0.24.
+
+**Where the wall clock goes**, every stage in series: the implementers are the largest block, 4.5 to 7.6 minutes; the
+adjudication is the largest single dispatch, 4 to 5, and the most expensive in all four; the two waves take 4.5 to 5
+between them, each round about a minute and a half with its poller, and the orchestrator's own turns between
+dispatches 2.5 to 3.5, the one figure up by about a minute.
+
+**What the pair does not license.** Two runs a side, against a 24% spread one plugin has shown back to back, so the
+totals say nothing either way; the orchestrator's rise is the only reading outside every earlier one. And the paths
+the change added the most prose for never ran: no ticket of the fixture asks for a demonstration, no change request
+conflicted and no **check** was red for a cause outside the branch, so an `Evidence:` entry, a wave's conflict merge
+and the outside-cause hand-off are all still unpriced. The ledger's saving is unmeasured for the same reason — this
+fixture's implementers never rediscovered anything for it to spare them.
+
 ## Reading many run directories at once, and the trap in doing it
 
 Nineteen **run directory**s of the refine test were still on disk on 2026-09-13, and the script above reads all of
