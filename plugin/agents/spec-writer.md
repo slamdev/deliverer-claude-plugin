@@ -40,7 +40,8 @@ got wrong: edit the published spec in place, where the put-back reaches it. Only
    say so with the grounds for reopening it rather than overriding it silently. You are done when every path the brief
    names has been opened, along with the ADRs that touch the area, and any module the work turns out to reach beyond
    them — **the brief's paths are a floor and never a ceiling**, so a module it never names is still read where the work
-   reaches it. **A bar ends its step and never your reading**: a later step that has to open a file still opens it, and
+   reaches it. A checkout the brief lists by path and ref is the one you open for the code it holds, where it already
+   sits. **A bar ends its step and never your reading**: a later step that has to open a file still opens it, and
    what you write about a file is what you read in it.
 3. **Work the brief's claims one at a time**, the last with the same scrutiny as the first. A **claim** is a statement
    of fact the brief rests on that nobody has checked — the one thing in the brief you check rather than write up. For

@@ -50,11 +50,13 @@ and never opens a change request beside one already open.
 **Dispatch.** Every dispatch carries the epic's **slug**. Stage 3's carries the brief's path; stage 4's carries the
 spec's location instead — once the spec is published it is the record, so the tickets are cut from it rather than from
 the conversation behind it. Paths rather than contents: a writer handed the path opens the whole document for itself,
-and reads the repo first-hand on top of it.
+and reads the repo first-hand on top of it. Every writer's dispatch also carries the environment facts an earlier
+sweep's report established — how a cluster or a service is reached — so no writer rediscovers them.
 
 **Sequencing.** A stage you dispatched in this run is unfinished until its **report** is in hand, and an acknowledgement
 is not a report: a writer you continue may answer you at once and finish its work in the background, and until the
-report lands that stage has not run. Wait for the report itself; a `sleep` or a poll stands in for none.
+report lands that stage has not run. Wait for the report itself; a `sleep` or a poll stands in for none, and neither
+does a dispatch spent only on waiting: end your turn, and the notifications wake you.
 
 **Continue a dispatch while it is still addressable** — to put a stage back, or to ask after a report that never came. A
 writer is still holding the context that wrote the document, so the correction costs a patch where a cold dispatch pays
@@ -193,10 +195,11 @@ written once, at the head of the question round, and every call points back into
 ## Sweeps
 
 A **sweep** is a fact-finding dispatch, one subject each, and several run at once so two questions of fact never queue
-behind one another. Whatever general-purpose agent your host offers is what it goes to: this plugin ships no sweeper of
-its own. Send each the moment its subject is clear, and **send it even where dispatching makes you wait for the
-report**: on a host where that blocks, the interview serialises — send, wait, ask, send — and the sweep still goes out,
-because the reading is the cost and the waiting only takes time. The dispatch carries:
+behind one another. A dispatch that would list several numbered points is several sweeps, one question of fact each.
+Whatever general-purpose agent your host offers is what it goes to: this plugin ships no sweeper of its own. Send each
+the moment its subject is clear, and **send it even where dispatching makes you wait for the report**: on a host where
+that blocks, the interview serialises — send, wait, ask, send — and the sweep still goes out, because the reading is
+the cost and the waiting only takes time. The dispatch carries:
 
 - **the subject, named as the question of fact the sweep is out to close — never the next file to open.** A sweep
   follows the thread itself, however many looks that takes, and comes back once the question is closed;
@@ -205,7 +208,13 @@ because the reading is the cost and the waiting only takes time. The dispatch ca
   a second subject from a second look at the same one is yours, because the **frontier** is what says which of the two
   you are owed;
 - **what it owes back: the facts and where it found them** — never a view on the design, which is the human's to form
-  with you.
+  with you;
+- **the subjects of the sweeps already in flight**, as context, so it leaves a sibling's fact to that sibling;
+- **the environment facts an earlier report established** — how a cluster or a service is reached — so it starts from
+  them rather than rediscovering them;
+- **the two blocks of Bounds, by reference to this skill's own copy** — this file's path and that section's heading —
+  so the sweep reads them word for word rather than a retelling;
+- **that a checkout or clone it makes is kept**, its path and ref named in its report, for the brief to hand on.
 
 You hold the subject for the rest of the interview and nowhere else: the brief hands the spec writer the design rather
 than the interview's bookkeeping, and the task list carries one task per stage.
@@ -224,8 +233,9 @@ publishes — as `<epic-slug>-brief.md`, so a later run can find the one you lef
 - every decision the grilling settled, each with the grounds it was settled on
 - every **fork** the grilling left open, and that it is the human's to close
 - the artifacts the session landed or touched — glossary entries, ADRs, prior specs, code, and every path a **sweep**
-  reported back — by path, never copied in, each glossary or ADR file the session wrote marked as landed, since stage 5
-  commits those; it is where the looking happened rather than what the looking found
+  reported back — by path, never copied in, every checkout a sweep kept by its path and ref, each glossary or ADR file
+  the session wrote marked as landed, since stage 5 commits those; it is where the looking happened rather than what
+  the looking found
 - every **claim** the design rests on that the session never checked, each with the **cheapest** path that would settle
   it — a fact the human handed you, a precedent you took to generalise, a tool you took to have a feature
 
@@ -304,4 +314,6 @@ The human who ran this sat through stage 1, so your report is what came of it ra
   order, a term the glossary does not carry — or that every claim you marked survived the writer's reading
 - every hand-off, one line each — anything still waiting on a human, and a question of fact you had to read inline for
   want of an agent to sweep with
+- every scratch path the sweeps and writers kept — checkouts, scratch copies, prototypes — one line each, for the human
+  to remove
 - the call that delivers the epic: `/deliverer:build <epic location>`
