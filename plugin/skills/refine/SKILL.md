@@ -204,8 +204,9 @@ its subject is clear, and **send it even where dispatching makes you wait for th
 the interview serialises — send, wait, ask, send — and the sweep still goes out, because the reading is the cost and the
 waiting only takes time. The dispatch carries:
 
-- **the subject, named as the question of fact the sweep is out to close — never the next file to open.** A sweep
-  follows the thread itself, however many looks that takes, and comes back once the question is closed;
+- **the subject, named as the question of fact the sweep is out to close — never the next file to open — and the
+  questions on the frontier it holds**, worded as the human will be asked them. A sweep follows the thread itself,
+  however many looks that takes, and comes back once its facts let every question it holds be put on a checked premise;
 - **that the looking is first-hand.** A subject broad enough to split is one an agent will split, and the half it hands
   on comes back late — or comes back to you instead, long after the sweep that sent it has reported without it. Telling
   a second subject from a second look at the same one is yours, because the **frontier** is what says which of the two
