@@ -75,6 +75,7 @@ import {
   finaliseSignalPath,
   readFinalReading,
   SESSION_ENDED_STATE,
+  STOPPED_EARLY_STATE,
   writeAnnouncement,
   writeFinalReading,
   writeMarker,
@@ -82,9 +83,14 @@ import {
   type FinalReading,
 } from "./announce.ts";
 import { NOTHING_JUDGES_YET, refreshDebrief, type Judging } from "./debrief-file.ts";
-import { debriefRun, type DebriefOutcome, type JudgingInput } from "./debrief.ts";
+import {
+  debriefRun,
+  stoppedEarlyAt,
+  type DebriefOutcome,
+  type JudgingInput,
+} from "./debrief.ts";
 import { synthesisJudge } from "./judge.ts";
-import { runSkills, type RunFacts } from "./run-facts.ts";
+import { epicName, runSkills, type RunFacts } from "./run-facts.ts";
 import { formatDuration } from "./trace.ts";
 
 /* ────────────────────────────────────── the clocks ────────────────────────────────────── */
@@ -211,6 +217,13 @@ function bound(name: string, fallback: number): number {
 export interface JudgeInput extends JudgingInput {
   /** true on the last reading of the run, which is the one synthesis's moment */
   readonly finalising: boolean;
+  /**
+   * true on the first finalise after an un-finalise (ticket 10): the one moment a judge holding an
+   * answer may read the run again rather than return it. Whether it does — whether the extent grew
+   * past the one its held reading was taken of — is the judge's to ask, in `./judge.ts`'s
+   * `owesReading`
+   */
+  readonly readAgain?: boolean;
 }
 
 /**
@@ -321,6 +334,19 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
    * `AFTER_FINALISE_MS` after it started, as the dead observer would have after its finalise.
    */
   let probing = inherited !== undefined;
+  /**
+   * Whether the run resumed since its last finalise (observer-debrief-defects ticket 10).
+   *
+   * Set by the un-finalise below — the run gained an own signal past the extent that finalise read
+   * — and handed to the next finalise's judge, whichever of the four finalisers that is, then
+   * cleared there: one reading per un-finalise, never one on the signal itself. Whether a reading
+   * is in fact owed — the extent past the one the held reading was taken of, whatever that reading
+   * came to — is asked in one place, the judge's `owesReading`, so a finalise of the same extent
+   * pays for nothing. Not written anywhere, because a finalise always follows it in this same
+   * process or the observer is gone — and a fresh one re-armed over a finalise asks the same of the
+   * answer it inherits.
+   */
+  let resumedSinceFinalise = false;
 
   // Written back verbatim while probing, so a probe that exits having found nothing leaves the
   // marker reading as the same finalise — and the next hook event can start another.
@@ -454,6 +480,7 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
           // better answer and a debrief nobody can find is worth less than an ugly directory name.
           force: heldSince !== undefined && now - heldSince >= RUN_PATIENCE_MS,
           probe: probing,
+          readAgain: resumedSinceFinalise,
         });
         consecutiveFailures = 0;
       } catch (error) {
@@ -468,6 +495,17 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
           const reason =
             `reading this run's records failed ${MOST_CONSECUTIVE_FAILURES} times in a row ` +
             `(${errorText(error)}), so the observer stopped`;
+          // A debrief already on disk and not final says so rather than standing as the run's last
+          // word (ticket 06). The error text stays out of it: it names paths on this machine.
+          if (written !== undefined && finalisedAt === undefined) {
+            await stopEarly(
+              options,
+              written,
+              `reading the session's records failed ${MOST_CONSECUTIVE_FAILURES} times in a ` +
+                `row, so the observer stopped`,
+            );
+            await mark(options, `${STOPPED_EARLY_STATE}${reason}`);
+          }
           await announce(options, { kind: "failure", reason });
           return { kind: "failed", reason };
         }
@@ -529,16 +567,39 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
             await sleep(TICK_MS);
             continue;
           }
+          // **A debrief that was not final says the observation stopped early** (ticket 06), at the
+          // last entry its last reading got to and why. It used to keep whatever flag its last
+          // reading gave it, and a reading taken between two stages looked as finished as any
+          // other (refine #1, #21 and #22). Re-rendered from that reading rather than read again,
+          // because the record is exactly what cannot be read. A finalised one earned its label
+          // and keeps it: the finalise had read the run, and only the watch for a resume is cut.
+          //
+          // Only for a record that could not be READ (`refused`), which is the one exit the spec's
+          // *Stopped early* names. A record read whole that holds no run, or none this observer may
+          // write yet (`no-run`, `held`), is not a reading cut short, and keeps its flag as before.
+          // The reason is the debrief's own words, never the reading's, which names the record by
+          // its path on this machine (ADR-0018).
+          const stoppedEarly = finalisedAt === undefined && outcome.kind === "refused";
+          if (stoppedEarly) {
+            await stopEarly(
+              options,
+              written,
+              `the session's record could not be read for ${formatDuration(RUN_PATIENCE_MS)}, so ` +
+                `the observer stopped`,
+            );
+          }
           // Announced as the debrief it is, because it is one: on disk, readable, and the last
-          // reading of this run there is ever going to be. What it cannot say is that the run
-          // finished, and it does not — it keeps whatever flag its last reading gave it.
+          // reading of this run there is ever going to be from this process.
           await announce(options, {
             kind: "debrief",
             debriefPath: written.written.debriefPath,
             headline: headlineOf(written),
             noCredential: nothingJudgedFor(written),
           });
-          await mark(options, `stopped watching — ${outcome.reason}`);
+          await mark(
+            options,
+            `${stoppedEarly ? STOPPED_EARLY_STATE : "stopped watching — "}${outcome.reason}`,
+          );
           return { kind: "debriefed", debriefPath: written.written.debriefPath };
         }
         // `refused` is a record nothing could read and `no-run` is one that holds no run YET. Both
@@ -576,6 +637,9 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
       dispatchesInRun = outcome.facts.dispatches.length;
 
       if (finalisedAt !== undefined && advanced && !finalisedBySignal) {
+        // The run resumed (ticket 10): its next finalise may read it again, which the judge
+        // settles against the reading it holds.
+        resumedSinceFinalise = true;
         // Reversible by construction (D23): the idle bound is a guess, and a run that turns out to
         // be alive gets its label back rather than a second debrief written beside the first.
         //
@@ -659,7 +723,10 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
         // second set of facts and a second write of both files, on the one tick of the run that is
         // already the most expensive there is, because the synthesis ran inside the reading above.
         if (!heldIsFinal) {
-          const final = await read(options, judge, { finalise: true }).catch(() => undefined);
+          const final = await read(options, judge, {
+            finalise: true,
+            readAgain: resumedSinceFinalise,
+          }).catch(() => undefined);
           if (final?.kind === "written") {
             written = final;
             lastFacts = final.facts;
@@ -668,6 +735,8 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
         }
         finalisedAt = Date.now();
         finalisedBySignal = signalled;
+        // Taken by the reading above where one was owed, and never owed twice for one resumption.
+        resumedSinceFinalise = false;
         await announce(options, {
           kind: "debrief",
           debriefPath: written.written.debriefPath,
@@ -715,7 +784,12 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
 async function read(
   options: ObserveOptions,
   judge: Judge,
-  how: { readonly finalise: boolean; readonly force?: boolean; readonly probe?: boolean },
+  how: {
+    readonly finalise: boolean;
+    readonly force?: boolean;
+    readonly probe?: boolean;
+    readonly readAgain?: boolean;
+  },
 ): Promise<DebriefOutcome> {
   return debriefRun({
     recordPath: options.recordPath,
@@ -731,12 +805,14 @@ async function read(
     // is what keeps an unnamed epic's reading off disk entirely, staged trace and all.
     write: refreshDebrief,
     observationLosses: options.startupLosses,
-    status: {
-      finalised: how.finalise,
-      note:
-        "It is being written by the observer the plugin started beside the run, which is still " +
-        "reading the host's own records for it.",
-    },
+    status: how.finalise
+      ? { state: "finalised" }
+      : {
+          state: "live",
+          note:
+            "It is being written by the observer the plugin started beside the run, which is " +
+            "still reading the host's own records for it.",
+        },
     // Held back until the run has named its epic. Where an observation lives is keyed by the
     // **slug**, and a run that has not yet created a task carries the stand-in — measured at 1m20s
     // into the delivery this was walked against — so without this gate every early reading would
@@ -753,7 +829,12 @@ async function read(
     // judges — so asking costs a reading of the records and never a model call.
     writeWhen: (trace) =>
       how.probe !== true && (trace.slugRead || how.finalise || how.force === true),
-    judging: (input) => judgeQuietly(judge, { ...input, finalising: how.finalise }),
+    judging: (input) =>
+      judgeQuietly(judge, {
+        ...input,
+        finalising: how.finalise,
+        readAgain: how.readAgain === true,
+      }),
   });
 }
 
@@ -834,7 +915,8 @@ function headlineOf(outcome: Extract<DebriefOutcome, { kind: "written" }>): stri
   const { facts, trace } = outcome;
   const spend = facts.spend.usd;
   return (
-    `${runSkills(facts, trace) || "a deliverer run"} · epic ${trace.slug} · ` +
+    // Both names of a renamed epic, as its debrief's own title gives them (ticket 05).
+    `${runSkills(facts, trace) || "a deliverer run"} · epic ${epicName(facts, trace)} · ` +
     `${formatDuration(facts.extent.durationMs)} · ` +
     `${spend === undefined ? "spend unknown" : `about $${spend.toFixed(2)}`} · ` +
     `${facts.dispatches.length} dispatches · ` +
@@ -864,6 +946,24 @@ async function announce(options: ObserveOptions, announcement: Announcement): Pr
   await writeAnnouncement(options.dataDirectory, options.sessionId, announcement).catch(
     () => undefined,
   );
+}
+
+/**
+ * Rewrites the debrief on disk as an observation that stopped early (ticket 06), from the reading
+ * that wrote it: the same trace, facts and judging, so nothing in it moves but its state.
+ *
+ * Swallowed like the announcement: a debrief that could not be rewritten still stands as it was,
+ * and the marker the caller leaves next is what lets the hook start an observer again.
+ */
+async function stopEarly(
+  options: ObserveOptions,
+  written: Extract<DebriefOutcome, { kind: "written" }>,
+  reason: string,
+): Promise<void> {
+  await refreshDebrief(options.dataDirectory, {
+    ...written.input,
+    status: stoppedEarlyAt(written.lastRead, reason),
+  }).catch(() => undefined);
 }
 
 async function mark(options: ObserveOptions, state: string): Promise<void> {

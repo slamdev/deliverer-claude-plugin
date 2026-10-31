@@ -29,7 +29,7 @@ import { join } from "node:path";
 import { NO_TOKENS, type TokenTotals } from "./records.ts";
 import { formatDuration, plural, tokenDetail, type Trace, type TraceDispatch } from "./trace.ts";
 import { observationDirectory, writeFileAtomically } from "./trace-file.ts";
-import { runSkills, type RunFacts, type RunRound } from "./run-facts.ts";
+import { epicName, runSkills, type RunFacts, type RunRound } from "./run-facts.ts";
 // The table's own wording, which the run's spend line and the observation's own cost line both rest
 // on: `./rates.ts` holds the rates, the date they were read and how they are stated, so this document
 // carries one account of them rather than two (the-observation-reports-the-whole-run ticket 06; D12).
@@ -170,6 +170,19 @@ export type Judging =
        * this case and carries none of the document's other wording. Nothing in the debrief reads it.
        */
       readonly noCredential?: true;
+      /**
+       * The extent a synthesis that came back unjudged was taken of (observer-debrief-defects
+       * ticket 10) — failed, unparsed or met no credential — so that a run resuming past it is read
+       * again exactly as one past a judged reading is. Absent where no synthesis was attempted.
+       * Nothing in the debrief reads it.
+       */
+      readonly readOf?: SynthesisExtent;
+      /**
+       * What came of that synthesis, as one clause completing "that reading …" — for the debrief
+       * that keeps an earlier judgement instead of this one (ticket 10), where `reason` above, the
+       * account of a run nothing judged, would be untrue. Bounded as `reason` is (ADR-0018).
+       */
+      readonly why?: string;
       readonly cost: ObservationCost;
       /** what the notes half did before it, where anything did (run-observation ticket 06) */
       readonly notes?: NotesSummary;
@@ -207,6 +220,25 @@ export type Judging =
       readonly judgedAgainst: JudgedTree;
       /** how much of the run the one synthesis actually held when it read (D23) */
       readonly readOf: SynthesisExtent;
+      /**
+       * The readings this one replaced, oldest first, each of a shorter extent
+       * (observer-debrief-defects ticket 10). A run that resumed after its debrief went final is
+       * read again at its next finalise, once per resumption, and the debrief says so rather than
+       * letting a reading of the longer extent pass for the only one there was. Absent on a run that
+       * never resumed, which is what keeps its debrief byte for byte what it was.
+       */
+      readonly replaced?: readonly SynthesisExtent[];
+      /**
+       * A reading of a longer extent taken after this one that came back unjudged, and what came
+       * of it (observer-debrief-defects ticket 10). It does not replace this one: the defects a
+       * human paid for stand, and the debrief says the re-reading failed and why (user story 7).
+       * Its spend is in `cost` with this reading's.
+       */
+      readonly failedReread?: {
+        readonly readOf: SynthesisExtent;
+        /** the unjudged reading's own `why` */
+        readonly why: string;
+      };
       /** the notes and the synthesis together, at both tiers (run-observation ticket 06) */
       readonly cost: ObservationCost;
       readonly notes?: NotesSummary;
@@ -237,11 +269,12 @@ export type Judging =
  * The run as it stood at the moment the one synthesis read it (run-observation D23).
  *
  * **Why an answer can be older than the debrief carrying it.** The synthesis runs once per run
- * (D9) and is then held, so a run finalised on the idle bound, resumed and finalised again is
- * described by a reading taken before it resumed. D23 lets that bound be a guess because getting
- * it wrong costs a label and never the content — and a debrief claiming a whole-run reading it did
- * not have costs the content. So the reading says how far it got instead, and neither a second
- * paid reading nor a silent lie is what the guess buys.
+ * (D9) and is then held, so a run finalised on the idle bound and resumed is described by a
+ * reading taken before it resumed — until its next finalise reads it again, once per resumption
+ * (observer-debrief-defects ticket 10). D23 lets that bound be a guess because getting it wrong
+ * costs a label and never the content — and a debrief claiming a whole-run reading it did not have
+ * costs the content. So the reading says how far it got instead, and no silent lie is what the
+ * guess buys.
  */
 export interface SynthesisExtent {
   /** the run's last entry it had, 1-based into the session's record, as the header prints them */
@@ -249,6 +282,12 @@ export interface SynthesisExtent {
   /** how many of the run's dispatches it had */
   readonly dispatches: number;
 }
+
+/** How far a judged reading read, and the readings around it that bear on that (ticket 10). */
+type ReadingExtents = Pick<
+  Extract<Judging, { kind: "judged" }>,
+  "readOf" | "replaced" | "failedReread"
+>;
 
 /**
  * What a live **observer** answers before the one synthesis has run.
@@ -359,10 +398,33 @@ export interface WrittenDebrief {
  * record on disk is a run that has stopped, so `undefined` means finalised and renders exactly
  * what ticket 03 rendered, byte for byte.
  */
-export interface DebriefStatus {
-  readonly finalised: boolean;
-  /** why it is not final yet, in the reader's words; unused once `finalised` */
-  readonly note: string;
+export type DebriefStatus =
+  | { readonly state: "finalised" }
+  | {
+      readonly state: "live";
+      /** why it is not final yet, in the reader's words */
+      readonly note: string;
+    }
+  | {
+      /**
+       * The observation stopped because a record could not be read, and this debrief is neither
+       * final nor live (observer-debrief-defects ticket 06): no observer is rewriting it, and the
+       * run it describes is not known to have stopped where it does. Without it an observer that
+       * gave up on an unreadable record left a file indistinguishable from a finished one —
+       * refine #1, #21 and #22 of the debriefs that spec was written from.
+       */
+      readonly state: "stopped early";
+      readonly stoppedEarly: StoppedEarly;
+    };
+
+/** Where an observation stopped early, and why (ticket 06). */
+export interface StoppedEarly {
+  /** the last entry of the session's own record that was read, 1-based as the extent counts */
+  readonly lastEntry: number;
+  /** that entry's own timestamp, where it carries one */
+  readonly lastEntryAt: string | undefined;
+  /** why nothing after it was read, in the reader's words */
+  readonly reason: string;
 }
 
 export interface DebriefInput {
@@ -517,7 +579,7 @@ export function renderIdentity(input: DebriefInput, ordinal: number): string {
     // used, and a half-written account presented as a finished one is the thing that must not
     // happen. Replay carries no status and is always `yes` — a record on disk is a run that
     // stopped.
-    `finalised: ${input.status === undefined || input.status.finalised ? "yes" : "no"}`,
+    `finalised: ${input.status === undefined || input.status.state === "finalised" ? "yes" : "no"}`,
   ];
   return `${lines.join("\n")}\n`;
 }
@@ -558,8 +620,11 @@ export function renderDebrief(input: DebriefInput): string {
   const { trace, facts, judging } = input;
   const skill = skillOf(input);
   const out: Document = { lines: [] };
+  // Headed by the name the epic ended with, and the one it is filed under beside it whenever the
+  // run renamed it, so a human can find it by either (observer-debrief-defects ticket 05).
+  const quote = (slug: string): string => `\`${slug}\``;
 
-  line(out, `# Deliverer debrief — \`${skill}\`, epic \`${trace.slug}\``);
+  line(out, `# Deliverer debrief — \`${skill}\`, epic ${epicName(facts, trace, { quote })}`);
   paragraph(out,
     "This is a **debrief** of one run of the deliverer plugin: what the plugin's own machinery " +
       "did, and what it cost. It is bounded to the plugin — its skills, its agents, its " +
@@ -578,7 +643,22 @@ export function renderDebrief(input: DebriefInput): string {
   // finalise signal, called a healthy run a defect, and wrote the conclusion up. The two runs
   // measured from signal to final write took 5m26s and ~7m23s, which is what "minutes" is grounded
   // on — the figure stays out of the prose because the number will move and the magnitude will not.
-  if (input.status !== undefined && !input.status.finalised) {
+  if (input.status?.state === "stopped early") {
+    // Ticket 06's state, in place of both of the others. It is said first and in bold for the same
+    // reason the live paragraph is: a partial reading forwarded as a final one is the harm, and the
+    // figures below look exactly as complete as a finished run's do.
+    const stopped = input.status.stoppedEarly;
+    paragraph(out,
+      `**The observation of this run stopped early, so this debrief is neither final nor live.** ` +
+        `It was last read at entry ${stopped.lastEntry} of the session's record` +
+        (stopped.lastEntryAt === undefined ? "" : ` (${stopped.lastEntryAt})`) +
+        `, and nothing after that entry is in it: ${stopped.reason}. Every figure below is the ` +
+        `run as far as that entry, and the run may well have gone on past it. Forwarding it is ` +
+        `safe — the bound below holds either way — but **it is a partial reading, not the whole ` +
+        `run**. A later reading that gets past that entry — an observer started again on the ` +
+        `session, or a replay of the record whole — is the one to forward instead.`,
+    );
+  } else if (input.status?.state === "live") {
     paragraph(out,
       `**This run is still going, so this debrief is not final.** ${input.status.note} Every ` +
         `figure below is the run as far as it has got, and this file is rewritten as each stage ` +
@@ -613,9 +693,13 @@ export function renderDebrief(input: DebriefInput): string {
   }
   bullet(out,
     "epic slug",
-    trace.slugRead
-      ? `\`${trace.slug}\``
-      : `\`${trace.slug}\` — a stand-in: no task update of this run carried one`,
+    !trace.slugRead
+      ? `\`${trace.slug}\` — a stand-in: no task update of this run carried one`
+      : epicName(facts, trace, {
+          quote,
+          renamed: (first) =>
+            ` — renamed during the run from ${first}, which is the name its files are kept under`,
+        }),
   );
   bullet(out, "wall clock", wallClockLine(facts));
   bullet(out, "dispatches", `${facts.dispatches.length} — ${dispatchTally(facts.dispatches)}`);
@@ -811,7 +895,7 @@ function defectsSection(out: Document, judging: Judging, facts: RunFacts): void 
       `beside it, or an earlier debrief of this epic. ` +
       `${found(judging.defectCount)} ` +
       `Read by ${askedFor(judging.model)}${servedClause(judging.servedBy)}, ` +
-      `${extentRead(judging.readOf, facts)}` +
+      `${extentRead(judging, facts)}` +
       (judging.notes === undefined || judging.notes.written === 0
         ? ""
         : `, together with the ${plural(judging.notes.written, "dispatch note", "dispatch notes")} ` +
@@ -823,6 +907,7 @@ function defectsSection(out: Document, judging: Judging, facts: RunFacts): void 
           `named above`) +
       `, against ${judging.judgedAgainst.line}`,
   );
+  failedRereadStatement(out, judging, facts);
   out.lines.push("", judging.defects, "");
 
   line(out, "## Hunches");
@@ -845,16 +930,72 @@ function defectsSection(out: Document, judging: Judging, facts: RunFacts): void 
  * defect has to know which of the two they are holding, and the figures are the header's own, so
  * they can see for themselves what was left out.
  */
-function extentRead(read: SynthesisExtent, facts: RunFacts): string {
+function extentRead(judging: ReadingExtents, facts: RunFacts): string {
+  const read = judging.readOf;
   if (read.lastEntry >= facts.extent.lastEntry && read.dispatches >= facts.dispatches.length) {
-    return "over the whole run in one reading";
+    return `over the whole run in one reading${readingsReplaced(judging, facts, true)}`;
   }
   return (
     `in one reading of the run **as far as it had got by then** — entries ` +
     `${facts.extent.firstEntry}–${read.lastEntry} of ${facts.extent.lastEntry} and ` +
-    `${read.dispatches} of its ${facts.dispatches.length} dispatches. The run had gone quiet long ` +
-    `enough to be taken for over, and it resumed after this reading: there is one reading per run ` +
-    `and it was not made again, so nothing has judged what the run did after that entry`
+    `${read.dispatches} of its ${facts.dispatches.length} dispatches` +
+    `${readingsReplaced(judging, facts, false)}. The run had gone quiet long ` +
+    `enough to be taken for over, and it resumed after this reading` +
+    // Where the reading that was to replace this one came back unjudged, the statement after this
+    // paragraph says so, and "that reading replaces this one" would be untrue.
+    (judging.failedReread !== undefined
+      ? ""
+      : `, so nothing has judged what the run did after that entry yet: a run that resumes is ` +
+        `read again at its next finalise, and that reading replaces this one`)
+  );
+}
+
+/**
+ * The readings a later one replaced, named by their extents (observer-debrief-defects ticket 10).
+ *
+ * Empty for a run that never resumed, so its paragraph reads as it always has. Where the run did
+ * resume, the reading above is not the first there was, and a human choosing which debrief to
+ * forward is owed how far each earlier one got: a debrief forwarded before the resumption carries
+ * one of these. The extent of the reading itself is named here only where the sentence around it
+ * has not named it already.
+ */
+function readingsReplaced(judging: ReadingExtents, facts: RunFacts, naming: boolean): string {
+  const { readOf, replaced } = judging;
+  if (replaced === undefined || replaced.length === 0) return "";
+  const extent = (it: SynthesisExtent): string =>
+    `entries ${facts.extent.firstEntry}–${it.lastEntry} and ${it.dispatches} dispatches`;
+  const earlier = replaced.map(extent);
+  return (
+    ` (${naming ? `${extent(readOf)}, ` : ""}taken again after the run resumed, which replaced ` +
+    (earlier.length === 1
+      ? `an earlier reading of a shorter extent, ${earlier.join("")})`
+      : `${earlier.length} earlier readings of shorter extents, one per resumption: ` +
+        `${earlier.join("; ")})`)
+  );
+}
+
+/**
+ * The one statement a debrief makes where the run was read again after it resumed and that reading
+ * came back unjudged (observer-debrief-defects ticket 10; user story 7, "nor lose what I paid
+ * for").
+ *
+ * The earlier judgement stays — its defects are what the human paid for, and a failed reading of
+ * the longer extent judged nothing that could take their place — and this says, once, that the
+ * longer extent was read again and what came of it. `why` is the unjudged reading's own clause,
+ * bounded as its account of a run nothing judged would have been: it quotes nothing an unparsed
+ * answer carried, which is in the notes file (ADR-0018). Nothing for any other debrief.
+ */
+function failedRereadStatement(out: Document, judging: ReadingExtents, facts: RunFacts): void {
+  const failed = judging.failedReread;
+  if (failed === undefined) return;
+  paragraph(out,
+    `**A later reading did not replace this one.** The run resumed past it and was read again ` +
+      `at its next finalise, over entries ${facts.extent.firstEntry}–${failed.readOf.lastEntry} ` +
+      `and ${plural(failed.readOf.dispatches, "dispatch", "dispatches")}, and that reading ` +
+      `${failed.why}. So the defects below are still the earlier reading's, of entries ` +
+      `${facts.extent.firstEntry}–${judging.readOf.lastEntry}, and nothing has judged what the ` +
+      `run did after entry ${judging.readOf.lastEntry}. The spend of both readings is counted in ` +
+      `what this observation cost, above.`,
   );
 }
 
@@ -1164,10 +1305,17 @@ function tiers(judging: Judging): string {
       ? undefined
       : `${plural(judging.notes.attempted, "dispatch note", "dispatch notes")} on ` +
         `\`${judging.notes.model}\``;
+  // A run read again after it resumed paid for every reading, the replaced and the failed ones
+  // with this one (observer-debrief-defects ticket 10), so "one synthesis" is said only of a run
+  // that never resumed, which keeps its debrief byte for byte what it was.
+  const readings =
+    judging.kind === "judged"
+      ? 1 + (judging.replaced?.length ?? 0) + (judging.failedReread === undefined ? 0 : 1)
+      : 0;
   const synthesis =
     judging.kind === "judged"
-      ? `one synthesis over the whole run on ${askedFor(judging.model)}` +
-        servedClause(judging.servedBy)
+      ? `${readings === 1 ? "one synthesis" : `${readings} syntheses`} over the whole run on ` +
+        `${askedFor(judging.model)}${servedClause(judging.servedBy)}`
       : "no synthesis: nothing read the whole run";
   return notes === undefined ? synthesis : `${notes}, and ${synthesis}`;
 }

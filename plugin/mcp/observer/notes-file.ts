@@ -5,7 +5,9 @@
  * **One file per run, beside the trace, appended as each dispatch lands.** Appended rather than
  * rewritten, because that is the whole of what makes writing early worth anything: a terminal
  * killed halfway through a delivery keeps every note already written, and the one synthesis at the
- * end has one file to read rather than thirteen.
+ * end has one file to read rather than thirteen. **The one exception is a put-back**
+ * (observer-debrief-defects ticket 08): a continued dispatch keeps its one note, rewritten in place
+ * once the continue returns, so the synthesis never reads a first attempt's state as the stage's.
  *
  * **It refuses forwarding in the two places the trace does** — its file name, which is what
  * somebody attaching a file reads, and its own first line, which is what somebody opening it reads.
@@ -19,7 +21,7 @@
  * and nothing already on disk is rewritten, appended to or removed. The live **observer** is the
  * one writer that comes back to a file it started, and it comes back to its own.
  */
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Trace, TraceDispatch } from "./trace.ts";
 import { observationDirectory } from "./trace-file.ts";
@@ -55,7 +57,7 @@ const MOST_REPLAYS = 200;
 const NOTE_MARKER = "== note ";
 
 /**
- * A run's notes file, open for appending.
+ * A run's notes file, open for appending — and for rewriting one note in place.
  *
  * `alreadyNoted` is what keeps an observer that was restarted mid-run from paying for the same
  * dispatch twice. It is empty for a replay by construction: a replay opens a file of its own.
@@ -63,9 +65,19 @@ const NOTE_MARKER = "== note ";
 export interface NotesFile {
   readonly path: string;
   readonly ordinal: number;
-  /** the keys of the notes this file already holds — `keyOf` below builds one */
-  readonly alreadyNoted: ReadonlySet<string>;
+  /**
+   * The keys of the notes this file already holds — `keyOf` below builds one — each with how many
+   * entries of its dispatch's record that note read, so a re-armed observer rewrites a note only
+   * when the record has grown past it (observer-debrief-defects ticket 08). A note that states no
+   * count was written before any continue, and reads as 0: whatever a continue appended is past it.
+   */
+  readonly alreadyNoted: ReadonlyMap<string, number>;
   append: (text: string) => Promise<void>;
+  /**
+   * Puts `text` where the note keyed `key` stands, leaving every other entry where it was — the
+   * unparsed synthesis answer ticket 04 appends after the notes included (ticket 08).
+   */
+  rewrite: (key: string, text: string) => Promise<void>;
 }
 
 /**
@@ -113,7 +125,7 @@ export async function openNotes(
       if (isAlreadyThere(error)) continue;
       throw error;
     }
-    return appender(path, ordinal, new Set());
+    return appender(path, ordinal, new Map());
   }
   throw new Error(
     `${directory} already holds ${MOST_REPLAYS} sets of notes for this run, and nothing here ` +
@@ -121,7 +133,7 @@ export async function openNotes(
   );
 }
 
-function appender(path: string, ordinal: number, alreadyNoted: Set<string>): NotesFile {
+function appender(path: string, ordinal: number, alreadyNoted: Map<string, number>): NotesFile {
   return {
     path,
     ordinal,
@@ -131,6 +143,20 @@ function appender(path: string, ordinal: number, alreadyNoted: Set<string>): Not
     // half-written would be a document a human reads. `./trace-file.ts` explains the other choice.
     append: async (text) => {
       await writeFile(path, text, { encoding: "utf8", flag: "a" });
+    },
+    // Staged and renamed, unlike `append`: a rewrite replaces what the file already held, so one
+    // caught halfway would cost every note after this one rather than this one alone.
+    rewrite: async (key, text) => {
+      const held = await readFile(path, "utf8");
+      const start = held.indexOf(`\n${NOTE_MARKER}${key} ==\n`);
+      if (start === -1) throw new Error(`${path} holds no note for ${key} to rewrite`);
+      const next = [`\n${NOTE_MARKER}`, `\n${UNPARSED_MARKER}`]
+        .map((marker) => held.indexOf(marker, start + 1))
+        .filter((at) => at !== -1);
+      const end = next.length === 0 ? held.length : Math.min(...next);
+      const staged = `${path}.rewrite`;
+      await writeFile(staged, `${held.slice(0, start)}${text}${held.slice(end)}`, "utf8");
+      await rename(staged, path);
     },
   };
 }
@@ -162,6 +188,58 @@ export function renderNote(input: {
     row("ended", dispatch.endedAt ?? "unknown"),
     row("record", dispatch.recordPath ?? "none — this dispatch left no record beside the run's"),
     row("outcome", outcomeOf(dispatch)),
+    // What this note covers, stated by code (observer-debrief-defects ticket 08): a **put-back**
+    // appends to the record this note read, so the note is rewritten when one returns, and
+    // `notedIn` reads the entry count back so a re-armed observer can tell whether it has to be.
+    // Only on a continued dispatch, so a run with no put-back writes — and its synthesis reads —
+    // the notes it did. A note without them was written before any continue, which is all
+    // `notedIn` needs to know of it.
+    ...(dispatch.continues === 0
+      ? []
+      : [
+          row(
+            "continues",
+            `${dispatch.continues} — this note covers the first attempt and every continue after it`,
+          ),
+          row(
+            READ_TO_LABEL,
+            `entry ${dispatch.entryCount} of its record` +
+              (dispatch.lastEntryAt === undefined ? "" : `, at ${dispatch.lastEntryAt}`),
+          ),
+        ]),
+    row("read by", input.readBy),
+    "",
+    input.body.trim(),
+    "",
+  ];
+  return `\n${rows.join("\n")}\n`;
+}
+
+/** The heading the unparsed synthesis answer goes under — deliberately not `NOTE_MARKER`'s. */
+const UNPARSED_MARKER = "== the synthesis answer, unparsed ==";
+
+/**
+ * A synthesis answer that came back in the wrong shape, as it goes into the file
+ * (observer-debrief-defects ticket 04; the spec's *The unparsed reading*).
+ *
+ * **Kept here because this is the one file beside the debrief that may hold it.** The reading was
+ * paid for, and a maintainer holding the machine can still read it; but it could not be split into
+ * defects and hunches, so nothing can tell which of its lines the synthesis meant as a finding, and
+ * nothing holds it to ADR-0018's bound either. The debrief says it went unjudged and points here.
+ *
+ * **Under a heading of its own, and never `NOTE_MARKER`'s**: `notedIn` reads that marker back as a
+ * dispatch already noted, and this answer is no dispatch's. It lands after the dispatch notes
+ * because the finalise notes every dispatch before the synthesis runs.
+ */
+export function renderUnparsed(input: {
+  readonly why: string;
+  readonly readBy: string;
+  readonly body: string;
+}): string {
+  const rows = [
+    UNPARSED_MARKER,
+    row("what", "the one synthesis over this run, which came back in no shape it could be split on"),
+    row("why unread", input.why),
     row("read by", input.readBy),
     "",
     input.body.trim(),
@@ -210,16 +288,36 @@ export function outcomeOf(dispatch: TraceDispatch): string {
   return `the host reported \`${dispatch.status ?? "no status"}\`, which is its claim and not a reading`;
 }
 
-/** The keys a notes file already holds, so an observer that restarted pays for none of them twice. */
-function notedIn(text: string): Set<string> {
-  const keys = new Set<string>();
+/**
+ * The keys a notes file already holds, and how far each note read, so an observer that restarted
+ * pays for none of them twice — and rewrites one only when its record has grown since (ticket 08).
+ */
+function notedIn(text: string): Map<string, number> {
+  const keys = new Map<string, number>();
+  let current: string | undefined;
   for (const line of text.split("\n")) {
-    if (!line.startsWith(NOTE_MARKER)) continue;
-    const key = line.slice(NOTE_MARKER.length).replace(/\s*==\s*$/, "").trim();
-    if (key !== "") keys.add(key);
+    if (line.startsWith(NOTE_MARKER)) {
+      const key = line.slice(NOTE_MARKER.length).replace(/\s*==\s*$/, "").trim();
+      current = key === "" ? undefined : key;
+      if (current !== undefined) keys.set(current, 0);
+      continue;
+    }
+    if (line.startsWith("== ")) current = undefined;
+    const readTo = READ_TO.exec(line);
+    if (current !== undefined && readTo?.[1] !== undefined) {
+      keys.set(current, Number(readTo[1]));
+      current = undefined;
+    }
   }
   return keys;
 }
+
+/**
+ * The `read to` row `renderNote` writes, as `notedIn` reads it back — built by `row` itself, so the
+ * label's padding the reader expects is the padding the writer gives and the two cannot drift.
+ */
+const READ_TO_LABEL = "read to";
+const READ_TO = new RegExp(`^${row(READ_TO_LABEL, "entry ")}(\\d+) of its record`);
 
 /** This run's notes as the synthesis reads them, or `undefined` where none were written. */
 export async function readNotes(path: string): Promise<string | undefined> {

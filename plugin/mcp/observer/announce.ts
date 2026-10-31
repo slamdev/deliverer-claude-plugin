@@ -271,8 +271,11 @@ export function hookOutput(systemMessage: string): string {
 /**
  * What the observer records about itself, for a human reading the data directory and for the hook.
  *
- * **The shell half reads one thing out of it: whether `state` says the observer finalised**
- * (idp-scaffold-defects ticket 02). Every finalise writes `finalised — <why>`, and the hook re-arms
+ * **The shell half reads one thing out of it: what `state` begins with** — whether the observer
+ * finalised (idp-scaffold-defects ticket 02), or stopped early (`STOPPED_EARLY_STATE`). The hook
+ * matches those two prefixes as literals in `../../hooks/observe-run.sh`'s `marker_state_begins`,
+ * so **a prefix changed here is changed there too**, or the hook silently stops re-arming on it.
+ * Every finalise writes `finalised — <why>`, and the hook re-arms
  * a stopped observer on any of those that left a final reading beside it — `SESSION_ENDED_STATE`
  * included, since `--resume` brings a session back after its end (PR #18 review) — so a further
  * finaliser joins by writing a `finalised — ` state of its own, and nothing in the hook changes.
@@ -293,6 +296,16 @@ export interface MarkerState {
  * a session's id and record across its end (PR #18 review). It is re-armed now like any other.
  */
 export const SESSION_ENDED_STATE = "finalised — the session ended";
+
+/**
+ * The prefix of the state an observer leaves when it stopped because a record could not be read
+ * and its debrief says so (observer-debrief-defects ticket 06). Not a `finalised — ` state, because
+ * nothing was finalised: the hook re-arms on it on its own terms, with no final reading beside it,
+ * and the fresh observer replaces the debrief as it would any other that is not final.
+ *
+ * The hook's `stopped_early` spells this same prefix as a literal: change both or neither.
+ */
+export const STOPPED_EARLY_STATE = "stopped early — ";
 
 export async function writeMarker(dataDirectory: string, marker: MarkerState): Promise<void> {
   await mkdir(sessionsDirectory(dataDirectory), { recursive: true });

@@ -38,15 +38,16 @@
  */
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { readDispatchRecords, readRecordFile } from "./records.ts";
+import { readDispatchRecords, readRecordFile, stringField, type RecordFile } from "./records.ts";
 import { formatDuration, type Trace } from "./trace.ts";
 import { DATA_DIRECTORY_ENV, distil } from "./distil.ts";
 import { resolvePluginCommit } from "./plugin-commit.ts";
 import { synthesisJudge } from "./judge.ts";
-import { runFactsOf, runSkills, type RunFacts } from "./run-facts.ts";
+import { epicName, runFactsOf, runSkills, type RunFacts } from "./run-facts.ts";
 import {
   NOTHING_JUDGED,
   writeDebrief,
+  type DebriefInput,
   type DebriefStatus,
   type DebriefWriter,
   type Judging,
@@ -63,6 +64,14 @@ export type DebriefOutcome =
       readonly written: WrittenDebrief;
       /** what the judging half contributed, so a caller can report it without re-reading the file */
       readonly judging: Judging;
+      /**
+       * What this debrief was rendered from, and how far into the session's record that reading
+       * got (observer-debrief-defects ticket 06). The live observer re-renders the debrief it
+       * already has from these when the record stops being readable — there is no record left to
+       * read it again from — so that the file says the observation stopped early, at which entry.
+       */
+      readonly input: DebriefInput;
+      readonly lastRead: LastEntryRead;
     }
   /** the record holds no deliverer run, so there is no trace and no debrief — an answer, not a
    *  failure */
@@ -90,6 +99,12 @@ export type DebriefOutcome =
     }
   /** nothing could be read, or there is nowhere to write */
   | { readonly kind: "refused"; readonly reason: string };
+
+/** The last entry of the session's own record a reading got to, 1-based as the extent counts. */
+export interface LastEntryRead {
+  readonly entry: number;
+  readonly at: string | undefined;
+}
 
 /** What a judge is handed: the whole run, mechanically read, and nothing else. */
 export interface JudgingInput {
@@ -170,7 +185,8 @@ export async function debriefRun(options: DebriefOptions): Promise<DebriefOutcom
   const { staged } = distilled;
 
   try {
-    const facts = await factsOf(options, distilled.trace);
+    const record = await readRecordFile(options.recordPath);
+    const facts = await factsOf(options, distilled.trace, record);
     const commit = await resolvePluginCommit({
       inRecords: facts.commitInRecords,
       dataDirectory: options.dataDirectory,
@@ -178,15 +194,17 @@ export async function debriefRun(options: DebriefOptions): Promise<DebriefOutcom
     const source = options.judging ?? NOTHING_JUDGED;
     const judging =
       typeof source === "function" ? await source({ trace: distilled.trace, facts }) : source;
-    const written = await (options.write ?? writeDebrief)(options.dataDirectory, {
+    const lastRead = lastEntryRead(record);
+    const input: DebriefInput = {
       trace: distilled.trace,
       facts,
       commit,
       judging,
       tracePath: staged.path,
-      status: options.status,
+      status: options.status ?? stoppedEarlyIn(record, lastRead),
       observationLosses: options.observationLosses,
-    });
+    };
+    const written = await (options.write ?? writeDebrief)(options.dataDirectory, input);
     // The debrief and its identity file are on disk, so the trace may be. Last, and only here: the
     // writers above are the ones that put a pair together — `writeDebrief` removes its own debrief
     // where the identity file could not follow it — so nothing before this line is a pair yet.
@@ -198,6 +216,8 @@ export async function debriefRun(options: DebriefOptions): Promise<DebriefOutcom
       tracePath: staged.path,
       written,
       judging,
+      input,
+      lastRead,
     };
   } catch (error) {
     // Whatever went wrong between the two writes, the pair already on disk is untouched and this
@@ -219,10 +239,48 @@ export async function debriefRun(options: DebriefOptions): Promise<DebriefOutcom
  * One function for both paths, because a reading held off disk answers with the same facts a written
  * one does (ticket 03; D5) and two ways of building them would let the two disagree about the run.
  */
-async function factsOf(options: DebriefOptions, trace: Trace): Promise<RunFacts> {
-  const record = await readRecordFile(options.recordPath);
+async function factsOf(
+  options: DebriefOptions,
+  trace: Trace,
+  read?: RecordFile,
+): Promise<RunFacts> {
+  // Handed in where the caller needs the record itself as well (ticket 06), so that the facts and
+  // the entry the reading stopped at are of one read rather than two of a file still growing.
+  const record = read ?? (await readRecordFile(options.recordPath));
   const dispatched = await readDispatchRecords(options.recordPath);
   return runFactsOf({ record, dispatchRecords: dispatched.records, trace });
+}
+
+function lastEntryRead(record: RecordFile): LastEntryRead {
+  const last = record.entries.at(-1);
+  return { entry: record.entries.length, at: stringField(last, "timestamp") };
+}
+
+/**
+ * Replay's own "stopped early" (observer-debrief-defects ticket 06): a record that ENDS inside a
+ * line is a reading that stopped there, which is what a copy taken mid-write, or a record whose
+ * writer died, looks like. Replay carries no status otherwise — a record on disk is a run that
+ * stopped — and that is why this applies only where the caller gave none: the live observer reads
+ * records the host is still writing, whose tail is mid-line on any tick, and decides its own state.
+ * An intact record ends in a newline and gets `undefined`, which renders as it always did.
+ */
+function stoppedEarlyIn(record: RecordFile, lastRead: LastEntryRead): DebriefStatus | undefined {
+  if (record.cutAt === undefined) return undefined;
+  return stoppedEarlyAt(
+    lastRead,
+    `the record ends partway through line ${record.cutAt}, which could not be read`,
+  );
+}
+
+/**
+ * The status of a debrief whose observation stopped early at `lastRead`, and why (ticket 06) — the
+ * one builder for both the replay's case above and the live observer's.
+ */
+export function stoppedEarlyAt(lastRead: LastEntryRead, reason: string): DebriefStatus {
+  return {
+    state: "stopped early",
+    stoppedEarly: { lastEntry: lastRead.entry, lastEntryAt: lastRead.at, reason },
+  };
 }
 
 /** What the judging half did, for the line the command prints. */
@@ -295,7 +353,8 @@ export function summariseDebrief(outcome: Extract<DebriefOutcome, { kind: "writt
   const { facts, trace } = outcome;
   const spend = facts.spend.usd;
   return (
-    `${runSkills(facts, trace) || "unknown skill"} · slug ${trace.slug} · ` +
+    // Both names of a renamed epic, as its debrief's own title gives them (ticket 05).
+    `${runSkills(facts, trace) || "unknown skill"} · slug ${epicName(facts, trace)} · ` +
     `${formatDuration(facts.extent.durationMs)} · ` +
     `${spend === undefined ? "spend unknown" : `about $${spend.toFixed(2)}`} · ` +
     `${facts.dispatches.length} dispatches · ` +
@@ -391,6 +450,11 @@ async function main(argv: readonly string[]): Promise<number> {
   process.stdout.write(
     `${outcome.written.debriefPath}\n  ${summariseDebrief(outcome)}\n` +
       `  ${judgingLine(outcome)}\n` +
+      // Only where it applies, so an intact record's output is what it always was (ticket 06).
+      (outcome.input.status?.state !== "stopped early"
+        ? ""
+        : `  observation stopped early: last read at entry ` +
+          `${outcome.input.status.stoppedEarly.lastEntry}, so this debrief is not final\n`) +
       `  trace ${outcome.tracePath}\n` +
       `  identity ${outcome.written.identityPath} (never forwarded)\n` +
       (outcome.written.ordinal === 1

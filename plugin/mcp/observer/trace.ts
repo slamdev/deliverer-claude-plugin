@@ -202,6 +202,28 @@ export interface TraceDispatch {
    */
   readonly reportInFull: string;
   readonly lines: readonly TraceLine[];
+  /**
+   * How many times the **orchestrator** continued this dispatch's agent with `SendMessage` — a
+   * **put-back** — counted off its own record (observer-debrief-defects ticket 08).
+   *
+   * **The record, because that is where a continue lands.** Ticket 01 read all 73 continues to a
+   * `deliverer:*` agent on this machine: every one APPENDS to the agent's existing record, opening
+   * with a `user` entry whose `origin.kind` is `coordinator`, and none starts a record of its own.
+   * So one dispatch's record can hold several attempts, and its tokens were always summed over all
+   * of them.
+   */
+  readonly continues: number;
+  /**
+   * How many of those continues have RETURNED, by the notifications the run's own record carries.
+   *
+   * A continue's finish is a `<task-notification>` naming this agent's id under `<task-id>` and the
+   * `SendMessage` call's id under `<tool-use-id>` — never the `Agent` call's, so `finished` above
+   * says nothing about it (ticket 01). The dispatch note is rewritten once this reaches
+   * `continues`, which is the moment the stage's last attempt is over.
+   */
+  readonly continuesReturned: number;
+  /** the last timestamp in this dispatch's own record, which a continue moves */
+  readonly lastEntryAt: string | undefined;
 }
 
 export interface TraceCounts {
@@ -221,6 +243,17 @@ export interface TraceCounts {
 /** The stand-in a run that created no task is keyed by. Never a guess at what the slug was. */
 export const UNKNOWN_SLUG = "unknown-slug";
 
+/**
+ * The slug a task subject opens with, or `undefined` where it opens with none. Both skills write
+ * `<slug>: implement every ticket (4/21)`; nothing past the colon is ever read here (ADR-0018).
+ * One reading for the trace's key and the run facts' last slug, so the two can never disagree on
+ * what counts as one.
+ */
+export function slugIn(subject: string | undefined): string | undefined {
+  if (subject === undefined) return undefined;
+  return /^([A-Za-z0-9][A-Za-z0-9._-]*):\s/.exec(subject)?.[1];
+}
+
 /** The stand-in for a record with no timestamped entry at all. */
 export const UNKNOWN_STAMP = "unknown-start";
 
@@ -229,9 +262,21 @@ export interface Trace {
   readonly sessionId: string | undefined;
   /** the plugin skills that produced entries here, in first-seen order */
   readonly skills: readonly string[];
+  /**
+   * The run's KEY: the first task update's slug, which names the observation directory, the
+   * identity file and every later run's lookup of this one. Never moved by a rename.
+   */
   readonly slug: string;
   /** false when no task update carried one, and `slug` is therefore the stand-in */
   readonly slugRead: boolean;
+  /**
+   * The last task update's slug in the whole record, and `slug` itself where none ever differed
+   * (observer-debrief-defects ticket 05). A renamed epic's debrief carried the name it was opened
+   * under and no other (refine #9), so a human looking for it by the name it ended with found
+   * nothing. It is carried and printed, never keyed by: the debrief's headline reads the RUN's
+   * last, `RunFacts.lastSlug`, because a record can go on past the run into another epic's tasks.
+   */
+  readonly lastSlug: string;
   readonly startedAt: string | undefined;
   readonly endedAt: string | undefined;
   readonly durationMs: number | undefined;
@@ -382,6 +427,9 @@ export function buildTrace(input: DistilInput): Trace {
   // own outcome on the line that raised them.
   const resultsByToolUse = new Map<string, { entry: JsonObject; block: JsonObject }>();
   const notificationsByToolUse = new Map<string, JsonObject>();
+  // Which notifications name each agent, by the tool-use id they carry: a continue's finish carries
+  // the `SendMessage`'s id rather than the dispatch's own (ticket 08, on ticket 01's reading).
+  const notifiedByAgent = new Map<string, Set<string>>();
   for (const entry of own) {
     const type = stringField(entry, "type");
     if (type === "user") {
@@ -400,6 +448,11 @@ export function buildTrace(input: DistilInput): Trace {
       const id = content === undefined ? null : /<tool-use-id>([^<]+)<\/tool-use-id>/.exec(content);
       if (id?.[1] !== undefined && !notificationsByToolUse.has(id[1])) {
         notificationsByToolUse.set(id[1], entry);
+      }
+      const agent = content === undefined ? null : /<task-id>([^<]+)<\/task-id>/.exec(content);
+      if (id?.[1] !== undefined && agent?.[1] !== undefined) {
+        const seen = notifiedByAgent.get(agent[1]) ?? new Set<string>();
+        notifiedByAgent.set(agent[1], seen.add(id[1]));
       }
     }
   }
@@ -422,6 +475,7 @@ export function buildTrace(input: DistilInput): Trace {
   let taskUpdates = 0;
   let toolCalls = 0;
   let slug: string | undefined;
+  let lastSlug: string | undefined;
 
   for (const entry of own) {
     const at = stringField(entry, "timestamp");
@@ -451,6 +505,7 @@ export function buildTrace(input: DistilInput): Trace {
               result: toolUseId === undefined ? undefined : resultsByToolUse.get(toolUseId),
               notification:
                 toolUseId === undefined ? undefined : notificationsByToolUse.get(toolUseId),
+              notifiedByAgent,
               cap,
               elision,
               losses,
@@ -518,10 +573,12 @@ export function buildTrace(input: DistilInput): Trace {
             const subject = stringField(toolInput, "subject");
             // The slug: both skills prefix every task subject with it — `<slug>: implement every
             // ticket (4/21)`. Checked against all eight runs on disk, refinements and deliveries
-            // alike. The FIRST subject that carries one wins, so a later task cannot move the key.
-            if (slug === undefined && subject !== undefined) {
-              const prefix = /^([A-Za-z0-9][A-Za-z0-9._-]*):\s/.exec(subject);
-              if (prefix?.[1] !== undefined) slug = prefix[1];
+            // alike. The FIRST subject that carries one wins, so a later task cannot move the key;
+            // the last is kept beside it for the headline alone (ticket 05).
+            const named = slugIn(subject);
+            if (named !== undefined) {
+              slug ??= named;
+              lastSlug = named;
             }
             lines.push({
               at,
@@ -606,6 +663,7 @@ export function buildTrace(input: DistilInput): Trace {
       record,
       result: undefined,
       notification: undefined,
+      notifiedByAgent,
       cap,
       elision,
       losses,
@@ -652,6 +710,7 @@ export function buildTrace(input: DistilInput): Trace {
     skills: attributionOf(own),
     slug: slug ?? UNKNOWN_SLUG,
     slugRead: slug !== undefined,
+    lastSlug: lastSlug ?? UNKNOWN_SLUG,
     startedAt,
     endedAt,
     durationMs: elapsed(startedAt, endedAt),
@@ -748,6 +807,7 @@ interface DispatchInput {
   readonly record: DispatchRecord | undefined;
   readonly result: { entry: JsonObject; block: JsonObject } | undefined;
   readonly notification: JsonObject | undefined;
+  readonly notifiedByAgent: ReadonlyMap<string, ReadonlySet<string>>;
   readonly cap: number;
   readonly elision: Elision;
   readonly losses: string[];
@@ -870,6 +930,16 @@ function buildDispatch(input: DispatchInput): TraceDispatch {
 
   const stamps = entries.map((entry) => stringField(entry, "timestamp")).filter(isString);
   const lastEntryAt = stamps.slice().sort().at(-1);
+  const agentId = input.record?.agentId ?? stringField(outcome, "agentId");
+  const continues = entries.filter(
+    (entry) =>
+      stringField(entry, "type") === "user" &&
+      stringField(objectField(entry, "origin"), "kind") === "coordinator",
+  ).length;
+  // Every notification naming this agent but the dispatch's own: a background dispatch's finish
+  // names the `Agent` call, and that is its first return rather than a continue's.
+  const returned = [...(agentId === undefined ? [] : (input.notifiedByAgent.get(agentId) ?? []))];
+  const continuesReturned = returned.filter((id) => id !== input.toolUseId).length;
   return {
     ordinal: input.ordinal,
     agentType:
@@ -883,11 +953,28 @@ function buildDispatch(input: DispatchInput): TraceDispatch {
       stringField(outcome, "description") ??
       "",
     toolUseId: input.toolUseId,
-    agentId: input.record?.agentId ?? stringField(outcome, "agentId"),
+    agentId,
     recordPath: input.record?.file.path,
     startedAt: input.at ?? stamps[0],
     endedAt: endedAt ?? lastEntryAt,
-    durationMs: reportedDuration ?? elapsed(input.at ?? stamps[0], endedAt ?? lastEntryAt),
+    // A continued dispatch's time is its working time — the first attempt plus every continue's own
+    // span — so it covers the same work its tokens always did (observer-debrief-defects ticket 08;
+    // the spec's *The replaced note*). The host's `totalDurationMs` is the FIRST attempt's alone and
+    // would name the put-back's minutes nowhere.
+    //
+    // **Never the span to the record's last entry.** That was the spec's first wording, and the
+    // ticket 03 judged replay's build record showed what it costs: a change-request-creator that
+    // worked 3m24s, sat idle 1h37m until the human was done, then was put back for 54s, read
+    // 1h41m — the slow stage named was the idle one, which is what user story 3 exists to stop.
+    //
+    // **Only a continued one.** Taken for every dispatch, the record's end differs from the host's
+    // own figure by a second on dispatches that were never continued — measured across the eight
+    // put-back-free deliveries on this machine, five of them moved — and a run with no put-back has
+    // to replay byte for byte as it did.
+    durationMs:
+      continues > 0
+        ? workingTime(entries, input.at ?? stamps[0], reportedDuration)
+        : (reportedDuration ?? elapsed(input.at ?? stamps[0], endedAt ?? lastEntryAt)),
     status: background
       ? (statusOfNotification(input.notification) ??
         "launched in the background, with no completion recorded in this record")
@@ -921,7 +1008,45 @@ function buildDispatch(input: DispatchInput): TraceDispatch {
     reportInFull:
       input.result === undefined || background ? lastSaid : collapse(input.result.block["content"]),
     lines,
+    continues,
+    continuesReturned,
+    lastEntryAt,
   };
+}
+
+/**
+ * A continued dispatch's working time: its first attempt, then each continue from the
+ * `coordinator` entry that opens it to the last entry before the next (observer-debrief-defects
+ * ticket 08).
+ *
+ * The gaps between attempts are left out, since the agent did nothing in them. The first attempt
+ * takes the host's own `totalDurationMs` where the result carries one. That is the figure an
+ * uncontinued dispatch reports, so the put-back's minutes are added to it rather than to a second
+ * measure of the same attempt.
+ */
+function workingTime(
+  entries: readonly JsonObject[],
+  startedAt: string | undefined,
+  firstAttempt: number | undefined,
+): number | undefined {
+  const spans: { from: string | undefined; to: string | undefined }[] = [
+    { from: startedAt, to: undefined },
+  ];
+  for (const entry of entries) {
+    const at = stringField(entry, "timestamp");
+    const opensContinue =
+      stringField(entry, "type") === "user" &&
+      stringField(objectField(entry, "origin"), "kind") === "coordinator";
+    if (opensContinue) spans.push({ from: at, to: at });
+    else if (at !== undefined) spans[spans.length - 1]!.to = at;
+  }
+  let total = 0;
+  for (const [index, span] of spans.entries()) {
+    const ms = index === 0 && firstAttempt !== undefined ? firstAttempt : elapsed(span.from, span.to);
+    if (ms === undefined) return undefined;
+    total += ms;
+  }
+  return total;
 }
 
 /**
