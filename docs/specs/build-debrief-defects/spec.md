@@ -71,8 +71,7 @@ Eight changes, all of them prose in the build skill and the agents it dispatches
 
 ### 2. One working-habits rule, in the build skill and every agent it dispatches
 
-One wording, repeated verbatim in the build skill and its six agents. The refine skill and its two writers carry the
-same block word for word, under [refine-debrief-defects](../refine-debrief-defects/spec.md):
+One wording, repeated verbatim in the build skill and its six agents:
 
 - **A long wait is backgrounded.** Work that takes minutes runs in the background and its completion notice wakes the
   agent; before waiting again, it reads the state of what it is waiting on, so a wait never outlives its answer.
@@ -166,8 +165,8 @@ named in the run's report.
 8. As a human whose repository holds a credential, I want no agent ever to use, print or interpolate it, so that it
    never lands in a command, a commit or the run's record.
 9. As a human, I want a credential an agent found reported to me, so that I know it is there and can deal with it.
-10. As a maintainer, I want the working-habits rule worded identically in the build skill, every agent it dispatches
-    and the refine side's copy, so that one change to it is one wording to change.
+10. As a maintainer, I want the working-habits rule worded identically in the build skill and every agent it
+    dispatches, so that one change to it is one wording to change.
 11. As a human delivering into GitLab, I want an assumption comment that cannot sit on head's diff anchored at the
     commit that recorded it, in a form GitLab stores, so that it sits on that commit's code rather than nowhere.
 12. As a `change-request-creator`, I want a GitLab example for the commit anchor that works, so that I do not post,
@@ -284,9 +283,7 @@ named in the run's report.
 - It names no host, no tool timeout and no command. "The file-reading tool in ranges" is the instruction; the host's
   tool name is not.
 - The secrets line covers what the agent finds in the repository, its environment files included, and binds every
-  agent of the build phase. The refine phase carries the same block, so the wording is one across all ten files.
-  The refine side's host bounds — scratch copies under the temporary directory, nothing written to a live system — are
-  its own and stay out of this block: an implementer works in the workspace and drives gates that may touch a cluster.
+  agent of the build phase.
 
 ### The rewrite flag
 
@@ -361,7 +358,7 @@ brief's contents, a debrief's figures — never how an agent phrased its reasoni
   read after stage 2 and at the flip; fix-wave commits per piece. The fixture runs on GitHub, so it does not exercise
   the GitLab anchors; it will not conflict, so it exercises the read and not the conflict dispatch.
 - **Every touched prose file read against `/mattpocock-skills:writing-for-agents`**, and the working-habits block
-  diffed across the seven files here and against the refine side's three copies to confirm it is identical.
+  diffed across the seven files here to confirm it is identical.
 - **The next observed deliveries' debriefs** are the remaining seam — for the conflict dispatch, the outside-cause
   hand-off, the GitLab rungs on a real delivery, and the rewrite flag on the next round the host rewrites.
 
