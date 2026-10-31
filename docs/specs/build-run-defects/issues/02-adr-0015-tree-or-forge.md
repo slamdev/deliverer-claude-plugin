@@ -7,7 +7,7 @@ the ADR is not a substitute for the skill text: nothing under `plugin/` cites an
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] ADR-0015 says a mechanical question about the tree **or the forge** is the orchestrator's own to settle.
 - [x] The reason the exception exists is unchanged: such a question asks whether a **report**'s fact is true, not

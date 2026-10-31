@@ -10,7 +10,7 @@ Settled as D23 in `../spec.md`.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] The definition says a round ending `failed` or `cancelled` is reported as the round it was, and that starting
       another inside the same dispatch is not its to do.

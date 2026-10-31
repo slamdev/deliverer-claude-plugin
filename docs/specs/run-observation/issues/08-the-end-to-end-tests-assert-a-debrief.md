@@ -1,6 +1,6 @@
 # 08 — The end-to-end tests assert a debrief appeared
 
-Status: ready-for-agent
+Status: resolved
 
 **Blocked by:** 04
 

@@ -13,7 +13,7 @@ D13 in `../spec.md`.
 **Blocked by:** 01 — the worked examples name two forges. 04 — the collectors must be able to see the new channel before
 the poster starts using it.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] The requirement names the capability: the comment goes through whatever conversation mechanism the forge can mark
       resolved.

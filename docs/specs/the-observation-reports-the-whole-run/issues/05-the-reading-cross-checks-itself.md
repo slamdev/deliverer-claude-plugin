@@ -1,6 +1,6 @@
 # 05 — The reading cross-checks itself against what is on disk
 
-Status: ready-for-agent
+Status: resolved
 
 **Blocked by:** 02, and through it 01. **A reuse edge:** the second check counts the run's own entries left outside the
 **extent**, and against the frozen extent 02 fixes it would fire on every run that ever delegated — 226 entries of the

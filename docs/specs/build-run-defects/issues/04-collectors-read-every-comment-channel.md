@@ -15,7 +15,7 @@ prompt happened to carry the number three.
 
 **Blocked by:** 01 — the worked examples name two forges, which the carve-out is what permits.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] `assumption-reviewer` collects every comment carrying the **assumption** prefix from every channel the forge
       exposes, not from one.

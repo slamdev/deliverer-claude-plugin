@@ -9,7 +9,7 @@ report attached to this did not survive checking: the rule lands, the measuremen
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] The delivery skill says a signal that needs no action needs no message.
 - [x] It says where progress goes instead — the task list it already maintains.
