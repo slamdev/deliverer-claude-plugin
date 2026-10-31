@@ -12,17 +12,16 @@ only where one of those eleven shows it, or where today's text plainly still has
 
 What those runs cost the human is mostly time spent waiting, and what they cost in money is mostly reading done twice.
 
-**Questions went to the human on premises nobody checked.** A recommended option rested on a fact that one look or a
+**Questions went to the human on premises nobody checked.** A recommended answer rested on a fact that one look or a
 **sweep** would have settled. The human decided on it, the **writer** killed the fact, and the decision came back as a
 **fork** in a later **question round** (#17, #19, #23, #27). A removal decision left dangling references, and every
 later reading found another one, which made three question rounds on one subject (#27). Today's per-round checklist
 sends the *question* through the mechanical-or-sweep bar, but never the premise behind the answer it recommends.
 
 **One frontier cost the human two waits.** Asking caps one call at four questions and says to carry the rest into
-further calls. Runs did that by sending the next call only after the first call's answers came back, so the overflow
-became a question round of its own (#20; also #11 and #16). On this host several question calls can go out in one
-message and all of them reach the human before any answer comes back. This was established during the grilling that
-produced this spec.
+further calls. Runs sent the next call only after the first call's answers came back, so the overflow became a question
+round of its own (#20; also #11 and #16). On this host several question calls can go out in one message, and all of
+them reached the human before any answer came back when tried during the grilling.
 
 **Stage 1 asked facts and left terms behind.** An ADR number was put to the human as a decision (#26). Where an epic's
 code lives was settled as a decision, and then two question rounds were spent unwinding it once the one-repository bound
@@ -35,10 +34,9 @@ spent purely as a timer (#17). Older runs show the hygiene the skill never state
 one sweep deleted under its siblings, extracted binaries and background processes left on the host, and pods created
 in production by a sweep everyone took to be read-only (#5, #10, #12, #13, #14).
 
-**Nothing a sweep found survived to the writers unless a decision carried it.** A sweep's checkout or found path was
-missing from the **brief**, so writers searched the whole disk for it and fetched it again (#23, #24). The brief's rule
-is that a sweep's facts ride only as a decision's **grounds**, so a fact with no decision attached had nowhere to go.
-Every dispatch in one run read a stale checkout, and the human answered a fork on outdated counts (#24).
+**A sweep's checkout never reached the writers.** The checkout a sweep made was missing from the **brief**, so writers
+searched the whole disk for it and fetched it again (#23, #24). Every dispatch in one run read a stale checkout, and
+the human answered a fork on outdated counts (#24).
 
 **Live credentials landed in dispatch records** (#17, #19; also #13, #18). From there they reached the **trace** and
 the notes: passwords, private keys, storage keys, webhook tokens. The plugin's only redaction rule binds the brief. The
@@ -58,223 +56,155 @@ refused by the forge as a native link, and the ticket was written twice (#28).
 
 ## Solution
 
-Three files change: the refine skill, `spec-writer` and `tickets-writer`. All three changes are prose.
+Three files change: the refine skill, `spec-writer` and `tickets-writer`, all in prose. The glossary's **Epic** names
+the one-repository bound.
 
 - **The refine skill:**
-  - checks the premises behind each question round, not just its questions;
-  - sends every question of a round in one message;
-  - closes stage 1 on a glossary bar, and names the one-repository bound in round 1;
-  - fetches the default branch at open, and names the base ref in every dispatch;
-  - sends sweeps that each carry one question, know their siblings and the environment, write their report to a file
-    the brief names, and work inside one shared set of bounds;
-  - puts writers back by continuing them, so the put-back is a patch;
-  - gives stage 4 the same loop stage 3 has.
-- **The two writers** share the same bounds and the build side's working-habits block, and both patch in place when
-  continued.
-- **The spec writer** marks every road it offers as proven or unchecked, and names a fourth kind of fork.
-- **The tickets writer** maps every story to its tickets, reports where the spec is wrong, and puts an external blocker
-  in the ticket body.
+  - checks the premise behind each recommended answer, not just the question;
+  - sends every question of a question round in one message;
+  - states the one-repository bound in the first question round, and closes stage 1 on a glossary bar;
+  - fetches the default branch at open, and puts a stale checkout to the human;
+  - sends sweeps that each carry one question of fact, know their siblings and the environment, keep their checkout
+    for the writers, and work inside one shared set of bounds;
+  - gives stage 4 the loop stage 3 has.
+- **The two writers** share those bounds and the build side's working-habits block, and patch in place when continued.
+  The spec writer marks every road it offers as proven or unchecked; the tickets writer reports the forks its reading
+  forced against the spec, maps every story to its tickets, and puts an external blocker in the ticket body.
 
 ## User Stories
 
 ### Asking
 
-1. As a human being grilled, I want every option I am recommended to rest on a premise that was checked where one look
-   or a sweep could check it, so that I do not decide on a fact a writer later kills.
-2. As a human being grilled, I want a question whose recommended answer rests on a fact a sweep is still out to find to
-   wait for that sweep, so that I am never asked the same decision twice.
-3. As a human being grilled, I want the full reach of a removal found before I am asked about it, so that one subject
+1. As a human being grilled, I want the premise behind every recommended answer checked where one look or a sweep could
+   check it, and the question held while that sweep is out, so that I never decide on a fact a writer later kills.
+2. As a human being grilled, I want the full reach of a removal found before I am asked about it, so that one subject
    costs me one question round and not three.
-4. As a human being grilled, I want every question of a question round in front of me at once, however many calls that
+3. As a human being grilled, I want every question of a question round in front of me at once, however many calls that
    takes, so that one frontier costs me one wait.
-5. As a human being grilled, I want questions of fact settled by the run instead of put to me, so that I only spend time
+4. As a human being grilled, I want questions of fact settled by the run instead of put to me, so that I only spend time
    on decisions.
-6. As a human being grilled, I want to hear in the first question round that an epic delivers into one repository, so
+5. As a human being grilled, I want to hear in the first question round that an epic delivers into one repository, so
    that where the code lives never becomes a decision I make and then unwind.
-7. As a human closing stage 1, I want every term my decisions rely on to be in the glossary or listed in the brief as
+6. As a human closing stage 1, I want every term my decisions rely on to be in the glossary or listed in the brief as
    missing, so that no term comes back as a fork after stage 1 is over.
-8. As a human answering a fork, I want the counts and facts in front of me to be read at the current default branch, so
-   that I am not deciding on a stale checkout.
+7. As a human whose checkout is behind the default branch, I want to be told so in the first question round and asked
+   whether to pull, so that no dispatch reads a stale tree and I never answer a fork on outdated counts.
 
 ### Sweeps
 
-9. As an orchestrator, I want each sweep to carry exactly one question of fact, so that no fact queues behind a slower
+8. As an orchestrator, I want each sweep to carry exactly one question of fact, so that no fact queues behind a slower
    one inside the same dispatch.
-10. As an orchestrator, I want each sweep to know the subjects of the sweeps already in flight, so that two sweeps never
-    close the same fact.
-11. As a sweep that runs into a sibling's subject, I want to report the collision rather than close it, so that the
-    orchestrator decides whether a second look is owed.
-12. As a sweep, I want to be handed how the environment is reached once an earlier report has established it, so that I
-    do not rediscover which context or credentials path works.
-13. As a writer, I want the same environment facts the sweeps were handed, so that I do not rediscover them either.
-14. As an orchestrator waiting on sweeps, I want to end my turn and let their notifications wake me, so that no dispatch
+9. As a sweep, I want to be told the subjects of the sweeps already in flight, so that I do not close a fact a sibling
+   is out to close.
+10. As a sweep or a writer, I want to be handed how the environment is reached once an earlier report has established
+    it, so that I do not rediscover which context or credentials path works.
+11. As an orchestrator waiting on sweeps, I want to end my turn and let their notifications wake me, so that no dispatch
     is spent as a timer.
-15. As a sweep, I want to write my report to a file named from the epic's slug, so that what I found outlives my
-    context.
-16. As a sweep that cloned or checked something out, I want to keep that copy and name its path and ref in my report, so
-    that a writer opens it instead of fetching it again.
-17. As a writer, I want the brief to list every sweep's report file by path, so that I can rely on what a sweep found
-    without fetching it again.
-18. As a writer whose own first-hand look disagrees with a sweep's report, I want my own look to win and the
-    disagreement to go to my report, so that a stale sweep fact never reaches the spec.
-19. As an orchestrator, I want the brief to carry sweep report files only by path, so that it stays free of a section
-    of established facts.
-20. As a sweep, I want my own scratch copy under the temporary directory and never a shared or named path, so that no
-    sibling deletes the tree I am reading.
-21. As a human whose machine the run used, I want every sweep and writer to report with nothing left running, and to
-    leave the host as it found it or name what it left, so that no binaries or processes pile up after the run.
-22. As a human whose live systems a sweep can reach, I want every sweep and writer to write nothing to a live system,
-    so that fact-finding never changes production.
+12. As a writer, I want every checkout a sweep made kept on disk and listed in the brief by path and ref, so that I open
+    it instead of searching the disk or fetching it again.
 
-### Working habits and secrets
+### Bounds, working habits and secrets
 
-23. As a human whose repository and environment hold credentials, I want every sweep and both writers to read config by
-    key and never print a secret's value, so that no credential lands in a dispatch record, a trace or the notes.
-24. As a dispatch comparing a secret, I want to compare it by hash or by length, so that I can settle the question
-    without the value ever appearing.
-25. As a human, I want no dispatch to use a credential it finds, so that a key found in a repository never
-    authenticates against a device.
-26. As a maintainer, I want the working-habits block, its secrets line included, worded the same way in the refine
-    skill, both writer contracts and every build agent, so that one wording changes in one review.
-27. As a human, I want every sweep and both writers to background a long wait, read a large file once in ranges and
-    measure text once after the last edit, so that a refinement pays for none of that twice.
-
-### The brief and the base ref
-
-28. As an orchestrator opening a run, I want to fetch the default branch first, so that every reading starts from the
-    remote's current state.
-29. As a sweep or a writer, I want my dispatch to name the base ref I read at, so that I read at the same point as
-    every other dispatch.
-30. As a resumed run, I want the sweep report files the brief lists to still be on disk where it says, so that resume
-    works as well as a first run.
+13. As a human whose machine and live systems the run used, I want every sweep and writer to work in its own scratch
+    copy under the temporary directory, report with nothing left running, name whatever it left, and write nothing to a
+    live system, so that no sibling deletes a tree under another and fact-finding never changes production.
+14. As a human whose machine the run used, I want the run's report to list every scratch path its sweeps and writers
+    kept, so that I know what to remove.
+15. As a human whose repository and environment hold credentials, I want every sweep and both writers to read config by
+    key, never print a secret's value, compare secrets by hash or length, and never use a credential they find, so that
+    no credential lands in a dispatch record, a trace or the notes, or authenticates against anything.
+16. As a human, I want every sweep and both writers to background a long wait, read a large file once in ranges and
+    measure text once after the last edit, worded as the build side words it, so that a refinement pays for none of
+    that twice and one wording changes in one review.
 
 ### Put-backs
 
-31. As an orchestrator putting a stage back, I want the skill to name continuing the writer as the mechanism, so that I
-    do not dispatch a cold writer where the old one is still addressable.
-32. As an orchestrator, I want a cold dispatch only where continuing fails or brings no report, so that a put-back's
-    cost stays a patch.
-33. As a continued spec writer, I want to edit the published spec in place, so that a put-back costs the change and not
-    the whole document.
-34. As a continued tickets writer, I want to edit the published tickets in place, so that a put-back keeps their
-    numbers and costs the change alone.
-35. As a cold writer, I want to be told that writing the document whole is what a cold dispatch does, so that I know
-    when a whole write is the right move.
-36. As a writer whose report still carries open forks, I want to keep my prototype until those forks close, so that the
+17. As a continued writer, I want to edit my published spec or tickets in place, keeping the tickets' numbers, and to
+    know that only a cold dispatch writes them whole, so that a put-back costs the change and not the whole document.
+18. As a writer whose report still carries open forks, I want to keep my prototype until those forks close, so that the
     put-back does not pay to build it again.
 
 ### The spec writer's forks
 
-37. As a human answering a fork, I want every road it offers marked as proven or unchecked, so that I never choose an
+19. As a human answering a fork, I want every road it offers marked as proven or unchecked, so that I never choose an
     untried road without knowing it.
-38. As a spec writer, I want a decision my reading raised that the brief never addressed to count as a fork, so that I
-    know how to carry it.
-39. As a spec writer, I want such a fork to close on grounds I hold, or else stay open, the same as a fork the brief
-    left open, so that I neither escalate a decision I can ground nor close one I cannot.
+20. As a spec writer, I want a decision my reading raised that the brief never addressed to be held as a fork the brief
+    left open, so that I close it on grounds I hold or else leave it open.
 
 ### Stage 4
 
-40. As a tickets writer, I want a report line for every place the spec is wrong, so that a spec defect reaches a human
-    instead of being worked around in silence.
-41. As an orchestrator holding a tickets report that names a spec defect, I want to close any fork it raises with the
-    human in one question round, so that stage 4 holds forks the same way stage 3 does.
-42. As an orchestrator, I want to put stage 3 back with the answers and then stage 4 back with the corrected spec, so
-    that the spec stays the record and the tickets are cut from it.
-43. As a human, I want the epic handed over only once no spec defect the tickets writer named is still open, so that I
-    never receive an epic whose tickets disagree with its spec.
-44. As a human reading the task list, I want a stage 4 put-back to flip its task back to `in_progress` the same way a
+21. As a tickets writer, I want to report every fork my reading forced against the spec, with what I found, so that a
+    wrong spec reaches a human instead of being worked around in silence.
+22. As an orchestrator holding such a report, I want to take it through stage 3's loop and then put stage 4 back on the
+    corrected spec, so that the spec stays the record and the tickets are cut from it.
+23. As a human, I want the epic handed over only once no fork the tickets writer raised is still open, so that I never
+    receive an epic whose tickets disagree with its spec.
+24. As a human reading the task list, I want a stage 4 put-back to flip its task back to `in_progress` the same way a
     stage 3 put-back does, so that the window shows what is running.
-45. As an orchestrator, I want the corrected tickets report taken through the same loop, as often as the writing needs,
-    so that a correction that raises a new defect is held like the first one.
 
 ### The tickets writer's coverage and blockers
 
-46. As a human, I want the tickets writer's report to map every user story to the tickets that cover it, so that "every
-    story covered" can be checked in one look.
-47. As a tickets writer, I want that mapping to be the output of step 3's per-story check, so that the report line is
-    never asserted without the check behind it.
-48. As a tickets writer meeting a blocker outside the ticket set, such as a pending change request, I want to name it in
-    the ticket body by its link and never as a native blocking edge, so that the forge never refuses the ticket.
-49. As a human, I want every external blocker named in the tickets writer's report, so that I know what the set waits
-    on beyond itself.
-
-### Maintainers
-
-50. As a maintainer, I want every touched skill and agent file read against the writing-for-agents guidance before
-    merge, so that the new prose holds the register the files are written in.
-51. As a maintainer, I want the spec writer's changes measured on the bench against the current agent, so that I can
-    see whether a put-back wave now patches.
-52. As a maintainer, I want one hand-driven refine happy-path run after the skill changes, so that the question calls,
-    the sweep report files and the brief's paths are seen working end to end.
+25. As a human, I want the tickets writer's report to map every user story to the tickets that cover it, as the output
+    of its per-story check, so that "every story covered" is never asserted unchecked and can be checked in one look.
+26. As a tickets writer meeting a blocker outside the ticket set, such as a pending change request, I want to name it in
+    the ticket body by its link and in my report, never as a native blocking link, so that the forge never refuses the
+    ticket and the human knows what the set waits on beyond itself.
 
 ## Implementation Decisions
 
+The refine skill, `spec-writer` and `tickets-writer` all run on opus at medium effort, and sweeps take the session's
+model through the host's general-purpose agent. Every rule here is one clause or one bullet added to an existing place,
+written to be held without deliberation; none adds a step, a file or a term.
+
 ### The refine skill
 
-- **The per-round checklist covers premises.** Stage 1's step 1 — telling each frontier question's kind — also
-  takes, for a decision, the load-bearing premise behind every option it recommends. That premise is a question of
-  fact, and it goes through the same mechanical bar. One look settles it now. A thread goes out as a sweep, and the
-  decision waits on that sweep under step 2's existing hold. The completeness of a removal's reach is such a premise:
-  "nothing else depends on this" is a fact to find before the question is asked.
+- **The premise behind a recommended answer is a question of fact.** Stage 1's step 1 — telling each frontier
+  question's kind — takes, for a decision, the premise its recommended answer rests on through the same mechanical
+  bar: one look settles it now, a thread goes out as a sweep and the decision waits under step 2's existing hold. The
+  reach of a removal is the example: "nothing else depends on this" is a fact to find before the question is asked.
 - **A question round is one message.** **Asking** says that every call of a question round goes out in the same
-  message, before any answer is waited on. A frontier wider than four questions is still one question round and one
-  wait. The skill's prose says "question round" wherever it now says "round" for the human's questions, following the
-  glossary.
-- **Stage 1's opening names the one-repository bound**, and its done bar gains a term rule. The first question round
-  says that an epic delivers into this one repository. Stage 1 is not done until every term a settled decision relies
-  on is in the glossary or listed in the brief as missing. A repository fact such as the next ADR's number stays a
-  mechanical question, as the existing bar already says.
-- **The base ref.** The run fetches the default branch as it opens, before stage 1, and every dispatch carries the base
-  ref it reads at, sweeps and both writers alike. Fetching does not move the checkout and pulls nothing.
-- **A sweep carries one question of fact.** "One subject each" is tightened so that a subject is one question of fact,
-  following the glossary's **Sweep**. A dispatch that would list several numbered points is several sweeps.
-- **What a sweep dispatch carries gains four things**, beside the subject, the first-hand rule and what it owes back:
-  - the subjects of the sweeps already in flight, with the rule to report a collision rather than close it;
-  - the environment facts an earlier report established, such as how a cluster or service is reached;
-  - the host bounds;
-  - the working-habits block.
+  message, before any answer is waited on, replacing "the human answers in batches". The skill says "question round"
+  wherever it now says "round" for the human's questions.
+- **Stage 1's opening and done bar.** The first question round states the glossary's one-repository bound. Stage 1 is
+  not done until every term a settled decision relies on is in the glossary or listed in the brief as missing.
+- **The checkout at open.** The run fetches the default branch as it opens, before stage 1. Where the checkout is behind
+  it, the first question round says so and asks whether to pull; the run never pulls on its own. Dispatches carry no
+  ref.
+- **A sweep carries one question of fact**, following the glossary's **Sweep**. A dispatch that would list several
+  numbered points is several sweeps. Beside the subject, the first-hand rule and what it owes back, a sweep's dispatch
+  carries:
+  - the subjects of the sweeps already in flight, as context;
+  - the environment facts an earlier report established, such as how a cluster or service is reached — writers'
+    dispatches carry these too;
+  - the host bounds and the working-habits block, by reference to the skill's own copy, word for word;
+  - that a checkout or clone it makes is kept, and its path and ref named in its report.
+- **The brief lists a sweep's checkout** through its existing artifacts bullet, by path and ref. Nothing else about the
+  brief changes: it still carries claims and no section of established facts, and what a sweep settled still rides as
+  a decision's **grounds**.
+- **No dispatch as a timer.** **Sequencing**'s rule that a `sleep` or a poll stands in for no report extends to a
+  dispatch spent only on waiting. The orchestrator ends its turn and the notifications wake it.
+- **Stage 4 gets stage 3's loop.** When the tickets writer's report raises forks against the spec, they go through
+  stage 3's "one report, one round, one put-back" by reference, the put-back going to `spec-writer`; stage 4 is then put
+  back carrying the corrected spec's location, and its corrected report goes through the same. Stage 4 is done when no
+  fork the report raised is still open. **Progress** flips stage 3's and stage 4's tasks the same way it does for a
+  stage 3 put-back today.
+- **What to report** gains a line for every fork the tickets writer raised and how it closed, and a line listing every
+  scratch path the sweeps and writers kept.
 
-  Writers' dispatches carry the environment facts too.
-- **A sweep's report is a file.** The sweep writes it to the OS temporary directory as
-  `<epic-slug>-sweep-<n>.md`, keeps any clone or checkout it made, and names that copy's path and ref in the report.
-  The brief's artifacts list names every sweep report file by path, beside the paths it already lists. The brief still
-  carries no section of established facts. A writer may rely on a report file without fetching what it describes
-  again, and where its own first-hand look disagrees, its own look wins and the disagreement goes to its report.
-- **No dispatch as a timer.** **Sequencing**'s rule that a `sleep` or a poll stands in for no report is extended to a
-  dispatch spent only on waiting. The orchestrator ends its turn and is woken by the notifications.
-- **A put-back continues the writer.** Stage 3's step 3 names the host's mechanism for continuing a dispatch by its id,
-  and says a cold dispatch is the fallback when continuing fails or brings no report. The put-back message names what
-  changed and points at the brief on disk rather than restating it.
-- **Stage 4 gets stage 3's loop.** When the tickets writer's report names a spec defect, the orchestrator:
-  1. closes any fork that defect raises with the human in one question round;
-  2. puts stage 3 back carrying the answers;
-  3. puts stage 4 back carrying the corrected spec's location;
-  4. takes the corrected report through the same loop.
-
-  Stage 4 is done when no defect the report names is still open. **Progress** flips stage 3's task and stage 4's task
-  back to `in_progress` the same way it does for a stage 3 put-back today. **What to report** gains a line for every
-  spec defect the tickets writer raised, and how it was closed.
+The skill's put-back mechanism stands as it is: **Dispatch** already continues a writer while it is addressable, and
+falls back to a cold dispatch.
 
 ### The shared bounds
 
-There are two rules, each copied word for word into the refine skill (whose sweep dispatch carries both), `spec-writer`
-and `tickets-writer`.
+Two blocks, each in the refine skill once, in `spec-writer` and in `tickets-writer`. The sweep dispatch passes the
+skill's copy on by reference.
 
-- **The working-habits block.** The block [build-debrief-defects](../build-debrief-defects/spec.md) puts in the build
-  skill and its six agents, word for word, so that one wording spans all eleven files:
-  - **A long wait is backgrounded.** Work that takes minutes runs in the background and its completion notice wakes
-    the agent; before waiting again, it reads the state of what it is waiting on, so a wait never outlives its answer.
-  - **A large file is read once, in ranges.** A file or a persisted output too big to show is read with the
-    file-reading tool in ranges, never dumped through the shell and then read again.
-  - **Measure once, after the last edit.** Widths, counts and conformance are measured once the text is final, never
-    between edits.
-  - **A secret is never used or shown.** Configuration is read by key. A secret's value is never printed and never
-    interpolated into a command; two secrets are compared by hash or by length. A credential found in the repository is
-    never used to authenticate against anything: it is reported, and the agent goes on without it.
-
-  The brief's existing redaction line stays as it is.
-- **Host bounds**, the refine side's own, since an implementer works in the workspace and drives gates that may
-  touch a live system:
+- **The working-habits block**, word for word as [build-debrief-defects](../build-debrief-defects/spec.md) gives it — a
+  long wait backgrounded, a large file read once in ranges, measuring once after the last edit, and a secret never used
+  or shown. That spec owns the wording; with the build skill and its six agents the block spans ten files. The brief's
+  existing redaction line stays as it is.
+- **Host bounds**, the refine side's own, since an implementer works in the workspace and drives gates that may touch a
+  live system:
   - Work in your own scratch copy under the OS temporary directory, never in a shared or named path, and never in the
     workspace root.
   - Report with nothing of yours still running.
@@ -282,67 +212,61 @@ and `tickets-writer`.
   - Write nothing to a live system.
   - A writer keeps its prototype and scratch copy while its report carries open forks.
 
-  A sweep's kept clone (above) is a named thing it left, so it appears in its report.
-
 ### `spec-writer`
 
 - **A put-back clause.** A continued dispatch edits the published spec in place. Only a cold dispatch, including
   **Resume** finding a spec already published, writes it whole.
 - **Fork roads carry their evidence state.** Every road a fork offers, open or recommended, is marked *proven* (the
-  writer saw it work: a prototype ran, a test passed, the code already does it) or *unchecked*. This holds in the spec's
-  Further Notes and in the report.
-- **A fourth origin.** **Forks** names a decision the reading raised that the brief never addressed as a fork in its
-  own right. It closes the same way as a fork the brief left open: on any grounds the writer holds, otherwise left open.
-  A consequence of an answer the dispatch carried is written up as the decision it follows from, not escalated.
-- The shared bounds and the base ref are read and honoured, and so are the sweep report files listed in the brief.
+  writer saw it work: a prototype ran, a test passed, the code already does it) or *unchecked*, in the spec's Further
+  Notes and in the report.
+- **An unaddressed decision.** One sentence in **Forks**: a decision the reading raised that the brief never addressed
+  is a fork the brief left open, and closes the same way. **Forks** keeps its two states and no third.
+- The shared bounds apply, and so do the checkout paths the brief lists.
 
 ### `tickets-writer`
 
-- **A spec-defect report line.** Every place its reading found the spec wrong (a mechanism that would not achieve what
-  the spec intends, a decision the code makes impossible) goes to the report with what it found. It is not worked
-  around silently in the tickets.
+- **Forks against the spec.** Every place its reading found the spec wrong — a mechanism that would not achieve what
+  the spec intends, a decision the code makes impossible — goes to the report as a fork, with what it found. It is not
+  worked around silently in the tickets.
 - **A put-back clause.** A continued dispatch edits its published tickets in place and keeps their numbers. Only a cold
   dispatch writes a ticket whole, and **Resume**'s fixed numbers still hold.
-- **A story map.** Step 3's coverage bar produces an explicit mapping from every user story number to the ticket
-  numbers that cover it, and the report carries that mapping in place of today's one-line coverage assertion. An
-  uncovered story is still named with why.
+- **A story map.** Step 5's per-story check produces a mapping from every user story number to the ticket numbers that
+  cover it, and the report carries that mapping in place of today's one-line coverage assertion. An uncovered story is
+  still named with why.
 - **External blockers.** A blocker outside the ticket set, such as a pending change request or another epic's ticket, is
-  named in the ticket body by its link. It is never a native blocking link and never a **blocking edge**, and every
-  one goes to the report.
-- The shared bounds and the base ref apply here too.
+  named in the ticket body by its link — never a native blocking link and never a **blocking edge** — and every one
+  goes to the report.
+- The shared bounds apply here too.
 
-### The glossary
+### The glossary and ADRs
 
-**Question round** and **Put-back** are already landed, and **Sweep** now says that a subject is one question of fact.
-**Put-back** is written for both sides of its use: what the skill does with one here, and what the observer counts in a
-run's **extent** under [observer-debrief-defects](../observer-debrief-defects/spec.md).
-No ADR changes. The orchestrator still forms no judgement (ADR 0015): checking a premise is settling a question of
-fact, and a put-back is still one move whether continued or cold. A sweep's report file is not a state file
-(ADR 0013), because no run reads its position from it.
+**Question round** and **Put-back** are landed, **Sweep** says a subject is one question of fact, and **Epic** names
+the one-repository bound. No ADR changes. The orchestrator still forms no judgement (ADR 0015): checking a premise is
+settling a question of fact, and a put-back is still one move whether continued or cold.
 
 ## Testing Decisions
 
-Nothing here is covered by CI: every change is prose. A good check here looks at what a run or a dispatch visibly did,
-such as the calls in one message, the files on disk, a wave's output tokens or a report's lines. It never asks whether
-the prose reads as intended. No new seam is proposed. The three existing ones are:
+Nothing here is covered by CI: every change is prose. A good check looks at what a run or a dispatch visibly did — the
+calls in one message, the paths in the brief, a wave's output tokens, a report's lines — and never asks whether the
+prose reads as intended. No new seam is proposed. The three existing ones:
 
 - **The writing-for-agents read.** The refine skill, `spec-writer` and `tickets-writer` are each read against
-  `/mattpocock-skills:writing-for-agents` before merge. That read checks that the host-bounds rule is identical across
-  the three files, and the working-habits block identical to the build side's copies.
+  `/mattpocock-skills:writing-for-agents` before merge. The read also diffs the host bounds across the three files, and
+  the working-habits block against the build side's seven copies.
 - **The bench** (CONTRIBUTING.md § The bench). Two arms, `current` against `before=<main>:plugin/agents/spec-writer.md`,
-  with `--waves 1` on the existing fixture. Two things are read off the arms. First, the put-back wave's output tokens
-  in each arm's `wave-1.md` and `reading.json`: the current arm should patch, and come in well under its own
-  first-dispatch output. Second, whether every fork road in each arm's first report carries *proven* or *unchecked*.
-  Under the bench's caveat, arms are compared only with each other.
+  with `--waves 1` on the existing fixture. Two things are read off the arms: the put-back wave's output tokens in each
+  arm's `wave-1.md` and `reading.json` — the current arm should patch, and come in well under its own first-dispatch
+  output — and whether every fork road in each arm's first report carries *proven* or *unchecked*. Under the bench's
+  caveat, arms are compared only with each other.
 - **One refine happy-path run, driven by hand** (CONTRIBUTING.md § The end-to-end tests). The test's existing
-  assertions must still pass. Its session record and debrief are then read for four things:
-  - every question round with more than four questions went out as several calls in one message;
-  - each sweep's report file exists under the temporary directory;
-  - the brief lists those files by path;
-  - every dispatch carries the base ref.
+  assertions must still pass. Its session record and debrief are then read for:
+  - the default branch fetched before stage 1;
+  - every question round with more than four questions sent as several calls in one message;
+  - every sweep carrying one question, and every checkout a sweep made listed in the brief by path and ref;
+  - the run's report listing the scratch paths kept.
 
-  The fixture may not raise a frontier wider than four questions or a spec defect in stage 4. Where it raises neither,
-  the report says so and that behaviour is left for the next observed debrief rather than forced.
+  The fixture may not raise a frontier wider than four questions, a stale checkout or a fork in stage 4. Where it
+  raises none of them, the report says so and that behaviour is left for the next observed debrief rather than forced.
 
 Prior art: `docs/specs/idp-scaffold-defects/` verified its prose changes the same way, reading them against the guidance
 and confirming them in the next observed run.
@@ -354,6 +278,9 @@ and confirming them in the next observed run.
   the brief, now step 4's collision trace), 3.6 (slug renames), 3.7 (ADRs landed early, and stage 1 artifacts left
   uncommitted, now stage 5), 4.3 (writers that stopped short of writing), 4.5 (prototype cost), 5.4 (operations epics)
   and 5.5 (placeholder references).
+- **Restating that a put-back continues the writer**: **Dispatch** already says it, and #28 did not follow it.
+- **Sweep reports as files the writers rely on**: the brief carries no established facts, so only a checkout's path.
+- **A model or effort for sweeps**: they take the session's; the money went on reading twice, not on the model.
 - **The spec writer's conformance loop (4.1).** The rule survived the restructure unchanged, but none of the eleven runs
   on current code showed the loop. It waits for one that does.
 - **The task-list findings (§7).** They are seen only in old runs, and the phantom stage 5 task in #19 is now stage 5's
@@ -374,17 +301,11 @@ file's. Run #20's claim that it "stopped with eight questions never asked" is no
 seven minutes of the run, which is the observer defect `idp-scaffold-defects` fixed, and the run went on to ask eight
 more question rounds. The overflow that run planned as a separate question round still holds as evidence.
 
-### Established during the grilling
-
-On this host, four question calls sent in one message all reached the human before any answer came back, so "every
-call of a question round goes out in one message" can be done as written.
-
 ### Load-bearing behaviour this change must not disturb
 
 - A question that does not turn on a sweep's subject is still asked now. A premise check holds only the question whose
   premise is in flight.
-- The brief carries no section of established facts. Sweep report files ride by path.
 - A sweep is still one subject each, and the first-hand rule still binds it.
-- A writer's own first-hand look still decides every **claim**.
-- Stage 5 still commits only the paths the refinement wrote. Sweep report files live in the temporary directory and are
-  never committed.
+- A writer's own first-hand look still decides every **claim**; the brief carries no section of established facts.
+- Stage 5 still commits only the paths the refinement wrote. Kept checkouts and scratch copies live in the temporary
+  directory and are never committed.

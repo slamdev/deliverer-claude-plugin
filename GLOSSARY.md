@@ -9,8 +9,8 @@ catches them.
 ### The work
 
 **Epic**:
-One feature's whole unit of delivery — a spec and its numbered tickets, sitting together at one location. _Avoid_:
-feature, project, initiative
+One feature's whole unit of delivery — a spec and its numbered tickets, sitting together at one location, and
+delivered into one repository on one **epic branch**. _Avoid_: feature, project, initiative
 
 **Idea**:
 The rough intent a refinement starts from, in the user's own terms, before anything has been decided. _Avoid_: request,
