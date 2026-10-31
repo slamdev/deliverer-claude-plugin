@@ -1,6 +1,6 @@
 # 03 — Every assumption comment lands, on GitLab too
 
-Status: ready-for-agent
+Status: resolved
 
 **Blocked by:** None — can start immediately.
 
@@ -16,20 +16,20 @@ personal namespace, one merge request of two commits, the second moving a line t
 comment** is posted at each rung, every discussion is read back to confirm what it stored, and the project is deleted
 (`../spec.md` § Testing Decisions).
 
-- [ ] The throwaway project's results are recorded in this ticket's comments: for each rung, the request posted and
+- [x] The throwaway project's results are recorded in this ticket's comments: for each rung, the request posted and
       what GitLab stored, positional fields included. The project is deleted afterwards.
-- [ ] Rung 3's GitLab example is a positional `text` form against the recording commit's own diff — base and start at
+- [x] Rung 3's GitLab example is a positional `text` form against the recording commit's own diff — base and start at
       its parent, head at the commit — where the probe shows GitLab stores it. Where it does not, rung 3 on GitLab is
       the general comment, and the example says so.
-- [ ] Rung 3 keeps its meaning and its GitHub example.
-- [ ] A rung 4 that always holds joins below it: a general comment carrying the entry's `file:` and `line:`, its body
+- [x] Rung 3 keeps its meaning and its GitHub example.
+- [x] A rung 4 that always holds joins below it: a general comment carrying the entry's `file:` and `line:`, its body
       opening with the same `ASSUMPTION (<hash>)` prefix, worked for both forges.
-- [ ] The file-level rung is described as covering a file the diff carries at a line it does not, not a file the diff
+- [x] The file-level rung is described as covering a file the diff carries at a line it does not, not a file the diff
       never touched.
-- [ ] The rule that a comment at rung 3 is reported as "anchored anywhere but at a translated line on head" covers
+- [x] The rule that a comment at rung 3 is reported as "anchored anywhere but at a translated line on head" covers
       rung 4 too, in the agent and wherever the build skill restates it.
-- [ ] The GitLab and GitHub forms stay worked examples of one mechanism (ADR 0012).
-- [ ] The file is read against `/mattpocock-skills:writing-for-agents`, and its register and 120-column wrap are kept.
+- [x] The GitLab and GitHub forms stay worked examples of one mechanism (ADR 0012).
+- [x] The file is read against `/mattpocock-skills:writing-for-agents`, and its register and 120-column wrap are kept.
 
 ## Comments
 
