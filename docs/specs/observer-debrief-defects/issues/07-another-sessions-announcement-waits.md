@@ -8,13 +8,13 @@ Settled as Solution item 7 and under **Holding announcements** in `../spec.md`.
 
 **Status:** ready-for-agent
 
-- [ ] **Live** is the session's own observation marker present and its observer alive, the liveness test the re-arm
+- [x] **Live** is the session's own observation marker present and its observer alive, the liveness test the re-arm
       already uses.
-- [ ] While this session is live, the prompt hook prints only announcements this session wrote. Others stay pending on
+- [x] While this session is live, the prompt hook prints only announcements this session wrote. Others stay pending on
       disk, untouched.
-- [ ] Held announcements print on the first prompt after this session is no longer live.
-- [ ] Driven by hand through the hook script at shortened bounds, two sessions sharing one plugin data directory: a
+- [x] Held announcements print on the first prompt after this session is no longer live.
+- [x] Driven by hand through the hook script at shortened bounds, two sessions sharing one plugin data directory: a
       prompt in the live one prints only its own announcement; once its run finalises, the next prompt prints the
       other's.
-- [ ] The hook script's header comment names the held announcements.
-- [ ] `npm run typecheck && npm run lint` pass in the plugin's Node package.
+- [x] The hook script's header comment names the held announcements.
+- [x] `npm run typecheck && npm run lint` pass in the plugin's Node package.
