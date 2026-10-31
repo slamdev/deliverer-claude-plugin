@@ -125,6 +125,12 @@ One numbered entry per assumption, and the `Assumptions:` section goes when ther
 one numbered entry per **gate** you left red, gone when every gate you met is green. A report can fail to arrive; the
 commit is what the branch carries either way.
 
+`Evidence:` follows `Gates:`, numbered the same way and gone when empty: one entry per demonstration the ticket or spec
+asks for — a proof, a timing, a probe pair — made for the piece this commit carries. Each says what was run, what it
+showed, and `observed` where you watched it run or `cached` where its result was served from a cache. A routine green
+gate gets no entry: evidence is what a human reading the change request would otherwise run again, and this section is
+the only place that reaches them.
+
 ```
 <Description of the work that has been done>
 
@@ -138,6 +144,11 @@ Assumptions:
 Gates:
 1. gate: <what stayed red, and how it is run>;
    outside: <the work it belongs to, which this ticket does not own>
+
+Evidence:
+1. ran: <the demonstration, and how it is run>;
+   showed: <what it showed>;
+   <observed or cached>
 ```
 
 **Read each `line:` back before you commit.** It names the code the assumption is about — the guard that throws, the
@@ -155,7 +166,8 @@ Whoever reads this has your report and nothing else.
 - every commit you added — hash and message — and that the branch on the remote carries them
 - how many assumptions those commits record
 - the **gates** this ticket had to satisfy and what satisfied them — where the toolchain each needed lives and how it
-  was obtained included — and any you left red
+  was obtained included — and any you left red. A gate you say passed says whether you watched it run or its result
+  was served from a cache
 - what you established that a later dispatch would otherwise look for again, one line each, with the one look that
   checks it — a convention found absent, a fact about the environment, a third-party artefact and where it sits, a
   procedure as ordered quoted steps; a convention found present by where it lives, never restated
