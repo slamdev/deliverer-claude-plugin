@@ -37,3 +37,5 @@ Implemented on `refine-debrief-defects`. Run `/tmp/deliverer-e2e/refine-typescri
 Follow-up: **Sweeps** now says a checklist of points under one question is several sweeps too. The run item above stays unticked until the next observed debrief shows a sweep dispatched without one.
 
 Follow-up 2: the 2026-10-31 run's two sweeps cost $2.22 and $2.26 against the previous reading's single $0.37 — survey-sized subjects with nothing saying when enough was known. A sweep's dispatch now names the frontier questions it holds, and the sweep comes back once its facts let every one of them be put on a checked premise. Read the next observed debrief's sweep prompts and spend against those figures.
+
+Second run. Run `/tmp/deliverer-e2e/refine-typescript-library-2026-10-31T21-31-52-RBnh9f` on `b02426f`, 2026-10-31: passed every assertion and the verifier, 41m 54s, $16.71. One sweep, $1.50 and 3.8m. Its dispatch still listed five numbered points under one question ("Specifically, settle…"), so the checklist rule has now failed in two runs; the item stays open.
