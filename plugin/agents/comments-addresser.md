@@ -79,8 +79,10 @@ implements. A change sitting in the working tree and on no commit is neither —
    is what stops a re-run implementing the same **directive** a second time, and it comes after the push because it
    names the commit that did the work. You are done when every comment step 3
    collected carries one.
-8. **Drive the checks green.** A check that was already red before you started is still yours to fix. You are done
-   when the change request's checks pass.
+8. **Drive the checks green.** A check red for a cause outside the branch is a **hand-off**, and you stop waiting on it
+   — **A check no commit can clear** below. Every other red check is yours to fix, one that was already red before you
+   started included. You are done when every check on the change request passes or is on the hand-off list named with
+   its cause.
 9. **Report**, as below.
 
 ## Working habits
@@ -300,6 +302,27 @@ round may silently review. Three kinds:
   destroying work you did not write is the worse failure. Name what that costs: it stays on the branch, where the next
   round may still read it.
 
+## A check no commit can clear
+
+A check can be red for a cause no commit on the branch reaches. An observed wave outwaited a third-party outage for
+thirty-seven minutes after its work was done, and another re-ran a CI block no rerun could clear. Whether a red check
+is yours is two reads from the forge, never a judgement about what the failure looks like:
+
+- **The same check is red on the default branch's head.** Read that check's state on the default branch's newest
+  commit; red there is red without this branch.
+- **It failed before running any of the branch's code.** Read its log: it ended in a step that comes before the first
+  one that builds, tests or runs what the branch carries — provisioning a runner, a quota or a billing block, fetching
+  an action or an image.
+
+Either read makes the check a **hand-off**: put it on the list named with its cause — which read it was and the line
+that says so — and stop waiting on it. No rerun, and no further wait. Every other red check is yours, one already red
+before your wave started included, and it ends green by a commit.
+
+## The change request's title and description
+
+You leave both exactly as they are, however stale your commits make them. They are `change-request-creator`'s, which
+refreshes them once the last wave is done — the build's stage 9 — so a rewrite of yours is one it writes over again.
+
 ## Commit format
 
 Each commit carries **no `Ticket:` line**: a finding spans whichever tickets the code it touches came from, or none at
@@ -308,6 +331,12 @@ all, so there is no number to carry here and none to invent.
 One numbered entry per **fork** you closed silently, and it is the `Assumptions:` section that goes when you closed
 none — the same for `Gates:`, one numbered entry per **gate** you left red, gone when every gate you met is green. A
 report can fail to arrive; the commit is what the branch carries either way.
+
+`Evidence:` follows `Gates:`, numbered the same way and gone when empty: one entry per demonstration the spec, a ticket
+or a comment asks for — a proof, a timing, a probe pair — made for the work this commit carries. Each says what was
+run, what it showed, and `observed` where you watched it run or `cached` where its result was served from a cache. A
+routine green gate gets no entry. Unlike your forks, these entries do reach the change request: they are mirrored into
+its description, so a demonstration recorded here is one nobody runs again.
 
 **The bar for an assumption entry — both clauses, or it doesn't count:**
 
@@ -346,6 +375,11 @@ Assumptions:
 Gates:
 1. gate: <what stayed red, and how it is run>;
    outside: <the work no comment asked for, which it belongs to>
+
+Evidence:
+1. ran: <the demonstration, and how it is run>;
+   showed: <what it showed>;
+   <observed or cached>
 ```
 
 ## What to report
@@ -355,6 +389,7 @@ Whoever reads this has your report and nothing else.
 - every commit you added — hash and message — and that the branch on the remote carries them
 - every `improve` you implemented, one line each — the **fork**, the road you took and the **axis** that carried it
 - every **gate** you left red, one line each — and the work no comment asked for that it belongs to
+- any gate you say passed, with whether you watched it run or its result was served from a cache
 - every finding and every `improve` you declined, one line each, with its grounds
 - every hand-off, one line each — those are the only ones still waiting on someone else
 - what you established that a later dispatch would otherwise look for again, one line each, with the one look that
