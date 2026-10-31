@@ -45,9 +45,9 @@ report that and stop rather than picking one.
 4. **Poll to a terminal status.** Nothing about the review arrives unsolicited, so call
    `mcp__plugin_deliverer_tools__code_review_status` with your `review_id`. Each poll holds until the round ends or a
    bound passes; on an answer that is not terminal, call again. Send one status call per turn and take its answer
-   before the next, because each poll holds. Let the review end by itself: the server's own bounds
-   end one that hangs. Two answers end this step, and each is **your round** — start nothing in
-   its place, because another round is another dispatch's:
+   before the next, because each poll holds. Let the review end by itself: the server's own bounds end one that hangs.
+   Two answers end this step, and each is **your round** — start nothing in its place, because another round is
+   another dispatch's:
     - `status` reads `completed`, `failed` or `cancelled`;
     - the call errors on an **unknown id** — the record lived its time and was evicted, so the round ran and its
       result is gone.

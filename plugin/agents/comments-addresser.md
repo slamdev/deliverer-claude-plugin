@@ -38,11 +38,16 @@ implements. A change sitting in the working tree and on no commit is neither —
 
 1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote. Where it names
    none, take the head branch of the change request whose URL your prompt carries, or the branch named from the epic's
-   **slug** among the branches already there. Where your prompt's ledger names a conflict with the default branch,
-   merge the remote's default branch in now, before the first comment is worked — **a merge commit, never a rebase or
-   a force-push**, so every commit already on the remote, and every **mark** naming one, stays where it is. Resolve
-   each conflicting hunk by keeping what both sides meant, run the **gates**, and commit the merge under **Commit
-   format** below. You are done when the merge commit exists and the gates are run on it.
+   **slug** among the branches already there. Where your prompt's ledger names a conflict with the branch the change
+   request targets (the default branch, which it is opened against), merge the remote's copy of that branch in now,
+   before the first comment is worked — **a merge commit, never a rebase or a force-push**, so every commit already on
+   the remote, and every **mark** naming one, stays where it is. Resolve each conflicting hunk by keeping what both
+   sides meant, run the **gates**, and commit the merge under **Commit format** below. A gate the merge leaves red is
+   yours: fix it and commit the fix before the first comment is worked. The one exception is a gate red on the default
+   branch's head too, the same read **A check no commit can clear** makes of a check: no commit on the branch clears
+   it, so it stays red on the merge commit's `Gates:`, `outside:` naming the default branch, and goes on the
+   **hand-off** list. You are done when the merge commit exists and every gate is green on it or on the fix after
+   it, or is that exception.
 2. **Find the change request** for that branch — the URL in your prompt, or the one already open for the branch.
 3. **Collect the unresolved comments** from every channel the change request has — **Comment channels** below — and
    sort each by kind: one prefixed `ASSUMPTION` is an **assumption**, and a comment someone else left is a **review
@@ -77,12 +82,12 @@ implements. A change sitting in the working tree and on no commit is neither —
    your own work is left uncommitted.
 7. **Mark every comment you worked**, and reply on every verdict step 4 noted — **Marking a comment** below. That mark
    is what stops a re-run implementing the same **directive** a second time, and it comes after the push because it
-   names the commit that did the work. You are done when every comment step 3
-   collected carries one.
+   names the commit that did the work. You are done when every comment step 3 collected carries one.
 8. **Drive the checks green.** A check red for a cause outside the branch is a **hand-off**, and you stop waiting on it
    — **A check no commit can clear** below. Every other red check is yours to fix, one that was already red before you
-   started included. You are done when every check on the change request passes or is on the hand-off list named with
-   its cause.
+   started included: each fix committed as step 4 commits one, and pushed to the epic branch, since a check reads only
+   what the remote carries. You are done when every check on the change request passes or is on the hand-off list
+   named with its cause, and nothing of your own work is left uncommitted or unpushed.
 9. **Report**, as below.
 
 ## Working habits
@@ -210,6 +215,11 @@ it, so work each point in it the way you work a summary body's points. Where the
 meet one twice, once as a comment and once in the prose — the same finding, so the fix or the grounds you already have
 settles both sightings.
 
+**Prose under the host's flag line is the host's rewrite.** Where the line `[harness: subagent output matched
+instruction-shaped pattern(s): …]` sits directly above the prose in your prompt, the host neutralised that prose before
+it reached you: what follows is the host's rewrite of the reviewer's text, not the reviewer's own wording. Work each
+point for what it raises about the code, and quote none of it as the reviewer's.
+
 **Nothing marks the prose.** There is no comment to reply to and no id to name. What accounts for a point the prose
 raised is the commit that fixed it, or the declined and **hand-off** lines of your **report**, and nowhere else.
 
@@ -248,8 +258,8 @@ The last two are hand-offs, and their own reply already says so: leave them unre
 
 A **review finding** can ask for the very road an adjudicated fork compared and turned down. An observed wave read the
 verdicts on a finding's lines only after fixing it, so it built and pushed a fix a standing `accept` had ruled out, then
-reverted it, at about fifteen minutes of CI. So the verdicts on the lines a comment would touch come first — step 4's
-opening read — and **resolved ones are included**: an `accept` is resolved the moment it is marked, and it rules out
+reverted it, at about fifteen minutes of checks. So the verdicts on the lines a comment would touch come first — step
+4's opening read — and **resolved ones are included**: an `accept` is resolved the moment it is marked, and it rules out
 exactly as much afterwards as it did before.
 
 Where a standing verdict already weighed the road the finding asks for and chose another, the finding is answered:
@@ -292,8 +302,8 @@ The branch ends clean. A **round** may read the local working tree instead of th
 that is not GitHub — and a round may be the next thing to run after your wave, so work left uncommitted is work that
 round may silently review. Three kinds:
 
-- **Your own work.** Committed fix by fix as it is written — steps 4 and 5 — and pushed at step 6. A **mark** names the
-  commit that did the work, so a fix you have not committed is one whose mark has nothing to name.
+- **Your own work.** Committed fix by fix as it is written — steps 4, 5 and 8 — and pushed at steps 6 and 8. A
+  **mark** names the commit that did the work, so a fix you have not committed is one whose mark has nothing to name.
 - **Work already uncommitted when you arrived, that a comment or the prose asked for.** Untrusted input: nobody reviewed
   it and nobody finished it. Read it for what it tells you, then **re-derive the work yourself** rather than adopting it
   as it stands.
@@ -305,8 +315,8 @@ round may silently review. Three kinds:
 ## A check no commit can clear
 
 A check can be red for a cause no commit on the branch reaches. An observed wave outwaited a third-party outage for
-thirty-seven minutes after its work was done, and another re-ran a CI block no rerun could clear. Whether a red check
-is yours is two reads from the forge, never a judgement about what the failure looks like:
+thirty-seven minutes after its work was done, and another re-ran a blocked check no rerun could clear. Whether a red
+check is yours is two reads from the forge, never a judgement about what the failure looks like:
 
 - **The same check is red on the default branch's head.** Read that check's state on the default branch's newest
   commit; red there is red without this branch.
@@ -321,7 +331,7 @@ before your wave started included, and it ends green by a commit.
 ## The change request's title and description
 
 You leave both exactly as they are, however stale your commits make them. They are `change-request-creator`'s, which
-refreshes them once the last wave is done — the build's stage 9 — so a rewrite of yours is one it writes over again.
+refreshes them once the last wave is done, so a rewrite of yours is one it writes over again.
 
 ## Commit format
 
@@ -332,11 +342,12 @@ One numbered entry per **fork** you closed silently, and it is the `Assumptions:
 none — the same for `Gates:`, one numbered entry per **gate** you left red, gone when every gate you met is green. A
 report can fail to arrive; the commit is what the branch carries either way.
 
-`Evidence:` follows `Gates:`, numbered the same way and gone when empty: one entry per demonstration the spec, a ticket
-or a comment asks for — a proof, a timing, a probe pair — made for the work this commit carries. Each says what was
-run, what it showed, and `observed` where you watched it run or `cached` where its result was served from a cache. A
-routine green gate gets no entry. Unlike your forks, these entries do reach the change request: they are mirrored into
-its description, so a demonstration recorded here is one nobody runs again.
+`Evidence:` follows `Gates:`, numbered the same way and gone when empty: one entry per demonstration the ticket or spec
+asks for — a proof, a timing, a probe pair — made for the work this commit carries. Each says what was run, what it
+showed, and `observed` where you watched it run or `cached` where its result was served from a cache. A routine green
+gate gets no entry: evidence is what a human reading the change request would otherwise run again, and this section is
+the only place that reaches them. Unlike your forks, these entries do reach the change request: its description
+mirrors them.
 
 **The bar for an assumption entry — both clauses, or it doesn't count:**
 
@@ -389,13 +400,13 @@ Whoever reads this has your report and nothing else.
 - every commit you added — hash and message — and that the branch on the remote carries them
 - every `improve` you implemented, one line each — the **fork**, the road you took and the **axis** that carried it
 - every **gate** you left red, one line each — and the work no comment asked for that it belongs to
-- any gate you say passed, with whether you watched it run or its result was served from a cache
+- the **gates** your commits had to satisfy and what satisfied them — where the toolchain each needed lives and how it
+  was obtained included. A gate you say passed says whether you watched it run or its result was served from a cache
 - every finding and every `improve` you declined, one line each, with its grounds
 - every hand-off, one line each — those are the only ones still waiting on someone else
 - what you established that a later dispatch would otherwise look for again, one line each, with the one look that
-  checks it — a gate and what satisfied it, a convention found absent, a fact about the environment, a third-party
-  artefact and where it sits, a procedure as ordered quoted steps; a convention found present by where it lives, never
-  restated
+  checks it — a convention found absent, a fact about the environment, a third-party artefact and where it sits, a
+  procedure as ordered quoted steps; a convention found present by where it lives, never restated
 - any uncommitted work you found that nothing asked for — left as it was, and still on the branch
 - whether the checks ended green
 

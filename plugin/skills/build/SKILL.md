@@ -110,12 +110,15 @@ exceptions, each carrying what exists nowhere the agent could read:
   what the prose says stays the wave's to weigh.
 
 **Before each fix wave, read whether the change request can merge** — a **mechanical** read of the forge, as its
-**checks** are: the forge's own account of whether the head merges into the branch it targets without conflict, and
-which checks it reads red. A conflict goes into that wave's **ledger** as an entry, and each red check the same way —
-the fact, the one look that checks it, and you as the dispatch that established it — so the wave meets them before its
-first comment instead of spending its opening turns working out what broke. Carry what the forge said and nothing
-more: why a check is red and how a conflict resolves are the wave's. A forge still computing the answer has given none
-yet, so read it again rather than taking it for mergeable.
+**checks** are: the forge's own account of whether the head merges into the branch it targets — the default branch,
+which it is opened against — without conflict, and which checks it reads red. A conflict goes into that wave's
+**ledger** as an entry, and each red check the same way — the fact, the one look that checks it, and you as the
+dispatch that established it — so the wave meets them before its first comment instead of spending its opening turns
+working out what broke. Carry what the forge said and nothing more: why a check is red and how a conflict resolves are
+the wave's. A forge still computing the answer has given none yet, so read it again rather than taking it for
+mergeable. Each read replaces every entry your previous read put in the ledger, so a wave carries only the latest: a
+conflict an earlier wave merged, or a check since turned green, is no longer in it. The dispatches'
+own entries are still carried as they came.
 
 **Sequencing.** One dispatch at a time: while a **report** is owed, nothing else goes out — no stage runs beside
 another, and no stage is worth the minutes an overlap saves. A stage you dispatched in this run is unfinished until its
@@ -163,8 +166,8 @@ addressable, or once continuing it fails. A continued `code-reviewer` opens no *
    recorded is this stage doing its job. A report naming `pr` missing is a stage that cannot be completed: report it as
    a **hand-off** and dispatch nothing further. You are done when the URL is in hand, with every comment the report
    names **anchored anywhere but at a translated line on head** kept — the agent's own wording, and wider than the
-   diff: an assumption about a file the branch never touched is posted on the change request itself on purpose, and is
-   one of these.
+   diff: an assumption about a caller the branch never touched is anchored at the file on purpose, one about a file the
+   branch never touched is posted on the change request itself on purpose, and both are among these.
 3. **Adjudicate the assumptions.** Dispatch `assumption-reviewer`. For each `ASSUMPTION` comment it compares the roads
    the **fork** left open and replies one verdict — `accept`, `improve`, `override` or `escalate`. An `improve` is a
    road that beat the one the code took on a named **axis**, so it carries a **directive** stage 6 implements, and code
@@ -189,8 +192,8 @@ addressable, or once continuing it fails. A continued `code-reviewer` opens no *
       report leaves out altogether has no account of the code at all: put the stage back naming it, since which report
       is right turns on what the replies on that comment say, and reading them is a judgement that is never yours;
    2. kept: every `improve` line, every finding and every `improve` it declined with its grounds, its **hand-off** list,
-      every gate it left red and every piece of uncommitted work it names, and whether the checks ended green; and
-      what it established, added to the **ledger** for the wave after it.
+      every gate it left red and every piece of uncommitted work it names, and whether the checks ended green; and,
+      where a wave follows it, what it established, added to the **ledger** for that wave.
 
    You are done when every directive stage 3 named has an account in the wave's report.
 7. **Second round.** Dispatch `code-reviewer` again, cold, so that a fresh round opens (**Rounds**). It reviews the fix
