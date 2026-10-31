@@ -13,49 +13,49 @@ pays for the same work more than once, because nothing a dispatch learns reaches
 proves reaches the reader.**
 
 **Every implementer rediscovers what the one before it found.** Whether the project marks a ticket delivered is
-searched for by every `implementer` of the run — eight times in one (#23), and on every ticket of #24 and #25 — and is
-usually absent, which every one of them rediscovers. A shared test cluster another session held was re-checked by every
-implementer and the first fix wave (#20). A CI block only a human could clear was rediscovered five times (#25), and a
+searched for by every `implementer` of a run — eight times in one, and on every ticket of two more — and is usually
+absent, which every one of them rediscovers. A shared test cluster another session held was re-checked by every
+implementer and the first fix wave. A CI block only a human could clear was rediscovered five times in one run, and a
 procedure one dispatch found — "confirm teardown, then rerun" — reached the next as a warning, which then paid the same
 22-minute stall. The only channel between dispatches is the **gates** account, and it carries what bit, nothing else.
 
 **A demonstration made in stage 1 has nowhere to go.** An implementer runs the proof, the timing or the probe pair its
 ticket asks for, and its commit and **report** have no slot for what that showed. `change-request-creator` writes the
 description's evidence from commit messages, `spec-reviewer` correctly posts each one as missing, and a fix wave runs
-every demonstration again: 18 **spec finding**s in #23, 3 in #24, 7 and six probe pairs redone in #25. Where a report
-did say a gate passed, it sometimes said more than its records show — a full-suite pass served from cache reported as
-watched (#20, #25) — and the orchestrator passed it on.
+every demonstration again: 18 **spec finding**s in one run, 3 and 7 in two others, six probe pairs redone in the last.
+Where a report did say a gate passed, it sometimes said more than its records show — a full-suite pass served from
+cache reported as watched, in two runs — and the orchestrator passed it on.
 
 **A fix wave has no exit and no checkpoint.** "Drive the checks green" has no case for a **check** red for a cause no
-commit on the branch can clear: a wave outwaited a third-party outage for 37 minutes after its work was done (#6), and
-re-ran a CI block no rerun could clear (#25). It commits only once every comment is worked, so an interruption lost the
-whole of a wave and left its edits in the tree (#11). It reads the **verdict**s on a finding's lines only after it has
+commit on the branch can clear: a wave outwaited a third-party outage for 37 minutes after its work was done, and
+another re-ran a CI block no rerun could clear. It commits only once every comment is worked, so an interruption lost
+the whole of a wave and left its edits in the tree. It reads the **verdict**s on a finding's lines only after it has
 fixed it, so a wave built and pushed a fix that a standing `accept` had already ruled out, then reverted it, at about 15
-minutes of CI (#23). And it rewrote the change request's description that stage 9 then rewrote again (#19).
+minutes of CI. And a wave rewrote the change request's description that stage 9 then rewrote again.
 
-**Nobody checks that the change request can merge.** #1 flipped a conflicting change request ready and its human spent
-17 minutes fixing it. In #23 the default branch moved mid-delivery and turned a check red, and the next wave spent its
-first turns working out what broke.
+**Nobody checks that the change request can merge.** One run flipped a conflicting change request ready and its human
+spent 17 minutes fixing it. In another the default branch moved mid-delivery and turned a check red, and the next wave
+spent its first turns working out what broke.
 
 **GitLab's commit anchor stores no anchor.** The worked example for an **assumption comment** anchored at the commit
-that recorded it is a bare `commit_id`. GitLab accepts it and stores nothing positional, so every time it was used it
-led to a post, a delete and a repost, or to the anchor being written into the body (#3, #6, #12, #13). And the anchoring
+that recorded it is a bare `commit_id`. GitLab accepts it and stores nothing positional, so in each of the four runs
+that used it, it led to a post, a delete and a repost, or to the anchor being written into the body. And the anchoring
 ladder has no rung that always holds: where the file is not in the diff at all, both the file-level and the commit
-anchor are refused, and in #20 one assumption was never posted and so never adjudicated.
+anchor are refused, and one assumption was never posted and so never adjudicated.
 
-**A round polls twice at once.** Both **round**s of #23 sent two identical status **poll**s in one turn, and #20 did
-the same. Each poll now holds for up to 50 seconds, so a parallel duplicate holds a second wait for nothing.
+**A round polls twice at once.** Both **round**s of one run sent two identical status **poll**s in one turn, and
+another run did the same. Each poll now holds for up to 50 seconds, so a parallel duplicate holds a second wait for
+nothing.
 
 **Every agent mishandles a long wait, a large file and a secret the same way.** A sleep loop beside a job already in the
-background burned 26 turns (#12); a blocking wait ran on after the completion notice arrived, leaving a failed **gate**
-unread for nine minutes (#24); two 600-second blind waits happened twice (#25). Whole files were dumped through the
-shell and then read again (#8, #9), and a 44 KB spec was read three times because the first output was persisted rather
-than shown (#25). Credentials found in a repository were used literally in commands, twice, and now sit in the run's
-record (#15).
+background burned 26 turns; a blocking wait ran on after the completion notice arrived, leaving a failed **gate** unread
+for nine minutes; two 600-second blind waits happened twice in one run. Whole files were dumped through the shell and
+then read again, and a 44 KB spec was read three times because the first output was persisted rather than shown.
+Credentials found in a repository were used literally in commands, twice, and now sit in the run's record.
 
 **A round's prose can reach a fix wave rewritten, and nobody says so.** When a dispatch's hand-back matches the host's
-instruction-shaped patterns, the host neutralises it and opens it with a flag line saying so. It did so to **round**
-prose the build skill carries verbatim into a fix wave (#3, #9, #24); the flag stayed with the orchestrator, and the fix
+instruction-shaped patterns, the host neutralises it and opens it with a flag line saying so. It did so, in three runs,
+to **round** prose the build skill carries verbatim into a fix wave; the flag stayed with the orchestrator, and the fix
 wave read the neutralised prose as the reviewer's.
 
 ## Solution
@@ -123,15 +123,15 @@ Eight changes, all of them prose in the build skill and the agents it dispatches
 
 ### Modules touched, and what they run on
 
-| Module                                   | Model / effort | Changes                                                     |
-|------------------------------------------|----------------|-------------------------------------------------------------|
-| build skill (the orchestrator's session) | opus / medium  | 2, 6, 7, 8                                                  |
-| `code-reviewer`                          | sonnet / low   | 1                                                           |
-| `implementer`                            | opus / high    | 2, 5, 7 (report slot)                                       |
-| `comments-addresser`                     | opus / medium  | 2, 4, 5, 6 (the merge), 7 (report slot)                     |
-| `change-request-creator`                 | opus / medium  | 2, 3, 5 (the mirror)                                        |
-| `assumption-reviewer`                    | opus / high    | 2                                                           |
-| `spec-reviewer`                          | opus / medium  | 2; reads `Evidence:` as the record of what was demonstrated |
+| Module                                   | Model / effort | Changes                                       |
+|------------------------------------------|----------------|-----------------------------------------------|
+| build skill (the orchestrator's session) | opus / medium  | 2, 6, 7, 8                                    |
+| `code-reviewer`                          | sonnet / low   | 1                                             |
+| `implementer`                            | opus / high    | 2, 5, 7 (report slot)                         |
+| `comments-addresser`                     | opus / medium  | 2, 4, 5, 6 (the merge), 7 (report slot)       |
+| `change-request-creator`                 | opus / medium  | 2, 3, 5 (the mirror)                          |
+| `assumption-reviewer`                    | opus / high    | 2                                             |
+| `spec-reviewer`                          | opus / medium  | 2; reads `Evidence:` as what was demonstrated |
 
 The wording is sized to those settings. `code-reviewer` runs at low effort, so its poll rule is one plain sentence, and
 the parallel duplicate is exactly what a low-effort turn emits. Most new rules land on `comments-addresser` at medium
@@ -198,38 +198,36 @@ contents, a debrief's figures — never how an agent phrased its reasoning.
 
 - **Everything already fixed at head:** the held poll, the burst of refused posts, the gates account reaching fix waves,
   the uncommitted refinement output, the implementer's anchor read-back.
-- **Hunches from older commits that never recurred at head:** `accept` on nearly everything (#6, #17), a wave adding
-  unrequested scope (#6), doubled baseline gate runs (#1), a `review_id` collision (#13), round 2 costing as much as
-  round 1 (#3).
-- **The ledger for reviewers.** `assumption-reviewer` in #20 posted a wrong **directive** because it did not know which
+- **Hunches from older commits that never recurred at head:** `accept` on nearly everything, a wave adding unrequested
+  scope, doubled baseline gate runs, a `review_id` collision, round 2 costing as much as round 1.
+- **The ledger for reviewers.** An `assumption-reviewer` posted a wrong **directive** because it did not know which
   files a gate leaves uncovered; reviewers still read that first-hand, so their judgement rests on nothing another agent
   claimed.
-- **Clearing a conflict before stage 3.** In #20 the change request conflicted from stage 3 to stage 5, so no check ran
-  and three of four spec findings were about that; the first fix wave now merges it, at the price of those stages.
-- **Re-measuring between edits** (#11, #13): a writer's habit, not every agent's.
-- **A flip bar that requires a round on the head being flipped** (#10): a third round per run is its price.
+- **Clearing a conflict before stage 3.** In one run the change request conflicted from stage 3 to stage 5, so no check
+  ran and three of four spec findings were about that; the first fix wave now merges it, at the price of those stages.
+- **Re-measuring between edits:** a writer's habit, not every agent's.
+- **A flip bar that requires a round on the head being flipped:** a third round per run is its price.
 - **The stage-flow gaps:** an exit for a blocked ticket in stage 1, question rounds in build, the first round before
-  adjudication (#6, #9, #10, #13, #15).
-- **Gates scoped to what a piece touched** (#24), **shell self-harm guards** (#15, #17), **carrying a wave's implemented
-  lines to the next wave** (#2, #10, #17), **listing the forks a wave closed** (#3), and **a shipped line translator**.
+  adjudication.
+- **Gates scoped to what a piece touched**, **shell self-harm guards**, **carrying a wave's implemented lines to the
+  next wave**, **listing the forks a wave closed**, and **a shipped line translator**.
 
 ## Further Notes
 
 ### The source
 
-The consolidated findings and the twenty-five debriefs behind them sit outside this repository; they name repositories
-and transcripts and are not for forwarding. Each finding was sorted by the plugin commit of every run that grounded it,
-and kept only where a run at or near head grounded it or the contract at head still carries the gap. The parallel-poll
-hunch was grounded by reading #23's record: both rounds sent two `code_review_status` calls in one assistant message.
-The host's flag line was confirmed in a `comments-addresser` hand-back's record: it opens
+The debriefs are not part of this repository, and this spec carries what it needs from them. Each finding was sorted by
+the plugin commit of every run that grounded it, and kept only where a run at or near head grounded it or the contract
+at head still carries the gap. Two hunches were grounded in a run's own record: both rounds of one run sent two
+`code_review_status` calls in one assistant message, and a flagged hand-back opens with the host's line
 `[harness: subagent output matched instruction-shaped pattern(s): …]`.
 
 ### What this reverses
 
 [idp-scaffold-defects](../idp-scaffold-defects/spec.md) put "carrying repository conventions between implementers, such
 as whether the project marks a ticket delivered" out of scope, keeping them first-hand reading. Three runs on head
-(#23–#25) searched for that convention on every ticket. The ledger reverses that call for a convention found absent,
-and keeps it for one found present, which is still cited and read rather than restated.
+searched for that convention on every ticket. The ledger reverses that call for a convention found absent, and keeps it
+for one found present, which is still cited and read rather than restated.
 
 ### Load-bearing behaviour this change must not disturb
 
