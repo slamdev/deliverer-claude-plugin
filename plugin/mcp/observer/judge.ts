@@ -89,7 +89,7 @@ import {
   type ModelChoice,
   type ModelEnvironment,
 } from "./model-env.ts";
-import { runNotes } from "./notes.ts";
+import { runNotes, type RunNotes } from "./notes.ts";
 import {
   NOTHING_JUDGES_YET,
   type Judging,
@@ -198,7 +198,18 @@ export type Answer =
     }
   /** the answer did not arrive in the instructed shape, which is a failed call and never an empty
    *  defects section */
-  | { readonly kind: "malformed"; readonly why: string };
+  | {
+      readonly kind: "malformed";
+      readonly why: string;
+      /**
+       * That the answer is in the wrong shape as a whole — a marker missing, or the two out of order
+       * — rather than split cleanly with a section failing inside it (observer-debrief-defects
+       * ticket 04). Only these are kept in the notes file: they are the cases the split itself
+       * could not make, which is what the spec's *The unparsed reading* names, and the two inside a
+       * section stay the failures they were.
+       */
+      readonly unsplit: boolean;
+    };
 
 /**
  * The answer, split into the two blocks the debrief places — or refused.
@@ -214,6 +225,7 @@ export function readAnswer(text: string): Answer {
   if (defectsAt === -1 || hunchesAt === -1) {
     return {
       kind: "malformed",
+      unsplit: true,
       why:
         `the answer carries no \`${defectsAt === -1 ? DEFECTS_MARKER : HUNCHES_MARKER}\` line, so ` +
         `it did not come back in the instructed shape and nothing here can tell a run it found ` +
@@ -223,6 +235,7 @@ export function readAnswer(text: string): Answer {
   if (hunchesAt < defectsAt) {
     return {
       kind: "malformed",
+      unsplit: true,
       why: `the answer carries \`${HUNCHES_MARKER}\` before \`${DEFECTS_MARKER}\`, so the two ` +
         `sections cannot be told apart`,
     };
@@ -232,6 +245,7 @@ export function readAnswer(text: string): Answer {
   if (defects === "" || hunches === "") {
     return {
       kind: "malformed",
+      unsplit: false,
       why: `the answer's ${defects === "" ? "defects" : "hunches"} section is empty, where the ` +
         `shape asks for either its items or the word saying it has none`,
     };
@@ -241,6 +255,7 @@ export function readAnswer(text: string): Answer {
   if (!empty && counted.length === 0) {
     return {
       kind: "malformed",
+      unsplit: false,
       why:
         `the answer's defects section neither opens with "none" nor carries a single \`### \` ` +
         `heading, so there is no way to tell how many defects it means to be naming`,
@@ -760,6 +775,14 @@ export interface SynthesisInput {
   readonly notesCost?: ObservationCost;
   readonly notesSummary?: NotesSummary;
   /**
+   * Where an answer in the wrong shape is kept, and the notes' summary as it stands after that
+   * (observer-debrief-defects ticket 04). Absent, such an answer is a failure and nothing more.
+   *
+   * The summary is asked for again rather than taken from `notesSummary` above, because keeping the
+   * answer may be what opened the notes file at all, and the debrief names that file by its path.
+   */
+  readonly notesHalf?: Pick<RunNotes, "keepUnparsed" | "summary">;
+  /**
    * The earlier **debrief**s of this **epic**, already read off disk (ticket 07; D21), and what
    * continuity there was to be had.
    *
@@ -965,6 +988,27 @@ export async function synthesise(input: SynthesisInput): Promise<Judging> {
   }
 
   const answer = readAnswer(text);
+  // **Kept, not forwarded, and not asked for again** (observer-debrief-defects ticket 04). An answer
+  // the split could not make is still a reading somebody paid for, so its prose goes into the notes
+  // file — the one file beside the debrief that carries no bound — and the debrief says the run went
+  // unjudged without quoting a word of it (ADR-0018). No retry and no structured output: the
+  // reading is kept rather than paid for twice.
+  if (answer.kind === "malformed" && answer.unsplit && input.notesHalf !== undefined) {
+    const served = servedBy(result);
+    const kept = await input.notesHalf.keepUnparsed({
+      trace: input.trace,
+      why: answer.why,
+      readBy: `the synthesis${served === undefined ? "" : `, served by ${served}`}`,
+      body: text,
+    });
+    return unparsedReading(
+      answer.why,
+      kept,
+      addCosts(before, cost),
+      input.notesHalf.summary(),
+      input.earlier.summary,
+    );
+  }
   if (answer.kind === "malformed") {
     return failed(
       `the synthesis answered, but ${answer.why}. Its answer is held to a shape by instruction ` +
@@ -1022,6 +1066,46 @@ function notJudged(
     reason:
       `The one synthesis this run's debrief rests on did not produce an answer, so what follows ` +
       `is the run's own facts and nothing that read them: ${reason}.`,
+    cost,
+    notes,
+    continuity,
+  };
+}
+
+/**
+ * What a debrief says where the synthesis answered in a shape it could not be split on
+ * (observer-debrief-defects ticket 04; the spec's *The unparsed reading*).
+ *
+ * **One statement, where the defects belong, and it quotes nothing of the answer.** It says the run
+ * went unjudged, why the answer could not be read, and that the answer is kept in the notes file —
+ * named by its role rather than restated, since the debrief already gives that file's path and its
+ * refusal. `why` is `readAnswer`'s own wording, which names only the markers and never the answer's
+ * text, so nothing the reading carried reaches the document a human forwards (ADR-0018).
+ *
+ * Where the answer could not be written down, that is said instead: a statement pointing at a file
+ * that does not hold the answer would be the claim this ticket exists to make true.
+ */
+function unparsedReading(
+  why: string,
+  kept: { readonly kept: true } | { readonly kept: false; readonly why: string },
+  cost: ObservationCost,
+  notes: NotesSummary,
+  continuity?: ContinuitySummary,
+): Judging {
+  return {
+    kind: "none",
+    reason:
+      `The one synthesis this run's debrief rests on answered, but not in the shape it was told to ` +
+      `answer in, so what follows is the run's own facts and nothing that read them: ${why}. ` +
+      `None of that answer is shown here — split, it would be defects and ` +
+      `hunches; unsplit, nothing can tell which of its lines it meant as a finding, and nothing ` +
+      `held it to this document's bound. ` +
+      (kept.kept
+        ? `It is kept whole, under a heading of its own after the dispatch notes, in this run's ` +
+          `do-not-forward notes file, for whoever holds this machine to read.`
+        : `It was to be kept in this run's do-not-forward notes file, and could not be written ` +
+          `there: ${kept.why}.`) +
+      ` No second reading was asked for.`,
     cost,
     notes,
     continuity,
@@ -1206,6 +1290,7 @@ export function synthesisJudge(
           notes: await notes.text(),
           notesCost: notes.cost(),
           notesSummary: notes.summary(),
+          notesHalf: notes,
           earlier,
           model,
           environment,
