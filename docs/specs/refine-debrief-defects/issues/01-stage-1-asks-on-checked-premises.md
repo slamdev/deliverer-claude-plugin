@@ -11,7 +11,7 @@ round says so and asks whether to pull. Settled under **The refine skill** in `.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] Stage 1's step 1 takes, for a decision, the premise its recommended answer rests on through the mechanical bar,
       with the reach of a removal as the example; a thread goes out as a sweep and the decision waits under step 2's
@@ -32,3 +32,7 @@ round says so and asks whether to pull. Settled under **The refine skill** in `.
 - [ ] Recorded for the hand-driven refine run (`../spec.md` § Testing Decisions): the default branch fetched before
       stage 1, and every question round wider than four questions sent as several calls in one message — or that the
       fixture raised no such frontier.
+
+## Comments
+
+Implemented on `refine-debrief-defects`. The hand-driven refine run (`../spec.md` § Testing Decisions) has not been run yet; its checklist item stays open until it is.

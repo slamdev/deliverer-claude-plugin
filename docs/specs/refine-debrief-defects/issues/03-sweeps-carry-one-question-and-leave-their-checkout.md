@@ -12,7 +12,7 @@ skill** and **`spec-writer`** in `../spec.md`; stories 8–12, 14.
 **Blocked by:** 02 — The shared bounds in all three files (the sweep dispatch passes the skill's copy on by
 reference).
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] **Sweeps** says a dispatch that would list several numbered points is several sweeps.
 - [x] A sweep's dispatch carries the subjects of the sweeps in flight as context, the environment facts an earlier
@@ -29,3 +29,7 @@ reference).
 - [ ] Recorded for the hand-driven refine run (`../spec.md` § Testing Decisions): every sweep carrying one question,
       every checkout a sweep made listed in the brief by path and ref, and the run's report listing the scratch paths
       kept.
+
+## Comments
+
+Implemented on `refine-debrief-defects`. The hand-driven refine run (`../spec.md` § Testing Decisions) has not been run yet; its checklist item stays open until it is.

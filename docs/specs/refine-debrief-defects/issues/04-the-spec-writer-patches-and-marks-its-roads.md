@@ -9,7 +9,7 @@ way. Settled under **`spec-writer`** in `../spec.md`; stories 17 (the spec's hal
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] A put-back clause: a continued dispatch edits the published spec in place, and only a cold dispatch, including
       **Resume** finding a spec already published, writes it whole.
@@ -22,3 +22,7 @@ way. Settled under **`spec-writer`** in `../spec.md`; stories 17 (the spec's hal
       the existing fixture; the put-back wave's output tokens in each arm's `wave-1.md` and `reading.json` are recorded,
       the current arm coming in well under its own first-dispatch output, and whether every fork road in each arm's
       first report carries *proven* or *unchecked*. Arms are compared only with each other.
+
+## Comments
+
+Implemented on `refine-debrief-defects`. The bench arms (`../spec.md` § Testing Decisions) have not been run yet; that checklist item stays open until they are.

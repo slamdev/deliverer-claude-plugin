@@ -9,7 +9,7 @@ stories 25, 26.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] Step 5's per-story check produces a mapping from every user story number to the ticket numbers that cover it.
 - [x] The report carries that mapping in place of the one-line coverage assertion, and still names an uncovered story

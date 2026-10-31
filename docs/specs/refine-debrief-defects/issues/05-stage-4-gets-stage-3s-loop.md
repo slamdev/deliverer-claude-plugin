@@ -10,7 +10,7 @@ when no fork its report raised is still open. Settled under **The refine skill**
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] `tickets-writer` sends every place its reading found the spec wrong — a mechanism that would not achieve what
       the spec intends, a decision the code makes impossible — to its report as a fork with what it found, never

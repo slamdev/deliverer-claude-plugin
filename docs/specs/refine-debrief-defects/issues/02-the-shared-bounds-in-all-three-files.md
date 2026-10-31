@@ -10,7 +10,7 @@ scratch copy kept while its report carries open forks — each sit once in the r
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] The working-habits block carries the four rules **The shared bounds** names, the secret rule including read by
       key, never printed or interpolated, compared by hash or length, and a found credential reported and never used.
