@@ -12,5 +12,9 @@ records it as done and gives the epic no work on it. Settled under **Landed file
 - [x] `spec-writer`'s step 1 carries the landed clause.
 - [x] `tickets-writer` is unchanged.
 - [x] `spec-writer` is read against `/mattpocock-skills:writing-for-agents`.
-- [ ] Recorded from a hand-driven refine run: the published spec gives the epic no work on any file the brief marks
+- [x] Recorded from a hand-driven refine run: the published spec gives the epic no work on any file the brief marks
       landed.
+
+## Comments
+
+Run `/tmp/deliverer-e2e/refine-typescript-library-2026-10-31T22-26-33-8nIwZM` on `7daf0a0`, 2026-10-31: passed every assertion and the verifier, 58m 38s, $28.87. The spec cites `GLOSSARY.md` and ADR-0001 as recorded and gives the epic no work on either; no ticket commits them. One reading — the first run never had the defect either.
