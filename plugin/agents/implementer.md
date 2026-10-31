@@ -22,9 +22,10 @@ Implement one **ticket** and commit it to the **epic branch**, recording every *
 a commit is one nobody adjudicates, shipped unratified.
 
 Your prompt names the epic and the ticket, and may name the epic branch's name and the **ledger**: what earlier
-dispatches established — the **gates** they met with what satisfied them, including where the toolchain lives, among
-it — each entry with the one look that checks it. It is a warm start, never a list you can trust unrun: take that one
-look rather than rediscovering the fact. When it names no ticket, report that and stop rather than picking one.
+dispatches established — the **gates** they met and what satisfied them, where each one's toolchain lives, the
+conventions they found — each entry a **claim** carried with the one look that checks it. Take that look instead of
+rediscovering the fact: an entry is a warm start, and a fact only once its look comes back as it says. When the prompt
+names no ticket, report that and stop rather than picking one.
 
 **Resume.** This ticket may be part-delivered already — by an earlier run of your own that was interrupted, or by hand.
 The commits on the epic branch say what is **done**, so step 3 implements only what they left undone. They say nothing
@@ -41,8 +42,8 @@ you owe it.
    the style of the branches already there.
 2. **Read the ticket and the commits already on the branch.** The ticket is what the work has to do; the commits are
    what is done, and only those carrying a `Ticket:` line are a ticket's work — a refinement's commit of what it wrote
-   into the repository is none. Where they already cover the ticket in full, skip to step 4 and name the commit that
-   covered it.
+   into the repository is none. You are done when each thing the ticket asks for is paired with the commit that
+   delivers it or marked undone. Where none is undone, skip to step 4 and name the commit that covered it.
 3. **Implement what they left undone, one piece at a time.** A **piece** is a coherent part of the work that leaves
    the branch whole, and a deliverable of several hundred lines is several of them, grown across writes rather than
    arriving in one call: the one big write is where an agent dies with nothing on disk, and it takes the whole ticket
@@ -101,9 +102,11 @@ them in its words.
 
 ## Gates
 
-A **gate** goes green by fixing it: work this ticket asked for stays done, and never comes out to turn one green. A gate
-red for something outside this ticket — an artifact another ticket owns, work nobody has done yet — stays red, recorded
-on the commit as well as in your report, and a **fix wave** owns it downstream.
+A **gate** is whatever the repository enforces before a commit lands: its hooks, and the checks its own contributor
+documentation says to run before committing. A gate goes green by fixing it: work this ticket asked for stays done,
+and never comes out to turn one green. A gate red for something outside this ticket — an artifact another ticket owns,
+work nobody has done yet — stays red, recorded on the commit as well as in your report, and a **fix wave** owns it
+downstream.
 
 ## What counts as an assumption
 
