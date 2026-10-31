@@ -61,7 +61,7 @@ import { earlierDebriefs, type Continuity, type ContinuitySummary } from "./cont
 import { installedDirectory } from "./plugin-commit.ts";
 import { renderTrace } from "./trace-file.ts";
 import { formatDuration, type Trace } from "./trace.ts";
-import { epicSlugs, runSkills, type RunFacts } from "./run-facts.ts";
+import { epicName, runSkills, type RunFacts } from "./run-facts.ts";
 import {
   addCosts,
   bound,
@@ -96,6 +96,7 @@ import {
   type JudgedTree,
   type NotesSummary,
   type ObservationCost,
+  type SynthesisExtent,
 } from "./debrief-file.ts";
 
 /* ──────────────────────────────── the model, and its bounds ──────────────────────────────── */
@@ -328,11 +329,10 @@ function synthesisPrompt(input: {
   const endedIn = facts.ending.stage === undefined ? "" : ` in \`${facts.ending.stage}\``;
   // Both names of a renamed epic, because the debrief's header carries both and the synthesis is
   // told the header already holds the slug (ticket 05). A run never renamed reads as it did.
-  const epic = epicSlugs(facts, trace);
-  const slugs =
-    epic.first === undefined
-      ? `\`${epic.last}\``
-      : `\`${epic.last}\`, renamed from \`${epic.first}\``;
+  const slugs = epicName(facts, trace, {
+    quote: (slug) => `\`${slug}\``,
+    renamed: (first) => `, renamed from ${first}`,
+  });
   const waiting =
     `${facts.human.questionRounds}, and ${formatDuration(facts.human.totalWaitMs)} of the run ` +
     `spent waiting on them`;
@@ -788,7 +788,7 @@ export interface SynthesisInput {
    * The summary is asked for again rather than taken from `notesSummary` above, because keeping the
    * answer may be what opened the notes file at all, and the debrief names that file by its path.
    */
-  readonly notesHalf?: Pick<RunNotes, "keepUnparsed" | "summary">;
+  readonly unparsedKeeper?: Pick<RunNotes, "keepUnparsed" | "summary">;
   /**
    * The earlier **debrief**s of this **epic**, already read off disk (ticket 07; D21), and what
    * continuity there was to be had.
@@ -1000,9 +1000,9 @@ export async function synthesise(input: SynthesisInput): Promise<Judging> {
   // file — the one file beside the debrief that carries no bound — and the debrief says the run went
   // unjudged without quoting a word of it (ADR-0018). No retry and no structured output: the
   // reading is kept rather than paid for twice.
-  if (answer.kind === "malformed" && answer.unsplit && input.notesHalf !== undefined) {
+  if (answer.kind === "malformed" && answer.unsplit && input.unparsedKeeper !== undefined) {
     const served = servedBy(result);
-    const kept = await input.notesHalf.keepUnparsed({
+    const kept = await input.unparsedKeeper.keepUnparsed({
       trace: input.trace,
       why: answer.why,
       readBy: `the synthesis${served === undefined ? "" : `, served by ${served}`}`,
@@ -1012,7 +1012,7 @@ export async function synthesise(input: SynthesisInput): Promise<Judging> {
       answer.why,
       kept,
       addCosts(before, cost),
-      input.notesHalf.summary(),
+      input.unparsedKeeper.summary(),
       input.earlier.summary,
     );
   }
@@ -1073,6 +1073,7 @@ function notJudged(
     reason:
       `The one synthesis this run's debrief rests on did not produce an answer, so what follows ` +
       `is the run's own facts and nothing that read them: ${reason}.`,
+    why: `did not produce an answer: ${reason}`,
     cost,
     notes,
     continuity,
@@ -1113,6 +1114,13 @@ function unparsedReading(
         : `It was to be kept in this run's do-not-forward notes file, and could not be written ` +
           `there: ${kept.why}.`) +
       ` No second reading was asked for.`,
+    why:
+      `answered, but not in the shape it was told to answer in: ${why}. None of that answer is ` +
+      `shown here; ` +
+      (kept.kept
+        ? `it is kept whole in this run's do-not-forward notes file`
+        : `it was to be kept in this run's do-not-forward notes file, and could not be written ` +
+          `there: ${kept.why}`),
     cost,
     notes,
     continuity,
@@ -1154,6 +1162,9 @@ function noCredentialReached(
       `observation reads one identity, so every call after it would have been the same call. ` +
       `${credentialSource(environment)} Every figure above is the run's own, read from the host's ` +
       `records by code that calls no model, and it stands.`,
+    why:
+      `met no credential: a model call this observation made came back not logged in, and ` +
+      `nothing was judged`,
     cost,
     notes,
     continuity,
@@ -1192,11 +1203,13 @@ function noCredentialReached(
  * lifts D9 and D23's one synthesis exactly as far as a resumption). Six build debriefs were read
  * mid-run and never again, one of them at entry 423 of 773, and the settle finaliser makes a
  * reading taken between two stages likelier rather than rarer. So `./observer.ts` asks for a
- * reading again — `readAgain` — on the first finalise after an un-finalise the extent grew past
- * the held reading for, and this judge pays for it only then: the notes catch up with what
- * finished since, the synthesis reads the longer extent, and the answer names the readings it
- * replaced (`replaced`) and carries their spend. A run resumed twice is read three times, and a run
- * that never resumed is read once, as before.
+ * reading again — `readAgain` — on the first finalise after an un-finalise, and this judge pays
+ * for it only where `owesReading` finds the extent grew past the held reading's, judged or not:
+ * the notes catch up with what finished since, the synthesis reads the longer extent, and the
+ * answer carries the spend of every reading. A judged answer names the readings it replaced
+ * (`replaced`); an unjudged one over a held judgement leaves that judgement standing and is named
+ * beside it (`failedReread`). A run resumed twice is read three times, and a run that never
+ * resumed is read once, as before.
  *
  * `beside` is the notes file's placement and the caller's to choose, exactly as the debrief
  * writer's two forms are: a **replay** writes a set beside whatever is there (D19), and the live
@@ -1262,17 +1275,44 @@ export function synthesisJudge(
     // *The extra reading*). The held answer stands on every other call — mid-run rewrites, the
     // finalise of an extent no longer than it read, and the readings `./observer.ts` takes after a
     // finalise — so the new signal itself never buys a reading: the observer asks on the first
-    // finalise after an un-finalise the extent grew past this answer's reading for, and nowhere
-    // else. The check on the extent here is the same test again, so an ask that reaches an answer
-    // of the extent in hand cannot pay for it twice.
-    const readAgain =
+    // finalise after an un-finalise, and `owesReading` — the one place the extent is compared —
+    // pays only where the run grew past the extent this answer was taken of, whatever it came to.
+    if (
       made !== undefined &&
-      input.finalising &&
-      input.readAgain === true &&
-      made.kind === "judged" &&
-      input.facts.extent.lastEntry > made.readOf.lastEntry;
-    if (made !== undefined && !readAgain) return made;
-    const replacing = made?.kind === "judged" ? made : undefined;
+      !(input.finalising && input.readAgain === true && owesReading(made, input.facts))
+    ) {
+      return made;
+    }
+    const held = made;
+    /**
+     * This reading, settled as the answer the observation holds (ticket 10): the extent it was
+     * taken of, whatever it came to, so a later resumption is measured against it; and the spend
+     * of every reading before it. `spent` is this synthesis's own, which `notes.cost()` does not
+     * count. Over a held answer, a judged reading replaces it and names the extents it replaced,
+     * and an unjudged one leaves a held judgement standing and is named beside it instead
+     * (user story 7: a failed reading of the longer extent judged nothing that could take the
+     * place of defects already paid for).
+     */
+    const settle = (answer: Judging, spent: ObservationCost): Judging => {
+      const cost = addCosts(addCosts(spentBefore, notes.cost()), spent);
+      spentBefore = addCosts(spentBefore, spent);
+      const readOf = extentOf(input.facts);
+      if (answer.kind === "judged") {
+        const replaced = held === undefined ? [] : readingsIn(held);
+        return under(
+          replaced.length === 0 ? { ...answer, cost } : { ...answer, cost, replaced },
+        );
+      }
+      if (held?.kind === "judged") {
+        return under({
+          ...held,
+          cost,
+          notes: answer.notes ?? held.notes,
+          failedReread: { readOf, why: answer.why ?? answer.reason },
+        });
+      }
+      return under({ ...answer, cost, readOf });
+    };
     // The run's OWN dispatches and never the session's, which is the set `./run-facts.ts` already
     // bounds: a dispatch some later work in the same session made is not this run's to read.
     //
@@ -1304,9 +1344,11 @@ export function synthesisJudge(
     // are neither listed nor read on this path: they exist to reach the one whole-run reading, so a
     // debrief saying it had two of them would name a reading that never happened (ticket 07).
     if (credential.closed()) {
-      const answer = under(noCredentialReached(environment, notes.cost(), notes.summary()));
-      if (!input.finalising) return answer;
-      made = answer;
+      if (!input.finalising) {
+        return under(noCredentialReached(environment, notes.cost(), notes.summary()));
+      }
+      const unjudged = noCredentialReached(environment, NOTHING_SPENT, notes.summary());
+      made = settle(unjudged, NOTHING_SPENT);
       return made;
     }
     if (!input.finalising) return under(stillWatching(notes.cost(), notes.summary()));
@@ -1329,40 +1371,67 @@ export function synthesisJudge(
         // for a reading after it; every answer `synthesise` gives is its `notesCost` plus that.
         notesCost: NOTHING_SPENT,
         notesSummary: notes.summary(),
-        notesHalf: notes,
+        unparsedKeeper: notes,
         earlier,
         model,
         environment,
         credential,
       });
-      const total = addCosts(addCosts(spentBefore, notes.cost()), answer.cost);
-      spentBefore = addCosts(spentBefore, answer.cost);
-      made = under(
-        replacing === undefined || answer.kind !== "judged"
-          ? { ...answer, cost: total }
-          : {
-              ...answer,
-              cost: total,
-              replaced: [...(replacing.replaced ?? []), replacing.readOf],
-            },
-      );
+      made = settle(answer, answer.cost);
     } catch (error) {
       // `synthesise` answers rather than throws for every failure it can foresee, so this is the
       // one it cannot: a throw from somewhere none was expected. Held as this run's answer like any
       // other, both because the notes' own spend has to survive it and because a second whole-run
       // reading is not something a surprise may buy.
-      made = under(
+      made = settle(
         notJudged(
           `it failed where nothing expected it to and nothing of its own spend was measured: ` +
             `${errorText(error)}`,
-          notes.cost(),
+          NOTHING_SPENT,
           notes.summary(),
           earlier.summary,
         ),
+        NOTHING_SPENT,
       );
     }
     return made;
   };
+}
+
+/**
+ * Whether a run is owed a reading again: the one test of it (observer-debrief-defects ticket 10).
+ *
+ * Asked by the judge on a finalise the observer marks as following an un-finalise, and nowhere
+ * else, so the observer's "the run resumed" and this "past the reading held" are one decision in
+ * two halves rather than the same test written twice. Owed where the run's extent ends past the
+ * extent the held reading was last taken of — whatever that reading came to: a judgement, a
+ * failure, an answer in the wrong shape or a missing credential, since a resumed run is read again
+ * once per resumption whatever it was read as before. A held reading carrying no extent, which only
+ * a final reading written before ticket 10 can be, is owed one too: nothing says the run is no
+ * longer than it was.
+ */
+function owesReading(held: Judging, facts: RunFacts): boolean {
+  const last = latestReadingOf(held);
+  return last === undefined || facts.extent.lastEntry > last.lastEntry;
+}
+
+/** The extent the latest synthesis behind a held answer was taken of, judged or not. */
+function latestReadingOf(held: Judging): SynthesisExtent | undefined {
+  return held.kind === "judged" ? (held.failedReread?.readOf ?? held.readOf) : held.readOf;
+}
+
+/** Every extent a held answer's syntheses were taken of, oldest first (ticket 10). */
+function readingsIn(held: Judging): readonly SynthesisExtent[] {
+  if (held.kind !== "judged") return held.readOf === undefined ? [] : [held.readOf];
+  return [
+    ...(held.replaced ?? []),
+    held.readOf,
+    ...(held.failedReread === undefined ? [] : [held.failedReread.readOf]),
+  ];
+}
+
+function extentOf(facts: RunFacts): SynthesisExtent {
+  return { lastEntry: facts.extent.lastEntry, dispatches: facts.dispatches.length };
 }
 
 /**

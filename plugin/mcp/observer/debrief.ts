@@ -43,7 +43,7 @@ import { formatDuration, type Trace } from "./trace.ts";
 import { DATA_DIRECTORY_ENV, distil } from "./distil.ts";
 import { resolvePluginCommit } from "./plugin-commit.ts";
 import { synthesisJudge } from "./judge.ts";
-import { epicSlugs, runFactsOf, runSkills, type RunFacts } from "./run-facts.ts";
+import { epicName, runFactsOf, runSkills, type RunFacts } from "./run-facts.ts";
 import {
   NOTHING_JUDGED,
   writeDebrief,
@@ -266,14 +266,20 @@ function lastEntryRead(record: RecordFile): LastEntryRead {
  */
 function stoppedEarlyIn(record: RecordFile, lastRead: LastEntryRead): DebriefStatus | undefined {
   if (record.cutAt === undefined) return undefined;
+  return stoppedEarlyAt(
+    lastRead,
+    `the record ends partway through line ${record.cutAt}, which could not be read`,
+  );
+}
+
+/**
+ * The status of a debrief whose observation stopped early at `lastRead`, and why (ticket 06) — the
+ * one builder for both the replay's case above and the live observer's.
+ */
+export function stoppedEarlyAt(lastRead: LastEntryRead, reason: string): DebriefStatus {
   return {
-    finalised: false,
-    note: "",
-    stoppedEarly: {
-      lastEntry: lastRead.entry,
-      lastEntryAt: lastRead.at,
-      reason: `the record ends partway through line ${record.cutAt}, which could not be read`,
-    },
+    state: "stopped early",
+    stoppedEarly: { lastEntry: lastRead.entry, lastEntryAt: lastRead.at, reason },
   };
 }
 
@@ -346,11 +352,9 @@ function judgingLine(outcome: Extract<DebriefOutcome, { kind: "written" }>): str
 export function summariseDebrief(outcome: Extract<DebriefOutcome, { kind: "written" }>): string {
   const { facts, trace } = outcome;
   const spend = facts.spend.usd;
-  // Both names of a renamed epic, as its debrief's own title gives them (ticket 05).
-  const epic = epicSlugs(facts, trace);
-  const filedUnder = epic.first === undefined ? "" : ` (first ${epic.first})`;
   return (
-    `${runSkills(facts, trace) || "unknown skill"} · slug ${epic.last}${filedUnder} · ` +
+    // Both names of a renamed epic, as its debrief's own title gives them (ticket 05).
+    `${runSkills(facts, trace) || "unknown skill"} · slug ${epicName(facts, trace)} · ` +
     `${formatDuration(facts.extent.durationMs)} · ` +
     `${spend === undefined ? "spend unknown" : `about $${spend.toFixed(2)}`} · ` +
     `${facts.dispatches.length} dispatches · ` +
@@ -447,7 +451,7 @@ async function main(argv: readonly string[]): Promise<number> {
     `${outcome.written.debriefPath}\n  ${summariseDebrief(outcome)}\n` +
       `  ${judgingLine(outcome)}\n` +
       // Only where it applies, so an intact record's output is what it always was (ticket 06).
-      (outcome.input.status?.stoppedEarly === undefined
+      (outcome.input.status?.state !== "stopped early"
         ? ""
         : `  observation stopped early: last read at entry ` +
           `${outcome.input.status.stoppedEarly.lastEntry}, so this debrief is not final\n`) +

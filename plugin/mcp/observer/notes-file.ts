@@ -202,7 +202,7 @@ export function renderNote(input: {
             `${dispatch.continues} — this note covers the first attempt and every continue after it`,
           ),
           row(
-            "read to",
+            READ_TO_LABEL,
             `entry ${dispatch.entryCount} of its record` +
               (dispatch.lastEntryAt === undefined ? "" : `, at ${dispatch.lastEntryAt}`),
           ),
@@ -312,8 +312,12 @@ function notedIn(text: string): Map<string, number> {
   return keys;
 }
 
-/** The `read to` row `renderNote` writes, as `notedIn` reads it back. */
-const READ_TO = /^ {2}read to {7}entry (\d+) of its record/;
+/**
+ * The `read to` row `renderNote` writes, as `notedIn` reads it back — built by `row` itself, so the
+ * label's padding the reader expects is the padding the writer gives and the two cannot drift.
+ */
+const READ_TO_LABEL = "read to";
+const READ_TO = new RegExp(`^${row(READ_TO_LABEL, "entry ")}(\\d+) of its record`);
 
 /** This run's notes as the synthesis reads them, or `undefined` where none were written. */
 export async function readNotes(path: string): Promise<string | undefined> {

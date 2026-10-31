@@ -231,7 +231,7 @@ export interface RunFacts {
   readonly openedAt: { readonly completed: number; readonly total: number } | undefined;
   /**
    * The slug the run's LAST task update inside the extent carried, or `undefined` where none did
-   * (observer-debrief-defects ticket 05). What the debrief is headed with; `epicSlugs` says how.
+   * (observer-debrief-defects ticket 05). What the debrief is headed with; `epicName` says how.
    *
    * Read inside the window rather than taken from `Trace.lastSlug`, and a measured record is why:
    * a delivery whose human went on, in the same session, to a task list of another name would
@@ -275,21 +275,32 @@ export function runSkills(facts: RunFacts, trace: Trace): string {
 }
 
 /**
- * The names to head a run's debrief with: the last it carried, and the first beside it only when
+ * A run's epic as a human is told it: the last slug it carried, and the first beside it only when
  * the two differ (observer-debrief-defects ticket 05; Solution item 6).
  *
- * `first` is the KEY — `Trace.slug`, what the observation directory, the identity file and every
+ * The first is the KEY — `Trace.slug`, what the observation directory, the identity file and every
  * later run's lookup are filed under — and this function moves none of that. It answers only what
  * a human reads: a renamed epic headed by the name it was opened under could not be found by the
  * name it ended with (refine #9), and one headed by the last alone could not be found on disk.
- * `first` is `undefined` for every run that was never renamed, so those print what they always did.
+ * A run never renamed gets its one slug alone, so it prints what it always did.
+ *
+ * One function for every surface that names the epic — the debrief's title and its slug bullet,
+ * the announcement's headline, the replay's summary and the synthesis prompt — so the rule of when
+ * the first is named lives here once. Each surface keeps its own wording: `quote` wraps each slug,
+ * and `renamed` words the first, by default ` (first <slug>)`.
  */
-export function epicSlugs(
+export function epicName(
   facts: RunFacts,
   trace: Trace,
-): { readonly last: string; readonly first: string | undefined } {
+  how: {
+    readonly quote?: (slug: string) => string;
+    readonly renamed?: (first: string) => string;
+  } = {},
+): string {
+  const quote = how.quote ?? ((slug: string) => slug);
+  const renamed = how.renamed ?? ((first: string) => ` (first ${first})`);
   const last = facts.lastSlug ?? trace.slug;
-  return { last, first: last === trace.slug ? undefined : trace.slug };
+  return last === trace.slug ? quote(last) : `${quote(last)}${renamed(quote(trace.slug))}`;
 }
 
 /* ──────────────────────────────────── reading the records ──────────────────────────────────── */

@@ -130,23 +130,30 @@ start_observer() {
 
 # ── re-arming one that finalised and exited (ticket 02) ──
 # Every read is a file test, one small file and a signal 0, so a `Stop` of every observed session
-# pays nothing measurable for them. The state is matched in the observer's own JSON spelling
-# (`observer/announce.ts` writes it): the two must stay the same.
-finalised_with_a_reading() {
+# pays nothing measurable for them.
+#
+# Whether the marker's `state` value begins with $1. Matched on the key and the value alone, with
+# any spacing between them, so it does not hang on how `JSON.stringify` lays the marker out. THE
+# PREFIXES ARE THE OBSERVER'S: `finalised — ` (every finalise, `SESSION_ENDED_STATE` among them) and
+# `STOPPED_EARLY_STATE`, both in `observer/announce.ts`, which names this function beside them. A
+# prefix changed on one side and not the other stops this hook re-arming on it, silently.
+marker_state_begins() {
   [[ -f "$MARKER" ]] || return 1
+  local marker pattern
+  marker="$(cat "$MARKER" 2>/dev/null)" || return 1
+  pattern="\"state\"[[:space:]]*:[[:space:]]*\"$1"
+  [[ "$marker" =~ $pattern ]]
+}
+
+finalised_with_a_reading() {
   # What the finalise left for the observer after it. Without it a fresh one could only un-finalise
   # unconditionally, and announce a debrief nobody's run had moved past a second time.
   [[ -f "$FINAL_READING" ]] || return 1
-  local marker
-  marker="$(cat "$MARKER" 2>/dev/null)" || return 1
-  [[ "$marker" == *'"state": "finalised — '* ]]
+  marker_state_begins 'finalised — '
 }
 
 stopped_early() {
-  [[ -f "$MARKER" ]] || return 1
-  local marker
-  marker="$(cat "$MARKER" 2>/dev/null)" || return 1
-  [[ "$marker" == *'"state": "stopped early — '* ]]
+  marker_state_begins 'stopped early — '
 }
 
 observer_alive() {

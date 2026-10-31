@@ -25,18 +25,35 @@ resumption. Settled as Solution item 5 and under **The extra reading** in `../sp
 
 ## Comments
 
-**Built, 2026-10-31.** `./observer.ts` sets `readingOwed` at the un-finalise, only when the reading's extent ends past
-`readOf.lastEntry` of the held answer (the one the finalise left in `finalReading`, inherited or this process's). The
-next finalise passes `readAgain`, and the flag clears there. `synthesisJudge` in `./judge.ts` returns its held answer
-on every other call. Given `readAgain` on a finalise whose extent passes that answer, it catches the notes up and
-synthesises again. The answer carries `replaced` (each earlier `readOf`, oldest first) and the spend of every reading.
-`./debrief-file.ts` prints the reading's extent and the replaced ones inside the "Read by" sentence. Only then:
-a run that never resumed reads as it did. Two calls this ticket made:
+**Built, 2026-10-31.** `./observer.ts` marks the un-finalise (`resumedSinceFinalise`), and the next finalise passes
+`readAgain`; the flag clears there. `synthesisJudge` in `./judge.ts` returns its held answer on every other call.
+Given `readAgain` on a finalise where `owesReading` finds the extent past the held reading's, it catches the notes up
+and synthesises again. A judged answer carries `replaced` (each earlier extent, oldest first) and the spend of every
+reading. `./debrief-file.ts` prints the reading's extent and the replaced ones inside the "Read by" sentence. Only
+then: a run that never resumed reads as it did.
 
-- **Only a judged held answer is read again.** A held answer that failed, came back unparsed or met no credential
-  carries no extent, so a resumption does not pay for it a second time.
-- **A re-reading that fails replaces the held answer**, like any other failed synthesis. Its spend is still counted
-  with the earlier one's.
+As first built, two calls went against the spec: only a judged held answer was read again (an unjudged one carried no
+extent), and a re-reading that failed replaced the held answer, defects and all. **Both were reversed in review,
+2026-10-31:**
+
+- **Every held reading is read again on a resumption, whatever it came to.** A synthesis that failed, came back
+  unparsed or met no credential now carries `readOf`, the extent it was taken of, like a judged one; the final reading
+  on disk carries it too, so a re-armed observer inherits it. The observer no longer tests the extent at all: it
+  marks the un-finalise (`resumedSinceFinalise`) and hands `readAgain` to the next finalise, and `owesReading` in
+  `./judge.ts` is the one test of whether the extent grew past the held reading's. A held reading with no extent,
+  which only a final reading written before this change can be, is owed one.
+- **A re-reading that comes back unjudged leaves an earlier judgement standing.** The judged answer keeps its defects
+  and its `readOf`, and gains `failedReread`: the longer extent, and why that reading came to nothing, in one clause
+  each unjudged answer now carries (`why`). The debrief adds one statement under the "Read by" paragraph that the
+  longer extent was read again and failed or came back unjudged, and why, quoting nothing of the answer (ADR-0018). An
+  unparsed re-reading's raw answer still goes to the notes file under ticket 04's heading. The spend of both readings
+  stays in the cost line. A later judged reading replaces it and names every earlier extent, the failed one included.
+
+Checked by hand through the stand-in (now answering per a shape file read on each call, so a live observer can be
+switched mid-run; harness `/tmp/rf/live/`): failed then resumed gives 1 → 2 readings and no third, live and through a
+re-armed observer; judged then a failed re-reading, and judged then an unparsed one, give 2 readings with the first
+defects kept, the statement, the unparsed answer in the notes file and none of it in the debrief; a `SessionEnd`
+finalise taking the owed reading still exits at once. Free and stand-in judged replays stay byte for byte as before.
 
 **Verified by hand, all through `hooks/observe-run.sh`.** The observer was installed into a scratch
 `CLAUDE_PLUGIN_DATA` and judged through ticket 04's SDK stand-in (`NODE_OPTIONS=--import`, counting every synthesis
