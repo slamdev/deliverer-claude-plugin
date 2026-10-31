@@ -202,6 +202,28 @@ export interface TraceDispatch {
    */
   readonly reportInFull: string;
   readonly lines: readonly TraceLine[];
+  /**
+   * How many times the **orchestrator** continued this dispatch's agent with `SendMessage` — a
+   * **put-back** — counted off its own record (observer-debrief-defects ticket 08).
+   *
+   * **The record, because that is where a continue lands.** Ticket 01 read all 73 continues to a
+   * `deliverer:*` agent on this machine: every one APPENDS to the agent's existing record, opening
+   * with a `user` entry whose `origin.kind` is `coordinator`, and none starts a record of its own.
+   * So one dispatch's record can hold several attempts, and its tokens were always summed over all
+   * of them.
+   */
+  readonly continues: number;
+  /**
+   * How many of those continues have RETURNED, by the notifications the run's own record carries.
+   *
+   * A continue's finish is a `<task-notification>` naming this agent's id under `<task-id>` and the
+   * `SendMessage` call's id under `<tool-use-id>` — never the `Agent` call's, so `finished` above
+   * says nothing about it (ticket 01). The dispatch note is rewritten once this reaches
+   * `continues`, which is the moment the stage's last attempt is over.
+   */
+  readonly continuesReturned: number;
+  /** the last timestamp in this dispatch's own record, which a continue moves */
+  readonly lastEntryAt: string | undefined;
 }
 
 export interface TraceCounts {
@@ -405,6 +427,9 @@ export function buildTrace(input: DistilInput): Trace {
   // own outcome on the line that raised them.
   const resultsByToolUse = new Map<string, { entry: JsonObject; block: JsonObject }>();
   const notificationsByToolUse = new Map<string, JsonObject>();
+  // Which notifications name each agent, by the tool-use id they carry: a continue's finish carries
+  // the `SendMessage`'s id rather than the dispatch's own (ticket 08, on ticket 01's reading).
+  const notifiedByAgent = new Map<string, Set<string>>();
   for (const entry of own) {
     const type = stringField(entry, "type");
     if (type === "user") {
@@ -423,6 +448,11 @@ export function buildTrace(input: DistilInput): Trace {
       const id = content === undefined ? null : /<tool-use-id>([^<]+)<\/tool-use-id>/.exec(content);
       if (id?.[1] !== undefined && !notificationsByToolUse.has(id[1])) {
         notificationsByToolUse.set(id[1], entry);
+      }
+      const agent = content === undefined ? null : /<task-id>([^<]+)<\/task-id>/.exec(content);
+      if (id?.[1] !== undefined && agent?.[1] !== undefined) {
+        const seen = notifiedByAgent.get(agent[1]) ?? new Set<string>();
+        notifiedByAgent.set(agent[1], seen.add(id[1]));
       }
     }
   }
@@ -475,6 +505,7 @@ export function buildTrace(input: DistilInput): Trace {
               result: toolUseId === undefined ? undefined : resultsByToolUse.get(toolUseId),
               notification:
                 toolUseId === undefined ? undefined : notificationsByToolUse.get(toolUseId),
+              notifiedByAgent,
               cap,
               elision,
               losses,
@@ -632,6 +663,7 @@ export function buildTrace(input: DistilInput): Trace {
       record,
       result: undefined,
       notification: undefined,
+      notifiedByAgent,
       cap,
       elision,
       losses,
@@ -775,6 +807,7 @@ interface DispatchInput {
   readonly record: DispatchRecord | undefined;
   readonly result: { entry: JsonObject; block: JsonObject } | undefined;
   readonly notification: JsonObject | undefined;
+  readonly notifiedByAgent: ReadonlyMap<string, ReadonlySet<string>>;
   readonly cap: number;
   readonly elision: Elision;
   readonly losses: string[];
@@ -897,6 +930,16 @@ function buildDispatch(input: DispatchInput): TraceDispatch {
 
   const stamps = entries.map((entry) => stringField(entry, "timestamp")).filter(isString);
   const lastEntryAt = stamps.slice().sort().at(-1);
+  const agentId = input.record?.agentId ?? stringField(outcome, "agentId");
+  const continues = entries.filter(
+    (entry) =>
+      stringField(entry, "type") === "user" &&
+      stringField(objectField(entry, "origin"), "kind") === "coordinator",
+  ).length;
+  // Every notification naming this agent but the dispatch's own: a background dispatch's finish
+  // names the `Agent` call, and that is its first return rather than a continue's.
+  const returned = [...(agentId === undefined ? [] : (input.notifiedByAgent.get(agentId) ?? []))];
+  const continuesReturned = returned.filter((id) => id !== input.toolUseId).length;
   return {
     ordinal: input.ordinal,
     agentType:
@@ -910,11 +953,24 @@ function buildDispatch(input: DispatchInput): TraceDispatch {
       stringField(outcome, "description") ??
       "",
     toolUseId: input.toolUseId,
-    agentId: input.record?.agentId ?? stringField(outcome, "agentId"),
+    agentId,
     recordPath: input.record?.file.path,
     startedAt: input.at ?? stamps[0],
     endedAt: endedAt ?? lastEntryAt,
-    durationMs: reportedDuration ?? elapsed(input.at ?? stamps[0], endedAt ?? lastEntryAt),
+    // A continued dispatch runs to its record's last entry, so its time covers the same span its
+    // tokens always did (observer-debrief-defects ticket 08; the spec's *The replaced note*). The
+    // host's `totalDurationMs` is the FIRST attempt's alone and would name the put-back's minutes
+    // nowhere. That span includes whatever idle time came before a continue — the human deciding,
+    // in the example ticket 01 read — and the spec takes it knowingly.
+    //
+    // **Only a continued one.** Taken for every dispatch, the record's end differs from the host's
+    // own figure by a second on dispatches that were never continued — measured across the eight
+    // put-back-free deliveries on this machine, five of them moved — and a run with no put-back has
+    // to replay byte for byte as it did.
+    durationMs:
+      continues > 0
+        ? (elapsed(input.at ?? stamps[0], lastEntryAt) ?? reportedDuration)
+        : (reportedDuration ?? elapsed(input.at ?? stamps[0], endedAt ?? lastEntryAt)),
     status: background
       ? (statusOfNotification(input.notification) ??
         "launched in the background, with no completion recorded in this record")
@@ -948,6 +1004,9 @@ function buildDispatch(input: DispatchInput): TraceDispatch {
     reportInFull:
       input.result === undefined || background ? lastSaid : collapse(input.result.block["content"]),
     lines,
+    continues,
+    continuesReturned,
+    lastEntryAt,
   };
 }
 
