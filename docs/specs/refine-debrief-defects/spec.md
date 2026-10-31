@@ -153,6 +153,15 @@ the one-repository bound.
     the ticket body by its link and in my report, never as a native blocking link, so that the forge never refuses the
     ticket and the human knows what the set waits on beyond itself.
 
+### Sweeps, after the first observed run
+
+27. As an orchestrator, I want each sweep told the frontier questions it holds and to come back once its facts let every
+    one of them be put on a checked premise, so that a sweep's subject is bounded by what the human is waiting on rather
+    than by how much there is to know.
+28. As a human paying for a refinement, I want every sweep to take the cheapest look that settles its fact and to build
+    only for a fact no reading shows, naming that fact when it does, so that a sweep costs a reading and not a
+    prototype.
+
 ## Implementation Decisions
 
 The refine skill, `spec-writer` and `tickets-writer` all run on opus at medium effort, and sweeps take the session's
@@ -181,6 +190,13 @@ written to be held without deliberation; none adds a step, a file or a term.
     dispatches carry these too;
   - the host bounds and the working-habits block, by reference to the skill's own copy, word for word;
   - that a checkout or clone it makes is kept, and its path and ref named in its report.
+- **A sweep is bounded by what it holds** (stories 27, 28, from the 2026-10-31 hand-driven run, whose two sweeps cost
+  $2.22 and $2.26 against the previous reading's single $0.37). The subject bullet also names the frontier questions
+  the sweep holds, worded as the human will be asked them, and the sweep comes back once its facts let every one be put
+  on a checked premise. The first-hand bullet gains that the sweep takes the cheapest look that settles it — the repo, a
+  primary source, a run of what is already installed — installing, cloning or writing a probe program only for a fact
+  no reading shows; the owes-back bullet gains, for anything it built, the fact that needed building. Sweeps only: the
+  writers' prototypes are what make a road *proven*. Two sweeps installing the same thing is left to the sibling rule.
 - **The brief lists a sweep's checkout** through its existing artifacts bullet, by path and ref. Nothing else about the
   brief changes: it still carries claims and no section of established facts, and what a sweep settled still rides as
   a decision's **grounds**.
