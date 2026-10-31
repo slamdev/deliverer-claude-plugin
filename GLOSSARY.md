@@ -239,6 +239,11 @@ prose, because that is the only form a finding the reviewer did not post exists 
 The only thing a dispatch returns. What it names is what the orchestrator knows, so what it leaves out is invisible.
 _Avoid_: output, result, summary
 
+**Put-back**:
+A stage the **orchestrator** hands back to an agent because it fell short — either by continuing that agent with
+`SendMessage` or by **dispatch**ing it again cold. The stage's figures and its **dispatch note** cover both attempts.
+_Avoid_: retry, redo, rework, follow-up
+
 **Writer**:
 A dispatched agent that meets the codebase first-hand but never the conversation — which is what makes the brief
 load-bearing. _Avoid_: author, generator
@@ -291,9 +296,9 @@ each one carried. Nothing is left out by kind, and volume is all the cap bounds:
 window, so the trace is what makes a run readable at all. _Avoid_: log, transcript, timeline
 
 **Dispatch note**:
-What an **observer** made of one **dispatch** the moment that dispatch finished — and again each time a continued
-**put-back** finished in it — read on a cheap tier from that dispatch's own **session record**, re-read at the note's
-own budget, wider than the **trace**'s, and kept for the whole-run reading. It exists because a dispatch's interior is
+What an **observer** made of one **dispatch** the moment that dispatch finished — rewritten each time a **put-back**
+continues it — read on a cheap tier from that dispatch's own **session record**, re-read at the note's own budget,
+wider than the **trace**'s, and kept for the whole-run reading. It exists because a dispatch's interior is
 the part of a **run** nothing else ever reads: the per-dispatch **session record**s outweigh a delivery's main one
 several times over, so under the trace's cap the whole-run reading sees a stage's shape and never its inside. Capped
 in length so that reading stays affordable, but carries no bound on what it names, so it is never forwarded, exactly
