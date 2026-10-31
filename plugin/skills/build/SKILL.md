@@ -13,24 +13,25 @@ Your argument names the epic; when it names none, report that and stop rather th
 
 **Find the epic before anything else**, and the **epic branch** with it, before any ticket is begun:
 
-- Where the epic location you were handed is on the forge's issues, read the epic there. Its epic branch is the one a
-  refinement left when its grilling landed glossary entries or ADRs, or the one an earlier run of this delivery
-  opened its change request from — `change-request-creator` keeps the spec's location in the description it writes:
-  fetch, and look for an open change request from a branch named from the epic's **slug** in the style of the
-  branches already there — the slug the spec's issue is titled from — whose description names the epic's spec
-  location. Both have to hold: a branch of that name with no such change request is someone else's. Where one does,
-  that branch is the epic branch, found. Where none does, no branch carries the epic, and the first `implementer`
-  creates the epic branch.
-- Where it is in the repository, fetch first. Where the default branch carries it, read the epic there.
-- Where the default branch does not, the epic sits on its epic branch alone — a refinement publishes its spec and
-  tickets there and nowhere else — and that branch is the one on the remote carrying the epic location: look first
-  under the name from the epic's **slug** in the style of the branches already there, then across the remote's other
-  branches, and read the epic off the one that carries it.
-- Where no branch carries the epic location, report that and stop.
+- **An epic on the forge's issues** is read there. Then fetch, and look for its epic branch — a refinement leaves one
+  when its grilling landed glossary entries or ADRs, and an earlier run of this delivery leaves the one it opened its
+  change request from. It is a branch named from the epic's **slug** (the slug the spec's issue is titled from), in
+  the style of the branches already there, with an open change request whose description names the epic's spec
+  location — `change-request-creator` keeps that location in every description it writes. Both have to hold: a
+  branch of that name with no such change request is someone else's. Where none matches, no branch carries the epic
+  yet, and the first `implementer` creates the epic branch.
+- **An epic in the repository**: fetch first, and read it on the default branch where that carries it. Where it does
+  not, the epic sits on its epic branch alone — a refinement publishes its spec and tickets there and nowhere else —
+  and that branch is the one on the remote carrying the epic location: look first under the name from the epic's
+  **slug** in the style of the branches already there, then across the remote's other branches, and read the epic off
+  the one that carries it. Where no branch carries the epic location, report that and stop.
+
+You are done when you hold every ticket the epic lists, in its order, and either the epic branch's name or the
+finding that no branch carries the epic yet.
 
 Every stage below is made of agent dispatches — **one stage, one task** (**Progress**) — and each dispatched agent's
 **report** is all you get back: what it names is what you know. Where a report leaves you unsure, put the stage back
-rather than going to look, and the bearings you take from the branch and the change request say which stage is owed, not
+rather than going to look; the bearings you take from the branch and the change request say which stage is owed, not
 what a finding says. Yours is the work no agent does: read the epic for its tickets, dispatch in order, read each
 report, keep the task list current, and flip the change request ready at the end.
 
@@ -45,13 +46,13 @@ branch and the change request are what say how far it got, and nothing else does
 
 - **A commit carrying a `Ticket:` line names a ticket begun.** One without it is not a ticket's — a refinement's commit
   of what it wrote into the repository, or a **fix wave**'s. The last ticket named may be part-delivered with nothing
-  anywhere saying so, because an `implementer` commits each coherent piece as it lands: it is dispatched again, ahead
-  of the tickets carrying no commit at all, and that implementer reads the commits, implements only what they left
-  undone, and reports the commit that covered it where the branch covered it in full already.
+  anywhere saying so, because an `implementer` commits each coherent piece as it lands: dispatch it again, ahead of
+  the tickets carrying no commit at all. That implementer reads the commits, implements only what they left undone,
+  and reports the commit that covered it where the branch covered it in full already.
 - **The change request's description says whether stage 1 is over.** One that does not read
   `This description is a placeholder` was written by stage 2, which runs only once every ticket has a report, so no
   `implementer` goes out again. An open change request alone says nothing — a refinement may have opened it before any
-  ticket began — so stage 2 is dispatched on every run.
+  ticket began — which is why stage 2 runs on every run.
 - **The adjudication, the spec review and the fix waves leave you no evidence to read.** What they leave is replies on
   the comments and `SPEC` comments among them, and telling a **verdict** that owes a change from a reply recording the
   change made, or a finding posted from a reading finished, is a judgement about what those say — not a mechanical fact,
@@ -65,18 +66,8 @@ branch and the change request are what say how far it got, and nothing else does
 
 Start from the earliest stage whose evidence you cannot find. Dispatching any agent but `code-reviewer` cold is safe,
 because each one resumes on its own and adds only what is missing; `code-reviewer` is the exception, because a cold
-dispatch opens a fresh **round** (**Rounds**).
-
-**Read off the branch every run, whatever the reports say** — a path that runs only once something has already gone
-wrong is the path least likely to work — and where a report and the branch disagree, **the account nearer the code** is
-the one to trust:
-
-- **every `Gates:` section on its commits.** It names a **gate** the commit left red for work nobody asked for — outside
-  its ticket where it carries a `Ticket:` line, and outside anything a comment asked for where it carries none. Carry
-  each into your report beside the ones the reports named.
-- **whether the working tree is clean.** An `implementer` and a **fix wave** each leave work nobody asked for exactly as
-  they found it and name it in their report, and a **round** reads the checkout it runs in and reviews whatever is
-  sitting there as the epic's work. Carry either account into your report.
+dispatch opens a fresh **round** (**Rounds**). You are done with your bearings when you can name that stage and the
+task list is open as **Progress** has it.
 
 **Dispatch.** Every dispatch carries the epic, and — once each exists — the change request's URL and the **epic branch's
 name**, so none of them has to find it again: the branch's name from the first stage-1 dispatch where you found the epic
@@ -170,9 +161,8 @@ addressable, or once continuing it fails. A continued `code-reviewer` opens no *
    branch never touched is posted on the change request itself on purpose, and both are among these.
 3. **Adjudicate the assumptions.** Dispatch `assumption-reviewer`. For each `ASSUMPTION` comment it compares the roads
    the **fork** left open and replies one verdict — `accept`, `improve`, `override` or `escalate`. An `improve` is a
-   road that beat the one the code took on a named **axis**, so it carries a **directive** stage 6 implements, and code
-   no ticket asked for changes on a judgement nobody ratified. You are done when its report is in hand, with the four
-   counts and every `improve` it names directing kept.
+   road that beat the one the code took on a named **axis**, so it carries a **directive** stage 6 implements. You are
+   done when its report is in hand, with the four counts and every `improve` it names directing kept.
 4. **Read it against the spec.** Dispatch `spec-reviewer`, once. It reads the change request against the epic's spec
    and every ticket, and posts each **spec finding** — something asked for missing or partial, behaviour nothing asked
    for, something asked for implemented but wrong — as a `SPEC` comment, which stage 6 works as it works any other. It
@@ -217,7 +207,8 @@ addressable, or once continuing it fails. A continued `code-reviewer` opens no *
     When it cannot merge, leave it a draft and report the conflict as a **hand-off**: a change request flipped ready
     with a conflict hands its human a merge to fix. When the bar cannot be met — no round completed, or one did and
     the second cannot — leave it a draft the same way, and report the review stage as a **hand-off** with the reason
-    each round ended on.
+    each round ended on. You are done when the change request is ready, or a draft whose reason your report names, and
+    the report is written (**What to report**).
 
 ## Rounds
 
@@ -268,6 +259,18 @@ request's description says stage 2 already ran.
 ## What to report
 
 Whoever reads this has your report and nothing else.
+
+**Before you write it, read off the branch, whatever the reports said** — a path that runs only once something has
+already gone wrong is the path least likely to work — and where a report and the branch disagree, **the account nearer
+the code** is the one to trust:
+
+- **every `Gates:` section on its commits.** It names a **gate** the commit left red for work nobody asked for — outside
+  its ticket where it carries a `Ticket:` line, and outside anything a comment asked for where it carries none.
+- **whether the working tree is clean.** An `implementer` and a **fix wave** each leave work nobody asked for exactly as
+  they found it and name it in their report, and a **round** reads the checkout it runs in and reviews whatever is
+  sitting there as the epic's work.
+
+The report then carries:
 
 - the change request's URL, and whether it ended draft or ready
 - how many tickets were implemented, and how many rounds completed — with the reason each round that did not complete
