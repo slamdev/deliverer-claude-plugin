@@ -14,7 +14,7 @@ the slow stage is the one named as slow. Settled as Solution item 3 and under **
 - [x] A re-armed observer rewrites a note only when the record has grown past that entry.
 - [x] A dispatch's tokens are still summed over its whole record; its duration runs from its start to the record's last
       entry.
-- [x] Free replay: a continued dispatch's duration runs to its record's last entry.
+- [x] Free replay: a continued dispatch's duration is its working time, with no idle gap between attempts.
 - [ ] Judged replay (`--judge`), on one refine and one build record with put-backs: one note per dispatch, and a
       continued dispatch's note covers its continues and names how many.
 - [x] Driven by hand through the hook script: an observer killed after a note and re-armed with the record unchanged
@@ -26,7 +26,8 @@ the slow stage is the one named as slow. Settled as Solution item 3 and under **
 
 **Built on `ticket-08`, verified by hand, 2026-10-31. Every check below spent nothing.**
 
-- **Duration: only a continued dispatch takes its record's end.** Taken for every dispatch, the record's last entry
+- **Duration: only a continued dispatch takes its time from its record.** (Superseded in part below: it is now the
+  working time, not the span to the record's end.) Taken for every dispatch, the record's last entry
   differs from the host's `totalDurationMs` by about a second on dispatches nobody continued: five of the eight
   put-back-free records on this machine (`53ee4fb8…`, `965ab64f…`, `330c2820…`, `558d2ef6…`, `a5f1b0ee…`) then
   replayed differently. That breaks "byte for byte as before". So a dispatch with a continue in its record runs to
@@ -56,4 +57,11 @@ the slow stage is the one named as slow. Settled as Solution item 3 and under **
 - **Open, for ticket 09:** a put-back after the hand-over does not yet un-finalise a finalised observer. Re-armed by
   `Stop` after the continue, it found no new own signal and never judged again, so it did not rewrite either. The
   rewrite runs on the next judging after that, so this closes once ticket 09 counts `SendMessage`.
-
+- **Duration is working time, not the span to the record's end (2026-10-31, after the build).** The ticket 03 judged
+  replay's build record `575abc28…` showed what the span cost: its change-request-creator worked 3m24s, sat idle 1h37m
+  while its human was away, and was put back for 54s, and read `1h41m`. That names the idle stage as slow, which user
+  story 3 exists to stop. Across the 43 records the old rule read up to `18h19m` (`c7ba8412…` #3, now `17m26s`). The
+  maintainer chose working time: the first attempt (the host's `totalDurationMs` where the result has one), plus each
+  continue from its `coordinator` entry to its last entry. Re-replayed all 43: only continued dispatches' `dispatched`
+  lines moved (`575abc28…` #10 `4m18s`, `527b6996…` #2 `33m11s`, `672f1723…` #4 `15m01s`); every other byte is as
+  before.

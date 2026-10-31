@@ -47,7 +47,7 @@ Nine changes, all of them in the observer.
 2. **A synthesis answer in the wrong shape is kept, but not forwarded.** Its raw prose goes into the do-not-forward
    notes file. The debrief says the run went unjudged and why, and stays within its bound (ADR-0018).
 3. **A continued dispatch's note is rewritten.** When a **put-back** continues an agent, its dispatch's one note is
-   rewritten from the whole record, and its duration runs to that record's last entry.
+   rewritten from the whole record, and its duration is its working time: every attempt, never the gaps between.
 4. **A put-back is one of the run's own signals.** A `SendMessage` to an agent the run itself dispatched moves the
    extent's ceiling, and with it the **round**s, the continues, the spend and the outcome.
 5. **A run that resumes after its debrief was final is read again**, once per resumption, at its next finalise. This
@@ -91,7 +91,7 @@ Nine changes, all of them in the observer.
 ### Modules touched
 
 - **The observer's rate table**: a prompt-length tier, and the 5-5 haiku's row in it.
-- **The observer's trace and its records reader**: a dispatch's end taken from its own record's last entry.
+- **The observer's trace and its records reader**: a continued dispatch's working time taken from its own record.
 - **The observer's run facts**: a `SendMessage` to an own agent counted as an own signal, and the last slug read
   alongside the first.
 - **The observer's notes and notes file**: a dispatch's note rewritten after each continue; the output cap; the
@@ -119,8 +119,9 @@ Nine changes, all of them in the observer.
   record at the note's existing input budget, as a first note is today.
 - The note states how many continues it covers and the last entry it read. The synthesis only ever sees the latest.
 - A re-armed observer rewrites a note only when the record has grown past that entry.
-- A dispatch's tokens are still summed over its whole record; its duration now runs from its start to the record's last
-  entry, so the two cover the same span.
+- A dispatch's tokens are still summed over its whole record; its duration is now its working time — the first attempt,
+  plus each continue from its first entry to its last — so the two cover the same work. The idle gap before a continue
+  is no part of it: a stage that sat waiting on its human is not the slow one.
 
 ### The own signal
 
@@ -187,7 +188,7 @@ CONTRIBUTING.md § Replaying a run's records.
     with one prompt each side of 100K is priced at the two tiers. Every other model's figure is unchanged.
   - **The extent.** A put-back after the hand-over ends the extent at the put-back's return, and its rounds, spend and
     outcome are included. A later `SendMessage` to an agent the run did not dispatch keeps today's ceiling.
-  - **Duration.** A continued dispatch's duration runs to its record's last entry.
+  - **Duration.** A continued dispatch's duration is its first attempt plus each continue's own span, and no gap.
   - **Slug.** A renamed epic is headed with the last slug and names the first, while its files stay under the first.
   - **Early stop.** A record truncated mid-line gives a debrief that says it stopped early at that entry.
   - **No change elsewhere.** A record with none of these shapes replays byte for byte as before. Two replays of any

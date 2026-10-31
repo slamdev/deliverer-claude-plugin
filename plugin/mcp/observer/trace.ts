@@ -957,11 +957,15 @@ function buildDispatch(input: DispatchInput): TraceDispatch {
     recordPath: input.record?.file.path,
     startedAt: input.at ?? stamps[0],
     endedAt: endedAt ?? lastEntryAt,
-    // A continued dispatch runs to its record's last entry, so its time covers the same span its
-    // tokens always did (observer-debrief-defects ticket 08; the spec's *The replaced note*). The
-    // host's `totalDurationMs` is the FIRST attempt's alone and would name the put-back's minutes
-    // nowhere. That span includes whatever idle time came before a continue — the human deciding,
-    // in the example ticket 01 read — and the spec takes it knowingly.
+    // A continued dispatch's time is its working time — the first attempt plus every continue's own
+    // span — so it covers the same work its tokens always did (observer-debrief-defects ticket 08;
+    // the spec's *The replaced note*). The host's `totalDurationMs` is the FIRST attempt's alone and
+    // would name the put-back's minutes nowhere.
+    //
+    // **Never the span to the record's last entry.** That was the spec's first wording, and the
+    // ticket 03 judged replay's build record showed what it costs: a change-request-creator that
+    // worked 3m24s, sat idle 1h37m until the human was done, then was put back for 54s, read
+    // 1h41m — the slow stage named was the idle one, which is what user story 3 exists to stop.
     //
     // **Only a continued one.** Taken for every dispatch, the record's end differs from the host's
     // own figure by a second on dispatches that were never continued — measured across the eight
@@ -969,7 +973,7 @@ function buildDispatch(input: DispatchInput): TraceDispatch {
     // to replay byte for byte as it did.
     durationMs:
       continues > 0
-        ? (elapsed(input.at ?? stamps[0], lastEntryAt) ?? reportedDuration)
+        ? workingTime(entries, input.at ?? stamps[0], reportedDuration)
         : (reportedDuration ?? elapsed(input.at ?? stamps[0], endedAt ?? lastEntryAt)),
     status: background
       ? (statusOfNotification(input.notification) ??
@@ -1008,6 +1012,41 @@ function buildDispatch(input: DispatchInput): TraceDispatch {
     continuesReturned,
     lastEntryAt,
   };
+}
+
+/**
+ * A continued dispatch's working time: its first attempt, then each continue from the
+ * `coordinator` entry that opens it to the last entry before the next (observer-debrief-defects
+ * ticket 08).
+ *
+ * The gaps between attempts are left out, since the agent did nothing in them. The first attempt
+ * takes the host's own `totalDurationMs` where the result carries one. That is the figure an
+ * uncontinued dispatch reports, so the put-back's minutes are added to it rather than to a second
+ * measure of the same attempt.
+ */
+function workingTime(
+  entries: readonly JsonObject[],
+  startedAt: string | undefined,
+  firstAttempt: number | undefined,
+): number | undefined {
+  const spans: { from: string | undefined; to: string | undefined }[] = [
+    { from: startedAt, to: undefined },
+  ];
+  for (const entry of entries) {
+    const at = stringField(entry, "timestamp");
+    const opensContinue =
+      stringField(entry, "type") === "user" &&
+      stringField(objectField(entry, "origin"), "kind") === "coordinator";
+    if (opensContinue) spans.push({ from: at, to: at });
+    else if (at !== undefined) spans[spans.length - 1]!.to = at;
+  }
+  let total = 0;
+  for (const [index, span] of spans.entries()) {
+    const ms = index === 0 && firstAttempt !== undefined ? firstAttempt : elapsed(span.from, span.to);
+    if (ms === undefined) return undefined;
+    total += ms;
+  }
+  return total;
 }
 
 /**
