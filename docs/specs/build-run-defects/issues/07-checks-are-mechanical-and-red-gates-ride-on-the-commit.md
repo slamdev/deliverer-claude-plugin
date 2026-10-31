@@ -12,7 +12,7 @@ titled for the repository **and the forge**. Settled as D19–D21 in `../spec.md
 
 **Blocked by:** 02 — the ADR has to cover the forge before the skill text relies on it.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] The delivery skill says a check's state is a mechanical fact the orchestrator may read, alongside the questions
       about the tree it already may settle.

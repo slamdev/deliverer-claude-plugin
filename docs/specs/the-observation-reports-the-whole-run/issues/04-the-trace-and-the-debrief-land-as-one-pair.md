@@ -1,6 +1,6 @@
 # 04 — The trace and the debrief land as one pair
 
-Status: ready-for-agent
+Status: resolved
 
 **Blocked by:** 01 — a sequencing and verification edge only. This ticket shares no wording and no reading with 02 or 03
 and could be implemented against the code as it stands; it is numbered here because one agent works this branch at a

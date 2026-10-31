@@ -1,6 +1,6 @@
 # 02 — A finished run's records become a trace
 
-Status: ready-for-agent
+Status: resolved
 
 **Blocked by:** 01
 

@@ -1,6 +1,6 @@
 # 05 — The debrief names defects, with grounds
 
-Status: ready-for-agent
+Status: ready-for-human
 
 **Blocked by:** 03
 

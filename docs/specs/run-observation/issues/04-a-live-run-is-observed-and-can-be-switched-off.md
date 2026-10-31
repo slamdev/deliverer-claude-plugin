@@ -1,6 +1,6 @@
 # 04 — A live run is observed without anyone asking, and can be switched off
 
-Status: ready-for-agent
+Status: resolved
 
 **Blocked by:** 03
 
