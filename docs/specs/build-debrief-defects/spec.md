@@ -284,7 +284,7 @@ named in the run's report.
 - It names no host, no tool timeout and no command. "The file-reading tool in ranges" is the instruction; the host's
   tool name is not.
 - The secrets line covers what the agent finds in the repository, its environment files included, and binds every
-  agent of the build phase. The refine phase carries the same block, so the wording is one across all eleven files.
+  agent of the build phase. The refine phase carries the same block, so the wording is one across all ten files.
   The refine side's host bounds — scratch copies under the temporary directory, nothing written to a live system — are
   its own and stay out of this block: an implementer works in the workspace and drives gates that may touch a cluster.
 
@@ -361,7 +361,7 @@ brief's contents, a debrief's figures — never how an agent phrased its reasoni
   read after stage 2 and at the flip; fix-wave commits per piece. The fixture runs on GitHub, so it does not exercise
   the GitLab anchors; it will not conflict, so it exercises the read and not the conflict dispatch.
 - **Every touched prose file read against `/mattpocock-skills:writing-for-agents`**, and the working-habits block
-  diffed across the seven files here and against the refine side's four copies to confirm it is identical.
+  diffed across the seven files here and against the refine side's three copies to confirm it is identical.
 - **The next observed deliveries' debriefs** are the remaining seam — for the conflict dispatch, the outside-cause
   hand-off, the GitLab rungs on a real delivery, and the rewrite flag on the next round the host rewrites.
 
