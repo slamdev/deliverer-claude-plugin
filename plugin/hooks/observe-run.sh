@@ -5,8 +5,10 @@
 #
 #   UserPromptSubmit  start an observer when this prompt begins or resumes a run, and print a
 #                     debrief nobody has been shown yet — from ANY session, which is what a debrief
-#                     finalised after its terminal closed needs. And start one again where this
-#                     session's observer finalised and has exited since (below).
+#                     finalised after its terminal closed needs. Except mid-run: while THIS
+#                     session is live, another session's announcement is held on disk until
+#                     it is not — the held announcements (below). And start one again where
+#                     this session's observer finalised and has exited since (re-arming).
 #   Stop              print this session's debrief if the observer has one ready, and NOTHING at
 #                     all if it has not. A refinement stops for every question it asks, so silence
 #                     here is the common case and has to cost nothing. It re-arms a stopped
@@ -196,11 +198,23 @@ esac
 # A debrief nobody has been shown yet, from any session — including one whose terminal was closed
 # days ago, which is the whole reason this line exists beside the stop one. Oldest first, and one
 # per prompt: a hook has one stdout and it carries one JSON document.
+#
+# HELD while this session is live (observer-debrief-defects ticket 07): a human mid-run is shown
+# only the announcements this session wrote. Another epic's debrief stays pending on disk,
+# untouched, and prints on the first prompt after this session is no longer live — so the wait
+# loses nothing, and outside a live run "from any session" stands. Live is the marker present and
+# its observer alive, the very test the re-arm uses; and it is asked BEFORE the re-arm below, so
+# the prompt that finds the observer gone prints what was held rather than the fresh observer
+# holding it a while longer.
 if [[ -d "$ANNOUNCE" ]]; then
-  for pending in "$ANNOUNCE"/*.prompt.json; do
-    [[ -f "$pending" ]] || continue
-    print_announcement "$pending" "${pending%.prompt.json}.stop.json" && break
-  done
+  if [[ -f "$MARKER" ]] && observer_alive; then
+    print_announcement "$ANNOUNCE/$SESSION_ID.prompt.json" "$ANNOUNCE/$SESSION_ID.stop.json"
+  else
+    for pending in "$ANNOUNCE"/*.prompt.json; do
+      [[ -f "$pending" ]] || continue
+      print_announcement "$pending" "${pending%.prompt.json}.stop.json" && break
+    done
+  fi
 fi
 
 # Once an observer exists for this session, nothing below is asked again — which is what keeps the

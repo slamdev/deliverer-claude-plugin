@@ -43,7 +43,7 @@ import { formatDuration, type Trace } from "./trace.ts";
 import { DATA_DIRECTORY_ENV, distil } from "./distil.ts";
 import { resolvePluginCommit } from "./plugin-commit.ts";
 import { synthesisJudge } from "./judge.ts";
-import { runFactsOf, runSkills, type RunFacts } from "./run-facts.ts";
+import { epicSlugs, runFactsOf, runSkills, type RunFacts } from "./run-facts.ts";
 import {
   NOTHING_JUDGED,
   writeDebrief,
@@ -294,8 +294,11 @@ function judgingLine(outcome: Extract<DebriefOutcome, { kind: "written" }>): str
 export function summariseDebrief(outcome: Extract<DebriefOutcome, { kind: "written" }>): string {
   const { facts, trace } = outcome;
   const spend = facts.spend.usd;
+  // Both names of a renamed epic, as its debrief's own title gives them (ticket 05).
+  const epic = epicSlugs(facts, trace);
+  const filedUnder = epic.first === undefined ? "" : ` (first ${epic.first})`;
   return (
-    `${runSkills(facts, trace) || "unknown skill"} · slug ${trace.slug} · ` +
+    `${runSkills(facts, trace) || "unknown skill"} · slug ${epic.last}${filedUnder} · ` +
     `${formatDuration(facts.extent.durationMs)} · ` +
     `${spend === undefined ? "spend unknown" : `about $${spend.toFixed(2)}`} · ` +
     `${facts.dispatches.length} dispatches · ` +

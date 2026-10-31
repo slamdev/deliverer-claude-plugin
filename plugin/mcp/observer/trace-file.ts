@@ -212,6 +212,9 @@ export function renderTrace(trace: Trace): string {
   out.push("== the run ==");
   out.push(row("skill", trace.skills.length === 0 ? "none recorded" : trace.skills.join(", ")));
   out.push(row("slug", trace.slugRead ? trace.slug : `${trace.slug} (no task update carried one)`));
+  // Only where a later task update carried another name, so an unrenamed trace keeps its bytes
+  // (observer-debrief-defects ticket 05). The row above stays the key.
+  if (trace.lastSlug !== trace.slug) out.push(row("last slug", trace.lastSlug));
   out.push(row("session", trace.sessionId ?? "unknown"));
   out.push(row("record", trace.recordPath));
   out.push(row("started", trace.startedAt ?? "unknown"));
