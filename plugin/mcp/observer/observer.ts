@@ -84,7 +84,7 @@ import {
 import { NOTHING_JUDGES_YET, refreshDebrief, type Judging } from "./debrief-file.ts";
 import { debriefRun, type DebriefOutcome, type JudgingInput } from "./debrief.ts";
 import { synthesisJudge } from "./judge.ts";
-import { runSkills, type RunFacts } from "./run-facts.ts";
+import { epicSlugs, runSkills, type RunFacts } from "./run-facts.ts";
 import { formatDuration } from "./trace.ts";
 
 /* ────────────────────────────────────── the clocks ────────────────────────────────────── */
@@ -833,8 +833,11 @@ function advancedPast(facts: RunFacts, extentEnd: string, dispatches: number): b
 function headlineOf(outcome: Extract<DebriefOutcome, { kind: "written" }>): string {
   const { facts, trace } = outcome;
   const spend = facts.spend.usd;
+  // Both names of a renamed epic, as its debrief's own title gives them (ticket 05).
+  const epic = epicSlugs(facts, trace);
+  const filedUnder = epic.first === undefined ? "" : ` (first ${epic.first})`;
   return (
-    `${runSkills(facts, trace) || "a deliverer run"} · epic ${trace.slug} · ` +
+    `${runSkills(facts, trace) || "a deliverer run"} · epic ${epic.last}${filedUnder} · ` +
     `${formatDuration(facts.extent.durationMs)} · ` +
     `${spend === undefined ? "spend unknown" : `about $${spend.toFixed(2)}`} · ` +
     `${facts.dispatches.length} dispatches · ` +

@@ -55,6 +55,7 @@ import {
   elapsed,
   isReviewTool,
   plural,
+  slugIn,
   TASK_TOOLS,
   type Trace,
   type TraceDispatch,
@@ -222,6 +223,15 @@ export interface RunFacts {
    * leaves.
    */
   readonly openedAt: { readonly completed: number; readonly total: number } | undefined;
+  /**
+   * The slug the run's LAST task update inside the extent carried, or `undefined` where none did
+   * (observer-debrief-defects ticket 05). What the debrief is headed with; `epicSlugs` says how.
+   *
+   * Read inside the window rather than taken from `Trace.lastSlug`, and a measured record is why:
+   * a delivery whose human went on, in the same session, to a task list of another name would
+   * otherwise head its debrief with an epic the run never touched.
+   */
+  readonly lastSlug: string | undefined;
   /** the commit the run's own records name, for `./plugin-commit.ts` to label */
   readonly commitInRecords: string | undefined;
   /**
@@ -258,6 +268,24 @@ export function runSkills(facts: RunFacts, trace: Trace): string {
   return facts.skills.length > 0 ? facts.skills.join(", ") : trace.skills.join(", ");
 }
 
+/**
+ * The names to head a run's debrief with: the last it carried, and the first beside it only when
+ * the two differ (observer-debrief-defects ticket 05; Solution item 6).
+ *
+ * `first` is the KEY — `Trace.slug`, what the observation directory, the identity file and every
+ * later run's lookup are filed under — and this function moves none of that. It answers only what
+ * a human reads: a renamed epic headed by the name it was opened under could not be found by the
+ * name it ended with (refine #9), and one headed by the last alone could not be found on disk.
+ * `first` is `undefined` for every run that was never renamed, so those print what they always did.
+ */
+export function epicSlugs(
+  facts: RunFacts,
+  trace: Trace,
+): { readonly last: string; readonly first: string | undefined } {
+  const last = facts.lastSlug ?? trace.slug;
+  return { last, first: last === trace.slug ? undefined : trace.slug };
+}
+
 /* ──────────────────────────────────── reading the records ──────────────────────────────────── */
 
 export interface RunFactsInput {
@@ -289,6 +317,7 @@ export function runFactsOf(input: RunFactsInput): RunFacts {
   let taskUpdates = 0;
   let toolCalls = 0;
   let openedAt: RunFacts["openedAt"];
+  let lastSlug: string | undefined;
   const delegatedSkills: string[] = [];
   for (const entry of window) {
     for (const block of toolUses(entry)) {
@@ -306,6 +335,7 @@ export function runFactsOf(input: RunFactsInput): RunFacts {
       // The FIRST count wins, exactly as the first slug does in `./trace.ts`: what the run opened
       // at is what a later update cannot move (ticket 07).
       openedAt ??= progressIn(block);
+      lastSlug = slugIn(stringField(objectField(block, "input"), "subject")) ?? lastSlug;
     }
   }
 
@@ -333,6 +363,7 @@ export function runFactsOf(input: RunFactsInput): RunFacts {
     taskUpdates,
     toolCalls,
     openedAt,
+    lastSlug,
     // Scanned over the run's own window rather than the whole session: a preamble from somebody
     // else's later skill in the same session is not this run's evidence of anything.
     commitInRecords: plugin?.commit,

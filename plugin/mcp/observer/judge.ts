@@ -61,7 +61,7 @@ import { earlierDebriefs, type Continuity, type ContinuitySummary } from "./cont
 import { installedDirectory } from "./plugin-commit.ts";
 import { renderTrace } from "./trace-file.ts";
 import { formatDuration, type Trace } from "./trace.ts";
-import { runSkills, type RunFacts } from "./run-facts.ts";
+import { epicSlugs, runSkills, type RunFacts } from "./run-facts.ts";
 import {
   addCosts,
   bound,
@@ -326,6 +326,13 @@ function synthesisPrompt(input: {
       ? ""
       : ` — ${facts.rounds.map((it) => it.status ?? "no status ever reported").join(", ")}`;
   const endedIn = facts.ending.stage === undefined ? "" : ` in \`${facts.ending.stage}\``;
+  // Both names of a renamed epic, because the debrief's header carries both and the synthesis is
+  // told the header already holds the slug (ticket 05). A run never renamed reads as it did.
+  const epic = epicSlugs(facts, trace);
+  const slugs =
+    epic.first === undefined
+      ? `\`${epic.last}\``
+      : `\`${epic.last}\`, renamed from \`${epic.first}\``;
   const waiting =
     `${facts.human.questionRounds}, and ${formatDuration(facts.human.totalWaitMs)} of the run ` +
     `spent waiting on them`;
@@ -340,7 +347,7 @@ plugin. Everything below follows from those two words.
 # The run you are reading
 
 - skill: \`${skill}\`
-- epic slug: \`${trace.slug}\`
+- epic slug: ${slugs}
 - wall clock: ${wallClock}
 - dispatches: ${facts.dispatches.length}
 - review rounds: ${facts.rounds.length}${rounds}
