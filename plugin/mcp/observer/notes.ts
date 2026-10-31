@@ -354,6 +354,47 @@ export function readNote(text: string): NoteAnswer {
   return { kind: "read", body };
 }
 
+/**
+ * The most a **dispatch note** may hand the synthesis, in characters of its own output
+ * (observer-debrief-defects ticket 03; the spec's Solution item 8 and **The note cap**).
+ *
+ * **The synthesis's input is bounded by the plugin's choice, not by a cheap tier's.** The input
+ * side was bounded from the start — `NOTE_BUDGET_CHARS` — and the output side was held by "under
+ * 400 words" in the prompt alone, so up to thirteen notes could each hand the one long-context
+ * reading whatever a haiku-class model chose to write. The prompt still asks for 400 words, which is
+ * what a healthy note needs; this is the ceiling under it, stated in the prompt as well so that the
+ * model is told the bound it is held to. About three times the longest note on this machine when
+ * it was set (3,778 characters with its header), so a note that reaches it has stopped being one.
+ */
+export const NOTE_OUTPUT_CHARS = 8_000;
+
+/**
+ * A note held to `NOTE_OUTPUT_CHARS`, cut where it runs over.
+ *
+ * **Cut at a line boundary, with a mark naming what was cut** — the trace's own `…(+N)` device,
+ * spelled out because it ends a piece of prose rather than an excerpt, so that the synthesis reading
+ * it knows the note stopped rather than ended. The mark is counted inside the cap: what reaches the
+ * notes file is never longer than the figure the prompt stated. A note with no line break under the
+ * cap is cut at the cap itself, because a ceiling that holds only for well-wrapped answers is not one.
+ *
+ * **It is never sent back to the model for a shorter one.** A second call is a second price for a
+ * note the run already paid for, and it is the same cheap tier that ignored the bound once; the
+ * cut costs the synthesis the note's tail, and that tail is what a note running past its bound was
+ * least likely to have needed.
+ */
+export function capNote(body: string, cap: number = NOTE_OUTPUT_CHARS): string {
+  if (body.length <= cap) return body;
+  const mark = (cut: number): string =>
+    `\n…(+${cut} characters cut: this note ran past the ${cap}-character cap it was given, and ` +
+    `was not asked again)`;
+  // The mark's own length depends on the count it names, so it is sized at the widest count it
+  // could carry — the whole body — and the cut is made under what is left.
+  const room = cap - mark(body.length).length;
+  const boundary = body.lastIndexOf("\n", room);
+  const kept = body.slice(0, boundary > 0 ? boundary : Math.max(0, room)).trimEnd();
+  return `${kept}${mark(body.length - kept.length)}`;
+}
+
 /* ────────────────────────────────────── the instruction ────────────────────────────────────── */
 
 /**
@@ -412,6 +453,17 @@ function notePrompt(input: {
     slice.elidedChars === 0
       ? ""
       : `, and ${slice.elidedChars} characters were elided by that cap`;
+  // A **put-back** appends to this same record (observer-debrief-defects ticket 08), so a continued
+  // dispatch is told so, and told where it ended: its result marks its FIRST return only. Absent on
+  // a dispatch nobody continued, whose prompt stays byte for byte what it was — and costs the same.
+  const continued = dispatch.continues > 0;
+  const ended = continued ? dispatch.lastEntryAt : dispatch.endedAt;
+  const continues = continued
+    ? `\n- continued: ${dispatch.continues} time(s) after it first returned — the orchestrator put ` +
+      `this stage back to the same agent, and each continue opens with an entry the orchestrator ` +
+      `sent. Your note is of the whole: what it finally did is what its last attempt shows, and an ` +
+      `earlier attempt's state is history, never its result`
+    : "";
   return `You are reading the inside of ONE dispatch of one finished run of the **deliverer** plugin — a
 Claude Code plugin that carries one feature from a rough idea to a change request a human can merge.
 A dispatch is one agent the run sent off to do one stage's work. You took no part in the run, and you
@@ -523,6 +575,10 @@ otherwise.
 One line carrying the marker, then the note. Nothing before the marker. Plain prose in short
 paragraphs — no headings, no bullet list of figures, and under 400 words. Wrap at 120 columns.
 
+**Never past ${NOTE_OUTPUT_CHARS} characters, whatever you have to say.** That is a hard cap on what
+you write, not a target. A note that runs past it is cut at the last line that fits, marked as cut,
+and passed on that way — you will not be asked for a shorter one, so what matters most goes first.
+
 ${NOTE_MARKER}
 
 The note.
@@ -531,9 +587,9 @@ The note.
 
 - run: \`${input.skill}\`
 - dispatch: #${dispatch.ordinal} \`${dispatch.agentType}\`${stage}
-- ran: ${dispatch.startedAt ?? "unknown"} to ${dispatch.endedAt ?? "unknown"}
+- ran: ${dispatch.startedAt ?? "unknown"} to ${ended ?? "unknown"}
 - outcome: ${outcomeOf(dispatch)}
-- entries in its record: ${dispatch.entryCount}
+- entries in its record: ${dispatch.entryCount}${continues}
 
 ## What it reported back
 
@@ -541,12 +597,18 @@ ${
   dispatch.reportInFull === ""
     ? "Nothing: no report of this dispatch is in the run's record."
     : `${
-        reportElision.chars === 0
+        // A background dispatch's report is already its record's last words, so only a foreground
+        // one's is the first attempt's.
+        (continued && !dispatch.background && dispatch.finished
+          ? "This is what came back at its FIRST return. What each continue reported went to the " +
+            "orchestrator separately, and its last words are at the end of its record below.\n\n"
+          : "") +
+        (reportElision.chars === 0
           ? "This is the whole of it, as it came back."
           : `Its first ${NOTE_REPORT_CHARS} characters; \`…(+${reportElision.chars})\` marks the ` +
             `rest, which you are NOT holding. What is past that mark may say anything, so a report ` +
             `cut off there has omitted nothing as far as you can tell — say what it does carry ` +
-            `and leave what it does not alone.`
+            `and leave what it does not alone.`)
       }
 
 ${report}`
@@ -761,7 +823,8 @@ async function call(query: Query, input: NoteInput): Promise<NoteOutcome> {
   const served = servedBy(result);
   return {
     kind: "written",
-    body: answer.body,
+    // Held to its output cap here, once, and never re-asked (ticket 03): `capNote` carries why.
+    body: capNote(answer.body),
     readBy:
       `\`${NOTE_MODEL}\`${served === undefined ? "" : ` (served by ${served})`} at ` +
       `${NOTE_EFFORT} effort, over ${slice.text.length} characters of this dispatch's record`,
@@ -818,6 +881,24 @@ export interface RunNotes {
   }) => Promise<{ readonly kept: true } | { readonly kept: false; readonly why: string }>;
 }
 
+/**
+ * Whether a dispatch already noted up to `readTo` entries of its record is due a rewrite
+ * (observer-debrief-defects ticket 08; the spec's *The replaced note*).
+ *
+ * **When a continue to its agent finishes**, and only then: the record grew past the note because
+ * a **put-back** appended to it, and every continue it holds has returned. At the finalise every
+ * continued dispatch is rewritten from what its record holds so far, as a first note is — the stage
+ * a run died inside is the one most worth reporting. A dispatch nobody continued is never rewritten,
+ * so a run with no put-back pays for exactly the notes it did.
+ */
+function rewriteDue(dispatch: TraceDispatch, readTo: number, finalising: boolean): boolean {
+  return (
+    dispatch.continues > 0 &&
+    dispatch.entryCount > readTo &&
+    (dispatch.continuesReturned >= dispatch.continues || finalising)
+  );
+}
+
 export function runNotes(
   dataDirectory: string,
   how: { readonly beside: boolean },
@@ -828,9 +909,12 @@ export function runNotes(
 ): RunNotes {
   let file: NotesFile | undefined;
   let cost: ObservationCost = NOTHING_SPENT;
-  let written = 0;
+  // The dispatches whose note in the file is a written one, rather than a count, because a rewrite
+  // can turn a failed note into a written one and back (ticket 08).
+  const written = new Set<string>();
   let attempted = 0;
-  const noted = new Set<string>();
+  // Each dispatch noted so far, with how many entries of its record that note read.
+  const noted = new Map<string, number>();
   const missing: string[] = [];
   let stopped: string | undefined;
 
@@ -848,9 +932,14 @@ export function runNotes(
       // that has not run, and note two of them at once where a pair was launched nine seconds
       // apart. At the finalise every remaining dispatch is noted from what its record holds so far:
       // the stage a run died inside is the one most worth reporting.
-      const due = dispatches.filter(
-        (it) => !noted.has(keyOf(it)) && (it.finished || finalising),
-      );
+      //
+      // A dispatch already noted is due again only to be rewritten after a put-back (ticket 08).
+      const due = dispatches.filter((it) => {
+        const readTo = noted.get(keyOf(it));
+        return readTo === undefined
+          ? it.finished || finalising
+          : rewriteDue(it, readTo, finalising);
+      });
       if (due.length === 0) return;
 
       if (file === undefined) {
@@ -860,8 +949,8 @@ export function runNotes(
           // Nowhere to write notes is the whole notes half lost, and it must not cost the debrief:
           // the synthesis still runs on the trace alone and the debrief says what is missing (D29).
           for (const dispatch of due) {
-            noted.add(keyOf(dispatch));
-            attempted += 1;
+            if (!noted.has(keyOf(dispatch))) attempted += 1;
+            noted.set(keyOf(dispatch), dispatch.entryCount);
           }
           missing.push(
             `every dispatch due a note so far — this run's notes file could not be opened: ` +
@@ -873,14 +962,25 @@ export function runNotes(
       const open = file;
 
       for (const dispatch of due) {
-        noted.add(keyOf(dispatch));
-        attempted += 1;
-        if (open.alreadyNoted.has(keyOf(dispatch))) {
-          // Left by an earlier observer process watching this same run. Counted as written, because
-          // it is in the file the synthesis will read, and never paid for a second time.
-          written += 1;
-          continue;
+        const key = keyOf(dispatch);
+        let readTo = noted.get(key);
+        if (readTo === undefined) {
+          attempted += 1;
+          readTo = open.alreadyNoted.get(key);
+          if (readTo !== undefined) {
+            // Left by an earlier observer process watching this same run. Counted as written,
+            // because it is in the file the synthesis will read, and never paid for a second time
+            // — unless a put-back has returned past what it read, when it is rewritten below as
+            // this process would have rewritten its own (ticket 08).
+            written.add(key);
+            noted.set(key, readTo);
+            if (!rewriteDue(dispatch, readTo, finalising)) continue;
+          }
         }
+        // Whatever the outcome below, this is as far as the note now stands: a failed rewrite is not
+        // retried on every rewrite of the debrief, at a price each time.
+        noted.set(key, dispatch.entryCount);
+        const rewriting = readTo !== undefined;
         const outcome = await noteFor({
           dispatch,
           skill: trace.skills.join(", ") || "a deliverer run",
@@ -896,26 +996,27 @@ export function runNotes(
         if (outcome.kind === "failed" && outcome.noCredential !== true) {
           missing.push(`${where} — ${outcome.why}`);
         }
-        const landed = await open
-          .append(
-            renderNote({
-              dispatch,
-              readBy: outcome.kind === "written" ? outcome.readBy : "nothing — this note failed",
-              body:
-                outcome.kind === "written"
-                  ? outcome.body
-                  : `NO NOTE. Nothing read this dispatch's interior: ${outcome.why}. ` +
-                    // The ordinary loss is this dispatch's alone and the synthesis still reads the
-                    // rest; the credential one is not, and saying it was would be a claim about a
-                    // call that was never made (one-environment-file ticket 04; D11).
-                    (outcome.noCredential === true
-                      ? `The judging stopped here: no dispatch after this one was read, and the ` +
-                        `one synthesis at the end of this run was not attempted either.`
-                      : `The one synthesis at the end of this run still ran, on the trace and on ` +
-                        `the notes that did come back; what is missing from it is this dispatch's ` +
-                        `inside.`),
-            }),
-          )
+        const rendered = renderNote({
+          dispatch,
+          readBy: outcome.kind === "written" ? outcome.readBy : "nothing — this note failed",
+          body:
+            outcome.kind === "written"
+              ? outcome.body
+              : `NO NOTE. Nothing read this dispatch's interior: ${outcome.why}. ` +
+                // The ordinary loss is this dispatch's alone and the synthesis still reads the
+                // rest; the credential one is not, and saying it was would be a claim about a
+                // call that was never made (one-environment-file ticket 04; D11).
+                (outcome.noCredential === true
+                  ? `The judging stopped here: no dispatch after this one was read, and the ` +
+                    `one synthesis at the end of this run was not attempted either.`
+                  : `The one synthesis at the end of this run still ran, on the trace and on ` +
+                    `the notes that did come back; what is missing from it is this dispatch's ` +
+                    `inside.`),
+        });
+        // A dispatch keeps ONE note (ticket 08; the spec's *The replaced note*): a rewrite takes the
+        // first note's place in the file, so the synthesis only ever reads the latest, and anything
+        // after it — the unparsed synthesis answer ticket 04 keeps last — stays where it was.
+        const landed = await (rewriting ? open.rewrite(key, rendered) : open.append(rendered))
           .then(() => true)
           // A note that could not be written down is the same loss to the debrief as one that was
           // never read, and it must not take the observation with it: it is named as missing.
@@ -926,7 +1027,12 @@ export function runNotes(
         // Counted written only once it is IN the file the synthesis reads. A note that came back and
         // then could not be written down would otherwise be counted twice over — once in `written`
         // and once in `missing` — and the header would claim a reading the debrief does not have.
-        if (outcome.kind === "written" && landed) written += 1;
+        //
+        // A rewrite that did not land leaves the note it was to replace standing, counted as before.
+        if (landed) {
+          if (outcome.kind === "written") written.add(key);
+          else written.delete(key);
+        }
         // **The judging ends here** (ticket 04; D11). Remembered in the gate first, so the rewrite
         // after this one attempts nothing and the synthesis is not attempted either, and then the
         // loop stops: every dispatch still due would learn the same thing at the same price. The
@@ -958,7 +1064,7 @@ export function runNotes(
       }
     },
     summary: () => ({
-      written,
+      written: written.size,
       attempted,
       model: NOTE_MODEL,
       path: file?.path,
