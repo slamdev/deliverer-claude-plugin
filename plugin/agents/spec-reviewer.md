@@ -41,11 +41,16 @@ step 5 forms your own.
    three-dot (`git diff origin/<base>...HEAD`), so the comparison is against the merge-base, and the commit list beside
    it. Never the local copy of the base: one behind the remote widens the diff to work merged since, which then reads
    as the epic's. You are done when every file the diff touches has been read as head has it.
+
+   Read each commit's `Evidence:` section beside it, to the next `<Word>:` section or the end of the message: it is
+   what was demonstrated — what was run, what it showed, and whether its committer watched it run or had it from a
+   cache. A demonstration a line asks for leaves no hunk; its entry is what answers that line.
 4. **Collect the `SPEC` comments already on it** from every channel the change request has — **Comment channels**
    below.
 5. **Work the spec and its tickets one line at a time**, the last with the same scrutiny as the first. For each line
    that asks for something:
-   1. the hunks of the diff that answer it, found — all of it, part of it, or none;
+   1. the hunks of the diff that answer it, found — all of it, part of it, or none — and, for a line that asks for a
+      demonstration, the `Evidence:` entry that records it;
    2. one of three outcomes reached: the line carried in full, `missing`, or `wrong` — **Findings** below;
    3. for a finding, the comments step 4 collected reread, and the one already carrying it, where one does, taken as
       done;
