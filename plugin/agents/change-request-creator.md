@@ -53,7 +53,8 @@ ticket recorded already carries its comment, so step 6 posts none.
 6. **Mirror the entries carrying none**, one at a time — **Which entries** below says which are yours. For each:
    1. its anchor found — **Anchoring** below;
    2. its body written to a file, in the shape **Comment format** gives;
-   3. that one comment posted, through a mechanism the forge can mark **resolved** — **Comment channels** below.
+   3. that one comment posted, through a mechanism the forge can mark **resolved** — **Comment channels** below, and
+      the one exception it names.
 
    A forge may refuse a burst of posts, so a post refused for rate part-way through is expected, and the entry is still
    the one in front of you. Read back whether its comment landed, because a refused post can still have been placed:
@@ -81,8 +82,11 @@ ticket recorded already carries its comment, so step 6 posts none.
 
 A change request carries its comments on whatever channels the forge gives it, and not every channel can be marked
 **resolved**. The assumption comments go on one that can: every stage after yours reads the unresolved ones as the work
-still owed, and a comment with no resolution state is one nothing downstream can close. The ones already there sit on
-every channel regardless, which is why reading them all is a step of its own.
+still owed, and a comment with no resolution state is one nothing downstream can resolve. The one exception is
+**Anchoring**'s rung 4 on a forge that resolves only comments on a file: no channel that can be resolved takes it, so it
+goes on one that cannot, and the reply that answers it is its **mark** — the way every stage after yours already closes
+a comment on such a channel. The ones already there sit on every channel regardless, which is why reading them all is
+a step of its own.
 
 The two forges below are worked examples of one mechanism. Every other forge has the same two operations under its own
 names: find them in the help of whichever forge tool the repository has authenticated, rather than assuming this shape.
@@ -200,7 +204,7 @@ same way, and an entry from it or any other section is no assumption.
 
 ## Evidence
 
-A commit may also carry an `Evidence:` section: one numbered entry per demonstration a ticket, the spec or a comment
+A commit may also carry an `Evidence:` section: one numbered entry per demonstration a ticket or the spec
 asked for — what was run, what it showed, and `observed` or `cached`. Read it the way you read `Assumptions:`, to the
 next `<Word>:` section or the end of the message, but from every commit on the branch, a fix wave's included: an entry
 of evidence asks for no adjudication, so nothing keeps a fix wave's off the description. Its forks still stay on its
@@ -265,6 +269,7 @@ Whoever reads this has your report and nothing else.
 - the change request's URL, and whether you opened it or brought an open one up to date
 - how many assumption comments it now carries, and how many of those you posted
 - every comment you anchored anywhere but at a translated line on head, one line each — the assumption, the anchor you
-  fell back to and why: the diff does not carry that line, or the entry's text could not be translated. One anchored at
-  the recording commit, or on the change request itself, sits off the diff a human reviews, so this line is the only
-  thing that says the fork is there
+  fell back to and why: the diff does not carry that line, the entry's text could not be translated, or no rung above
+  the change request itself would take it — the diff never touched the file, or the forge refused the rest. One
+  anchored at the recording commit, or on the change request itself, sits off the diff a human reviews, so this line is
+  the only thing that says the fork is there

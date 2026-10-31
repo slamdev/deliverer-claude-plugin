@@ -59,3 +59,26 @@ itself: the `ALPHA` post came back at line 8 against `C2`. The bare `commit_id` 
 positional — a general comment with its anchor lost. GitLab did not refuse a file-level position on a file outside the
 diff: it stored one against a file the change request's changes never show, which is why the ladder sends that case to
 rung 4 rather than to rung 2.
+
+### The rung-3 re-probe, 2026-10-31
+
+The first probe's recording commit `C1` was the change request's first, so its parent was the diff base and its
+rung-3 position matched the version's own base and start. A second private project under the owner's namespace probed
+the normal case, and was deleted the same way (a `DELETE`, then a second with `permanently_remove=true` and the
+project's renamed `full_path`; a read by id and by the original path then came back `404`). `main` carried `a.txt`
+(ten lines) at `C0`. The change request held four commits: `C1` and `C2` each edited `a.txt`; `C3`, the recording
+commit, added `GAMMA` at line 5 and `DELTA` at line 6; `C4` inserted two lines above `GAMMA`, moving it to line 7, and
+deleted `DELTA`. Its one diff version had base and start at `C0` and head at `C4`, so `C3`'s parent `C2` is not the
+base. Each body opened `ASSUMPTION (<C3>)`, both posts used base and start `C2` and head `C3`, and both discussions were
+read back from `merge_requests/:iid/discussions`: each stored `resolvable: true`, `individual_note: false` and no note
+`commit_id`.
+
+| Line                   | `new_line` posted | What GitLab stored                                            |
+|------------------------|-------------------|---------------------------------------------------------------|
+| `DELTA`, gone on head  | 6                 | `DiffNote`, `text`, `new_line` 6; base, start `C2`; head `C3` |
+| `GAMMA`, moved on head | 5                 | `DiffNote`, `text`, `new_line` 7; base, start `C0`; head `C4` |
+
+GitLab accepts and stores the positional form against a recording commit whose parent is not the diff base, so rung
+3's GitLab example stands as shipped. As in the first probe, a line that survives to head is carried forward onto the
+change request's own version — here with its base and start moved from `C2` to `C0` as well — and a line gone on head
+keeps the recording commit's position as posted.

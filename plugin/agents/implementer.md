@@ -126,7 +126,7 @@ one numbered entry per **gate** you left red, gone when every gate you met is gr
 commit is what the branch carries either way.
 
 `Evidence:` follows `Gates:`, numbered the same way and gone when empty: one entry per demonstration the ticket or spec
-asks for — a proof, a timing, a probe pair — made for the piece this commit carries. Each says what was run, what it
+asks for — a proof, a timing, a probe pair — made for the work this commit carries. Each says what was run, what it
 showed, and `observed` where you watched it run or `cached` where its result was served from a cache. A routine green
 gate gets no entry: evidence is what a human reading the change request would otherwise run again, and this section is
 the only place that reaches them.

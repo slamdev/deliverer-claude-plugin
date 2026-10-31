@@ -208,8 +208,9 @@ is the ticket where a ticket is being committed, and the comments being cleared 
 pre-commit, local checks
 
 **Check**:
-Whatever the forge runs on a change request; **green** is all of them passing. A fix wave owns them whether or not it
-was what made them red. _Avoid_: CI, build, pipeline, gate
+Whatever the forge runs on a change request; **green** is all of them passing. A fix wave owns every red one, whether or
+not it was what made it red, except one red for a cause outside the branch — red on the default branch's head too, or
+failed before running any of the branch's code — which is a **hand-off**. _Avoid_: CI, build, pipeline, gate
 
 **Evidence**:
 A demonstration a ticket or spec asks for, recorded on the commit that made it: what was run, what it showed, and
