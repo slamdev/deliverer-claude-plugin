@@ -29,7 +29,7 @@ import { join } from "node:path";
 import { NO_TOKENS, type TokenTotals } from "./records.ts";
 import { formatDuration, plural, tokenDetail, type Trace, type TraceDispatch } from "./trace.ts";
 import { observationDirectory, writeFileAtomically } from "./trace-file.ts";
-import { runSkills, type RunFacts, type RunRound } from "./run-facts.ts";
+import { epicSlugs, runSkills, type RunFacts, type RunRound } from "./run-facts.ts";
 // The table's own wording, which the run's spend line and the observation's own cost line both rest
 // on: `./rates.ts` holds the rates, the date they were read and how they are stated, so this document
 // carries one account of them rather than two (the-observation-reports-the-whole-run ticket 06; D12).
@@ -576,8 +576,12 @@ export function renderDebrief(input: DebriefInput): string {
   const { trace, facts, judging } = input;
   const skill = skillOf(input);
   const out: Document = { lines: [] };
+  // Headed by the name the epic ended with, and the one it is filed under beside it whenever the
+  // run renamed it, so a human can find it by either (observer-debrief-defects ticket 05).
+  const epic = epicSlugs(facts, trace);
+  const filedUnder = epic.first === undefined ? "" : ` (first \`${epic.first}\`)`;
 
-  line(out, `# Deliverer debrief — \`${skill}\`, epic \`${trace.slug}\``);
+  line(out, `# Deliverer debrief — \`${skill}\`, epic \`${epic.last}\`${filedUnder}`);
   paragraph(out,
     "This is a **debrief** of one run of the deliverer plugin: what the plugin's own machinery " +
       "did, and what it cost. It is bounded to the plugin — its skills, its agents, its " +
@@ -646,9 +650,12 @@ export function renderDebrief(input: DebriefInput): string {
   }
   bullet(out,
     "epic slug",
-    trace.slugRead
-      ? `\`${trace.slug}\``
-      : `\`${trace.slug}\` — a stand-in: no task update of this run carried one`,
+    !trace.slugRead
+      ? `\`${trace.slug}\` — a stand-in: no task update of this run carried one`
+      : epic.first === undefined
+        ? `\`${epic.last}\``
+        : `\`${epic.last}\` — renamed during the run from \`${epic.first}\`, which is the name ` +
+          `its files are kept under`,
   );
   bullet(out, "wall clock", wallClockLine(facts));
   bullet(out, "dispatches", `${facts.dispatches.length} — ${dispatchTally(facts.dispatches)}`);

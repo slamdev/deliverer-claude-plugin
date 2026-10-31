@@ -170,6 +170,39 @@ export function renderNote(input: {
   return `\n${rows.join("\n")}\n`;
 }
 
+/** The heading the unparsed synthesis answer goes under — deliberately not `NOTE_MARKER`'s. */
+const UNPARSED_MARKER = "== the synthesis answer, unparsed ==";
+
+/**
+ * A synthesis answer that came back in the wrong shape, as it goes into the file
+ * (observer-debrief-defects ticket 04; the spec's *The unparsed reading*).
+ *
+ * **Kept here because this is the one file beside the debrief that may hold it.** The reading was
+ * paid for, and a maintainer holding the machine can still read it; but it could not be split into
+ * defects and hunches, so nothing can tell which of its lines the synthesis meant as a finding, and
+ * nothing holds it to ADR-0018's bound either. The debrief says it went unjudged and points here.
+ *
+ * **Under a heading of its own, and never `NOTE_MARKER`'s**: `notedIn` reads that marker back as a
+ * dispatch already noted, and this answer is no dispatch's. It lands after the dispatch notes
+ * because the finalise notes every dispatch before the synthesis runs.
+ */
+export function renderUnparsed(input: {
+  readonly why: string;
+  readonly readBy: string;
+  readonly body: string;
+}): string {
+  const rows = [
+    UNPARSED_MARKER,
+    row("what", "the one synthesis over this run, which came back in no shape it could be split on"),
+    row("why unread", input.why),
+    row("read by", input.readBy),
+    "",
+    input.body.trim(),
+    "",
+  ];
+  return `\n${rows.join("\n")}\n`;
+}
+
 function row(label: string, value: string): string {
   return `  ${label.padEnd(13)} ${value}`;
 }

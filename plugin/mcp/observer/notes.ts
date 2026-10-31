@@ -60,6 +60,7 @@ import {
   outcomeOf,
   readNotes,
   renderNote,
+  renderUnparsed,
   type NotesFile,
 } from "./notes-file.ts";
 import {
@@ -800,6 +801,21 @@ export interface RunNotes {
    * (D29).
    */
   readonly lost: (reason: string) => void;
+  /**
+   * Keeps a synthesis answer that came back in the wrong shape, under its own heading after the
+   * dispatch notes (observer-debrief-defects ticket 04), and says whether it landed.
+   *
+   * Here rather than in `./judge.ts` because this is what holds the file: a replay writes a set of
+   * notes beside whatever is there (D19), so a second `openNotes` would put the answer in a file of
+   * its own rather than after the notes it was read with. Opened here where no note opened it — a
+   * run whose dispatches all left nothing to note still has a reading to keep.
+   */
+  readonly keepUnparsed: (input: {
+    readonly trace: Trace;
+    readonly why: string;
+    readonly readBy: string;
+    readonly body: string;
+  }) => Promise<{ readonly kept: true } | { readonly kept: false; readonly why: string }>;
 }
 
 export function runNotes(
@@ -932,6 +948,15 @@ export function runNotes(
     text: async () => (file === undefined ? undefined : readNotes(file.path)),
     cost: () => cost,
     lost: (reason) => missing.push(reason),
+    keepUnparsed: async ({ trace, why, readBy, body }) => {
+      try {
+        file ??= await openNotes(dataDirectory, trace, how);
+        await file.append(renderUnparsed({ why, readBy, body }));
+        return { kept: true };
+      } catch (error) {
+        return { kept: false, why: errorText(error) };
+      }
+    },
     summary: () => ({
       written,
       attempted,
