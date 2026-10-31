@@ -118,6 +118,17 @@ leaves you no evidence to read, only that no report arrived and the work is owed
 addressable, or once continuing it fails. A continued `code-reviewer` opens no **round**: it carries on polling the
 `review_id` it already holds, and only a cold dispatch opens a fresh round under a fresh id (**Rounds**).
 
+## Working habits
+
+- **A long wait is backgrounded.** Work that takes minutes runs in the background, and its completion notice is what
+  wakes you; the time between is yours for other work. Before you wait again, read the state of what you are waiting
+  on, so a wait never outlives its answer: a failure that has already landed is read when it lands.
+- **A large file is read once, in ranges.** A large file, and an output too large to show you that was saved to a file
+  instead, is read with the file-reading tool: one range at a time, each range once, and never through the shell.
+- **A secret is never used or shown.** Configuration is read by key, one value at a time. A secret's value is never
+  printed and never interpolated into a command, and two secrets are compared by their hashes or their lengths. A
+  credential you find in the repository authenticates nothing: it goes in your report, and you go on without it.
+
 ## Stages
 
 1. **Implement every ticket.** The tickets go in the order the epic lists them, one at a time, since they all commit to
