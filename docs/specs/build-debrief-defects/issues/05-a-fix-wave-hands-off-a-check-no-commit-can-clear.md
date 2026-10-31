@@ -1,6 +1,6 @@
 # 05 — A fix wave hands off a check no commit can clear, and leaves the description alone
 
-Status: ready-for-agent
+Status: resolved
 
 **Blocked by:** None — can start immediately.
 
@@ -12,9 +12,9 @@ change request's description, which stage 9 then rewrote again. Settled as chang
 The test is mechanical because `comments-addresser` runs at medium effort and is to apply it without judgement
 (`../spec.md` § Modules touched).
 
-- [ ] A check red for a cause outside the branch is a **hand-off**, named with its cause, and the wave stops waiting on
+- [x] A check red for a cause outside the branch is a **hand-off**, named with its cause, and the wave stops waiting on
       it.
-- [ ] Outside means, mechanically: the same check is red on the default branch's head, or it failed before running any
+- [x] Outside means, mechanically: the same check is red on the default branch's head, or it failed before running any
       of the branch's code. Every other red check is the wave's, one that was red before it started included.
-- [ ] The wave never edits the change request's title or description; those are stage 9's.
-- [ ] The file is read against `/mattpocock-skills:writing-for-agents`, and its register and 120-column wrap are kept.
+- [x] The wave never edits the change request's title or description; those are stage 9's.
+- [x] The file is read against `/mattpocock-skills:writing-for-agents`, and its register and 120-column wrap are kept.
