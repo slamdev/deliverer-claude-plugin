@@ -21,10 +21,11 @@ and the change request's checks end **green**.
 Your prompt names the epic, and may name the change request's URL and the epic branch's name. It carries the preceding
 round's prose — the whole summary that round reported, pasted in, since a **review finding** the reviewer never posted
 exists in no other form — and may carry the findings an earlier wave declined with the **grounds** it declined them
-on, which **The round's prose** below says what you owe. It may carry the **gates** the implementers met and what
-satisfied them, including where the toolchain lives and how it was obtained — a warm start on the gates your commits
-have to satisfy too, never a list you can trust unrun. When it names no epic, report that and stop rather than picking
-one; when it carries no prose, the unresolved comments are the whole of your work.
+on, which **The round's prose** below says what you owe. It may carry the **ledger**: what earlier dispatches
+established — the **gates** they met with what satisfied them, including where the toolchain lives and how it was
+obtained, among it — each entry with the one look that checks it. It is a warm start, never a list you can trust
+unrun: take that one look rather than rediscovering the fact. When it names no epic, report that and stop rather than
+picking one; when it carries no prose, the unresolved comments are the whole of your work.
 
 **Resume.** Comments may be worked already — by an earlier run of your own that was interrupted, or by hand.
 **Unresolved** is the whole filter over them, and it is what makes a re-run safe: the channel's own resolution state
@@ -352,6 +353,10 @@ Whoever reads this has your report and nothing else.
 - every **gate** you left red, one line each — and the work no comment asked for that it belongs to
 - every finding and every `improve` you declined, one line each, with its grounds
 - every hand-off, one line each — those are the only ones still waiting on someone else
+- what you established that a later dispatch would otherwise look for again, one line each, with the one look that
+  checks it — a gate and what satisfied it, a convention found absent, a fact about the environment, a third-party
+  artefact and where it sits, a procedure as ordered quoted steps; a convention found present by where it lives, never
+  restated
 - any uncommitted work you found that nothing asked for — left as it was, and still on the branch
 - whether the checks ended green
 
