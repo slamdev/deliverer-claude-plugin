@@ -91,6 +91,14 @@ export interface RecordFile {
   readonly unreadableLines: readonly number[];
   /** why the file could not be opened at all; `entries` is empty when this is set */
   readonly unreadable: string | undefined;
+  /**
+   * The 1-based line the file ENDS inside — no newline after it, and not JSON — or `undefined`
+   * (observer-debrief-defects ticket 06). It is one of `unreadableLines` and is told apart from the
+   * rest because it is a different claim: every other unreadable line is a loss in the middle of a
+   * record that carries on, and this one is where the reading stopped. The host ends every entry
+   * with a newline, so an intact record never has one.
+   */
+  readonly cutAt?: number;
 }
 
 export async function readRecordFile(path: string): Promise<RecordFile> {
@@ -105,6 +113,7 @@ export async function readRecordFile(path: string): Promise<RecordFile> {
       unreadable: error instanceof Error ? error.message : String(error),
     };
   }
+  let cutAt: number | undefined;
   const entries: JsonObject[] = [];
   const unreadableLines: number[] = [];
   const lines = text.split("\n");
@@ -115,13 +124,14 @@ export async function readRecordFile(path: string): Promise<RecordFile> {
       parsed = JSON.parse(line);
     } catch {
       unreadableLines.push(index + 1);
+      if (index === lines.length - 1) cutAt = index + 1;
       continue;
     }
     const entry = asObject(parsed);
     if (entry === undefined) unreadableLines.push(index + 1);
     else entries.push(entry);
   }
-  return { path, entries, unreadableLines, unreadable: undefined };
+  return { path, entries, unreadableLines, unreadable: undefined, cutAt };
 }
 
 /* ───────────────────────────────────── identifying a run ───────────────────────────────────── */

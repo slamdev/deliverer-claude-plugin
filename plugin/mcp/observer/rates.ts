@@ -65,6 +65,23 @@ interface ModelRate {
    * above the source states that it shares Fable 5.1's (idp-scaffold-defects ticket 05).
    */
   readonly cacheReadMultiplier?: number;
+  /**
+   * The rates a request pays once its own prompt is longer than a threshold, where the model has
+   * such a tier (observer-debrief-defects ticket 02).
+   *
+   * **One threshold per row, and decided per request.** The source prices Claude Haiku 5.5 by prompt
+   * length, and its pricing page counts a prompt as all of the request's input tokens — uncached,
+   * cache reads and cache writes together — with each request priced on its own (ticket 01's third
+   * fact). So the tier is read off the request in hand and never off a run's total or an average,
+   * which is what `./records.ts` grouping usage per request already makes possible. The threshold is
+   * exclusive: a prompt of exactly `overTokens` takes the rates above. Cache writes and reads keep
+   * their usual multipliers, on whichever tier's input rate the request fell in.
+   */
+  readonly longPrompt?: {
+    readonly overTokens: number;
+    readonly inputPerMTok: number;
+    readonly outputPerMTok: number;
+  };
 }
 
 /**
@@ -85,12 +102,6 @@ export const CACHE_READ_MULTIPLIER = 0.1;
  * `claude-sonnet-4-5`, `claude-opus-4-1` and the rest — carry no price there, so they are absent
  * here rather than guessed at: D15 makes an id this table does not know a named gap in the debrief,
  * which is the honest answer and is never a zero.
- *
- * **`claude-haiku-5-5` is priced there and left out here, knowingly** (idp-scaffold-defects ticket
- * 05). Its rate depends on the request: $0.10/$0.50 per MTok for a prompt of 100K tokens or fewer
- * and $0.50/$2.50 above that. A row here has one rate, and the lower one would understate every
- * long-prompt request fivefold under a figure that reads as exact; until the table can carry a
- * prompt-length tier, that model is a named gap rather than a wrong number.
  */
 const RATES: Readonly<Record<string, ModelRate>> = {
   // The source's own note: Claude Fable 5.1's cache reads are $0.25/MTok — 0.025× — and Claude
@@ -111,6 +122,15 @@ const RATES: Readonly<Record<string, ModelRate>> = {
   "claude-sonnet-5-5": { inputPerMTok: 2, outputPerMTok: 10 },
   "claude-sonnet-5": { inputPerMTok: 2, outputPerMTok: 10 },
   "claude-sonnet-4-6": { inputPerMTok: 3, outputPerMTok: 15 },
+  // Claude Haiku 5.5 is priced by prompt length: $0.10/$0.50 up to 100K tokens and $0.50/$2.50
+  // above. idp-scaffold-defects ticket 05 left it out because a single rate would have understated
+  // every long-prompt request fivefold; the tier is what that exclusion waited for
+  // (observer-debrief-defects ticket 02).
+  "claude-haiku-5-5": {
+    inputPerMTok: 0.1,
+    outputPerMTok: 0.5,
+    longPrompt: { overTokens: 100_000, inputPerMTok: 0.5, outputPerMTok: 2.5 },
+  },
   "claude-haiku-4-5": { inputPerMTok: 1, outputPerMTok: 5 },
 };
 
@@ -125,6 +145,14 @@ const RATES: Readonly<Record<string, ModelRate>> = {
  */
 function rateFor(model: string): ModelRate | undefined {
   return RATES[model] ?? RATES[model.replace(/-\d{8}$/, "")];
+}
+
+/**
+ * Whether this model's rate depends on each request's own prompt, which a usage summed over several
+ * requests cannot decide (observer-debrief-defects ticket 02).
+ */
+export function pricedByPromptLength(model: string): boolean {
+  return rateFor(model)?.longPrompt !== undefined;
 }
 
 /* ─────────────────────────────── what pricing a run found ─────────────────────────────── */
@@ -176,16 +204,35 @@ export const NO_MODEL_NAMED = "no model named on the request";
  */
 function priceOf(usage: RequestUsage, rate: ModelRate): number {
   const perMTok = (tokens: number, dollars: number): number => (tokens / 1_000_000) * dollars;
+  const { inputPerMTok, outputPerMTok } = tierOf(usage, rate);
   return (
-    perMTok(usage.inputTokens, rate.inputPerMTok) +
-    perMTok(usage.outputTokens, rate.outputPerMTok) +
-    perMTok(usage.cacheWrite5mTokens, rate.inputPerMTok * CACHE_WRITE_5M_MULTIPLIER) +
-    perMTok(usage.cacheWrite1hTokens, rate.inputPerMTok * CACHE_WRITE_1H_MULTIPLIER) +
+    perMTok(usage.inputTokens, inputPerMTok) +
+    perMTok(usage.outputTokens, outputPerMTok) +
+    perMTok(usage.cacheWrite5mTokens, inputPerMTok * CACHE_WRITE_5M_MULTIPLIER) +
+    perMTok(usage.cacheWrite1hTokens, inputPerMTok * CACHE_WRITE_1H_MULTIPLIER) +
     perMTok(
       usage.cacheReadTokens,
-      rate.inputPerMTok * (rate.cacheReadMultiplier ?? CACHE_READ_MULTIPLIER),
+      inputPerMTok * (rate.cacheReadMultiplier ?? CACHE_READ_MULTIPLIER),
     )
   );
+}
+
+/**
+ * The input and output rates THIS request pays: the row's own, or its long-prompt tier's where the
+ * request's prompt is over that tier's threshold (observer-debrief-defects ticket 02).
+ *
+ * The prompt is the request's input, cache-write and cache-read tokens together, as the source
+ * counts it — never the uncached input alone, which on a long agentic run is a few tokens on top of
+ * a cached prefix of hundreds of thousands, and would put every such request in the cheap tier.
+ */
+function tierOf(
+  usage: RequestUsage,
+  rate: ModelRate,
+): { readonly inputPerMTok: number; readonly outputPerMTok: number } {
+  const prompt = usage.inputTokens + usage.cacheWriteTokens + usage.cacheReadTokens;
+  return rate.longPrompt !== undefined && prompt > rate.longPrompt.overTokens
+    ? rate.longPrompt
+    : rate;
 }
 
 /**
@@ -317,8 +364,8 @@ export function ratesClause(models: readonly string[]): string {
       models.length === 0 ? "which named no model here" : `at the rates for ${named}`
     }, as of ${RATES_AS_OF} from ${RATES_SOURCE}: cache writes at ` +
     `${CACHE_WRITE_5M_MULTIPLIER}× input on the five-minute TTL and ${CACHE_WRITE_1H_MULTIPLIER}× ` +
-    `on the one-hour one, and ${cacheReadClause(models)}. The table ships in the plugin and ` +
-    `reaches no network, so this figure is reproducible from the records on disk.`
+    `on the one-hour one, and ${cacheReadClause(models)}.${tierClause(models)} The table ships in ` +
+    `the plugin and reaches no network, so this figure is reproducible from the records on disk.`
   );
 }
 
@@ -355,6 +402,27 @@ function cacheReadClause(models: readonly string[]): string {
     ([multiplier, named]) => `${multiplier}× for ${named.map((it) => `\`${it}\``).join(", ")}`,
   );
   return `reads at ${groups.join(" and ")}`;
+}
+
+/**
+ * How the models priced by prompt length were priced, and `""` where none of them was
+ * (observer-debrief-defects ticket 02).
+ *
+ * **Said only where it applied**, for the reason `cacheReadClause` groups its multipliers: the
+ * stated basis has to be what `priceOf` did, and a figure over models with one rate each reads
+ * exactly as it did before the table learned a tier.
+ */
+function tierClause(models: readonly string[]): string {
+  const tiered = models.flatMap((model) => {
+    const tier = rateFor(model)?.longPrompt;
+    if (tier === undefined) return [];
+    return [`\`${model}\` over ${tier.overTokens.toLocaleString("en-US")}`];
+  });
+  if (tiered.length === 0) return "";
+  return (
+    ` Each request of ${tiered.join(", ")} tokens of prompt — its input, cache writes and cache ` +
+    `reads together — took that model's long-prompt rates, decided per request and never by a total.`
+  );
 }
 
 /** What the table could not price, in the reader's words, and `""` where it priced everything. */

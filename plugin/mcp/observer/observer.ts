@@ -75,6 +75,7 @@ import {
   finaliseSignalPath,
   readFinalReading,
   SESSION_ENDED_STATE,
+  STOPPED_EARLY_STATE,
   writeAnnouncement,
   writeFinalReading,
   writeMarker,
@@ -468,6 +469,17 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
           const reason =
             `reading this run's records failed ${MOST_CONSECUTIVE_FAILURES} times in a row ` +
             `(${errorText(error)}), so the observer stopped`;
+          // A debrief already on disk and not final says so rather than standing as the run's last
+          // word (ticket 06). The error text stays out of it: it names paths on this machine.
+          if (written !== undefined && finalisedAt === undefined) {
+            await stopEarly(
+              options,
+              written,
+              `reading the session's records failed ${MOST_CONSECUTIVE_FAILURES} times in a ` +
+                `row, so the observer stopped`,
+            );
+            await mark(options, `${STOPPED_EARLY_STATE}${reason}`);
+          }
           await announce(options, { kind: "failure", reason });
           return { kind: "failed", reason };
         }
@@ -529,16 +541,26 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
             await sleep(TICK_MS);
             continue;
           }
+          // **A debrief that was not final says the observation stopped early** (ticket 06), at the
+          // last entry its last reading got to and why. It used to keep whatever flag its last
+          // reading gave it, and a reading taken between two stages looked as finished as any
+          // other (refine #1, #21 and #22). Re-rendered from that reading rather than read again,
+          // because the record is exactly what cannot be read. A finalised one earned its label
+          // and keeps it: the finalise had read the run, and only the watch for a resume is cut.
+          const stoppedEarly = finalisedAt === undefined;
+          if (stoppedEarly) await stopEarly(options, written, stopReason(outcome.kind));
           // Announced as the debrief it is, because it is one: on disk, readable, and the last
-          // reading of this run there is ever going to be. What it cannot say is that the run
-          // finished, and it does not — it keeps whatever flag its last reading gave it.
+          // reading of this run there is ever going to be from this process.
           await announce(options, {
             kind: "debrief",
             debriefPath: written.written.debriefPath,
             headline: headlineOf(written),
             noCredential: nothingJudgedFor(written),
           });
-          await mark(options, `stopped watching — ${outcome.reason}`);
+          await mark(
+            options,
+            `${stoppedEarly ? STOPPED_EARLY_STATE : "stopped watching — "}${outcome.reason}`,
+          );
           return { kind: "debriefed", debriefPath: written.written.debriefPath };
         }
         // `refused` is a record nothing could read and `no-run` is one that holds no run YET. Both
@@ -867,6 +889,44 @@ async function announce(options: ObserveOptions, announcement: Announcement): Pr
   await writeAnnouncement(options.dataDirectory, options.sessionId, announcement).catch(
     () => undefined,
   );
+}
+
+/**
+ * Rewrites the debrief on disk as an observation that stopped early (ticket 06), from the reading
+ * that wrote it: the same trace, facts and judging, so nothing in it moves but its state.
+ *
+ * Swallowed like the announcement: a debrief that could not be rewritten still stands as it was,
+ * and the marker the caller leaves next is what lets the hook start an observer again.
+ */
+async function stopEarly(
+  options: ObserveOptions,
+  written: Extract<DebriefOutcome, { kind: "written" }>,
+  reason: string,
+): Promise<void> {
+  await refreshDebrief(options.dataDirectory, {
+    ...written.input,
+    status: {
+      finalised: false,
+      note: "",
+      stoppedEarly: {
+        lastEntry: written.lastRead.entry,
+        lastEntryAt: written.lastRead.at,
+        reason,
+      },
+    },
+  }).catch(() => undefined);
+}
+
+/**
+ * Why the patience ran out, in the debrief's words (ticket 06). Never the reading's own reason,
+ * which names the record by its path on this machine, and a debrief carries no such thing
+ * (ADR-0018).
+ */
+function stopReason(kind: "refused" | "no-run" | "held"): string {
+  const patience = formatDuration(RUN_PATIENCE_MS);
+  return kind === "refused"
+    ? `the session's record could not be read for ${patience}, so the observer stopped`
+    : `the session's record held no run it could read for ${patience}, so the observer stopped`;
 }
 
 async function mark(options: ObserveOptions, state: string): Promise<void> {
