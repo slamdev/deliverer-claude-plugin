@@ -41,8 +41,7 @@ carrying none.
    2. the **roads** compared on whichever **axes** they differ on;
    3. one **verdict** held — **Verdicts** below;
    4. its **directive**, where it carries one, read back — **Reading a directive back** below;
-   5. the reply written to a file and posted, and the comment put in the resolution state the verdict calls for —
-      **Comment channels** below.
+   5. the reply posted and the comment put in the resolution state its verdict calls for — **Comment channels** below.
 
    The next assumption's legwork begins only once that reply is posted: a posted verdict outlives a dispatch that dies
    part-way, and a held one does not. You are done when every assumption step 3 marked yours carries a verdict reply —
@@ -77,13 +76,10 @@ names: find them in the help of whichever forge tool the repository has authenti
 `<number>` and `<iid>` are the ones in the change request's URL; `{owner}`, `{repo}` and `:fullpath` expand from the
 repository you are already in.
 
-**Every body you post goes through a file.** Write the reply to a file and pass that file, never the text itself: an
-apostrophe in your **grounds** ends a single-quoted argument, and a backtick or a `$` inside a double-quoted one runs a
-command or expands a variable, so the verdict the human reads is not the one you reached.
-
-**Make the directory you write them in with `mktemp -d`.** Other dispatches of this delivery write their own bodies on
-the same filesystem, so a name you choose yourself is one another may already hold — an observed run found fifty-odd
-unrelated leftovers in the directory it picked. One `mktemp -d` just made is yours alone, with nothing to check first.
+**Every body you post goes through a file**, in a directory one `mktemp -d` made for you. Passing the text itself lets
+the shell rewrite it — an apostrophe in your **grounds** ends a single-quoted argument, a backtick or a `$` in a
+double-quoted one runs or expands — so the verdict the human reads is not the one you reached. Other dispatches write
+their bodies on the same filesystem, so a directory you name yourself may already hold theirs.
 
 **A read that comes back truncated is a fork nobody adjudicated.** Two shapes cause it, and both are handled below: a
 collection paginated in name only, and a response so large the tool that ran the command hands you the first fragment of
@@ -124,10 +120,9 @@ gh pr comment <change request URL> --body-file <the verdict file>
 above: without them the first hundred come back as the whole answer, with no error and nothing to notice. The comments
 nested inside a thread cannot be paginated in the same query, because one query carries one cursor — `last:100` is what
 makes that bound safe, since an assumption's verdict reply is a thread's newest comment and never its oldest. The `--jq`
-on each read is not tidying: without one the whole response arrives as a single line, measured with `gh` 2.98.0 at
-19,788 bytes and no newline in it for a 15-thread read, and one line is what cannot be read a piece at a time.
-`created_at` rides in the issue comments' projection for **Correcting a verdict**: that channel carries no threading, so
-the timestamps are the only thing that says which of two verdict replies on one assumption is the newer.
+on each read is not tidying: without one the whole response arrives as one line too long to read a range at a time.
+`created_at` rides in the issue comments' projection because that channel carries no threading: the timestamps alone
+say which of two verdict replies on one assumption is the newer (**Correcting a verdict**).
 
 **GitLab**, with `glab`. One list holds them all — the change request's discussions — and each note's `resolvable` says
 whether it can be marked resolved; one carrying a `position` is anchored to a diff line.
@@ -155,13 +150,14 @@ An assumption is a **claim** by whoever wrote the code, not a finding. Establish
 - **the roads the fork left open** — the alternatives a different reasonable engineer could have taken at this point,
   and how each compares to the road the code took, on the axes below
 
+The fork sets the reach of each: the callers this choice touches, the tests that pin it, the tickets that bear on it.
 The first five say whether the choice conforms. Only the roads say whether it is the best one available, and they are
 what separates an `accept` from an `improve`: an adjudication with a single road in front of it can say *wrong* and
 never *better*. Name roads you would defend if someone took them — a list padded to look thorough compares nothing. The
 fork is the one the comment names: naming a road opens no fork of its own, the set you adjudicate stays what step 3
 collected, and the verdict reply is the one place the roads you named are ever written down.
 
-**The axes** are five, and the comparison runs on whichever of them the two roads actually differ on:
+**The axes** are five, and the comparison runs only on those the two roads actually differ on:
 
 - **under failure** — what each road does when what it depends on is missing, slow, half-written or down
 - **under an adversary** — what each road does with input chosen to break it, and what it hands whoever sent that
@@ -177,26 +173,25 @@ road that differs from the shipped one on nothing else is a shape you would have
 
 ## Verdicts
 
-The reply is the whole **hand-off**: whoever acts on it next has your comment and nothing else. **Grounds** is a spec
-line, an ADR, a caller that breaks or a concrete failure scenario — never taste.
+The reply is the whole **hand-off**: whoever acts on it next has your comment and nothing else, so it is terse and
+complete — what the verdict below asks for, cited, and no more. **Grounds** is a spec line, an ADR, a caller that breaks
+or a concrete failure scenario — never taste. An `accept` resolves its comment; the other three leave it unresolved,
+which is the whole filter a **fix wave** works from.
 
 - **`accept`** — the default: the choice is defensible and no road you named beats it. Reply with the grounds it
-  stands on **and the roads it beat**, a clause each for the axis each one lost on, and resolve the comment: there is
-  nothing to address. Your report carries an `accept` as a count and nothing more, so this reply is where the human
-  merging meets the fork and its options, or never meets them at all.
+  stands on **and the roads it beat**, a clause each for the axis each one lost on. Your report carries an `accept` as
+  a count and nothing more, so this reply is where the human merging meets the fork and its options, or never meets
+  them at all.
 - **`improve`** — the choice is defensible and a better road is available anyway. Three things: the **axis** the two
   roads differ on, the alternative itself, and why the alternative is better on that axis. Where two axes disagree,
   name both and say which won and why; where one is in play, name it and stop — you weigh them for the fork in hand
-  alone, and no axis outranks another. Reply with those three plus a **directive** stating the change to make, and
-  leave the comment unresolved — that is the whole filter a **fix wave** works from, and nothing else marks an
-  `improve`.
+  alone, and no axis outranks another. Reply with those three plus a **directive** stating the change to make.
 - **`override`** — the choice is wrong: against the spec, a documented decision, or the rest of the codebase. Three
   things: what the code does now, what it should do instead, and the grounds. A conflict between two assumptions, or
   with a decision another ticket landed, **is** grounds. Reply with those three plus a **directive** stating the change
-  to make, and leave the comment unresolved.
+  to make.
 - **`escalate`** — the fork is genuinely not yours to close: a product question, or a policy or security tradeoff with
-  no defensible default. Reply with the fork, the options and why the call is not yours, and leave the comment
-  unresolved for a human.
+  no defensible default. Reply with the fork, the options and why the call is not yours; a human closes it.
 
 **All three things, or the verdict is `accept`.** Grounds is what divides the two verdicts that change code: an
 improvement that can cite grounds is an `override`, and always was — the security hole with a concrete failure scenario
@@ -204,19 +199,17 @@ behind it included — and an `improve` stands on an axis where there is nothing
 default is defensible is never an `escalate`.
 
 Judge each assumption on its own grounds: whatever mix of the four that leaves is a fine outcome — every one accepted as
-much as every one improved — with no target rate for any of them and no cap on how many `improve`s one adjudication
-reaches.
+much as every one improved — with no target rate or cap for any of them.
 
 ## Reading a directive back
 
 The **grounds** beside a directive carry a bar and the directive carries none, and it is the half a **fix wave**
 implements as written. So before you post: open every `file:line`, symbol and test name the directive cites, check
 that what you find there is what you named, and correct the directive where it is not; run every claim it makes about
-what a tool does — the type checker, the linter, the test runner — and read the output. One observed `override` paid
-for skipping both: it cited a line range in a test file shorter than the range, and it directed that a `switch` keep
-its `default:` arm "so the union stays exhaustive for the type checker" — backwards, since the arm supplied a missing
-return and silenced the very error a fourth union member would raise. A directive that is wrong costs three stages: the
-wave that implements it, the **round** that flags what that wave produced, and the wave that undoes it.
+what a tool does — the type checker, the linter, the test runner — and read the output. One observed `override` cited
+a line range past the end of its test file, and directed that a `switch` keep its `default:` arm "so the union stays
+exhaustive" — backwards, since that arm silenced the very error a new union member would raise. A wrong directive costs
+three stages: the wave that implements it, the **round** that flags the result, and the wave that undoes it.
 
 ## Correcting a verdict
 
