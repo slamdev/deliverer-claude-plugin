@@ -18,11 +18,11 @@ way. Settled under **`spec-writer`** in `../spec.md`; stories 17 (the spec's hal
 - [x] **Forks** gains one sentence: a decision the reading raised that the brief never addressed is a fork the brief
       left open. **Forks** keeps its two states and no third.
 - [x] `spec-writer` is read against `/mattpocock-skills:writing-for-agents`.
-- [ ] The bench is run with two arms, `current` against `before=<main>:plugin/agents/spec-writer.md`, `--waves 1`, on
+- [x] The bench is run with two arms, `current` against `before=<main>:plugin/agents/spec-writer.md`, `--waves 1`, on
       the existing fixture; the put-back wave's output tokens in each arm's `wave-1.md` and `reading.json` are recorded,
       the current arm coming in well under its own first-dispatch output, and whether every fork road in each arm's
       first report carries *proven* or *unchecked*. Arms are compared only with each other.
 
 ## Comments
 
-Implemented on `refine-debrief-defects`. The bench arms (`../spec.md` § Testing Decisions) have not been run yet; that checklist item stays open until they are.
+Implemented on `refine-debrief-defects`. Bench, 2026-10-31, `--waves 1`, typescript-library fixture, $17.99 for both arms. Output tokens, first dispatch / put-back wave: `current` 55,583 / 13,308 (24%), `before` 34,827 / 17,109 (49%). The current arm's put-back edited `spec.md` and never wrote it whole; the before arm also patched (9 edits), so the patch is not clearly this change's. In dollars the current put-back wave ($6.60) cost more than its first dispatch ($4.60), all of it in context re-read. Every road in the current arm's first report is marked *proven* or *unchecked* (4 of 4); the before arm marks none. Runs: `/tmp/deliverer-e2e/spec-writer-bench-current-2026-10-31T20-08-19-vGJSLv`, `/tmp/deliverer-e2e/spec-writer-bench-before-2026-10-31T20-23-47-IERu6M`.

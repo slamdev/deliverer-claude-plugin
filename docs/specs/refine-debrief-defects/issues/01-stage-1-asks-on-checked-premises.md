@@ -29,10 +29,10 @@ round says so and asks whether to pull. Settled under **The refine skill** in `.
       round, asking whether to pull, and the run never pulls on its own. Dispatches carry no ref.
 - [x] Each change is one clause or one bullet in an existing place: no new step, file or term.
 - [x] The refine skill is read against `/mattpocock-skills:writing-for-agents`.
-- [ ] Recorded for the hand-driven refine run (`../spec.md` § Testing Decisions): the default branch fetched before
+- [x] Recorded for the hand-driven refine run (`../spec.md` § Testing Decisions): the default branch fetched before
       stage 1, and every question round wider than four questions sent as several calls in one message — or that the
       fixture raised no such frontier.
 
 ## Comments
 
-Implemented on `refine-debrief-defects`. The hand-driven refine run (`../spec.md` § Testing Decisions) has not been run yet; its checklist item stays open until it is.
+Implemented on `refine-debrief-defects`. Run `/tmp/deliverer-e2e/refine-typescript-library-2026-10-31T20-08-21-thJPmn`, 2026-10-31: passed every assertion and the verifier, 47m 47s, $22.08 plus $0.64 for the verdict. The default branch was fetched (`git fetch` and a left/right count, `0 0`) before round 1, so no stale checkout was raised. 11 question rounds, 37 questions, none wider than four: the fixture raised no frontier that needed several calls in one message, so that behaviour waits for the next observed debrief.
