@@ -52,16 +52,19 @@ relinked or moved.
       board;
    2. its **blocking edges** named: the slices that must complete before it can start, each one in this set, or none,
       which means it can start immediately. A prefactoring blocks every slice it makes smaller, and an expand–contract
-      sequence's edges are the ones **Tracer bullets** gives it.
+      sequence's edges are the ones **Tracer bullets** gives it. A blocker outside this set — a pending change request,
+      another epic's ticket — is no blocking edge: it is named in the ticket's body by its link, never as the forge's
+      native blocking link, and carried to your report.
 
    You are done when every slice holds all three rules, and every blocking edge names a slice in this set.
 5. **Read the user stories down the set, one at a time**, the last with the same care as the first. For each:
-   1. the slice whose completed path makes it true found — a story is covered by a slice that makes it demoable, never
-      by one that merely touches its layer;
+   1. the slices whose completed path makes it true found, and entered against the story's number in a story map —
+      a story is covered by a slice that makes it demoable, never by one that merely touches its layer;
    2. where none does, a slice added for it and taken through step 4's two sub-steps — or, where no slice can be cut
-      for it, the story and why carried to your report.
+      for it, the story entered in the story map as uncovered, with why.
 
-   You are done when every user story the spec lists has a slice that covers it or a line in your report.
+   You are done when every user story the spec lists has its line in the story map: the slices that cover it, or why
+   none can.
 6. **Publish one ticket per slice**, in dependency order, blockers first, past the tickets **Resume** found published;
    **Numbers and the tracker** below settles the numbering and what your publishing target replaces. For each:
    1. its ticket written to the **ticket template** below — one ticket per file or per issue, never a combined one;
@@ -212,6 +215,7 @@ Whoever reads this has your report and nothing else.
   — or that none did
 - which tickets can start immediately
 - every ticket that has to be built before a lower-numbered one, and both numbers — sequencing those two is the human's
-- every user story the spec lists that no ticket covers, and why — or that every one is covered
+- the story map, one line per user story by number: the numbers of the tickets that cover it, or that none does and why
+- every blocker outside the ticket set, by ticket, with its link — or that none has one
 - every prefactoring ticket and every expand–contract sequence you added, and what each buys
 - every term the tickets needed that the glossary does not carry
