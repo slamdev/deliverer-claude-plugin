@@ -5,8 +5,10 @@
 #
 #   UserPromptSubmit  start an observer when this prompt begins or resumes a run, and print a
 #                     debrief nobody has been shown yet — from ANY session, which is what a debrief
-#                     finalised after its terminal closed needs. And start one again where this
-#                     session's observer finalised and has exited since (below).
+#                     finalised after its terminal closed needs. Except mid-run: while THIS
+#                     session is live, another session's announcement is held on disk until
+#                     it is not — the held announcements (below). And start one again where
+#                     this session's observer finalised and has exited since (re-arming).
 #   Stop              print this session's debrief if the observer has one ready, and NOTHING at
 #                     all if it has not. A refinement stops for every question it asks, so silence
 #                     here is the common case and has to cost nothing. It re-arms a stopped
@@ -30,6 +32,13 @@
 # this change leaves: the fresh one would have nothing to tell "moved past" by. Alive is the pid in
 # the observer's `.lock`, which `mcp/observe.mjs` writes and removes; a crashed observer leaves a
 # pid nothing answers to, which reads as not alive.
+#
+# An observer that STOPPED EARLY — a record it could not read, its debrief rewritten to say so
+# (observer-debrief-defects ticket 06) — is re-armed on the same two events, with no final reading
+# needed: nothing was finalised, so the fresh one has nothing to tell "moved past" by and needs
+# nothing. It watches as any observer does, and its first reading replaces the stopped-early debrief
+# as it would any non-final one. A record still unreadable leaves it failing as before, and the
+# marker it writes on starting is no longer a stopped-early one, so nothing re-arms it twice.
 #
 # THE SWITCH IS READ FROM THE ENVIRONMENT, NEVER FROM `${user_config.*}` (D26, claim C1). A hook
 # reads the SAVED option values, where the MCP path merges the manifest's defaults first — so an
@@ -133,6 +142,13 @@ finalised_with_a_reading() {
   [[ "$marker" == *'"state": "finalised — '* ]]
 }
 
+stopped_early() {
+  [[ -f "$MARKER" ]] || return 1
+  local marker
+  marker="$(cat "$MARKER" 2>/dev/null)" || return 1
+  [[ "$marker" == *'"state": "stopped early — '* ]]
+}
+
 observer_alive() {
   [[ -f "$LOCK" ]] || return 1
   local pid
@@ -143,6 +159,15 @@ observer_alive() {
 
 rearm() {
   [[ -f "$RECORD" ]] || return 0
+  if stopped_early; then
+    observer_alive && return 0
+    # The debrief on disk is not final, so a final reading left from before it is stale and would
+    # set the fresh observer probing a finalise that no longer stands; and a `SessionEnd` signal is
+    # stale for the reason the branch below gives.
+    rm -f "$FINAL_READING" "$SESSIONS/$SESSION_ID.finalise" 2>/dev/null
+    start_observer "re-armed by the $EVENT hook: the observer had stopped early on a record it could not read"
+    return 0
+  fi
   finalised_with_a_reading || return 0
   observer_alive && return 0
   # A `SessionEnd` signal still on disk here is the end of this session BEFORE it was resumed:
@@ -196,11 +221,23 @@ esac
 # A debrief nobody has been shown yet, from any session — including one whose terminal was closed
 # days ago, which is the whole reason this line exists beside the stop one. Oldest first, and one
 # per prompt: a hook has one stdout and it carries one JSON document.
+#
+# HELD while this session is live (observer-debrief-defects ticket 07): a human mid-run is shown
+# only the announcements this session wrote. Another epic's debrief stays pending on disk,
+# untouched, and prints on the first prompt after this session is no longer live — so the wait
+# loses nothing, and outside a live run "from any session" stands. Live is the marker present and
+# its observer alive, the very test the re-arm uses; and it is asked BEFORE the re-arm below, so
+# the prompt that finds the observer gone prints what was held rather than the fresh observer
+# holding it a while longer.
 if [[ -d "$ANNOUNCE" ]]; then
-  for pending in "$ANNOUNCE"/*.prompt.json; do
-    [[ -f "$pending" ]] || continue
-    print_announcement "$pending" "${pending%.prompt.json}.stop.json" && break
-  done
+  if [[ -f "$MARKER" ]] && observer_alive; then
+    print_announcement "$ANNOUNCE/$SESSION_ID.prompt.json" "$ANNOUNCE/$SESSION_ID.stop.json"
+  else
+    for pending in "$ANNOUNCE"/*.prompt.json; do
+      [[ -f "$pending" ]] || continue
+      print_announcement "$pending" "${pending%.prompt.json}.stop.json" && break
+    done
+  fi
 fi
 
 # Once an observer exists for this session, nothing below is asked again — which is what keeps the

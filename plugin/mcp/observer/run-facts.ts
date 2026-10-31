@@ -55,6 +55,7 @@ import {
   elapsed,
   isReviewTool,
   plural,
+  slugIn,
   TASK_TOOLS,
   type Trace,
   type TraceDispatch,
@@ -76,6 +77,12 @@ export interface RunExtent {
   readonly entriesOutside: number;
   /** how the far end was found, in the words the debrief prints */
   readonly boundedBy: string;
+  /**
+   * How many **put-back**s inside the extent were counted as the run's own signals
+   * (observer-debrief-defects ticket 09). Printed nowhere: it is here so that a reading which grew
+   * because a put-back moved the ceiling can be told from one that grew for any other reason.
+   */
+  readonly putBacks: number;
 }
 
 /**
@@ -222,6 +229,15 @@ export interface RunFacts {
    * leaves.
    */
   readonly openedAt: { readonly completed: number; readonly total: number } | undefined;
+  /**
+   * The slug the run's LAST task update inside the extent carried, or `undefined` where none did
+   * (observer-debrief-defects ticket 05). What the debrief is headed with; `epicSlugs` says how.
+   *
+   * Read inside the window rather than taken from `Trace.lastSlug`, and a measured record is why:
+   * a delivery whose human went on, in the same session, to a task list of another name would
+   * otherwise head its debrief with an epic the run never touched.
+   */
+  readonly lastSlug: string | undefined;
   /** the commit the run's own records name, for `./plugin-commit.ts` to label */
   readonly commitInRecords: string | undefined;
   /**
@@ -258,6 +274,24 @@ export function runSkills(facts: RunFacts, trace: Trace): string {
   return facts.skills.length > 0 ? facts.skills.join(", ") : trace.skills.join(", ");
 }
 
+/**
+ * The names to head a run's debrief with: the last it carried, and the first beside it only when
+ * the two differ (observer-debrief-defects ticket 05; Solution item 6).
+ *
+ * `first` is the KEY — `Trace.slug`, what the observation directory, the identity file and every
+ * later run's lookup are filed under — and this function moves none of that. It answers only what
+ * a human reads: a renamed epic headed by the name it was opened under could not be found by the
+ * name it ended with (refine #9), and one headed by the last alone could not be found on disk.
+ * `first` is `undefined` for every run that was never renamed, so those print what they always did.
+ */
+export function epicSlugs(
+  facts: RunFacts,
+  trace: Trace,
+): { readonly last: string; readonly first: string | undefined } {
+  const last = facts.lastSlug ?? trace.slug;
+  return { last, first: last === trace.slug ? undefined : trace.slug };
+}
+
 /* ──────────────────────────────────── reading the records ──────────────────────────────────── */
 
 export interface RunFactsInput {
@@ -289,6 +323,7 @@ export function runFactsOf(input: RunFactsInput): RunFacts {
   let taskUpdates = 0;
   let toolCalls = 0;
   let openedAt: RunFacts["openedAt"];
+  let lastSlug: string | undefined;
   const delegatedSkills: string[] = [];
   for (const entry of window) {
     for (const block of toolUses(entry)) {
@@ -306,6 +341,7 @@ export function runFactsOf(input: RunFactsInput): RunFacts {
       // The FIRST count wins, exactly as the first slug does in `./trace.ts`: what the run opened
       // at is what a later update cannot move (ticket 07).
       openedAt ??= progressIn(block);
+      lastSlug = slugIn(stringField(objectField(block, "input"), "subject")) ?? lastSlug;
     }
   }
 
@@ -333,6 +369,7 @@ export function runFactsOf(input: RunFactsInput): RunFacts {
     taskUpdates,
     toolCalls,
     openedAt,
+    lastSlug,
     // Scanned over the run's own window rather than the whole session: a preamble from somebody
     // else's later skill in the same session is not this run's evidence of anything.
     commitInRecords: plugin?.commit,
@@ -427,6 +464,8 @@ interface RunBounds {
    * replaced by then. A line a reader is shown is not a fact another reader may turn on.
    */
   readonly secondRunAt: number | undefined;
+  /** the put-backs `putBacksIn` counted, as positions in the session's record */
+  readonly putBacks: readonly number[];
 }
 
 /**
@@ -501,9 +540,14 @@ function boundsOf(entries: readonly JsonObject[], losses: string[]): RunBounds {
   // ceiling here, one `TaskCreate` in that work pulls the far end a day past the turn that ended the
   // run, and the wall clock, both human-time figures, the dispatch count, the tokens and the ending
   // all go with it — the "far too long" failure this module opens by naming.
+  // A put-back to one of the run's own agents is one of those signals too, so a stage put back
+  // after the run handed over still ends the run at the put-back's return (observer-debrief-defects
+  // ticket 09). Scanned up to the second command and no further: an agent of the second run is
+  // not this one's.
+  const putBacks = putBacksIn(entries, firstIndex, ceiling);
   let lastOwn = firstIndex;
   for (let index = firstIndex; index < ceiling; index += 1) {
-    if (isOwnSignal(entries[index] ?? {})) lastOwn = index;
+    if (isOwnSignal(entries[index] ?? {}) || putBacks.at.has(index)) lastOwn = index;
   }
   for (let index = lastOwn + 1; index < ceiling; index += 1) {
     if (typedText(entries[index] ?? {}) === undefined) continue;
@@ -523,7 +567,11 @@ function boundsOf(entries: readonly JsonObject[], losses: string[]): RunBounds {
       const name = stringField(block, "name") ?? "";
       const id = stringField(block, "id");
       const machinery =
-        name === "Agent" || name === "AskUserQuestion" || TASK_TOOLS.has(name) || isReviewTool(name);
+        name === "Agent" ||
+        name === "AskUserQuestion" ||
+        TASK_TOOLS.has(name) ||
+        isReviewTool(name) ||
+        (id !== undefined && putBacks.ids.has(id));
       if (machinery) {
         lastSignal = index;
         if (id !== undefined) raised.add(id);
@@ -535,6 +583,8 @@ function boundsOf(entries: readonly JsonObject[], losses: string[]): RunBounds {
     }
     // A dispatch launched in the background reports back as a `<task-notification>` carrying the
     // tool-use id of the `Agent` call that started it, so it is the run's however late it lands.
+    // A put-back's continue reports back the same way, under the `SendMessage`'s own id, and that
+    // notification is the put-back's return.
     const content = stringField(entry, "content");
     const notified =
       content === undefined ? null : /<tool-use-id>([^<]+)<\/tool-use-id>/.exec(content);
@@ -550,7 +600,15 @@ function boundsOf(entries: readonly JsonObject[], losses: string[]): RunBounds {
     boundedBy = "the human typed something else next, and what follows is work of their own";
     break;
   }
-  return { command, firstIndex, lastIndex, boundedBy, total: entries.length, secondRunAt: second };
+  return {
+    command,
+    firstIndex,
+    lastIndex,
+    boundedBy,
+    total: entries.length,
+    secondRunAt: second,
+    putBacks: [...putBacks.at].filter((index) => index <= lastIndex),
+  };
 }
 
 /** The plugin's own commands, as the host writes one into the prompt that ran it. */
@@ -626,13 +684,90 @@ function isOwnSignal(entry: JsonObject): boolean {
     const name = stringField(block, "name") ?? "";
     if (isReviewTool(name)) return true;
     if (name === "Skill") return true;
-    if (name !== "Agent") continue;
-    const type = stringField(objectField(block, "input"), "subagent_type") ?? "";
-    if (OWN_AGENTS.has(type.startsWith("deliverer:") ? type.slice("deliverer:".length) : type)) {
-      return true;
-    }
+    if (isOwnDispatch(block)) return true;
   }
   return false;
+}
+
+/** Whether one tool call is an `Agent` call dispatching one of the plugin's own agents. */
+function isOwnDispatch(block: JsonObject): boolean {
+  if (stringField(block, "name") !== "Agent") return false;
+  const type = stringField(objectField(block, "input"), "subagent_type") ?? "";
+  return OWN_AGENTS.has(type.startsWith("deliverer:") ? type.slice("deliverer:".length) : type);
+}
+
+/** The put-backs between two positions in a record, as their positions and their tool-use ids. */
+interface PutBacks {
+  readonly at: ReadonlySet<number>;
+  readonly ids: ReadonlySet<string>;
+}
+
+/**
+ * Every `SendMessage` in `[from, to)` that put back an agent the run itself dispatched
+ * (observer-debrief-defects ticket 09; the spec's **The own signal**).
+ *
+ * **An own agent is one a dispatch of the plugin's own agents started** — the same `Agent` calls
+ * `isOwnSignal` already trusts — and it is known by two things: the id that dispatch's result
+ * named (`toolUseResult.agentId`), and the `name` its input gave it, where it gave one. A
+ * `SendMessage` names its target by either, and says which in `recipient_kind` (`agent` or `name`);
+ * older records leave that out, and then the target counts if it is either (ticket 01, fact 2).
+ * Deliverer runs have only ever named the id. Read off the record in order, so a target is only
+ * ever an agent dispatched BEFORE the message that names it.
+ *
+ * **A `SendMessage` to anything else is the session's and never the run's.** A peer session, an
+ * agent the human dispatched themselves, a host built-in: none of those can tell the run's
+ * continuation from the human's own later work, which is the whole reason a bare `Agent` call does
+ * not set the ceiling either (user story 4).
+ *
+ * **A `SendMessage` whose result says `success: false` continued nothing, so it is not counted.**
+ * The host writes that result when the agent could not be resumed — "No transcript found for agent
+ * ID" — and nothing was appended to the agent's record, no task notification follows, and no
+ * stage was put back. Counting it would move the ceiling past a turn the human typed on the
+ * strength of an act that did not happen. A message whose result has not landed yet — a prefix
+ * read mid-run — is counted: its result follows within milliseconds, and a live reading that
+ * waited on it would close the run on a put-back already under way.
+ */
+function putBacksIn(entries: readonly JsonObject[], from: number, to: number): PutBacks {
+  const named = new Map<string, string | undefined>();
+  const agentIds = new Set<string>();
+  const agentNames = new Set<string>();
+  const failed = new Set<string>();
+  const sent: { readonly index: number; readonly id: string; readonly own: boolean }[] = [];
+  for (let index = Math.max(from, 0); index < to; index += 1) {
+    const entry = entries[index] ?? {};
+    const result = objectField(entry, "toolUseResult");
+    for (const block of contentBlocks(objectField(entry, "message"))) {
+      const answers = stringField(block, "tool_use_id");
+      if (answers === undefined || stringField(entry, "type") !== "user") continue;
+      if (result?.["success"] === false) failed.add(answers);
+      if (!named.has(answers)) continue;
+      const agentId = stringField(result, "agentId");
+      if (agentId !== undefined) agentIds.add(agentId);
+      const name = named.get(answers);
+      if (name !== undefined) agentNames.add(name);
+    }
+    for (const block of toolUses(entry)) {
+      const id = stringField(block, "id");
+      const input = objectField(block, "input");
+      if (id === undefined) continue;
+      if (isOwnDispatch(block)) named.set(id, stringField(input, "name"));
+      if (stringField(block, "name") !== "SendMessage") continue;
+      const target = stringField(input, "to") ?? stringField(input, "recipient");
+      const kind = stringField(input, "recipient_kind");
+      const own =
+        target !== undefined &&
+        ((kind !== "name" && agentIds.has(target)) || (kind !== "agent" && agentNames.has(target)));
+      sent.push({ index, id, own });
+    }
+  }
+  const at = new Set<number>();
+  const ids = new Set<string>();
+  for (const message of sent) {
+    if (!message.own || failed.has(message.id)) continue;
+    at.add(message.index);
+    ids.add(message.id);
+  }
+  return { at, ids };
 }
 
 /** The run's window as a wall clock, once its own dispatches are known. */
@@ -675,6 +810,7 @@ function extentOf(
     lastEntry: bounds.lastIndex + 1,
     entriesOutside: bounds.firstIndex + (bounds.total - 1 - bounds.lastIndex),
     boundedBy: bounds.boundedBy,
+    putBacks: bounds.putBacks.length,
   };
 }
 

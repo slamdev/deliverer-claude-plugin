@@ -29,7 +29,7 @@ import { join } from "node:path";
 import { NO_TOKENS, type TokenTotals } from "./records.ts";
 import { formatDuration, plural, tokenDetail, type Trace, type TraceDispatch } from "./trace.ts";
 import { observationDirectory, writeFileAtomically } from "./trace-file.ts";
-import { runSkills, type RunFacts, type RunRound } from "./run-facts.ts";
+import { epicSlugs, runSkills, type RunFacts, type RunRound } from "./run-facts.ts";
 // The table's own wording, which the run's spend line and the observation's own cost line both rest
 // on: `./rates.ts` holds the rates, the date they were read and how they are stated, so this document
 // carries one account of them rather than two (the-observation-reports-the-whole-run ticket 06; D12).
@@ -363,6 +363,24 @@ export interface DebriefStatus {
   readonly finalised: boolean;
   /** why it is not final yet, in the reader's words; unused once `finalised` */
   readonly note: string;
+  /**
+   * Set where the observation stopped because a record could not be read, and then this debrief is
+   * neither final nor live (observer-debrief-defects ticket 06): no observer is rewriting it, and
+   * the run it describes is not known to have stopped where it does. Without it an observer that
+   * gave up on an unreadable record left a file indistinguishable from a finished one — refine #1,
+   * #21 and #22 of the debriefs that spec was written from. Never set with `finalised`.
+   */
+  readonly stoppedEarly?: StoppedEarly;
+}
+
+/** Where an observation stopped early, and why (ticket 06). */
+export interface StoppedEarly {
+  /** the last entry of the session's own record that was read, 1-based as the extent counts */
+  readonly lastEntry: number;
+  /** that entry's own timestamp, where it carries one */
+  readonly lastEntryAt: string | undefined;
+  /** why nothing after it was read, in the reader's words */
+  readonly reason: string;
 }
 
 export interface DebriefInput {
@@ -558,8 +576,12 @@ export function renderDebrief(input: DebriefInput): string {
   const { trace, facts, judging } = input;
   const skill = skillOf(input);
   const out: Document = { lines: [] };
+  // Headed by the name the epic ended with, and the one it is filed under beside it whenever the
+  // run renamed it, so a human can find it by either (observer-debrief-defects ticket 05).
+  const epic = epicSlugs(facts, trace);
+  const filedUnder = epic.first === undefined ? "" : ` (first \`${epic.first}\`)`;
 
-  line(out, `# Deliverer debrief — \`${skill}\`, epic \`${trace.slug}\``);
+  line(out, `# Deliverer debrief — \`${skill}\`, epic \`${epic.last}\`${filedUnder}`);
   paragraph(out,
     "This is a **debrief** of one run of the deliverer plugin: what the plugin's own machinery " +
       "did, and what it cost. It is bounded to the plugin — its skills, its agents, its " +
@@ -578,7 +600,22 @@ export function renderDebrief(input: DebriefInput): string {
   // finalise signal, called a healthy run a defect, and wrote the conclusion up. The two runs
   // measured from signal to final write took 5m26s and ~7m23s, which is what "minutes" is grounded
   // on — the figure stays out of the prose because the number will move and the magnitude will not.
-  if (input.status !== undefined && !input.status.finalised) {
+  if (input.status?.stoppedEarly !== undefined) {
+    // Ticket 06's state, in place of both of the others. It is said first and in bold for the same
+    // reason the live paragraph is: a partial reading forwarded as a final one is the harm, and the
+    // figures below look exactly as complete as a finished run's do.
+    const stopped = input.status.stoppedEarly;
+    paragraph(out,
+      `**The observation of this run stopped early, so this debrief is neither final nor live.** ` +
+        `It was last read at entry ${stopped.lastEntry} of the session's record` +
+        (stopped.lastEntryAt === undefined ? "" : ` (${stopped.lastEntryAt})`) +
+        `, and nothing after that entry is in it: ${stopped.reason}. Every figure below is the ` +
+        `run as far as that entry, and the run may well have gone on past it. Forwarding it is ` +
+        `safe — the bound below holds either way — but **it is a partial reading, not the whole ` +
+        `run**. A later reading that gets past that entry — an observer started again on the ` +
+        `session, or a replay of the record whole — is the one to forward instead.`,
+    );
+  } else if (input.status !== undefined && !input.status.finalised) {
     paragraph(out,
       `**This run is still going, so this debrief is not final.** ${input.status.note} Every ` +
         `figure below is the run as far as it has got, and this file is rewritten as each stage ` +
@@ -613,9 +650,12 @@ export function renderDebrief(input: DebriefInput): string {
   }
   bullet(out,
     "epic slug",
-    trace.slugRead
-      ? `\`${trace.slug}\``
-      : `\`${trace.slug}\` — a stand-in: no task update of this run carried one`,
+    !trace.slugRead
+      ? `\`${trace.slug}\` — a stand-in: no task update of this run carried one`
+      : epic.first === undefined
+        ? `\`${epic.last}\``
+        : `\`${epic.last}\` — renamed during the run from \`${epic.first}\`, which is the name ` +
+          `its files are kept under`,
   );
   bullet(out, "wall clock", wallClockLine(facts));
   bullet(out, "dispatches", `${facts.dispatches.length} — ${dispatchTally(facts.dispatches)}`);

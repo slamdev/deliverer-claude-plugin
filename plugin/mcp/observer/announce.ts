@@ -294,6 +294,14 @@ export interface MarkerState {
  */
 export const SESSION_ENDED_STATE = "finalised — the session ended";
 
+/**
+ * The prefix of the state an observer leaves when it stopped because a record could not be read
+ * and its debrief says so (observer-debrief-defects ticket 06). Not a `finalised — ` state, because
+ * nothing was finalised: the hook re-arms on it on its own terms, with no final reading beside it,
+ * and the fresh observer replaces the debrief as it would any other that is not final.
+ */
+export const STOPPED_EARLY_STATE = "stopped early — ";
+
 export async function writeMarker(dataDirectory: string, marker: MarkerState): Promise<void> {
   await mkdir(sessionsDirectory(dataDirectory), { recursive: true });
   await writeFileAtomically(

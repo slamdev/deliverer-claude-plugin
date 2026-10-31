@@ -519,7 +519,10 @@ loop's. Walk these after any change to either, each with what it should do:
   then the watcher stops by itself;
 - **a record that stops being readable after a debrief was written** — move or `chmod` it and leave it that way. The
   patience bounds the wait: the observer announces the debrief already on disk and stops, rather than ticking for the
-  rest of the machine's uptime over a record that is never coming back;
+  rest of the machine's uptime over a record that is never coming back. A debrief that was not final is rewritten to
+  say the observation stopped early, at which entry and why, and the marker reads `stopped early — `; put the record
+  back and fire `Stop` or a prompt, and a fresh observer starts with no `.final-reading` needed and replaces it. A
+  replayed record cut off mid-line says the same of itself;
 - **observation switched off** (`CLAUDE_PLUGIN_OPTION_OBSERVE_RUNS=false`) — nothing starts at all: no process, no
   trace and no debrief.
 
