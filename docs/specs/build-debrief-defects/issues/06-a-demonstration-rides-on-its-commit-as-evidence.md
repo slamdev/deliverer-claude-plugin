@@ -1,6 +1,6 @@
 # 06 — A demonstration rides on its commit as evidence
 
-Status: ready-for-agent
+Status: resolved
 
 **Blocked by:** None — can start immediately.
 
@@ -11,14 +11,14 @@ description's evidence from commit messages, `spec-reviewer` correctly posts eac
 every demonstration again — 18 **spec finding**s in one run. And a full-suite pass served from cache was reported as
 watched, in two runs. Settled as change 5 in `../spec.md` § Solution and under § Evidence.
 
-- [ ] The `implementer` and `comments-addresser` commit formats gain an `Evidence:` section after `Gates:`, numbered
+- [x] The `implementer` and `comments-addresser` commit formats gain an `Evidence:` section after `Gates:`, numbered
       the same way and left out when empty: one entry per demonstration the ticket or spec asks for — what was run,
       what it showed, and `observed` or `cached`.
-- [ ] Routine green gates get no entry.
-- [ ] `change-request-creator` reads `Evidence:` the way it reads `Assumptions:` — to the next `<Word>:` line — but
+- [x] Routine green gates get no entry.
+- [x] `change-request-creator` reads `Evidence:` the way it reads `Assumptions:` — to the next `<Word>:` line — but
       from every commit, a fix wave's included, and mirrors the entries into the description marked as reported.
-- [ ] A fix wave's forks are still neither mirrored nor adjudicated; only its evidence is mirrored.
-- [ ] `spec-reviewer` reads `Evidence:` as what was demonstrated.
-- [ ] An `implementer` or fix-wave report that says a gate passed says whether it watched it run.
-- [ ] Every touched file is read against `/mattpocock-skills:writing-for-agents`, and its register and 120-column wrap
+- [x] A fix wave's forks are still neither mirrored nor adjudicated; only its evidence is mirrored.
+- [x] `spec-reviewer` reads `Evidence:` as what was demonstrated.
+- [x] An `implementer` or fix-wave report that says a gate passed says whether it watched it run.
+- [x] Every touched file is read against `/mattpocock-skills:writing-for-agents`, and its register and 120-column wrap
       are kept.

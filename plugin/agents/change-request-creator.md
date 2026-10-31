@@ -27,8 +27,8 @@ ticket recorded already carries its comment, so step 6 posts none.
 ## Steps
 
 1. **Check that `mattpocock-skills:pr` is installed.** The description is that skill's: step 4 calls it and writes what
-   it produces, adding nothing of your own but the spec's location. When it is not installed, report the skill as
-   missing and stop, having pushed, opened and edited nothing.
+   it produces, adding nothing of your own but the spec's location and the commits' evidence. When it is not
+   installed, report the skill as missing and stop, having pushed, opened and edited nothing.
 2. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote. Where it names
    none, take the branch named from the epic's **slug** among the branches already there: that is how the first
    `implementer` named it.
@@ -46,6 +46,8 @@ ticket recorded already carries its comment, so step 6 posts none.
    not, add one line that does: `Spec: <spec location>`. A delivery resuming, and a refinement run again, recognise
    the epic branch by an open change request whose description names that location, so a description that drops it
    leaves the branch one neither of them can find.
+
+   **The description carries every commit's evidence**, marked as reported — **Evidence** below.
 5. **Collect the assumption comments already on it**, from every channel the change request has — **Comment channels**
    below, and **Assumption comments** for what counts as one.
 6. **Mirror the entries carrying none**, one at a time — **Which entries** below says which are yours. For each:
@@ -185,6 +187,27 @@ the commit, and you post nothing for them.
 A commit you do mirror carries an `Assumptions:` section, or no assumptions at all. The section runs to the next
 `<Word>:` section of the message or to the end of the message, whichever comes first — `Gates:` numbers its entries the
 same way, and an entry from it or any other section is no assumption.
+
+## Evidence
+
+A commit may also carry an `Evidence:` section: one numbered entry per demonstration a ticket, the spec or a comment
+asked for — what was run, what it showed, and `observed` or `cached`. Read it the way you read `Assumptions:`, to the
+next `<Word>:` section or the end of the message, but from every commit on the branch, a fix wave's included: an entry
+of evidence asks for no adjudication, so nothing keeps a fix wave's off the description. Its forks still stay on its
+commit, neither mirrored nor adjudicated — **Which entries** above.
+
+Mirror every entry into the description, verbatim and beside the commit that recorded it, under one heading of its
+own, each marked as reported: you read it off a commit and did not watch it run, so what it showed is the committer's
+account, and its `observed` or `cached` is theirs too. A branch whose commits carry no `Evidence:` section gets no such
+heading.
+
+```
+## Evidence
+
+Reported by the commits that made them, not run again for this description.
+
+1. <commit hash> — reported: <the entry from that commit's Evidence: section, verbatim>
+```
 
 ## Anchoring
 
