@@ -39,13 +39,11 @@ happened in 3 refine runs and 7 build runs. The reading was paid for and then di
   chose to write (build #2).
 - **Early stop.** An observer that stops because a record became unreadable leaves the debrief looking as finished as
   any other (refine #1, #21, #22).
-- **Rewritten prose.** On the build side, the host's guard against instruction-shaped subagent output rewrote **round**
-  prose that the build skill carries verbatim into a **fix wave**, and nothing told anyone (build #3, #9, #24).
 
 ## Solution
 
-Ten changes. Nine of them are in the observer. They make it follow every **put-back**, read a resumed run again, keep
-a reading it cannot parse, and fix five smaller faults. One is in the build skill's prose.
+Nine changes, all of them in the observer. They make it follow every **put-back**, read a resumed run again, keep a
+reading it cannot parse, and fix five smaller faults.
 
 ### 1. The 5-5 haiku is priced by prompt length
 
@@ -110,12 +108,6 @@ When the observer stops because a record became unreadable, the debrief it leave
 early, at which entry and why, in place of a final label it did not earn. A process killed with its container, and
 never touched again, stays out of scope (see `the-observation-reports-the-whole-run`, D7).
 
-### 10. A round's prose the host altered is said to be altered
-
-The build skill's account of a round says that when the host marks a dispatch's output as rewritten (instruction-shaped
-output neutralised), the prose it carries into a fix wave is not verbatim. The flag is carried with that prose, and
-named in the run's report.
-
 ## User Stories
 
 1. As a human who ran a refinement with a put-back, I want the debrief to count the put-back's rounds and spend, so that
@@ -165,13 +157,9 @@ named in the run's report.
 24. As a human, I want a debrief whose observation stopped early to say so, so that I do not forward a partial reading
     as a final one.
 25. As a maintainer, I want the entry it stopped at named, so that I can replay the record from there by hand.
-26. As a maintainer reading a build debrief, I want to know when the host rewrote a round's prose, so that a fix wave
-    that misread a finding is not blamed on the fix wave.
-27. As a human reading a build run's report, I want a rewritten round named in it, so that I know which carry-forward
-    was not verbatim.
-28. As a maintainer, I want the free replay of a record to stay byte-for-byte deterministic, so that the mechanical half
+26. As a maintainer, I want the free replay of a record to stay byte-for-byte deterministic, so that the mechanical half
     can still be verified by diffing two replays.
-29. As a maintainer, I want a run with no put-backs, no rename and no resumption to produce the same debrief it does
+27. As a maintainer, I want a run with no put-backs, no rename and no resumption to produce the same debrief it does
     today, so that these changes cost nothing where they do not apply.
 
 ## Implementation Decisions
@@ -189,10 +177,9 @@ named in the run's report.
 - **The observer's loop and its debrief file**: when the extra reading fires; the "stopped early" state; the headline
   naming both slugs.
 - **The observer's hook script**: holding other sessions' announcements while this session's run is live.
-- **The build skill**: the round carry-forward's line about the host's rewrite flag. Prose, written against
-  `/mattpocock-skills:writing-for-agents`.
-- **The glossary**: already done. **Put-back** is added, the **Extent** entry counts put-backs to own agents, and the
-  **Dispatch note** entry covers continue spans and the length cap.
+- **The glossary**: already done. The **Extent** entry counts put-backs to own agents, and the **Dispatch note** entry
+  covers continue spans and the length cap. **Put-back** itself is the refine side's term, added by
+  [refine-debrief-defects](../refine-debrief-defects/spec.md).
 
 ### The tier
 
@@ -271,7 +258,7 @@ named in the run's report.
 
 ## Testing Decisions
 
-Nothing here is covered by CI beyond typecheck and lint. Each behaviour is verified by hand at the four existing seams.
+Nothing here is covered by CI beyond typecheck and lint. Each behaviour is verified by hand at the three existing seams.
 Each check asserts what a human or a maintainer would see: a debrief's figures and statements, the notes file's
 entries, a hook's output. It never asserts an internal call. The prior art for every seam is the `idp-scaffold-defects`
 spec's Testing Decisions and CONTRIBUTING.md § Replaying a run's records.
@@ -305,8 +292,6 @@ spec's Testing Decisions and CONTRIBUTING.md § Replaying a run's records.
   - **Restarting.** An observer killed after its first note and re-armed writes only the spans it had not noted.
   - **Announcements.** With two sessions sharing one plugin data directory, a prompt in the live one prints only its
     own announcement. Once its run finalises, the next prompt prints the other's.
-- **Reading the prose.** The build skill's change is read against `/mattpocock-skills:writing-for-agents`, and then
-  confirmed by the next observed delivery whose round the host rewrites.
 
 ## Out of Scope
 
@@ -318,7 +303,9 @@ spec's Testing Decisions and CONTRIBUTING.md § Replaying a run's records.
 - **Forbidding an epic's rename in the skills.** The debrief copes with a rename rather than the skills preventing one.
 - **Reading a resumed run again on every new signal.** One reading per resumption is the cap.
 - **The skill and agent findings in the same debriefs**, such as the continued writer that rewrote its whole document
-  instead of patching it. They are for a session about the skills, not the observer.
+  instead of patching it, or the round prose the host's guard rewrote before the build skill carried it into a fix wave.
+  They belong to [refine-debrief-defects](../refine-debrief-defects/spec.md) and
+  [build-debrief-defects](../build-debrief-defects/spec.md).
 - **Fast mode's rates for `claude-opus-5-5`.** Nothing in a session record says whether a request ran fast, so the table
   prices it at the standard rate.
 

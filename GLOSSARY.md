@@ -239,11 +239,6 @@ prose, because that is the only form a finding the reviewer did not post exists 
 The only thing a dispatch returns. What it names is what the orchestrator knows, so what it leaves out is invisible.
 _Avoid_: output, result, summary
 
-**Put-back**:
-A stage handed back to an agent because its **report** fell short — continued, where the same agent picks up the
-conversation it was holding, or cold, where a fresh **dispatch** starts over from the paths. Either way it is the same
-stage's work, and counted as the run's own. _Avoid_: retry, redo, follow-up, re-dispatch
-
 **Writer**:
 A dispatched agent that meets the codebase first-hand but never the conversation — which is what makes the brief
 load-bearing. _Avoid_: author, generator
