@@ -8,7 +8,7 @@ never doubled. Settled under **Re-arming a stopped observer** in `../spec.md`.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] On `UserPromptSubmit` and on `Stop`, a marker whose state reads as finalised, with a final reading beside it and
       no observer alive, starts a fresh one through the existing spawn path, marker rewritten before the spawn.

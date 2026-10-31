@@ -1,6 +1,6 @@
 # 01 — The by-hand procedure reproduces a mid-run reading
 
-Status: ready-for-agent
+Status: resolved
 
 **Blocked by:** None (can start immediately).
 

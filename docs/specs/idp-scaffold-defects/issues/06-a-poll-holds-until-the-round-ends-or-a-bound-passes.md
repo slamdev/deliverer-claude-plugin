@@ -7,7 +7,7 @@ own, which a host may refuse. Settled under **The held poll** in `../spec.md`.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] First, verified by hand: the host's timeout on an MCP tool call. The figure and its source are recorded under
       `## Comments` below, and the held bound sits well inside it.

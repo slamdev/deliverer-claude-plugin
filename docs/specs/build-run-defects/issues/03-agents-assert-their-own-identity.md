@@ -11,7 +11,7 @@ its prompt. Settled as D1–D4 in `../spec.md`.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] All seven definitions assert identity, in the body, before the task imperative — the imperative is what the
       registry entry paraphrases, so identity has to be met first.

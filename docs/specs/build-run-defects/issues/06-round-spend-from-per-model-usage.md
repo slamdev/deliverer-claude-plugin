@@ -11,7 +11,7 @@ in `../spec.md`; the diagnosis the observation report offered was wrong, and Fur
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] The token counters come from the per-model usage on the result message, summed across its entries — a review calls
       more than one model and every one of those tokens is real spend.

@@ -78,8 +78,10 @@ from. Keep them, including the blocks `lifecycle.ts` marks as defensive.
 
 ## How the contributor skills behave here
 
-- **Ask with `AskUserQuestion`.** Every question to the human goes through that tool — the grilling rounds above all,
-  and including where a skill's own text asks its questions in prose, which this rule overrides. Open-ended is not an
+- **Written, then picked.** Every question to the human — the grilling rounds above all — is asked twice in one turn.
+  First as text, in the skill's own prose format where it has one: each question's context, every plausible answer
+  with what follows from it, and the recommended one. Then through `AskUserQuestion` as the answer pad: each option a
+  short label pointing back at an answer the text spelled out, the recommended one first. Open-ended is not an
   exemption: put the plausible answers in the options and let the free-text escape carry anything else. Up to four
   questions per call, and `multiSelect` when the answers are not exclusive.
 - **`docs/agents/issue-tracker.md`** — read when a skill says publish, fetch or triage an issue, spec or ticket: they

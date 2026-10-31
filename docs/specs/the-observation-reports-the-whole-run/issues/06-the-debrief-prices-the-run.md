@@ -1,6 +1,6 @@
 # 06 — The debrief prices the run
 
-Status: ready-for-agent
+Status: resolved
 
 **Blocked by:** 01 — a sequencing and verification edge only. The pricing reads the tokens the reading already sums and
 depends on no other ticket's wording; it lands last because it is the largest single addition and the one with an

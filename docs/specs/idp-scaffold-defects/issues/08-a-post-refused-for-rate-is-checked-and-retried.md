@@ -7,7 +7,7 @@ two comments. Settled under **The refused post** in `../spec.md`.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] The posting step says a forge may refuse a burst of posts, and that a refusal for rate is expected.
 - [x] It says to check whether the refused entry's comment landed before retrying it.

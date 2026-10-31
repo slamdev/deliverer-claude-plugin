@@ -1,6 +1,6 @@
 # 07 — An epic's earlier debriefs are read
 
-Status: ready-for-agent
+Status: ready-for-human
 
 **Blocked by:** 05
 

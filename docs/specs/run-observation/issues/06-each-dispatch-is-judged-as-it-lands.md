@@ -1,6 +1,6 @@
 # 06 — Each dispatch is judged as it lands
 
-Status: ready-for-agent
+Status: ready-for-human
 
 **Blocked by:** 04, 05
 

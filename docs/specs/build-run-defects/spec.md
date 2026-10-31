@@ -1,6 +1,6 @@
 # Six defects an observed delivery run exposed in the plugin's own machinery
 
-Status: ready-for-agent
+Status: resolved
 
 ## Problem Statement
 

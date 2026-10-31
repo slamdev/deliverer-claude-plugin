@@ -8,7 +8,7 @@ waiting ceiling — reversible exactly as an idle finalise is. Settled under **T
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] A latest reading of `finished` plus two minutes of silence across the run's records, measured as the idle bound
       measures its own, finalises and announces the debrief.
