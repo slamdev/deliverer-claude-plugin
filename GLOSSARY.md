@@ -239,6 +239,11 @@ prose, because that is the only form a finding the reviewer did not post exists 
 The only thing a dispatch returns. What it names is what the orchestrator knows, so what it leaves out is invisible.
 _Avoid_: output, result, summary
 
+**Put-back**:
+A stage handed back to an agent because its **report** fell short — continued, where the same agent picks up the
+conversation it was holding, or cold, where a fresh **dispatch** starts over from the paths. Either way it is the same
+stage's work, and counted as the run's own. _Avoid_: retry, redo, follow-up, re-dispatch
+
 **Writer**:
 A dispatched agent that meets the codebase first-hand but never the conversation — which is what makes the brief
 load-bearing. _Avoid_: author, generator
@@ -268,9 +273,9 @@ never as a contract. _Avoid_: transcript, log, history, session file
 **Extent**:
 Which part of a **session record** is one **run**: where it starts, where it stops, and what bounded it there. A record
 can hold work before a run, after it and between two of them, so every figure in a **debrief** is of the extent and
-never of the record. Bounded by the run's own signals — its attribution, its **dispatch**es of the plugin's own agents,
-its calls to the plugin's own tools, and the skills it invoked — and never by a host built-in the human's own later work
-makes too. _Avoid_: window, span, range, bounds, scope
+never of the record. Bounded by the run's own signals — its attribution, its **dispatch**es of the plugin's own agents
+and its **put-back**s to them, its calls to the plugin's own tools, and the skills it invoked — and never by a host
+built-in the human's own later work makes too. _Avoid_: window, span, range, bounds, scope
 
 **Waiting**:
 A **run** whose own last act is a question it put to its human, unanswered. Nothing is written anywhere while it waits,
@@ -291,12 +296,13 @@ each one carried. Nothing is left out by kind, and volume is all the cap bounds:
 window, so the trace is what makes a run readable at all. _Avoid_: log, transcript, timeline
 
 **Dispatch note**:
-What an **observer** made of one **dispatch** the moment that dispatch finished, read on a cheap tier from that
-dispatch's own **session record** — re-read at the note's own budget, wider than the **trace**'s — and kept for the
-one synthesis at the end. It exists because a dispatch's interior is the part of a **run** nothing else ever reads:
-the per-dispatch **session record**s outweigh a delivery's main one several times over, so under the trace's cap the
-whole-run reading sees a stage's shape and never its inside. Carries no bound of its own and is never forwarded,
-exactly as the trace is not. _Avoid_: stage note, note, summary, annotation, commentary
+What an **observer** made of one **dispatch** the moment that dispatch finished — and again each time a continued
+**put-back** finished in it — read on a cheap tier from that dispatch's own **session record**, re-read at the note's
+own budget, wider than the **trace**'s, and kept for the whole-run reading. It exists because a dispatch's interior is
+the part of a **run** nothing else ever reads: the per-dispatch **session record**s outweigh a delivery's main one
+several times over, so under the trace's cap the whole-run reading sees a stage's shape and never its inside. Capped
+in length so that reading stays affordable, but carries no bound on what it names, so it is never forwarded, exactly
+as the trace is not. _Avoid_: stage note, note, summary, annotation, commentary
 
 **Debrief**:
 What observing one **run** produced, written for the human who ran it to forward to whoever maintains the plugin.
