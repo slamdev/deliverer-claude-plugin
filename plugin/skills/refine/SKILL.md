@@ -101,8 +101,10 @@ re-run.
 
    You are done when the spec's location is in hand and no decision a killed claim took down is still open.
 4. **Break it into tickets.** Dispatch `tickets-writer`, carrying the spec's location. It publishes one ticket per
-   slice, numbered in dependency order. You are done when its report is in hand, with the count and the locations it
-   names kept.
+   slice, numbered in dependency order, and its report raises the **fork**s its reading found against the spec. Those
+   go through stage 3's **one report, one round, one put-back**, the put-back going to `spec-writer`; stage 4 is then
+   put back carrying the corrected spec's location, and its corrected report goes through the same. You are done when
+   its report is in hand, with the count and the locations it names kept, and no fork it raised is still open.
 5. **Open the draft** — for both tracker kinds: what this refinement wrote into the repository, committed onto the
    **epic branch**. It is **mechanical** throughout — every step a git or forge operation, with no wording to choose.
    First **the paths**, read off the project's tracker conventions, the same ones the writers published to:
@@ -243,7 +245,8 @@ enter its stage and `completed` once its artifact exists — for stages 3 and 4,
 for stage 5, once its own bar holds, renamed `<slug>: open the draft (nothing to commit)` where it had no paths, so the
 skip shows rather than looking like a stage that never ran. Putting a stage back to its writer flips its task to
 `in_progress` again, and `completed` once the corrected report lands: a correction is the same stage rather than a new
-one, so it gets no task of its own. A resumed run opens the same set, with the stages whose artifacts it found created
+one, so it gets no task of its own. A fork stage 4 raises flips stage 3's task and then stage 4's the same way.
+A resumed run opens the same set, with the stages whose artifacts it found created
 `completed` — never stage 5's, which runs on every run and is marked `completed` once its bar holds on this one.
 
 ## What to report
@@ -259,6 +262,7 @@ The human who ran this sat through stage 1, so your report is what came of it ra
   reasons held — the brief marks no glossary or ADR file as landed, or the brief was gone, with its uncommitted
   glossary and ADR changes among the hand-offs
 - every fork the grilling left open, one line each — those are the human's to close
+- every fork the tickets writer raised against the spec, one line each, and how it closed
 - every glossary entry and ADR the session landed
 - what the writers raised for a human — a seam newly proposed, an ADR the spec contradicts, a **claim** of yours a
   writer killed or could settle neither way, a user story no ticket covers, two tickets the set does not build in number

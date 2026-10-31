@@ -12,15 +12,15 @@ when no fork its report raised is still open. Settled under **The refine skill**
 
 **Status:** ready-for-agent
 
-- [ ] `tickets-writer` sends every place its reading found the spec wrong — a mechanism that would not achieve what
+- [x] `tickets-writer` sends every place its reading found the spec wrong — a mechanism that would not achieve what
       the spec intends, a decision the code makes impossible — to its report as a fork with what it found, never
       worked around silently in the tickets.
-- [ ] A put-back clause in `tickets-writer`: a continued dispatch edits its published tickets in place and keeps their
+- [x] A put-back clause in `tickets-writer`: a continued dispatch edits its published tickets in place and keeps their
       numbers; only a cold dispatch writes a ticket whole, and **Resume**'s fixed numbers still hold.
-- [ ] Stage 4 takes a report's forks through stage 3's loop by reference, with the put-back to `spec-writer`, then puts
+- [x] Stage 4 takes a report's forks through stage 3's loop by reference, with the put-back to `spec-writer`, then puts
       stage 4 back carrying the corrected spec's location, its corrected report going through the same.
-- [ ] Stage 4's done bar: no fork the tickets writer raised is still open.
-- [ ] **Progress** flips stage 3's and stage 4's tasks back to `in_progress` and on to `completed` the same way a
+- [x] Stage 4's done bar: no fork the tickets writer raised is still open.
+- [x] **Progress** flips stage 3's and stage 4's tasks back to `in_progress` and on to `completed` the same way a
       stage 3 put-back does today.
-- [ ] **What to report** gains a line for every fork the tickets writer raised and how it closed.
-- [ ] The refine skill and `tickets-writer` are read against `/mattpocock-skills:writing-for-agents`.
+- [x] **What to report** gains a line for every fork the tickets writer raised and how it closed.
+- [x] The refine skill and `tickets-writer` are read against `/mattpocock-skills:writing-for-agents`.
