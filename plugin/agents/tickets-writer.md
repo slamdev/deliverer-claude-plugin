@@ -27,14 +27,17 @@ published tickets are what say so: they stand in the set as the slices they are,
 records a ticket on its commits by number — and step 6 publishes what they leave unpublished, each at the next free
 number, rather than renumbering the set. A published ticket's type and links stay exactly as found, child of the spec
 or not, and so does its place among the spec's children: what someone may already be working from is never retyped,
-relinked or moved.
+relinked or moved. **A put-back edits in place**: continued on one, you edit the tickets you published, each keeping
+its number; only a cold dispatch writes a ticket whole, and the fixed numbers hold either way.
 
 ## Steps
 
 1. **Read the spec in full**, and whatever it points at. Its **user stories** are the coverage bar step 5 holds the set
    to; its decisions are settled — a ticket restates one where it needs it rather than reopening it. A **fork** the
    spec leaves open stays open: name it in the ticket that meets it, so whoever implements it records it as an
-   **assumption**.
+   **assumption**. **A spec your reading finds wrong goes to your report as a fork** — a mechanism that would not
+   achieve what the spec intends, a decision the code makes impossible — with what you found, rather than worked
+   around silently in the tickets.
 2. **Explore the codebase** for the state of the code the slices cut through, reading the project's glossary and the
    ADRs that touch the area first: ticket titles and bodies use the glossary's vocabulary. Look for **prefactoring**
    that makes the slices smaller — make the change easy, then make the easy change. You are done when every module the
@@ -189,6 +192,7 @@ Whoever reads this has your report and nothing else.
   — or that none did
 - which tickets can start immediately
 - every ticket that has to be built before a lower-numbered one, and both numbers — sequencing those two is the human's
+- every fork your reading found against the spec, with what you found — or that none did
 - the story map, one line per user story by number: the numbers of the tickets that cover it, or that none does and why
 - every blocker outside the ticket set, by ticket, with its link — or that none has one
 - every prefactoring ticket and every expand–contract sequence you added, and what each buys
