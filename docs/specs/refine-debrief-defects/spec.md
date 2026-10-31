@@ -28,10 +28,10 @@ produced this spec.
 code lives was settled as a decision, and then two question rounds were spent unwinding it once the one-repository bound
 surfaced (#13). A term a settled decision relied on never reached the glossary and came back later as a fork (#26).
 
-**Sweeps queued, overlapped and rediscovered.** One sweep carried five to eight numbered points, so the slowest point set
-the stage's critical path (#20). Parallel sweeps closed the same facts four to six times over (#17, #19, #20). Every
-sweep rediscovered which cluster context worked, even after one had reported it (#17, #19). One dispatch was spent purely
-as a timer (#17). Older runs show the hygiene the skill never states at all: shared scratch paths that one sweep deleted
+**Sweeps queued, overlapped and rediscovered.** One sweep carried five to eight numbered points, so the slowest point
+set the stage's critical path (#20). Parallel sweeps closed the same facts four to six times over (#17, #19, #20).
+Every sweep rediscovered which cluster context worked, even after one had reported it (#17, #19). One dispatch was
+spent purely as a timer (#17). Older runs show the hygiene the skill never states at all: shared scratch paths that one sweep deleted
 under its siblings, extracted binaries and background processes left on the host, and pods created in production by a
 sweep everyone took to be read-only (#5, #10, #12, #13, #14).
 
@@ -106,7 +106,8 @@ Three files change: the refine skill, `spec-writer` and `tickets-writer`. All th
 13. As a writer, I want the same environment facts the sweeps were handed, so that I do not rediscover them either.
 14. As an orchestrator waiting on sweeps, I want to end my turn and let their notifications wake me, so that no dispatch
     is spent as a timer.
-15. As a sweep, I want to write my report to a file named from the epic's slug, so that what I found outlives my context.
+15. As a sweep, I want to write my report to a file named from the epic's slug, so that what I found outlives my
+    context.
 16. As a sweep that cloned or checked something out, I want to keep that copy and name its path and ref in my report, so
     that a writer opens it instead of fetching it again.
 17. As a writer, I want the brief to list every sweep's report file by path, so that I can rely on what a sweep found
