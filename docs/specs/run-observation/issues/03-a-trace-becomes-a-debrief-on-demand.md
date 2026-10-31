@@ -1,6 +1,6 @@
 # 03 — A trace becomes a debrief of the run's facts, on demand
 
-Status: ready-for-agent
+Status: resolved
 
 **Blocked by:** 02
 

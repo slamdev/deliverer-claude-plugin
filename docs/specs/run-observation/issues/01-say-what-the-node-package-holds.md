@@ -1,6 +1,6 @@
 # 01 — Say what `plugin/mcp/` holds, before it holds more than a server
 
-Status: ready-for-agent
+Status: resolved
 
 **Blocked by:** None — can start immediately.
 

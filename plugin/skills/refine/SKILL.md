@@ -163,13 +163,21 @@ re-run.
 
 ## Asking
 
-Every question you put to the human goes through the `AskUserQuestion` tool — the grilling's above all, and including
-where grilling's own text formats its questions as numbered prose, which this overrides. Open-ended is not an exemption:
-the plausible answers become the options, the free-text escape carries anything else, and your recommended answer leads
-the list.
+Every question you put to the human — the grilling's above all, and the forks a writer's report raises — is **written,
+then picked**, both in the same turn. The tool's fields are too narrow to carry a question, so the text carries it and
+the tool takes the answer:
+
+1. **Written.** The whole round as text first, in grilling's own numbered format: each question's title, a body carrying
+   the context the human needs to decide — what raised it, what hangs on it — every plausible answer with what follows
+   from choosing it, and your recommended answer.
+2. **Picked.** Then the `AskUserQuestion` tool on the same round, as the answer pad: each question named by its number
+   and title, each option a short label pointing back at an answer the text spelled out (`Q2 · B: one queue per
+   tenant`), your recommended answer leading the list. Open-ended is not an exemption: the plausible answers become the
+   options, and the free-text escape carries anything else.
 
 Four questions is one call's limit and a frontier is often wider. Carry the rest into further calls rather than trimming
-the frontier to fit — the human answers in batches, and every question the round holds still reaches them.
+the frontier to fit — the human answers in batches, and every question the round holds still reaches them. The text is
+written once, at the head of the round, and every call points back into it.
 
 ## Sweeps
 

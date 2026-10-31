@@ -1,6 +1,6 @@
 # 03 — A waiting run is not a dead terminal
 
-Status: ready-for-agent
+Status: resolved
 
 **Blocked by:** 02, and through it 01. **A reuse edge and the epic's one real dependency:** an observer can only see a
 question this run is **waiting** on if that question is inside the **extent**, and until 02 lands the extent excludes

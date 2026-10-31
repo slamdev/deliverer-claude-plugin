@@ -1,6 +1,6 @@
 # What two observed runs of one epic exposed: an observer that stopped watching, and a delivery that paid twice
 
-Status: ready-for-agent
+Status: resolved
 
 ## Problem Statement
 

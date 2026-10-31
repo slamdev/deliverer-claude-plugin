@@ -1,6 +1,6 @@
 # Every run is observed, and what it cost the human comes back as a debrief
 
-Status: ready-for-agent
+Status: ready-for-human
 
 ## Problem Statement
 
