@@ -212,6 +212,11 @@ function bound(name: string, fallback: number): number {
 export interface JudgeInput extends JudgingInput {
   /** true on the last reading of the run, which is the one synthesis's moment */
   readonly finalising: boolean;
+  /**
+   * true on the first finalise after a resumption the held answer did not read (ticket 10): the
+   * one moment a judge holding an answer reads the run again rather than returning it
+   */
+  readonly readAgain?: boolean;
 }
 
 /**
@@ -322,6 +327,18 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
    * `AFTER_FINALISE_MS` after it started, as the dead observer would have after its finalise.
    */
   let probing = inherited !== undefined;
+  /**
+   * Whether the next finalise owes the run a reading again (observer-debrief-defects ticket 10).
+   *
+   * Set by the un-finalise below, and only where the extent it found reaches past the extent the
+   * held answer read — the run resumed with an own signal that reading never saw. Taken at the next
+   * finalise, whichever of the four that is, and cleared there: one reading per un-finalise, never
+   * one on the signal itself, and none for a finalise of the same extent. Not written anywhere,
+   * because a finalise always follows it in this same process or the observer is gone — and a fresh
+   * one re-armed over a finalise compares its own extent with the answer it inherits, which is the
+   * same test.
+   */
+  let readingOwed = false;
 
   // Written back verbatim while probing, so a probe that exits having found nothing leaves the
   // marker reading as the same finalise — and the next hook event can start another.
@@ -455,6 +472,7 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
           // better answer and a debrief nobody can find is worth less than an ugly directory name.
           force: heldSince !== undefined && now - heldSince >= RUN_PATIENCE_MS,
           probe: probing,
+          readAgain: readingOwed,
         });
         consecutiveFailures = 0;
       } catch (error) {
@@ -598,6 +616,14 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
       dispatchesInRun = outcome.facts.dispatches.length;
 
       if (finalisedAt !== undefined && advanced && !finalisedBySignal) {
+        // **Whether the run is owed a reading again** (ticket 10): the extent grew past what the
+        // answer this finalise held had read. Asked before the reading it names is cleared below,
+        // and of a judged answer only, the one kind that carries how far it read; a reading that
+        // failed or came back unparsed is not paid for again on a resumption.
+        const heldRead = finalReading?.judging;
+        readingOwed =
+          heldRead?.kind === "judged" &&
+          outcome.facts.extent.lastEntry > heldRead.readOf.lastEntry;
         // Reversible by construction (D23): the idle bound is a guess, and a run that turns out to
         // be alive gets its label back rather than a second debrief written beside the first.
         //
@@ -681,7 +707,10 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
         // second set of facts and a second write of both files, on the one tick of the run that is
         // already the most expensive there is, because the synthesis ran inside the reading above.
         if (!heldIsFinal) {
-          const final = await read(options, judge, { finalise: true }).catch(() => undefined);
+          const final = await read(options, judge, {
+            finalise: true,
+            readAgain: readingOwed,
+          }).catch(() => undefined);
           if (final?.kind === "written") {
             written = final;
             lastFacts = final.facts;
@@ -690,6 +719,8 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
         }
         finalisedAt = Date.now();
         finalisedBySignal = signalled;
+        // Taken by the reading above where one was owed, and never owed twice for one resumption.
+        readingOwed = false;
         await announce(options, {
           kind: "debrief",
           debriefPath: written.written.debriefPath,
@@ -737,7 +768,12 @@ export async function observeRun(options: ObserveOptions): Promise<ObserveOutcom
 async function read(
   options: ObserveOptions,
   judge: Judge,
-  how: { readonly finalise: boolean; readonly force?: boolean; readonly probe?: boolean },
+  how: {
+    readonly finalise: boolean;
+    readonly force?: boolean;
+    readonly probe?: boolean;
+    readonly readAgain?: boolean;
+  },
 ): Promise<DebriefOutcome> {
   return debriefRun({
     recordPath: options.recordPath,
@@ -775,7 +811,13 @@ async function read(
     // judges — so asking costs a reading of the records and never a model call.
     writeWhen: (trace) =>
       how.probe !== true && (trace.slugRead || how.finalise || how.force === true),
-    judging: (input) => judgeQuietly(judge, { ...input, finalising: how.finalise }),
+    judging: (input) =>
+      judgeQuietly(judge, {
+        ...input,
+        finalising: how.finalise,
+        // Only ever beside a finalise: a held answer is read again at a finalise and nowhere else.
+        readAgain: how.finalise && how.readAgain === true,
+      }),
   });
 }
 

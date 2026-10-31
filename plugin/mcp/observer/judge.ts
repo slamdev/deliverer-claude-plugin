@@ -1182,17 +1182,21 @@ function noCredentialReached(
  * is a named failure and nothing else — no second call, which is what makes the failure the
  * debrief's whole answer rather than a retry loop spending on a machine that cannot judge at all.
  *
- * A run that was finalised on the idle bound, resumed, and finalised again keeps the answer it
- * already has, and writes no further notes. D23 makes that bound a guess whose cost is a label
- * rather than content, and paying for a second whole-run reading is not a cost a guess may impose —
- * and a note written after the synthesis has read them all is a note nothing would ever read. What
- * that costs is paid in words instead: the answer carries the extent it read (`readOf`), and the
- * debrief says how far the reading got rather than claiming the whole run. Which is what makes the
- * kept answer honest instead of merely cheap — and it is the finalise's own trigger, not this
- * memo, that keeps the case rare: `./observer.ts` finalises on the session's end, on long silences,
- * and on a `finished` reading only once it has settled — and `finished` first reads within a dozen
- * entries of a run's own last entry on every measured run that reaches it
- * (idp-scaffold-defects, § The finished-and-settled finaliser).
+ * A run that was finalised, resumed, and finalised again keeps the answer it already has while it
+ * runs on, and writes no further notes in between. D23 makes the finalise a guess whose cost is a
+ * label rather than content, so the new signal that undoes it buys nothing by itself: the answer
+ * carries the extent it read (`readOf`), and the debrief says how far the reading got rather than
+ * claiming the whole run.
+ *
+ * **And the next finalise reads the run again, once** (observer-debrief-defects ticket 10, which
+ * lifts D9 and D23's one synthesis exactly as far as a resumption). Six build debriefs were read
+ * mid-run and never again, one of them at entry 423 of 773, and the settle finaliser makes a
+ * reading taken between two stages likelier rather than rarer. So `./observer.ts` asks for a
+ * reading again — `readAgain` — on the first finalise after an un-finalise the extent grew past
+ * the held reading for, and this judge pays for it only then: the notes catch up with what
+ * finished since, the synthesis reads the longer extent, and the answer names the readings it
+ * replaced (`replaced`) and carries their spend. A run resumed twice is read three times, and a run
+ * that never resumed is read once, as before.
  *
  * `beside` is the notes file's placement and the caller's to choose, exactly as the debrief
  * writer's two forms are: a **replay** writes a set beside whatever is there (D19), and the live
@@ -1217,7 +1221,12 @@ function noCredentialReached(
 export function synthesisJudge(
   dataDirectory: string,
   how: { readonly beside: boolean; readonly held?: Judging },
-): (input: { trace: Trace; facts: RunFacts; finalising: boolean }) => Promise<Judging> {
+): (input: {
+  trace: Trace;
+  facts: RunFacts;
+  finalising: boolean;
+  readAgain?: boolean;
+}) => Promise<Judging> {
   const environment = readModelEnvironment();
   const model = readModelChoice(SYNTHESIS_MODEL);
   // **Built here because here is where "the life of the observation" is** (ticket 04; D11). This
@@ -1240,8 +1249,30 @@ export function synthesisJudge(
    */
   const under = (judging: Judging): Judging => ({ ...judging, modelEnvironment: environment });
   let made: Judging | undefined = how.held === undefined ? undefined : under(how.held);
+  /**
+   * What this observation spent that `notes.cost()` does not count (observer-debrief-defects
+   * ticket 10): every synthesis this process ran, and — where it inherited an answer — the whole
+   * spend the dead observer's answer carried, whose notes this process reads back for free. Only a
+   * reading taken again ever reads it; for one reading per run it stays the identity `addCosts`
+   * skips, so a run that never resumed is priced exactly as before.
+   */
+  let spentBefore: ObservationCost = how.held?.cost ?? NOTHING_SPENT;
   return async (input) => {
-    if (made !== undefined) return made;
+    // **Read again once per resumption, and only when the observer asks** (ticket 10; the spec's
+    // *The extra reading*). The held answer stands on every other call — mid-run rewrites, the
+    // finalise of an extent no longer than it read, and the readings `./observer.ts` takes after a
+    // finalise — so the new signal itself never buys a reading: the observer asks on the first
+    // finalise after an un-finalise the extent grew past this answer's reading for, and nowhere
+    // else. The check on the extent here is the same test again, so an ask that reaches an answer
+    // of the extent in hand cannot pay for it twice.
+    const readAgain =
+      made !== undefined &&
+      input.finalising &&
+      input.readAgain === true &&
+      made.kind === "judged" &&
+      input.facts.extent.lastEntry > made.readOf.lastEntry;
+    if (made !== undefined && !readAgain) return made;
+    const replacing = made?.kind === "judged" ? made : undefined;
     // The run's OWN dispatches and never the session's, which is the set `./run-facts.ts` already
     // bounds: a dispatch some later work in the same session made is not this run's to read.
     //
@@ -1289,20 +1320,31 @@ export function synthesisJudge(
       dataDirectory,
     });
     try {
+      const answer = await synthesise({
+        trace: input.trace,
+        facts: input.facts,
+        dataDirectory,
+        notes: await notes.text(),
+        // This reading's own spend alone, so it can be both added to what came before it and kept
+        // for a reading after it; every answer `synthesise` gives is its `notesCost` plus that.
+        notesCost: NOTHING_SPENT,
+        notesSummary: notes.summary(),
+        notesHalf: notes,
+        earlier,
+        model,
+        environment,
+        credential,
+      });
+      const total = addCosts(addCosts(spentBefore, notes.cost()), answer.cost);
+      spentBefore = addCosts(spentBefore, answer.cost);
       made = under(
-        await synthesise({
-          trace: input.trace,
-          facts: input.facts,
-          dataDirectory,
-          notes: await notes.text(),
-          notesCost: notes.cost(),
-          notesSummary: notes.summary(),
-          notesHalf: notes,
-          earlier,
-          model,
-          environment,
-          credential,
-        }),
+        replacing === undefined || answer.kind !== "judged"
+          ? { ...answer, cost: total }
+          : {
+              ...answer,
+              cost: total,
+              replaced: [...(replacing.replaced ?? []), replacing.readOf],
+            },
       );
     } catch (error) {
       // `synthesise` answers rather than throws for every failure it can foresee, so this is the

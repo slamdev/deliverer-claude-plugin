@@ -207,6 +207,14 @@ export type Judging =
       readonly judgedAgainst: JudgedTree;
       /** how much of the run the one synthesis actually held when it read (D23) */
       readonly readOf: SynthesisExtent;
+      /**
+       * The readings this one replaced, oldest first, each of a shorter extent
+       * (observer-debrief-defects ticket 10). A run that resumed after its debrief went final is
+       * read again at its next finalise, once per resumption, and the debrief says so rather than
+       * letting a reading of the longer extent pass for the only one there was. Absent on a run that
+       * never resumed, which is what keeps its debrief byte for byte what it was.
+       */
+      readonly replaced?: readonly SynthesisExtent[];
       /** the notes and the synthesis together, at both tiers (run-observation ticket 06) */
       readonly cost: ObservationCost;
       readonly notes?: NotesSummary;
@@ -237,11 +245,12 @@ export type Judging =
  * The run as it stood at the moment the one synthesis read it (run-observation D23).
  *
  * **Why an answer can be older than the debrief carrying it.** The synthesis runs once per run
- * (D9) and is then held, so a run finalised on the idle bound, resumed and finalised again is
- * described by a reading taken before it resumed. D23 lets that bound be a guess because getting
- * it wrong costs a label and never the content — and a debrief claiming a whole-run reading it did
- * not have costs the content. So the reading says how far it got instead, and neither a second
- * paid reading nor a silent lie is what the guess buys.
+ * (D9) and is then held, so a run finalised on the idle bound and resumed is described by a
+ * reading taken before it resumed — until its next finalise reads it again, once per resumption
+ * (observer-debrief-defects ticket 10). D23 lets that bound be a guess because getting it wrong
+ * costs a label and never the content — and a debrief claiming a whole-run reading it did not have
+ * costs the content. So the reading says how far it got instead, and no silent lie is what the
+ * guess buys.
  */
 export interface SynthesisExtent {
   /** the run's last entry it had, 1-based into the session's record, as the header prints them */
@@ -851,7 +860,7 @@ function defectsSection(out: Document, judging: Judging, facts: RunFacts): void 
       `beside it, or an earlier debrief of this epic. ` +
       `${found(judging.defectCount)} ` +
       `Read by ${askedFor(judging.model)}${servedClause(judging.servedBy)}, ` +
-      `${extentRead(judging.readOf, facts)}` +
+      `${extentRead(judging, facts)}` +
       (judging.notes === undefined || judging.notes.written === 0
         ? ""
         : `, together with the ${plural(judging.notes.written, "dispatch note", "dispatch notes")} ` +
@@ -885,16 +894,50 @@ function defectsSection(out: Document, judging: Judging, facts: RunFacts): void 
  * defect has to know which of the two they are holding, and the figures are the header's own, so
  * they can see for themselves what was left out.
  */
-function extentRead(read: SynthesisExtent, facts: RunFacts): string {
+function extentRead(
+  judging: { readonly readOf: SynthesisExtent; readonly replaced?: readonly SynthesisExtent[] },
+  facts: RunFacts,
+): string {
+  const read = judging.readOf;
   if (read.lastEntry >= facts.extent.lastEntry && read.dispatches >= facts.dispatches.length) {
-    return "over the whole run in one reading";
+    return `over the whole run in one reading${readingsReplaced(judging, facts, true)}`;
   }
   return (
     `in one reading of the run **as far as it had got by then** — entries ` +
     `${facts.extent.firstEntry}–${read.lastEntry} of ${facts.extent.lastEntry} and ` +
-    `${read.dispatches} of its ${facts.dispatches.length} dispatches. The run had gone quiet long ` +
-    `enough to be taken for over, and it resumed after this reading: there is one reading per run ` +
-    `and it was not made again, so nothing has judged what the run did after that entry`
+    `${read.dispatches} of its ${facts.dispatches.length} dispatches` +
+    `${readingsReplaced(judging, facts, false)}. The run had gone quiet long ` +
+    `enough to be taken for over, and it resumed after this reading, so nothing has judged what ` +
+    `the run did after that entry yet: a run that resumes is read again at its next finalise, and ` +
+    `that reading replaces this one`
+  );
+}
+
+/**
+ * The readings a later one replaced, named by their extents (observer-debrief-defects ticket 10).
+ *
+ * Empty for a run that never resumed, so its paragraph reads as it always has. Where the run did
+ * resume, the reading above is not the first there was, and a human choosing which debrief to
+ * forward is owed how far each earlier one got: a debrief forwarded before the resumption carries
+ * one of these. The extent of the reading itself is named here only where the sentence around it
+ * has not named it already.
+ */
+function readingsReplaced(
+  judging: { readonly readOf: SynthesisExtent; readonly replaced?: readonly SynthesisExtent[] },
+  facts: RunFacts,
+  naming: boolean,
+): string {
+  const { readOf, replaced } = judging;
+  if (replaced === undefined || replaced.length === 0) return "";
+  const extent = (it: SynthesisExtent): string =>
+    `entries ${facts.extent.firstEntry}–${it.lastEntry} and ${it.dispatches} dispatches`;
+  const earlier = replaced.map(extent);
+  return (
+    ` (${naming ? `${extent(readOf)}, ` : ""}taken again after the run resumed, which replaced ` +
+    (earlier.length === 1
+      ? `an earlier reading of a shorter extent, ${earlier.join("")})`
+      : `${earlier.length} earlier readings of shorter extents, one per resumption: ` +
+        `${earlier.join("; ")})`)
   );
 }
 
