@@ -7,52 +7,55 @@ Status: ready-for-agent
 A human ran `/deliverer:refine` 28 times across three projects, and an **observer** wrote a **debrief** of each run. A
 synthesis judged 20 of them. Those findings were deduplicated and then re-sorted by the plugin commit each run used.
 Seventeen runs used the commit from before the per-item restructure of the refine skill and both writers. Eleven runs
-(#17 and #19–28) used today's refine skill, and five of those used today's `main` exactly. A finding is grounded here
-only where one of those eleven shows it, or where today's text plainly still has the gap an older run fell into.
+(17 and 19–28) used today's refine skill, and five of those used today's `main` exactly. A finding is grounded here
+only where one of those eleven shows it, or where today's text plainly still has the gap an older run fell into. Runs
+are cited by number; Further Notes lists every one cited.
 
 What those runs cost the human is mostly time spent waiting, and what they cost in money is mostly reading done twice.
 
 **Questions went to the human on premises nobody checked.** A recommended answer rested on a fact that one look or a
 **sweep** would have settled. The human decided on it, the **writer** killed the fact, and the decision came back as a
-**fork** in a later **question round** (#17, #19, #23, #27). A removal decision left dangling references, and every
-later reading found another one, which made three question rounds on one subject (#27). Today's per-round checklist
+**fork** in a later **question round** (runs 17, 19, 23, 27). A removal decision left dangling references, and every
+later reading found another one, which made three question rounds on one subject (run 27). Today's per-round checklist
 sends the *question* through the mechanical-or-sweep bar, but never the premise behind the answer it recommends.
 
 **One frontier cost the human two waits.** Asking caps one call at four questions and says to carry the rest into
 further calls. Runs sent the next call only after the first call's answers came back, so the overflow became a question
-round of its own (#20; also #11 and #16). On this host several question calls can go out in one message, and all of
-them reached the human before any answer came back when tried during the grilling.
+round of its own (run 20; also runs 11 and 16). On this host several question calls can go out in one message, and all
+of them reached the human before any answer came back when tried during the grilling.
 
-**Stage 1 asked facts and left terms behind.** An ADR number was put to the human as a decision (#26). Where an epic's
-code lives was settled as a decision, and then two question rounds were spent unwinding it once the one-repository bound
-surfaced (#13). A term a settled decision relied on never reached the glossary and came back later as a fork (#26).
+**Stage 1 asked facts and left terms behind.** An ADR number was put to the human as a decision (run 26). Where an
+epic's code lives was settled as a decision, and then two question rounds were spent unwinding it once the
+one-repository bound surfaced (run 13). A term a settled decision relied on never reached the glossary and came back
+later as a fork (run 26).
 
 **Sweeps queued, overlapped and rediscovered.** One sweep carried five to eight numbered points, so the slowest point
-set the stage's critical path (#20). Parallel sweeps closed the same facts four to six times over (#17, #19, #20).
-Every sweep rediscovered which cluster context worked, even after one had reported it (#17, #19). One dispatch was
-spent purely as a timer (#17). Older runs show the hygiene the skill never states at all: shared scratch paths that
+set the stage's critical path (run 20). Parallel sweeps closed the same facts four to six times over (runs 17, 19, 20).
+Every sweep rediscovered which cluster context worked, even after one had reported it (runs 17, 19). One dispatch was
+spent purely as a timer (run 17). Older runs show the hygiene the skill never states at all: shared scratch paths that
 one sweep deleted under its siblings, extracted binaries and background processes left on the host, and pods created
-in production by a sweep everyone took to be read-only (#5, #10, #12, #13, #14).
+in production by a sweep everyone took to be read-only (runs 5, 10, 12, 13, 14).
 
 **A sweep's checkout never reached the writers.** The checkout a sweep made was missing from the **brief**, so writers
-searched the whole disk for it and fetched it again (#23, #24). Every dispatch in one run read a stale checkout, and
-the human answered a fork on outdated counts (#24).
+searched the whole disk for it and fetched it again (runs 23, 24). Every dispatch in one run read a stale checkout, and
+the human answered a fork on outdated counts (run 24).
 
-**Live credentials landed in dispatch records** (#17, #19; also #13, #18). From there they reached the **trace** and
+**Live credentials landed in dispatch records** (runs 17, 19; also 13, 18). From there they reached the **trace** and
 the notes: passwords, private keys, storage keys, webhook tokens. The plugin's only redaction rule binds the brief. The
-same dispatches dumped large files whole through the shell and read them again (§9), and the build side's debriefs show
+same dispatches dumped large files whole through the shell and read them again, and the build side's debriefs show
 every agent there doing the same.
 
-**A put-back paid for the whole write again.** A continued spec writer rewrote its document whole instead of patching
-it (#24). A cold writer was dispatched where continuing the old one would have worked, and spent 17 minutes rebuilding
-context (#28). One writer tore down its prototype before a report whose open forks guaranteed a **put-back** (#28).
+**A put-back paid for the whole write again.** A continued spec writer rewrote its document whole instead of patching it
+(run 24). A cold writer was dispatched where continuing the old one would have worked, and spent 17 minutes rebuilding
+context (run 28). One writer tore down its prototype before a report whose open forks guaranteed a **put-back** (run
+28).
 
-**Forks offered roads nobody had tried.** The human chose a road the writer had never seen work, and it failed (#26).
+**Forks offered roads nobody had tried.** The human chose a road the writer had never seen work, and it failed (run 26).
 
-**Stage 4 has no loop.** The tickets writer found the spec wrong, and the epic was handed over anyway (#16), or every
-ticket was rewritten after the hand-over (#6). Today's stage 4 is still one dispatch and done. "Every story covered" was
-asserted without the per-story check behind it (#26). A blocker outside the ticket set, a pending change request, was
-refused by the forge as a native link, and the ticket was written twice (#28).
+**Stage 4 has no loop.** The tickets writer found the spec wrong, and the epic was handed over anyway (run 16), or every
+ticket was rewritten after the hand-over (run 6). Today's stage 4 is still one dispatch and done. "Every story covered"
+was asserted without the per-story check behind it (run 26). A blocker outside the ticket set, a pending change request,
+was refused by the forge as a native link, and the ticket was written twice (run 28).
 
 ## Solution
 
@@ -273,33 +276,54 @@ and confirming them in the next observed run.
 
 ## Out of Scope
 
-- **Findings seen only in runs on the old commit, where today's text already has an answer**: 1.1 (asking while a sweep
-  is in flight), 1.3 (re-asking settled ground), 3.3 (system facts stated as context), 3.4 (contradicting decisions in
-  the brief, now step 4's collision trace), 3.6 (slug renames), 3.7 (ADRs landed early, and stage 1 artifacts left
-  uncommitted, now stage 5), 4.3 (writers that stopped short of writing), 4.5 (prototype cost), 5.4 (operations epics)
-  and 5.5 (placeholder references).
-- **Restating that a put-back continues the writer**: **Dispatch** already says it, and #28 did not follow it.
+- **Findings seen only in runs on the old commit, where today's text already has an answer**: asking while a sweep is
+  in flight, re-asking settled ground, system facts stated as context, contradicting decisions in the brief (now step
+  4's collision trace), slug renames, ADRs landed early and stage 1 artifacts left uncommitted (now stage 5), writers
+  that stopped short of writing, prototype cost, operations epics and placeholder references.
+- **Restating that a put-back continues the writer**: **Dispatch** already says it, and run 28 did not follow it.
 - **Sweep reports as files the writers rely on**: the brief carries no established facts, so only a checkout's path.
 - **A model or effort for sweeps**: they take the session's; the money went on reading twice, not on the model.
-- **The spec writer's conformance loop (4.1).** The rule survived the restructure unchanged, but none of the eleven runs
+- **The spec writer's conformance loop.** The rule survived the restructure unchanged, but none of the eleven runs
   on current code showed the loop. It waits for one that does.
-- **The task-list findings (§7).** They are seen only in old runs, and the phantom stage 5 task in #19 is now stage 5's
+- **The task-list findings.** They are seen only in old runs, and the phantom stage 5 task in run 19 is now stage 5's
   own task.
-- **Host-level waste (§9)**: the 120-second tool timeout, and `disable-model-invocation` making the human re-type the
+- **Host-level waste**: the 120-second tool timeout, and `disable-model-invocation` making the human re-type the
   command. No plugin file owns them. Large files dumped whole are the working-habits block's.
-- **The observer's own defects** in `debrief-findings.md`. They are worked separately.
+- **The observer's own defects** that the debriefs surfaced. They are worked separately.
 - **A mechanical guard for secrets or for writes to live systems**, such as a hook. This change states the rule in
   prose, and a guard would come only if the prose fails again.
 
 ## Further Notes
 
-### The source
+### The runs
 
-`/root/deliverer-debriefs/refine-findings.md` deduplicates the 28 debriefs collected in
-`/root/deliverer-debriefs/refine.md`. That file names each run's plugin commit, and the numbers used here are that
-file's. Run #20's claim that it "stopped with eight questions never asked" is not used as grounds: its debrief saw
-seven minutes of the run, which is the observer defect `idp-scaffold-defects` fixed, and the run went on to ask eight
-more question rounds. The overflow that run planned as a separate question round still holds as evidence.
+Each debrief was written by the observer from one run's session records, and the runs are numbered in the order they
+were collected. A run is on today's refine skill where it used the commit after the per-item restructure; only those
+ground a finding on their own. The runs this spec cites:
+
+| Run | Project   | Epic                         | Today's skill |
+|-----|-----------|------------------------------|---------------|
+| 5   | k8s-infra | claude-runner-single-pod     | no            |
+| 6   | k8s-infra | hindsight                    | no            |
+| 10  | k8s-infra | hindsight-openai-cost        | no            |
+| 11  | k8s-infra | claude-runner-grilling       | no            |
+| 12  | k8s-infra | claude-runner-session-fixes  | no            |
+| 13  | k8s-infra | node-auto-remediation        | no            |
+| 14  | k8s-infra | hindsight-recall-latency     | no            |
+| 16  | k8s-infra | kgateway-gateway-api-upgrade | no            |
+| 17  | k8s-infra | nativelink-rbe-poc           | yes           |
+| 18  | audienzz  | media-focus-sftp             | no            |
+| 19  | audienzz  | retire-ws-scheduler          | yes           |
+| 20  | upkept    | idp-scaffold                 | yes           |
+| 23  | upkept    | golden-flows-kind            | yes           |
+| 24  | upkept    | repo-linters                 | yes           |
+| 26  | upkept    | ts-gazelle                   | yes           |
+| 27  | upkept    | vendor-shadcn-skill          | yes           |
+| 28  | upkept    | ts-isolated-declarations     | yes           |
+
+Run 20's claim that it "stopped with eight questions never asked" is not used as grounds: its debrief saw seven minutes
+of the run, which is the observer defect `idp-scaffold-defects` fixed, and the run went on to ask eight more question
+rounds. The overflow that run planned as a separate question round still holds as evidence.
 
 ### Load-bearing behaviour this change must not disturb
 
