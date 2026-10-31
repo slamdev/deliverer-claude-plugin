@@ -109,6 +109,14 @@ exceptions, each carrying what exists nowhere the agent could read:
   finding. The prose still goes as the host returned it, in full. Whether the line opens the report is all you read —
   what the prose says stays the wave's to weigh.
 
+**Before each fix wave, read whether the change request can merge** — a **mechanical** read of the forge, as its
+**checks** are: the forge's own account of whether the head merges into the branch it targets without conflict, and
+which checks it reads red. A conflict goes into that wave's **ledger** as an entry, and each red check the same way —
+the fact, the one look that checks it, and you as the dispatch that established it — so the wave meets them before its
+first comment instead of spending its opening turns working out what broke. Carry what the forge said and nothing
+more: why a check is red and how a conflict resolves are the wave's. A forge still computing the answer has given none
+yet, so read it again rather than taking it for mergeable.
+
 **Sequencing.** One dispatch at a time: while a **report** is owed, nothing else goes out — no stage runs beside
 another, and no stage is worth the minutes an overlap saves. A stage you dispatched in this run is unfinished until its
 **report** is in hand, and an acknowledgement is not a report: a dispatch may answer you at once and finish its work in
@@ -171,11 +179,11 @@ addressable, or once continuing it fails. A continued `code-reviewer` opens no *
 5. **First round.** Dispatch `code-reviewer`; it drives one **round** and reports its prose. You are done when its
    report is in hand, with the round's `review_id`, how it ended and all of its prose kept (**Rounds**): stage 6 is
    dispatched with the whole of that prose.
-6. **First fix wave.** Dispatch `comments-addresser`, carrying the first round's prose and the ledger
-   (**Dispatch**). It works every unresolved comment and every point that prose raises — implementing the improvements,
-   the overrides and the findings, resolving what it implements or declines, and leaving the escalations for a human —
-   and what happened to the code is its report's to say, **the account nearer the code** over `assumption-reviewer`'s.
-   Each report goes through:
+6. **First fix wave.** Dispatch `comments-addresser`, carrying the first round's prose and the ledger, your
+   mergeability read in it (**Dispatch**). It works every unresolved comment and every point that prose raises —
+   implementing the improvements, the overrides and the findings, resolving what it implements or declines, and
+   leaving the escalations for a human — and what happened to the code is its report's to say, **the account nearer
+   the code** over `assumption-reviewer`'s. Each report goes through:
    1. every **directive** stage 3 named found in it — implemented, declined with **grounds**, or handed off. One the
       report leaves out altogether has no account of the code at all: put the stage back naming it, since which report
       is right turns on what the replies on that comment say, and reading them is a judgement that is never yours;
@@ -187,8 +195,9 @@ addressable, or once continuing it fails. A continued `code-reviewer` opens no *
 7. **Second round.** Dispatch `code-reviewer` again, cold, so that a fresh round opens (**Rounds**). It reviews the fix
    wave's commits, so what the first round missed still gets caught. You are done on stage 5's bar.
 8. **Second fix wave.** Dispatch `comments-addresser` again, carrying the second round's prose, the findings the
-   first wave declined with their grounds, and the ledger (**Dispatch**), for what that round raised. Its
-   report goes through stage 6's loop over the directives the first wave handed off, and you are done on the same bar.
+   first wave declined with their grounds, and the ledger, a fresh mergeability read in it (**Dispatch**), for what
+   that round raised. Its report goes through stage 6's loop over the directives the first wave handed off, and you
+   are done on the same bar.
 9. **Refresh the description.** Dispatch `change-request-creator` again, continued where the stage-2 agent is still
    addressable — telling it the fix waves have landed since it read the branch — and cold otherwise, so the description
    a human reads accounts for both fix waves rather than for the tickets alone. It changes the title and description and
@@ -196,13 +205,15 @@ addressable, or once continuing it fails. A continued `code-reviewer` opens no *
    nothing will adjudicate now, and rides into your report as a **hand-off**. This stage runs whatever stage 10 then
    does, flip or draft — a change request left a draft is the one a human has the most to judge. A report naming `pr`
    missing ends the run as it does at stage 2. You are done when its report is in hand.
-10. **Flip it ready.** Once **two rounds have completed** (**Rounds**) and you have read the change request's
-    **checks** green on the forge, take the change request out of draft and report. The fix wave reports the checks too;
-    where its account and the forge disagree, put the stage back rather than choosing between them. Escalations and
-    declined findings ride into the report rather than holding the flip: they are what the human review is for. When
-    the checks are not green, leave it a draft and report that instead. When the bar cannot be met — no round completed,
-    or one did and the second cannot — leave it a draft the same way, and report the review stage as a **hand-off** with
-    the reason each round ended on.
+10. **Flip it ready.** Once **two rounds have completed** (**Rounds**) and you have read on the forge that the change
+    request's **checks** are green and that it can merge (**Dispatch**), take the change request out of draft and
+    report. The fix wave reports the checks too; where its account and the forge disagree, put the stage back rather
+    than choosing between them. Escalations and declined findings ride into the report rather than holding the flip:
+    they are what the human review is for. When the checks are not green, leave it a draft and report that instead.
+    When it cannot merge, leave it a draft and report the conflict as a **hand-off**: a change request flipped ready
+    with a conflict hands its human a merge to fix. When the bar cannot be met — no round completed, or one did and
+    the second cannot — leave it a draft the same way, and report the review stage as a **hand-off** with the reason
+    each round ended on.
 
 ## Rounds
 

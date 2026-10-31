@@ -38,7 +38,11 @@ implements. A change sitting in the working tree and on no commit is neither —
 
 1. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote. Where it names
    none, take the head branch of the change request whose URL your prompt carries, or the branch named from the epic's
-   **slug** among the branches already there.
+   **slug** among the branches already there. Where your prompt's ledger names a conflict with the default branch,
+   merge the remote's default branch in now, before the first comment is worked — **a merge commit, never a rebase or
+   a force-push**, so every commit already on the remote, and every **mark** naming one, stays where it is. Resolve
+   each conflicting hunk by keeping what both sides meant, run the **gates**, and commit the merge under **Commit
+   format** below. You are done when the merge commit exists and the gates are run on it.
 2. **Find the change request** for that branch — the URL in your prompt, or the one already open for the branch.
 3. **Collect the unresolved comments** from every channel the change request has — **Comment channels** below — and
    sort each by kind: one prefixed `ASSUMPTION` is an **assumption**, and a comment someone else left is a **review
@@ -68,7 +72,7 @@ implements. A change sitting in the working tree and on no commit is neither —
    uncommitted.
 6. **Push to the epic branch**, once, now the comments and the points are worked. Whoever commits publishes: step 8's
    checks run on the remote, so a commit that is not pushed has not landed. When nothing needed implementing, there is
-   nothing to push — carry that to the report. You are done when every commit from steps 4 and 5 is on the remote,
+   nothing to push — carry that to the report. You are done when every commit from steps 1, 4 and 5 is on the remote,
    every fork you closed silently and every gate you left red carries an entry in a commit message, and nothing of
    your own work is left uncommitted.
 7. **Mark every comment you worked**, and reply on every verdict step 4 noted — **Marking a comment** below. That mark
