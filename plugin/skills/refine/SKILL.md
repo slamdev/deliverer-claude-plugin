@@ -209,13 +209,12 @@ The dispatch carries:
 - **the subject, named as the question of fact the sweep is out to close — never the next file to open — and the
   questions on the frontier it holds**, worded as the human will be asked them. A sweep follows the thread itself,
   however many looks that takes, and comes back once its facts let every question it holds be put on a checked premise;
-- **that the looking is first-hand, and takes the cheapest look that settles it** — the repo, a primary source, a run
-  of what is already installed — installing, cloning or writing a probe program only for a fact no reading shows. A
-  subject broad enough to split is one an agent will split, and the half it hands on comes back late — or comes back to
-  you instead, long after the sweep that sent it has reported without it. Telling a second subject from a second look
-  at the same one is yours, because the **frontier** is what says which of the two you are owed;
-- **what it owes back: the facts and where it found them, and, for anything it built, the fact that needed building**
-  — never a view on the design, which is the human's to form with you;
+- **that the looking is first-hand.** A subject broad enough to split is one an agent will split, and the half it hands
+  on comes back late — or comes back to you instead, long after the sweep that sent it has reported without it. Telling
+  a second subject from a second look at the same one is yours, because the **frontier** is what says which of the two
+  you are owed;
+- **what it owes back: the facts and where it found them** — never a view on the design, which is the human's to form
+  with you;
 - **the subjects of the sweeps already in flight**, as context, so it leaves a sibling's fact to that sibling;
 - **the environment facts**, as **Dispatch** names them;
 - **the two blocks of Bounds, by reference to this skill's own copy** — this file's path and that section's heading —

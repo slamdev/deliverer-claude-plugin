@@ -158,9 +158,7 @@ the one-repository bound.
 27. As an orchestrator, I want each sweep told the frontier questions it holds and to come back once its facts let every
     one of them be put on a checked premise, so that a sweep's subject is bounded by what the human is waiting on rather
     than by how much there is to know.
-28. As a human paying for a refinement, I want every sweep to take the cheapest look that settles its fact and to build
-    only for a fact no reading shows, naming that fact when it does, so that a sweep costs a reading and not a
-    prototype.
+28. *Withdrawn — the cheapest-look rule it asked for did not bind; see Out of Scope.*
 29. As an orchestrator, I want the facts that different frontier questions turn on sent as different sweeps, and the
     points one held question needs kept in one, so that no sweep reports late on another question's account.
 30. As a spec writer, I want to know that a glossary entry or ADR the brief marks landed is the refinement's own to
@@ -202,15 +200,12 @@ written to be held without deliberation; none adds a step, a file or a term.
     dispatches carry these too;
   - the host bounds and the working-habits block, by reference to the skill's own copy, word for word;
   - that a checkout or clone it makes is kept, and its path and ref named in its report.
-- **A sweep is bounded by what it holds** (stories 27, 28, from the 2026-10-31 hand-driven run on claude-opus-5, whose
-  two sweeps cost $2.22 and $2.26 against the previous reading's single $0.37). That overspend was seen only on
-  claude-opus-5; § What the two hand-driven runs ground has the claude-opus-5-5 pair that showed none. The subject
+- **A sweep is bounded by what it holds** (story 27, from the 2026-10-31 hand-driven runs on claude-opus-5). The subject
   bullet also names the frontier questions the sweep holds, worded as the human will be asked them, and the sweep comes
-  back once its facts let every one be put on a checked premise. The first-hand bullet gains that the sweep takes the
-  cheapest look that settles it — the repo, a primary source, a run of what is already installed — installing, cloning
-  or writing a probe program only for a fact no reading shows; the owes-back bullet gains, for anything it built, the
-  fact that needed building. Sweeps only: the writers' prototypes are what make a road *proven*. Two sweeps installing
-  the same thing is left to the sibling rule.
+  back once its facts let every one be put on a checked premise. In the second run the sweep reported its premise held
+  with two qualifications, one of which changed the question, and stage 1 no longer sat idle on it. The sweep overspend
+  that prompted it was seen only on claude-opus-5; § What the two hand-driven runs ground has the claude-opus-5-5 pair
+  that showed none.
 - **A sweep is cut by the questions it holds** (story 29). **Sweeps**' numbered-points sentence failed in both
   hand-driven runs, both on claude-opus-5 — each dispatch listed five points under one question — while in the second
   the five all served one held question and the sweep came back in 3.8m. The sentence becomes: facts that different
@@ -332,6 +327,12 @@ Prior art: `docs/specs/idp-scaffold-defects/` verified its prose changes the sam
 and confirming them in the next observed run.
 
 ## Out of Scope
+
+- **The cheapest look** (story 28, withdrawn). A clause telling a sweep to take the cheapest look that settles its fact —
+  installing, cloning or writing a probe only for a fact no reading shows, and naming that fact — shipped and was
+  taken out. Reading a remote primary source counted as a look, so in the third 2026-10-31 run (claude-opus-5) the
+  sweeps still cloned three repositories and pulled a crate under it, and the orchestrator's own dispatch called
+  `npm install` the cheapest look. On claude-opus-5-5 sweeps were already cheap, so it had nothing to restrain.
 
 - **Findings seen only in runs on the old commit, where today's text already has an answer**: asking while a sweep is
   in flight, re-asking settled ground, system facts stated as context, contradicting decisions in the brief (now step

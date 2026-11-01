@@ -1,10 +1,8 @@
 # 07 — A sweep is bounded by what it holds
 
-**What to build:** a sweep that costs a reading and not a prototype. Its dispatch names the frontier questions it
-holds, and it comes back once its facts let every one be put on a checked premise. It takes the cheapest look that
-settles its fact — the repo, a primary source, a run of what is already installed — and installs, clones or writes a
-probe program only for a fact no reading shows, naming that fact in its report. Settled under **A sweep is bounded by
-what it holds** in `../spec.md`; stories 27, 28.
+**What to build:** a sweep bounded by what the human is waiting on. Its dispatch names the frontier questions it
+holds, and it comes back once its facts let every one be put on a checked premise. Settled under **A sweep is bounded by
+what it holds** in `../spec.md`; story 27. Its second half, the cheapest look (story 28), was withdrawn — see Comments.
 
 **Blocked by:** 03 — Sweeps carry one question of fact and leave their checkout to the writers.
 
@@ -12,9 +10,9 @@ what it holds** in `../spec.md`; stories 27, 28.
 
 - [x] The subject bullet in **Sweeps** names the frontier questions the sweep holds, and its completion bar is every
       one of them put on a checked premise.
-- [x] The first-hand bullet carries the cheapest-look clause; a run of what is already installed and a primary source
+- [x] *Withdrawn.* The first-hand bullet carries the cheapest-look clause; a run of what is already installed and a primary source
       read remotely both count as looks.
-- [x] The owes-back bullet asks, for anything built, the fact that needed building.
+- [x] *Withdrawn.* The owes-back bullet asks, for anything built, the fact that needed building.
 - [x] Sweeps only: neither Bounds block and neither writer changes.
 - [x] The refine skill is read against `/mattpocock-skills:writing-for-agents`.
 - [x] Recorded from the next observed debrief: each sweep's dispatch naming the questions it holds, what each sweep
@@ -33,3 +31,8 @@ the fact that needed building. One reading against one reading; the sweep count 
 Model: every reading above, and the $2.22 and $2.26 it is held against, ran on claude-opus-5, not the
 claude-opus-5-5 users get. The controlled pair on claude-opus-5-5 (`../spec.md` § What the two hand-driven runs
 ground) showed no sweep overspend on either side, so this ticket's rules are unproven on the model users get.
+
+**Withdrawn, 2026-11-01:** the cheapest-look clause and the owes-back clause naming what needed building are taken back
+out of **Sweeps**, which returns both bullets to their text before this ticket. The clause did not bind under its own
+reading of a look, and on claude-opus-5-5 sweeps were cheap without it; the spec's Out of Scope carries the evidence.
+The held-question bound stays.
