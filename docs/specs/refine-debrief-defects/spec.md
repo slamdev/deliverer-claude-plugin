@@ -328,11 +328,11 @@ and confirming them in the next observed run.
 
 ## Out of Scope
 
-- **The cheapest look** (story 28, withdrawn). A clause telling a sweep to take the cheapest look that settles its fact —
-  installing, cloning or writing a probe only for a fact no reading shows, and naming that fact — shipped and was
+- **The cheapest look** (story 28, withdrawn). A clause telling a sweep to take the cheapest look that settles its fact
+  — installing, cloning or writing a probe only for a fact no reading shows, and naming that fact — shipped and was
   taken out. Reading a remote primary source counted as a look, so in the third 2026-10-31 run (claude-opus-5) the
-  sweeps still cloned three repositories and pulled a crate under it, and the orchestrator's own dispatch called
-  `npm install` the cheapest look. On claude-opus-5-5 sweeps were already cheap, so it had nothing to restrain.
+  sweeps still cloned three repositories and pulled a crate under it, and the orchestrator's own dispatch called `npm
+  install` the cheapest look. On claude-opus-5-5 sweeps were already cheap, so it had nothing to restrain.
 
 - **Findings seen only in runs on the old commit, where today's text already has an answer**: asking while a sweep is
   in flight, re-asking settled ground, system facts stated as context, contradicting decisions in the brief (now step
