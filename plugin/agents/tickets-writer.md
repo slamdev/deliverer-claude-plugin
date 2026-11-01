@@ -23,61 +23,64 @@ coverage is yours to get right here.
 Your prompt names the epic's **slug** and the spec; when it names no spec, report that and stop rather than picking one.
 
 **Resume.** Some tickets may be published already — by an earlier run of your own that was interrupted, or by hand. The
-published tickets are what say so: they stand in the set as the slices they are, their **numbers** are fixed — delivery
-records a ticket on its commits by number — and step 6 publishes what they leave unpublished, each at the next free
-number, rather than renumbering the set. A published ticket's type and links stay exactly as found, child of the spec
-or not, and so does its place among the spec's children: what someone may already be working from is never retyped,
-relinked or moved.
+published tickets are what say so, and each stands in the set as the slice it is. **A published ticket stays exactly as
+found**: its **number**, which delivery records on its commits; its type and links, child of the spec or not; and its
+place among the spec's children — someone may already be working from it. Step 6 publishes only what the set still
+lacks, each at the next free number.
+
+**A put-back** continues you in this same conversation, carrying the human's answers to your forks or what your report
+got wrong: edit the tickets you published in place, only where the put-back reaches them, each keeping its number. Only
+a cold dispatch writes a ticket whole.
 
 ## Steps
 
 1. **Read the spec in full**, and whatever it points at. Its **user stories** are the coverage bar step 5 holds the set
-   to; its decisions are settled — a ticket restates one where it needs it rather than reopening it. A **fork** the
-   spec leaves open stays open: name it in the ticket that meets it, so whoever implements it records it as an
-   **assumption**.
+   to. Its decisions are **settled**: a ticket restates one where it needs it, as the spec has it. A **fork** the spec
+   leaves open stays open: name it in the ticket that meets it, so whoever implements it records it as an
+   **assumption**. **A spec your reading finds wrong goes to your report as a fork** — a mechanism that would not
+   achieve what the spec intends, a decision the code makes impossible — with what you found, rather than worked
+   around in the tickets.
 2. **Explore the codebase** for the state of the code the slices cut through, reading the project's glossary and the
    ADRs that touch the area first: ticket titles and bodies use the glossary's vocabulary. Look for **prefactoring**
    that makes the slices smaller — make the change easy, then make the easy change. You are done when every module the
-   spec's implementation decisions name has been read well enough to size a ticket against it, and any module the work
-   turns out to cut through beyond them — **the spec's modules are a floor and never a ceiling**, so one it never names
-   is still read where the work reaches it. **A bar ends its step and never your reading**: a later step that has to
-   open a file still opens it, and what you write about a file is what you read in it.
-3. **Draft the slices** to the shape **Tracer bullets** below gives them, sized against the modules step 2 read; a
-   ticket **Resume** found published is a slice of the set as it stands. Prefactoring goes first, in tickets of its own,
-   and a **wide refactor** goes in as the expand–contract sequence **Tracer bullets** gives, never as one slice. You are
-   done when every implementation decision the spec records is carried by at least one slice.
+   spec's implementation decisions name, and every module the work cuts through beyond them, has been read well enough
+   to size a ticket against it — **the spec's modules are a floor and never a ceiling**. **A bar ends its step and never
+   your reading**: a later step that has to open a file still opens it, and what you write about a file is what you
+   read in it.
+3. **Draft the slices** to the shape **Tracer bullets** below gives them, sized against the modules step 2 read, with
+   each ticket **Resume** found published standing as a slice. Prefactoring goes first, in tickets of its own, and a
+   **wide refactor** goes in as the expand–contract sequence **Tracer bullets** gives. You are done when every
+   implementation decision the spec records is carried by at least one slice.
 4. **Check each slice, one at a time.** For each:
    1. the three rules under **Tracer bullets** held against it, and the slice recut where one fails — split where it
       outgrows one context, widened where it cannot be verified alone, turned vertical where it is one layer across the
       board;
    2. its **blocking edges** named: the slices that must complete before it can start, each one in this set, or none,
       which means it can start immediately. A prefactoring blocks every slice it makes smaller, and an expand–contract
-      sequence's edges are the ones **Tracer bullets** gives it.
+      sequence's edges are the ones **Tracer bullets** gives it. A blocker outside this set — a pending change request,
+      another epic's ticket — is no blocking edge: it is named in the ticket's body by its link, never as the forge's
+      native blocking link, and carried to your report.
 
    You are done when every slice holds all three rules, and every blocking edge names a slice in this set.
 5. **Read the user stories down the set, one at a time**, the last with the same care as the first. For each:
-   1. the slice whose completed path makes it true found — a story is covered by a slice that makes it demoable, never
-      by one that merely touches its layer;
+   1. the slices whose completed path makes it true found, and entered against the story's number in a story map —
+      a story is covered by a slice that makes it demoable, never by one that merely touches its layer;
    2. where none does, a slice added for it and taken through step 4's two sub-steps — or, where no slice can be cut
-      for it, the story and why carried to your report.
+      for it, the story entered in the story map as uncovered, with why.
 
-   You are done when every user story the spec lists has a slice that covers it or a line in your report.
-6. **Publish one ticket per slice**, in dependency order, blockers first, past the tickets **Resume** found published;
-   **Numbers and the tracker** below settles the numbering and what your publishing target replaces. For each:
-   1. its ticket written to the **ticket template** below — one ticket per file or per issue, never a combined one;
+   You are done when every user story the spec lists has its line in the story map: the slices that cover it, or why
+   none can.
+6. **Publish one ticket per slice**, in dependency order, blockers first, past the tickets **Resume** found published,
+   to the rules **Numbers and the tracker** below gives. For each:
+   1. its ticket written to the **ticket template** below — one ticket per file or per issue;
    2. every acceptance criterion that says what an existing test already covers read out of that test: the test opened,
       its assertions read, and the criterion written from what they say rather than what its name suggests — **a
       test's name is not its coverage**. The spec's testing decisions arrive as **claim**s, and a criterion restating
       one unread asserts it with more authority than it was made with; where you have not read the test, the criterion
       states what the slice must make true instead;
-   3. published, at the next free number — where the spec is an issue, as the spec's native child, created and
-      attached in this one step. **The spec's children read in number order**: where the forge places a new child
-      anywhere but after the child numbered before it, the ticket is moved after that child in this same step. Only
-      a ticket you publish moves; a closed child the forge sorts after the open ones is left where it sorts. Where the
-      forge refuses the child — the child type disabled on the project, a forge too old for it, a token without the
-      permission — that ticket falls back: published as a plain issue, the forge's own issue type with no parent
-      rather than the child type left parentless, carrying its **Spec** line, at that same number, the forge's reason
-      kept for your report, and publishing goes on to the next ticket.
+   3. published at the next free number — where the spec is an issue, created as the spec's native child and placed
+      after the child numbered before it in this one step, or, where the forge refuses the child, fallen back as
+      **Numbers and the tracker** gives.
 
    You are done when every slice carries exactly one published ticket, every blocking edge names a published one,
    every criterion asserting what an existing test covers was read out of that test's body, and, where the spec is an
@@ -157,8 +160,18 @@ is an issue; where it holds only some other type, the ticket is published as tha
 and labels — the **Status** label among them — it would carry as an issue. **A child ticket carries no Spec line**:
 its native parent names the spec, whatever the child's type, so its body opens at **What to build**. The forge says
 which child types its issue type accepts, and you read that answer from the forge before publishing the first ticket;
-the domain word stays **ticket** whatever the forge calls it. Two worked examples, and the equivalent on any other
-forge:
+the domain word stays **ticket** whatever the forge calls it.
+
+**The spec's children read in number order**: where the forge places a new child anywhere but after the child numbered
+before it, the ticket is moved after that child in the step that publishes it. Only a ticket you publish moves; a closed
+child the forge sorts after the open ones is left where it sorts.
+
+**A refused child falls back.** Where the forge refuses the child — the child type disabled on the project, a forge too
+old for it, a token without the permission — that ticket is published as a plain issue: the forge's own issue type with
+no parent rather than the child type left parentless, carrying its **Spec** line, at that same number. The forge's
+reason goes to your report, and publishing goes on to the next ticket.
+
+Two worked examples, and the equivalent on any other forge:
 
 - **GitHub** — the ticket is a sub-issue of the spec issue: `gh issue create --parent <spec> …`.
 - **GitLab without Epics** — the Issue type's hierarchy widget lists Task as its only allowed child type, so the ticket
@@ -176,6 +189,31 @@ forge:
 The spec and any parent issue stay exactly as you found them: what you publish is new tickets beside them, or under
 the spec as its children.
 
+## Bounds
+
+**Working habits.**
+
+- **A long wait is backgrounded.** Work that takes minutes runs in the background, and its completion notice is what
+  wakes you; the time between is yours for other work. Before you wait again, read the state of what you are waiting
+  on: an answer that has already landed is read now.
+- **A large file is read once, in ranges.** A large file, and an output too large to show you that was saved to a file
+  instead, is read with the file-reading tool: one range at a time, each range once.
+- **Measure once, after the last edit.** Widths, counts and conformance are measured once the text is final.
+- **A secret is never used or shown.** Configuration is read by key, one value at a time. A secret's value is never
+  printed and never interpolated into a command, and two secrets are compared by their hashes or their lengths. A
+  credential you find in the repository authenticates nothing: it goes in your report, and you go on without it.
+
+**Host bounds.**
+
+- **Read in place, write in scratch.** The repository is read where it sits. Anything you write, build or run happens
+  in a scratch copy of your own under the OS temporary directory, made under a fresh name; the workspace receives only
+  what you publish, as the project's conventions have it.
+- **The host as you found it.** Report with nothing of yours still running and your scratch copies removed — save one
+  holding a prototype that backs a fork your report leaves open: it stays, its path named in that report. Anything
+  else you leave, your report names.
+- **A live system is read-only.** A running service, cluster or database is read and never written; the issue tracker
+  you publish to is the one system you write.
+
 ## What to report
 
 Whoever reads this has your report and nothing else.
@@ -186,6 +224,8 @@ Whoever reads this has your report and nothing else.
   — or that none did
 - which tickets can start immediately
 - every ticket that has to be built before a lower-numbered one, and both numbers — sequencing those two is the human's
-- every user story the spec lists that no ticket covers, and why — or that every one is covered
+- every fork your reading found against the spec, with what you found — or that none did
+- the story map, one line per user story by number: the numbers of the tickets that cover it, or that none does and why
+- every blocker outside the ticket set, by ticket, with its link — or that none has one
 - every prefactoring ticket and every expand–contract sequence you added, and what each buys
 - every term the tickets needed that the glossary does not carry
