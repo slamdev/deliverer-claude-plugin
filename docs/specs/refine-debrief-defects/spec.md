@@ -166,6 +166,14 @@ the one-repository bound.
 30. As a spec writer, I want to know that a glossary entry or ADR the brief marks landed is the refinement's own to
     commit, so that the spec never gives the epic work that stage 5 has already done.
 
+### Forks settled in the briefing
+
+31. As a human being grilled, I want the inputs my settled decisions leave unanswered or contradictory found before I
+    confirm stage 1, and put to me then, so that I answer them in the conversation I am already in rather than through
+    a writer's report and a put-back.
+32. As a human whose answer goes back to a writer, I want it carried as I gave it — the option I picked and anything I
+    typed, quoted — so that no paraphrase of mine raises a fork of its own.
+
 ## Implementation Decisions
 
 The refine skill, `spec-writer` and `tickets-writer` all run on opus at medium effort, and sweeps take the session's
@@ -207,6 +215,16 @@ written to be held without deliberation; none adds a step, a file or a term.
   hand-driven runs, both on claude-opus-5 — each dispatch listed five points under one question — while in the second
   the five all served one held question and the sweep came back in 3.8m. The sentence becomes: facts that different
   frontier questions turn on go out as different sweeps, and the points one held question needs stay in one.
+- **One sweep goes over the brief before stage 1 closes** (story 31). Once the frontier is empty, the orchestrator
+  writes the brief and sends a sweep carrying its path, its subject which inputs the settled decisions leave unanswered
+  or contradictory — derived from the decisions: the empty input, the edge of each threshold, and inputs where two
+  decisions' triggers meet. Each input it reports, with the decisions it involves, goes to the human as a decision in
+  one question round; the brief takes the answers, and the sweep goes out again over the decisions settled since its
+  last pass and those they meet, until it reports none. Stage 1's done bar gains that report; **Sweeps** gains the
+  paragraph. It is a **sweep** — its answer is a fact about the decisions, so ADR 0015 holds — and no new step, file or
+  term. Grounds: § Forks the writers raised, on claude-opus-5-5.
+- **An answer travels as given** (story 32). Stage 3's put-back, and stage 4's through it, carries each answer as the
+  option picked and any free text, quoted rather than restated.
 - **The brief lists a sweep's checkout** through its existing artifacts bullet, by path and ref. Nothing else about the
   brief changes: it still carries claims and no section of established facts, and what a sweep settled still rides as
   a decision's **grounds**.
@@ -378,7 +396,21 @@ A controlled pair on claude-opus-5-5 followed, on the same fixture: `main` in
 `/tmp/deliverer-e2e/refine-typescript-library-2026-10-31T23-42-18-WsvTWi` ($7.51, 24m31s, no sweep, the spec writer
 in 5 passes and 9 forks, stage 4 looped once on 2 gaps). The sweep overspend that grounds stories 27–29 was seen only
 on claude-opus-5 and did not appear on claude-opus-5-5, so those rules are unproven on the model users get. The earlier
-$0.37 they are held against is not traced to a run here, so its model is not known.
+$0.37 they are held against is the single sweep of `p6Ks0d` (2026-10-26), which `e2e-tests/README.md` records as
+running on claude-opus-5-5 — so that comparison spans two models.
+
+### Forks the writers raised, on claude-opus-5-5
+
+Stories 31–32 rest on a census of every fork the two writers raised across four runs on claude-opus-5-5: the controlled
+pair above and two runs of 2026-10-28 near `main`. Of 28 forks, 2 were killed claims and 26 were decisions — 10
+collisions between the human's own stage-1 answers, 8 edge inputs the grilling never reached, 8 raised by folding an
+answer in. 18 could have been settled by one stage-1 question on a boundary input, 5 more follow from those, 2 by a
+look, 2 were seeded by the orchestrator paraphrasing the human's answer, and 1 was visible only from a prototype. Each
+edge family was asked in some run's stage 1, never all of them in one. The forks cost $1.46 on `main` and $5.91 on this
+branch in put-backs and question rounds. The rules that let a writer raise more — an unaddressed decision is a fork,
+*proven* and *unchecked* marks, the tickets writer's forks against the spec — are kept, and judged again once the sweep
+over the brief is measured. The success bar: on the fixture, at most one stage-3 put-back, and the run at or under
+`main`'s $4.40.
 
 ### Load-bearing behaviour this change must not disturb
 

@@ -90,13 +90,14 @@ re-run.
    3. the question round asked (**Asking**) — or, where the holds took every question out of it, the sweep waited for
       rather than asking anyway.
 
-   Each sweep that lands releases its subject: every question it was holding goes into the next question round, with
-   its premise corrected where the sweep's facts changed it, and a settled decision whose premise those facts undercut
-   goes back to the human as a **fork**, saying what changed — an answer carried on a premise that turned out false is a
+   Each sweep that lands releases its subject: every question it was holding goes into the next question round, with its
+   premise corrected where the sweep's facts changed it, and a settled decision whose premise those facts undercut goes
+   back to the human as a **fork**, saying what changed — an answer carried on a premise that turned out false is a
    decision silently assumed, the one thing this stage exists to prevent. The hold lasts as long as the sweep is in
-   flight and no longer. You are done on grilling's own bar — the frontier empty, a question a sweep is holding still
-   on it, and the user's confirmation that you have reached a shared understanding — and once every term a settled
-   decision relies on is in the glossary or listed in the brief as missing from it.
+   flight and no longer. You are done on grilling's own bar — the frontier empty, a question a sweep is holding still on
+   it, the sweep over the brief (**Sweeps**) reporting no input left unanswered, and the user's confirmation that
+   you have reached a shared understanding — and once every term a settled decision relies on is in the glossary or
+   listed in the brief as missing from it.
 2. **Write the brief** — as **The brief** below. You are done when every one of the five things it carries is written
    out of the conversation or stated to hold nothing, and a fresh agent could carry the design forward from it alone.
 3. **Write the spec.** Dispatch `spec-writer`; it publishes the spec to the project's issue tracker, and its **report**
@@ -105,8 +106,9 @@ re-run.
    1. the spec's location it names kept;
    2. every fork it raises closed with the human in one question round (**Asking**), saying what the writer found.
       The forks a report raised are the whole set, and you hold them all the moment it lands;
-   3. the stage put back once, carrying every answer — the writer continued where it is addressable, a cold dispatch
-      otherwise — since an answer that reaches stage 4 any other way is one the record does not carry;
+   3. the stage put back once, carrying every answer as the human gave it — the option picked and any free text,
+      quoted rather than restated — the writer continued where it is addressable, a cold dispatch otherwise, since an
+      answer that reaches stage 4 any other way is one the record does not carry;
    4. the corrected report taken as the next one, through the same loop: folding the answers in can raise forks the
       writer could not have seen before, as often as the writing needs.
 
@@ -219,6 +221,13 @@ The dispatch carries:
 - **the two blocks of Bounds, by reference to this skill's own copy** — this file's path and that section's heading —
   so the sweep reads them word for word rather than a retelling;
 - **that a checkout or clone it makes is kept**, its path and ref named in its report, for the brief to hand on.
+
+**Once the frontier is empty, one sweep goes over the brief** before the human confirms. Write the brief as stage 2 has
+it, and send a sweep carrying its path, its subject the question of fact which inputs the settled decisions leave
+unanswered or contradictory — inputs derived from the decisions themselves: the empty one, the edge of each threshold,
+and those where two decisions' triggers meet. It owes back each such input with the decisions it involves. Every one
+goes to the human as a decision, in one question round; the brief takes the answers, and the sweep goes out again over
+the decisions settled since its last pass and those they meet, until it reports none.
 
 You hold the subject for the rest of the interview and nowhere else: the brief hands the spec writer the design rather
 than the interview's bookkeeping, and the task list carries one task per stage.
