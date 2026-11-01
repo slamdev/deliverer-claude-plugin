@@ -406,8 +406,9 @@ pair above and two runs of 2026-10-28 near `main`. Of 28 forks, 2 were killed cl
 collisions between the human's own stage-1 answers, 8 edge inputs the grilling never reached, 8 raised by folding an
 answer in. 18 could have been settled by one stage-1 question on a boundary input, 5 more follow from those, 2 by a
 look, 2 were seeded by the orchestrator paraphrasing the human's answer, and 1 was visible only from a prototype. Each
-edge family was asked in some run's stage 1, never all of them in one. The forks cost $1.46 on `main` and $5.91 on this
-branch in put-backs and question rounds. The rules that let a writer raise more — an unaddressed decision is a fork,
+edge family was asked in some run's stage 1, never all of them in one. The writers' put-back passes cost $0.67 on
+`main` and $2.74 on this branch, priced at claude-opus-5-5's rates ($4/$20, cache reads at 0.05×), which reconstruct
+each run to the cent of what the harness reported. The rules that let a writer raise more — an unaddressed decision is a fork,
 *proven* and *unchecked* marks, the tickets writer's forks against the spec — are kept, and judged again once the sweep
 over the brief is measured. The success bar: on the fixture, at most one stage-3 put-back, and the run at or under
 `main`'s $4.40.
