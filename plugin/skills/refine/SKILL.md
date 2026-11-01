@@ -95,8 +95,8 @@ re-run.
    back to the human as a **fork**, saying what changed — an answer carried on a premise that turned out false is a
    decision silently assumed, the one thing this stage exists to prevent. The hold lasts as long as the sweep is in
    flight and no longer. You are done on grilling's own bar — the frontier empty, a question a sweep is holding still on
-   it, the sweep over the brief (**Sweeps**) reporting no input left unanswered, and the user's confirmation that
-   you have reached a shared understanding — and once every term a settled decision relies on is in the glossary or
+   it, the sweep over the brief (**Sweeps**) reported and every input it raised answered, and the user's confirmation
+   that you have reached a shared understanding — and once every term a settled decision relies on is in the glossary or
    listed in the brief as missing from it.
 2. **Write the brief** — as **The brief** below. You are done when every one of the five things it carries is written
    out of the conversation or stated to hold nothing, and a fresh agent could carry the design forward from it alone.
@@ -226,8 +226,8 @@ The dispatch carries:
 it, and send a sweep carrying its path, its subject the question of fact which inputs the settled decisions leave
 unanswered or contradictory — inputs derived from the decisions themselves: the empty one, the edge of each threshold,
 and those where two decisions' triggers meet. It owes back each such input with the decisions it involves. Every one
-goes to the human as a decision, in one question round; the brief takes the answers, and the sweep goes out again over
-the decisions settled since its last pass and those they meet, until it reports none.
+goes to the human as a decision, in one question round, and the brief takes the answers. It goes out once: an input
+those answers raise is the writer's to find, as any other fork is.
 
 You hold the subject for the rest of the interview and nowhere else: the brief hands the spec writer the design rather
 than the interview's bookkeeping, and the task list carries one task per stage.

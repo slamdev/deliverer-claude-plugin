@@ -219,10 +219,11 @@ written to be held without deliberation; none adds a step, a file or a term.
   writes the brief and sends a sweep carrying its path, its subject which inputs the settled decisions leave unanswered
   or contradictory — derived from the decisions: the empty input, the edge of each threshold, and inputs where two
   decisions' triggers meet. Each input it reports, with the decisions it involves, goes to the human as a decision in
-  one question round; the brief takes the answers, and the sweep goes out again over the decisions settled since its
-  last pass and those they meet, until it reports none. Stage 1's done bar gains that report; **Sweeps** gains the
-  paragraph. It is a **sweep** — its answer is a fact about the decisions, so ADR 0015 holds — and no new step, file or
-  term. Grounds: § Forks the writers raised, on claude-opus-5-5.
+  one question round, and the brief takes the answers. It goes out once: an input those answers raise is the writer's to
+  find, as any other fork is — the first measured run repeated it to none, four passes for $1.92 and 17 questions, and
+  stage 1 came to $4.62 against `main`'s $1.46. Stage 1's done bar gains that report and every input it raised answered;
+  **Sweeps** gains the paragraph. It is a **sweep** — its answer is a fact about the decisions, so ADR 0015 holds — and
+  no new step, file or term. Grounds: § Forks the writers raised, on claude-opus-5-5.
 - **An answer travels as given** (story 32). Stage 3's put-back, and stage 4's through it, carries each answer as the
   option picked and any free text, quoted rather than restated.
 - **The brief lists a sweep's checkout** through its existing artifacts bullet, by path and ref. Nothing else about the
@@ -410,8 +411,9 @@ edge family was asked in some run's stage 1, never all of them in one. The write
 and $2.74 on this branch, priced at claude-opus-5-5's rates ($4/$20, cache reads at 0.05×), which reconstruct each run
 to the cent of what the harness reported. The rules that let a writer raise more — an unaddressed decision is a fork,
 *proven* and *unchecked* marks, the tickets writer's forks against the spec — are kept, and judged again once the sweep
-over the brief is measured. The success bar: on the fixture, at most one stage-3 put-back, and the run at or under
-`main`'s $4.40.
+over the brief is measured. The success bar: on the fixture, at most one stage-3 put-back, and the run at or under about
+$6 — a premium over `main`'s $4.40 accepted for no writer put-backs, since this branch's writers cost about $1 more than
+`main`'s on their first pass alone.
 
 ### Load-bearing behaviour this change must not disturb
 
