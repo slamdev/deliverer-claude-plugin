@@ -22,3 +22,9 @@ scratch copy kept while its report carries open forks — each sit once in the r
 - [x] Stage 5 still commits only the paths the refinement wrote; nothing in the bounds puts a scratch path in the
       workspace.
 - [x] The three files are read against `/mattpocock-skills:writing-for-agents`.
+
+## Comments
+
+After `main` was merged in (2026-11-01), the long-wait, large-file and secret rules were reworded to match the build
+skill's working-habits block word for word; measuring once and the host bounds stay refine-only. Both blocks are still
+byte-identical across the refine skill, `spec-writer` and `tickets-writer`.

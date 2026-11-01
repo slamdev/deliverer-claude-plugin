@@ -256,7 +256,10 @@ skill's copy on by reference.
     interpolated into a command; two secrets are compared by hash or by length. A credential found in the repository is
     never used to authenticate against anything: it is reported, and the agent goes on without it.
 
-  The brief's existing redaction line stays as it is.
+  The brief's existing redaction line stays as it is. Three of the four rules — the long wait, the large file and the
+  secret — take the wording the build skill and its agents carry, word for word, so each rule reads the same across the
+  plugin and changes in one review; the bullets above give their meaning. Measuring once is the refine side's own, and
+  so are the host bounds: the build side's agents work in the workspace itself.
 - **Host bounds**:
   - Work in your own scratch copy under the OS temporary directory, never in a shared or named path, and never in the
     workspace root.
