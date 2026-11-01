@@ -38,16 +38,19 @@ and nothing else: the **brief**, and the glossary entries and ADRs stage 1 lands
 **Resume.** Every run, resumed or not, fetches the default branch before anything else runs. Where the checkout is
 behind it, say so and ask whether to pull — in the first question round, or before the next dispatch on a run that skips
 stage 1: the pull is the human's call, never yours. This idea may be part-refined — by an earlier run of your own that
-was interrupted, or by hand. The artifacts are what say how far it got: the brief on disk says stage 2 ran, a published
-spec says stage 3 ran, and published tickets say stage 4 did. Start from the earliest stage whose artifact you cannot
-find — re-dispatching either writer is safe, because each one resumes on its own and adds only what is missing. Stage 1
-is the exception: a conversation leaves nothing behind but the brief, so when the brief is gone the grilling is owed
-again. Once stage 5 has run, what it committed may sit on the **epic branch** alone, with the checkout on some other
-branch. Where the project keeps the spec in the repository and the tree carries none, find the epic branch the way stage
-5 does, and where one carries the spec, switch to it with `--merge` before judging anything — the writers resume off
-what it carries. An open change request says nothing about whether stage 5 is done, since what it committed may have
-changed since it opened, so stage 5 runs on every run: it reads its own progress off the branch and the forge, commits
-only what differs, and never opens a change request beside one already open.
+was interrupted, or by hand. The artifacts are what say how far it got: the brief on disk ending on its confirmation
+line says stage 2 ran, a published spec says stage 3 ran, and published tickets say stage 4 did. Start from the earliest
+stage whose artifact you cannot find — re-dispatching either writer is safe, because each one resumes on its own and
+adds only what is missing. Stage 1 is the exception: a conversation leaves nothing behind but the brief, so when the
+brief is gone the grilling is owed again, and a brief without that line is stage 1 cut short — pick the grilling up from
+it, its settled decisions standing, and owe what its done bar still lacks: the sweep over the brief, since nothing on
+disk says it reported, and the user's confirmation. Once stage 5 has run, what it committed may sit on the **epic
+branch** alone, with the checkout on some other branch. Where the project keeps the spec in the repository and the tree
+carries none, find the epic branch the way stage 5 does, and where one carries the spec, switch to it with `--merge`
+before judging anything — the writers resume off what it carries. An open change request says nothing about whether
+stage 5 is done, since what it committed may have changed since it opened, so stage 5 runs on every run: it reads its
+own progress off the branch and the forge, commits only what differs, and never opens a change request beside one
+already open.
 
 **Dispatch.** Every dispatch carries the epic's **slug**. Stage 3's carries the brief's path; stage 4's carries the
 spec's location instead — once the spec is published it is the record, so the tickets are cut from it rather than from
@@ -98,8 +101,10 @@ re-run.
    it, the sweep over the brief (**Sweeps**) reported and every input it raised answered, and the user's confirmation
    that you have reached a shared understanding — and once every term a settled decision relies on is in the glossary or
    listed in the brief as missing from it.
-2. **Write the brief** — as **The brief** below. You are done when every one of the five things it carries is written
-   out of the conversation or stated to hold nothing, and a fresh agent could carry the design forward from it alone.
+2. **Write the brief** — as **The brief** below, finishing the one stage 1 wrote, and close it on the line
+   `Confirmed by the human.`, written now and nowhere earlier: that line is how **Resume** tells a finished stage 1 from
+   one cut short. You are done when every one of the five things it carries is written out of the conversation or
+   stated to hold nothing, a fresh agent could carry the design forward from it alone, and the line closes it.
 3. **Write the spec.** Dispatch `spec-writer`; it publishes the spec to the project's issue tracker, and its **report**
    raises the **fork**s its reading forced — among them the decision a killed **claim** took down with it. Every one is
    yours to hold, and **one report, one question round, one put-back** is the loop each report goes through:
@@ -221,12 +226,15 @@ The dispatch carries:
   so the sweep reads them word for word rather than a retelling;
 - **that a checkout or clone it makes is kept**, its path and ref named in its report, for the brief to hand on.
 
-**Once the frontier is empty, one sweep goes over the brief** before the human confirms. Write the brief as stage 2 has
-it, and send a sweep carrying its path, its subject the question of fact which inputs the settled decisions leave
-unanswered or contradictory — inputs derived from the decisions themselves: the empty one, the edge of each threshold,
-and those where two decisions' triggers meet. It owes back each such input with the decisions it involves. Every one
-goes to the human as a decision, in one question round, and the brief takes the answers. It goes out once: an input
-those answers raise is the writer's to find, as any other fork is.
+**Once the frontier is empty, one sweep goes over the brief** before the human confirms. Write the brief as **The
+brief** has it, short of the line stage 2 closes it on, and send a sweep carrying its path, its subject the question of
+fact which inputs the settled decisions leave unanswered or contradictory — inputs derived from the decisions
+themselves: the empty one, the edge of each threshold, and those where two decisions' triggers meet. It holds no
+frontier question: its bound is the brief's settled decisions, and it owes back each such input with the decisions it
+involves — a fact about those decisions, never a view on the design. Each input it raises goes through stage 1's step 1
+as any decision does, so its premise may still go out as a sweep, and then to the human in one question round, the brief
+taking the answers. The sweep over the brief itself goes out once: an input those answers raise is the writer's to find,
+as any other fork is.
 
 You hold the subject for the rest of the interview and nowhere else: the brief hands the spec writer the design rather
 than the interview's bookkeeping, and the task list carries one task per stage.

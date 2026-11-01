@@ -215,10 +215,13 @@ written to be held without deliberation; none adds a step, a file or a term.
   or contradictory — derived from the decisions: the empty input, the edge of each threshold, and inputs where two
   decisions' triggers meet. Each input it reports, with the decisions it involves, goes to the human as a decision in
   one question round, and the brief takes the answers. It goes out once: an input those answers raise is the writer's to
-  find, as any other fork is — the first measured run repeated it to none, four passes for $1.92 and 17 questions, and
-  stage 1 came to $4.62 against `main`'s $1.46. Stage 1's done bar gains that report and every input it raised answered;
+  find, as any other fork is; a repeat until none reported was measured and dropped, ticket 10's comments carrying its
+  figures and ticket 11's the one pass's. Stage 1's done bar gains that report and every input it raised answered;
   **Sweeps** gains the paragraph. It is a **sweep** — its answer is a fact about the decisions, so ADR 0015 holds — and
-  no new step, file or term. Grounds: § Forks the writers raised, on claude-opus-5-5.
+  no new step, file or term. Since the brief is now written before the human confirms, stage 2 closes it on a
+  confirmation line, and **Resume** reads a brief without that line as stage 1 cut short, picked up from the brief
+  rather than grilled again — a mechanical mark, so ADR 0015 holds there too. Grounds: § Forks the writers raised, on
+  claude-opus-5-5.
 - **An answer travels as given** (story 32). Stage 3's put-back, and stage 4's through it, carries each answer as the
   option picked and any free text, quoted rather than restated.
 - **The brief lists a sweep's checkout** through its existing artifacts bullet, by path and ref. Nothing else about the
@@ -393,9 +396,9 @@ seen only on a fixture whose subject is terminal escapes. A question worded agai
 confirmed, seen once in the second run and caught by the spec writer, is left out too.
 
 A controlled pair on claude-opus-5-5 followed, on the same fixture: `main` in
-`/tmp/deliverer-e2e/refine-typescript-library-2026-10-31T23-42-16-n3Eqb3` ($4.40, 14m13s, one sweep at $0.42 and
+`/tmp/deliverer-e2e/refine-typescript-library-2026-10-31T23-42-16-n3Eqb3` ($4.30, 14m13s, one sweep at $0.42 and
 0.6m, the spec writer in 3 passes, no stage-4 loop) and this branch in
-`/tmp/deliverer-e2e/refine-typescript-library-2026-10-31T23-42-18-WsvTWi` ($7.51, 24m31s, no sweep, the spec writer
+`/tmp/deliverer-e2e/refine-typescript-library-2026-10-31T23-42-18-WsvTWi` ($7.37, 24m31s, no sweep, the spec writer
 in 5 passes and 9 forks, stage 4 looped once on 2 gaps). The sweep overspend that grounds stories 27–29 was seen only
 on claude-opus-5 and did not appear on claude-opus-5-5, so those rules are unproven on the model users get. The earlier
 $0.37 they are held against is the single sweep of `p6Ks0d` (2026-10-26), which `e2e-tests/README.md` records as
@@ -413,7 +416,7 @@ and $2.74 on this branch, priced at claude-opus-5-5's rates ($4/$20, cache reads
 to the cent of what the harness reported. The rules that let a writer raise more — an unaddressed decision is a fork,
 *proven* and *unchecked* marks, the tickets writer's forks against the spec — are kept, and judged again once the sweep
 over the brief is measured. The success bar: on the fixture, at most one stage-3 put-back, and the run at or under about
-$6 — a premium over `main`'s $4.40 accepted for no writer put-backs, since this branch's writers cost about $1 more than
+$6 — a premium over `main`'s $4.30 accepted for no writer put-backs, since this branch's writers cost about $1 more than
 `main`'s on their first pass alone.
 
 ### Load-bearing behaviour this change must not disturb

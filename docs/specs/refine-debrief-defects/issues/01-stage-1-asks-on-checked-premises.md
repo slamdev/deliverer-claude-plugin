@@ -35,6 +35,12 @@ round says so and asks whether to pull. Settled under **The refine skill** in `.
 
 ## Comments
 
-Implemented on `refine-debrief-defects`. Run `/tmp/deliverer-e2e/refine-typescript-library-2026-10-31T20-08-21-thJPmn` on claude-opus-5, 2026-10-31: passed every assertion and the verifier, 47m 47s, $22.08 plus $0.64 for the verdict. The default branch was fetched (`git fetch` and a left/right count, `0 0`) before round 1, so no stale checkout was raised. 11 question rounds, 37 questions, none wider than four: the fixture raised no frontier that needed several calls in one message, so that behaviour waits for the next observed debrief.
+Implemented on `refine-debrief-defects`. Run `/tmp/deliverer-e2e/refine-typescript-library-2026-10-31T20-08-21-thJPmn`
+on claude-opus-5, 2026-10-31: passed every assertion and the verifier, 47m 47s, $22.08 plus $0.64 for the verdict. The
+default branch was fetched (`git fetch` and a left/right count, `0 0`) before round 1, so no stale checkout was raised.
+11 question rounds, 37 questions, none wider than four: the fixture raised no frontier that needed several calls in one
+message, so that behaviour waits for the next observed debrief.
 
-Second run. Run `/tmp/deliverer-e2e/refine-typescript-library-2026-10-31T21-31-52-RBnh9f` on `b02426f` and claude-opus-5, 2026-10-31: passed every assertion and the verifier, 41m 54s, $16.71. The first question round carried six questions as two calls in one message, before any answer — the wide-frontier behaviour, now observed.
+Second run. Run `/tmp/deliverer-e2e/refine-typescript-library-2026-10-31T21-31-52-RBnh9f` on `b02426f` and
+claude-opus-5, 2026-10-31: passed every assertion and the verifier, 41m 54s, $16.71. The first question round carried
+six questions as two calls in one message, before any answer — the wide-frontier behaviour, now observed.

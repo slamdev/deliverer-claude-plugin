@@ -17,8 +17,14 @@ hand-driven runs. Settled under **A sweep is cut by the questions it holds** in 
 
 ## Comments
 
-Run `/tmp/deliverer-e2e/refine-typescript-library-2026-10-31T22-26-33-8nIwZM` on `7daf0a0` and claude-opus-5, 2026-10-31: passed every assertion and the verifier, 58m 38s, $28.87. Two sweeps, one holding three frontier questions and the other one, with no held question shared — the cut held. Cost did not follow: $2.60 and $2.81 (39 and 37 requests, 6.3m and 9.0m), and the grilling sat idle 6.0m on them. Each premise was framed as what "established implementations" do, and each dispatch named four ecosystems to read; both sweeps cloned `muesli/reflow`, and between them they packed npm tarballs, cloned three Go repositories and pulled a Rust crate. Reading a remote primary source counts as a look (07), so the cheapest-look clause did not bind any of it.
+Run `/tmp/deliverer-e2e/refine-typescript-library-2026-10-31T22-26-33-8nIwZM` on `7daf0a0` and claude-opus-5,
+2026-10-31: passed every assertion and the verifier, 58m 38s, $28.87. Two sweeps, one holding three frontier questions
+and the other one, with no held question shared — the cut held. Cost did not follow: $2.60 and $2.81 (39 and 37
+requests, 6.3m and 9.0m), and the grilling sat idle 6.0m on them. Each premise was framed as what "established
+implementations" do, and each dispatch named four ecosystems to read; both sweeps cloned `muesli/reflow`, and between
+them they packed npm tarballs, cloned three Go repositories and pulled a Rust crate. Reading a remote primary source
+counts as a look (07), so the cheapest-look clause did not bind any of it.
 
 Model: this reading, and both runs whose numbered-points failure the ticket answers, ran on claude-opus-5, not the
-claude-opus-5-5 users get. The controlled pair on claude-opus-5-5 (`../spec.md` § What the two hand-driven runs
-ground) showed no sweep overspend on either side, so this ticket's rule is unproven on the model users get.
+claude-opus-5-5 users get. The controlled pair on claude-opus-5-5 (`../spec.md` § What the two hand-driven runs ground)
+showed no sweep overspend on either side, so this ticket's rule is unproven on the model users get.

@@ -12,21 +12,22 @@ over the brief before stage 1 closes** and **An answer travels as given** in `..
 
 **Status:** resolved
 
-- [x] Stage 1's done bar requires the sweep over the brief to report no input left unanswered.
-- [x] **Sweeps** carries the paragraph: when it goes out, what it reads, its subject and input classes, what it owes
-      back, and the repeat over what changed.
+- Stage 1's done bar requires the sweep over the brief to report no input left unanswered. *Superseded by 11.*
+- [x] **Sweeps** carries the paragraph: when it goes out, what it reads, its subject and input classes, and what it
+      owes back.
+- **Sweeps**' paragraph carries the repeat over what changed. *Superseded by 11.*
 - [x] Stage 3's put-back carries each answer quoted as the option picked and any free text; stage 4 inherits it.
 - [x] No new step, file or glossary term.
 - [x] The refine skill is read against `/mattpocock-skills:writing-for-agents`.
 - [x] Recorded from a hand-driven refine run on claude-opus-5-5: the sweep over the brief and what it raised, the spec
-      writer's stage-3 put-backs (at most one), and the run's cost against `main`'s $4.40 in `n3Eqb3`.
+      writer's stage-3 put-backs (at most one), and the run's cost against `main`'s $4.30 in `n3Eqb3`.
 
 ## Comments
 
 Run `/tmp/deliverer-e2e/refine-typescript-library-2026-11-01T00-24-19-wMwBmD` on `07af96b`, claude-opus-5-5,
 2026-11-01: passed every assertion and the verifier, 29m 52s, $7.88. **The put-back bar is met**: the spec writer
 published in one pass and raised no fork, and the tickets writer raised none, so stage 4 never looped. **The cost bar is
-missed**: $7.88 against `main`'s $4.40 in `n3Eqb3`. Stages 3 and 4 came back to `main`'s level ($2.94 against $2.65,
+missed**: $7.88 against `main`'s $4.30 in `n3Eqb3`. Stages 3 and 4 came back to `main`'s level ($2.94 against $2.65,
 orchestrator share included), and the whole excess moved into stage 1 ($4.62 against $1.46): the sweep over the brief
 ran four passes for $1.92 and surfaced 10, 5, 1 and 1 questions, and the orchestrator's stage-1 share doubled to $2.29
 over 35 questions in 9 messages. The fork cost moved rather than shrank — this branch before the sweep spent about the
