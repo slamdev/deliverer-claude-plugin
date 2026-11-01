@@ -208,8 +208,14 @@ is the ticket where a ticket is being committed, and the comments being cleared 
 pre-commit, local checks
 
 **Check**:
-Whatever the forge runs on a change request; **green** is all of them passing. A fix wave owns them whether or not it
-was what made them red. _Avoid_: CI, build, pipeline, gate
+Whatever the forge runs on a change request; **green** is all of them passing. A fix wave owns every red one, whether or
+not it was what made it red, except one red for a cause outside the branch — red on the default branch's head too, or
+failed before running any of the branch's code — which is a **hand-off**. _Avoid_: CI, build, pipeline, gate
+
+**Evidence**:
+A demonstration a ticket or spec asks for, recorded on the commit that made it: what was run, what it showed, and
+whether it was observed or served from cache. Whoever did not watch it run reports it as reported, not observed.
+_Avoid_: proof, verification, test results
 
 ### The run
 
@@ -232,12 +238,25 @@ next — is not one, however cheap each step of it looks. _Avoid_: factual, obje
 
 **Dispatch**:
 One agent invocation. It carries paths rather than contents, so the agent opens the document for itself and meets the
-repository first-hand — with one deliberate exception: a **fix wave**'s dispatch carries the preceding **round**'s
-prose, because that is the only form a finding the reviewer did not post exists in. _Avoid_: call, delegation, spawn
+repository first-hand — with two deliberate exceptions: a **fix wave**'s dispatch carries the preceding **round**'s
+prose, because that is the only form a finding the reviewer did not post exists in; and every implementer after the
+first and every fix wave carries the **ledger**, because what an earlier dispatch established lives nowhere else.
+_Avoid_: call, delegation, spawn
+
+**Ledger**:
+The **mechanical** facts a run's dispatches have established so far — the **gates** that bit and what satisfied them,
+a convention found or found absent, a fact about the environment — each carried as a **claim** with the one look that
+checks it. It grows as the run goes, reaches only the dispatches that build, and cites a convention found present by
+where it lives, never restating it. _Avoid_: gates account, context, notes, memory
 
 **Report**:
 The only thing a dispatch returns. What it names is what the orchestrator knows, so what it leaves out is invisible.
 _Avoid_: output, result, summary
+
+**Put-back**:
+A stage the **orchestrator** hands back to an agent because it fell short — either by continuing that agent with
+`SendMessage` or by **dispatch**ing it again cold. The stage's figures and its **dispatch note** cover both attempts.
+_Avoid_: retry, redo, rework, follow-up
 
 **Writer**:
 A dispatched agent that meets the codebase first-hand but never the conversation — which is what makes the brief
@@ -281,9 +300,9 @@ never as a contract. _Avoid_: transcript, log, history, session file
 **Extent**:
 Which part of a **session record** is one **run**: where it starts, where it stops, and what bounded it there. A record
 can hold work before a run, after it and between two of them, so every figure in a **debrief** is of the extent and
-never of the record. Bounded by the run's own signals — its attribution, its **dispatch**es of the plugin's own agents,
-its calls to the plugin's own tools, and the skills it invoked — and never by a host built-in the human's own later work
-makes too. _Avoid_: window, span, range, bounds, scope
+never of the record. Bounded by the run's own signals — its attribution, its **dispatch**es of the plugin's own agents
+and its **put-back**s to them, its calls to the plugin's own tools, and the skills it invoked — and never by a host
+built-in the human's own later work makes too. _Avoid_: window, span, range, bounds, scope
 
 **Waiting**:
 A **run** whose own last act is a question it put to its human, unanswered. Nothing is written anywhere while it waits,
@@ -304,12 +323,13 @@ each one carried. Nothing is left out by kind, and volume is all the cap bounds:
 window, so the trace is what makes a run readable at all. _Avoid_: log, transcript, timeline
 
 **Dispatch note**:
-What an **observer** made of one **dispatch** the moment that dispatch finished, read on a cheap tier from that
-dispatch's own **session record** — re-read at the note's own budget, wider than the **trace**'s — and kept for the
-one synthesis at the end. It exists because a dispatch's interior is the part of a **run** nothing else ever reads:
-the per-dispatch **session record**s outweigh a delivery's main one several times over, so under the trace's cap the
-whole-run reading sees a stage's shape and never its inside. Carries no bound of its own and is never forwarded,
-exactly as the trace is not. _Avoid_: stage note, note, summary, annotation, commentary
+What an **observer** made of one **dispatch** the moment that dispatch finished — rewritten each time a **put-back**
+continues it — read on a cheap tier from that dispatch's own **session record**, re-read at the note's own budget,
+wider than the **trace**'s, and kept for the whole-run reading. It exists because a dispatch's interior is
+the part of a **run** nothing else ever reads: the per-dispatch **session record**s outweigh a delivery's main one
+several times over, so under the trace's cap the whole-run reading sees a stage's shape and never its inside. Capped
+in length so that reading stays affordable, but carries no bound on what it names, so it is never forwarded, exactly
+as the trace is not. _Avoid_: stage note, note, summary, annotation, commentary
 
 **Debrief**:
 What observing one **run** produced, written for the human who ran it to forward to whoever maintains the plugin.

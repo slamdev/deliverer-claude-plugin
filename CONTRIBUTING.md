@@ -504,8 +504,9 @@ loop's. Walk these after any change to either, each with what it should do:
 - **a terminal killed**, with no `SessionEnd` to be had — the idle bound finalises it, and the line naming the debrief
   waits for the next prompt of any session;
 - **a run that outlived its observer** — let an idle finalise exit, grow the record, then fire `Stop` or a prompt:
-  a fresh observer starts, silently, and un-finalises the same debrief and carries on, finalising again on the
-  answer the first one's judge held (`observations/.sessions/<id>.final-reading`) rather than a second synthesis.
+  a fresh observer starts, silently, and un-finalises the same debrief and carries on. Where the extent grew past the
+  answer the first one's judge held (`observations/.sessions/<id>.final-reading`), its next finalise reads the run
+  again, once, and the debrief names the extent it replaced; where it did not, it finalises on that held answer.
   Fired with the record unchanged it starts one too, which leaves the debrief final and announces nothing; two events
   back to back start one; a session finalised by `SessionEnd`, or a marker with no `.final-reading` beside it, starts
   none. Alive is the pid in `observations/.sessions/<id>.lock`, so `kill -9` one and the next event re-arms over it;
@@ -519,7 +520,10 @@ loop's. Walk these after any change to either, each with what it should do:
   then the watcher stops by itself;
 - **a record that stops being readable after a debrief was written** — move or `chmod` it and leave it that way. The
   patience bounds the wait: the observer announces the debrief already on disk and stops, rather than ticking for the
-  rest of the machine's uptime over a record that is never coming back;
+  rest of the machine's uptime over a record that is never coming back. A debrief that was not final is rewritten to
+  say the observation stopped early, at which entry and why, and the marker reads `stopped early — `; put the record
+  back and fire `Stop` or a prompt, and a fresh observer starts with no `.final-reading` needed and replaces it. A
+  replayed record cut off mid-line says the same of itself;
 - **observation switched off** (`CLAUDE_PLUGIN_OPTION_OBSERVE_RUNS=false`) — nothing starts at all: no process, no
   trace and no debrief.
 
