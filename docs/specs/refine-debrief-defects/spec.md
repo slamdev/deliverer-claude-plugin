@@ -194,17 +194,19 @@ written to be held without deliberation; none adds a step, a file or a term.
     dispatches carry these too;
   - the host bounds and the working-habits block, by reference to the skill's own copy, word for word;
   - that a checkout or clone it makes is kept, and its path and ref named in its report.
-- **A sweep is bounded by what it holds** (stories 27, 28, from the 2026-10-31 hand-driven run, whose two sweeps cost
-  $2.22 and $2.26 against the previous reading's single $0.37). The subject bullet also names the frontier questions
-  the sweep holds, worded as the human will be asked them, and the sweep comes back once its facts let every one be put
-  on a checked premise. The first-hand bullet gains that the sweep takes the cheapest look that settles it — the repo, a
-  primary source, a run of what is already installed — installing, cloning or writing a probe program only for a fact
-  no reading shows; the owes-back bullet gains, for anything it built, the fact that needed building. Sweeps only: the
-  writers' prototypes are what make a road *proven*. Two sweeps installing the same thing is left to the sibling rule.
+- **A sweep is bounded by what it holds** (stories 27, 28, from the 2026-10-31 hand-driven run on claude-opus-5, whose
+  two sweeps cost $2.22 and $2.26 against the previous reading's single $0.37). That overspend was seen only on
+  claude-opus-5; § What the two hand-driven runs ground has the claude-opus-5-5 pair that showed none. The subject
+  bullet also names the frontier questions the sweep holds, worded as the human will be asked them, and the sweep comes
+  back once its facts let every one be put on a checked premise. The first-hand bullet gains that the sweep takes the
+  cheapest look that settles it — the repo, a primary source, a run of what is already installed — installing, cloning
+  or writing a probe program only for a fact no reading shows; the owes-back bullet gains, for anything it built, the
+  fact that needed building. Sweeps only: the writers' prototypes are what make a road *proven*. Two sweeps installing
+  the same thing is left to the sibling rule.
 - **A sweep is cut by the questions it holds** (story 29). **Sweeps**' numbered-points sentence failed in both
-  hand-driven runs — each dispatch listed five points under one question — while in the second the five all served one
-  held question and the sweep came back in 3.8m. The sentence becomes: facts that different frontier questions turn on
-  go out as different sweeps, and the points one held question needs stay in one.
+  hand-driven runs, both on claude-opus-5 — each dispatch listed five points under one question — while in the second
+  the five all served one held question and the sweep came back in 3.8m. The sentence becomes: facts that different
+  frontier questions turn on go out as different sweeps, and the points one held question needs stay in one.
 - **The brief lists a sweep's checkout** through its existing artifacts bullet, by path and ref. Nothing else about the
   brief changes: it still carries claims and no section of established facts, and what a sweep settled still rides as
   a decision's **grounds**.
@@ -257,9 +259,10 @@ skill's copy on by reference.
   is a fork the brief left open, and closes the same way. **Forks** keeps its two states and no third.
 - The shared bounds apply, and so do the checkout paths the brief lists.
 - **Landed files are the refinement's** (story 30). Step 1 gains: a glossary entry or ADR the brief marks landed is the
-  refinement's own, committed before any ticket starts, so the spec records it as done and gives the epic no work on
-  it. The second hand-driven run's spec gave the epic `GLOSSARY.md` and the ADR to commit; only the tickets writer
-  caught it, at a question round and two put-backs. `tickets-writer` is unchanged: it already refused the ticket.
+  refinement's own, committed before any ticket starts, so the spec records it as done and gives the epic no work on it.
+  The second hand-driven run's spec, on claude-opus-5, gave the epic `GLOSSARY.md` and the ADR to commit; only the
+  tickets writer caught it, at a question round and two put-backs. `tickets-writer` is unchanged: it already refused the
+  ticket.
 
 ### `tickets-writer`
 
@@ -363,9 +366,19 @@ rounds. The overflow that run planned as a separate question round still holds a
 ### What the two hand-driven runs ground
 
 Stories 27–30 are grounded in the two hand-driven refine runs of 2026-10-31 on the `typescript-library` fixture, not in
-the 28 debriefs. Both runs' debriefs also show every agent writing literal escape bytes and repairing them; that is
-left out, since it is seen only on a fixture whose subject is terminal escapes. A question worded against a decision the
-human had already confirmed, seen once in the second run and caught by the spec writer, is left out too.
+the 28 debriefs. Both runs, the third run of that evening and the spec-writer bench all ran on claude-opus-5, not the
+claude-opus-5-5 users get: the end-to-end harness pinned an Agent SDK whose bundled CLI mapped `opus` to claude-opus-5.
+Both runs' debriefs also show every agent writing literal escape bytes and repairing them; that is left out, since it is
+seen only on a fixture whose subject is terminal escapes. A question worded against a decision the human had already
+confirmed, seen once in the second run and caught by the spec writer, is left out too.
+
+A controlled pair on claude-opus-5-5 followed, on the same fixture: `main` in
+`/tmp/deliverer-e2e/refine-typescript-library-2026-10-31T23-42-16-n3Eqb3` ($4.40, 14m13s, one sweep at $0.42 and
+0.6m, the spec writer in 3 passes, no stage-4 loop) and this branch in
+`/tmp/deliverer-e2e/refine-typescript-library-2026-10-31T23-42-18-WsvTWi` ($7.51, 24m31s, no sweep, the spec writer
+in 5 passes and 9 forks, stage 4 looped once on 2 gaps). The sweep overspend that grounds stories 27–29 was seen only
+on claude-opus-5 and did not appear on claude-opus-5-5, so those rules are unproven on the model users get. The earlier
+$0.37 they are held against is not traced to a run here, so its model is not known.
 
 ### Load-bearing behaviour this change must not disturb
 
