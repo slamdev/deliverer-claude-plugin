@@ -16,6 +16,12 @@ delivered into one repository on one **epic branch**. _Avoid_: feature, project,
 The rough intent a refinement starts from, in the user's own terms, before anything has been decided. _Avoid_: request,
 feature request
 
+**Origin**:
+The tracker item an idea was filed as before any refinement ran, where there was one. The brief and the spec record it,
+and the epic branch and the change request carry its number, so a human tracks the delivery from the item they filed.
+It is the human's to close: a delivery closes each ticket as it lands and the spec at the end, never the origin.
+_Avoid_: original ticket, parent issue, source issue
+
 **Brief**:
 The written record of a refinement conversation — every decision it settled, every fork it left open. The only part of
 that conversation that outlives it. _Avoid_: notes, transcript, summary
@@ -31,7 +37,8 @@ a ticket set is measured against. _Avoid_: requirement, acceptance criterion
 
 **Ticket**:
 One vertical slice of an epic, sized to fit a single fresh context — because that is exactly what it gets: one ticket,
-one agent, one context. _Avoid_: issue, task, story, card
+one agent, one context. Closed once its last commit is on the remote, so the tracker reads like the branch. _Avoid_:
+issue, task, story, card
 
 **Tracer bullet**:
 The shape a ticket has to have — a narrow but complete path through every layer, verifiable on its own. _Avoid_:
@@ -121,7 +128,8 @@ follow-up, outstanding item
 **Epic branch**:
 The one branch an epic is carried on — whatever its refinement wrote into the repository (its spec and tickets where
 they live there, and the glossary entries and ADRs its grilling landed), then every ticket's commits — and the branch its
-change request is opened from. _Avoid_: feature branch, topic branch
+change request is opened from. Named from the epic's **slug** in the style of the branches already there, carrying the
+**origin**'s number where that style puts a ticket's number. _Avoid_: feature branch, topic branch
 
 **Change request**:
 The unit of delivery a human reviews and merges, on whatever forge the repository uses. _Avoid_: PR, MR, pull request,

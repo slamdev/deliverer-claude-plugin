@@ -36,6 +36,9 @@ You are needed for the conversation at the start and the merge at the end. Every
   escalated to you; improved on means another of those roads held up better under failure, under attack, at the limits
   or for whoever calls the code, and the run took it without asking you first; the fixes made after the review record
   theirs on their own commits instead, where you meet them unratified rather than adjudicated
+- every ticket closed as its commit lands and the spec closed at the end, while the issue you filed — the origin —
+  stays open for you to test against; the branch and the change request carry its number where your project's
+  conventions put one
 - a description in three parts — a summary, evidence with a before and an after, and how dangerous it is to merge —
   written once the last fixes have landed
 - green checks, and the change request flipped out of draft (if the checks are red it stays a draft, and the report says

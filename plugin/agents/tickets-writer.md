@@ -186,8 +186,8 @@ Two worked examples, and the equivalent on any other forge:
   `adjacentWorkItemId` the work item ID of the child numbered before it, `relativePosition: AFTER`; it returns
   `errors: []`.
 
-The spec and any parent issue stay exactly as you found them: what you publish is new tickets beside them, or under
-the spec as its children.
+The spec, its **origin** and any parent issue stay exactly as you found them: what you publish is new tickets beside
+them, or under the spec as its children.
 
 ## Bounds
 

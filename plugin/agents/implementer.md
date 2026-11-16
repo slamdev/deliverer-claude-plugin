@@ -39,7 +39,8 @@ you owe it.
    it carries a `Ticket:` line yet, it was cut when the epic was refined, maybe days ago: merge the up-to-date default
    branch into it — a merge commit, never a rebase or a force-push — and push. Where the dispatch names none, you are
    the first and no epic branch exists: create it from an up-to-date default branch, named from the epic's **slug** in
-   the style of the branches already there.
+   the style of the branches already there, carrying the **origin**'s number where that style puts a ticket's number —
+   your prompt names the origin, or says the epic has none.
 2. **Read the ticket and the commits already on the branch.** The ticket is what the work has to do; the commits are
    what is done, and only those carrying a `Ticket:` line are a ticket's work — a refinement's commit of what it wrote
    into the repository is none. You are done when each thing the ticket asks for is paired with the commit that
@@ -62,7 +63,11 @@ you owe it.
    last commit rather than the ticket. You are done when the ticket is implemented, every fork you closed silently and
    every gate you left red carries an entry in a commit message, the branch on the remote carries those commits, and
    nothing of your own work is left uncommitted.
-4. **Mark the ticket delivered** the way the project's own conventions do; where there is none, nothing is owed.
+4. **Close the ticket**, once the remote carries its last commit — that commit is the ticket's whole delivery, so the
+   tracker reads like the branch, and a run that dies after this step leaves nothing to reconcile. A ticket already
+   closed is left as it is. The **origin** and the spec stay open whatever you close: the spec closes once every
+   ticket has, and the origin is the human's to test the epic against and to close. **Closing a ticket** below has the
+   operations. You are done when the tracker shows the ticket closed.
 5. **Report**, as below.
 
 ## Working habits
@@ -161,6 +166,22 @@ your own that moved the line. Nothing downstream catches a number out by two —
 at whatever text the number names, and the human adjudicating the fork then reads your reason beside code it was never
 about.
 
+## Closing a ticket
+
+The tracker is wherever the epic's tickets are published, and every tracker has the same two operations under its own
+names: a note and a close. On any tracker but the two below, find the equivalents in the help of the tool the
+repository has authenticated. The note is one line:
+
+```
+Delivered in <commit hash> on <epic branch>.
+```
+
+- **GitHub**: `gh issue comment <ticket> --body "<the note>"`, then `gh issue close <ticket>`.
+- **GitLab**: `glab issue note <ticket> --message "<the note>"`, then `glab issue close <ticket>`.
+- **Local files** in the repository: set the ticket file's `Status:` line to the label the project's conventions name
+  for delivered work — `done` where they name none — in a commit of its own carrying this ticket's `Ticket:` line, and
+  push it. The note is that commit.
+
 ## What to report
 
 Whoever reads this has your report and nothing else.
@@ -175,4 +196,5 @@ Whoever reads this has your report and nothing else.
   checks it — a convention found absent, a fact about the environment, a third-party artefact and where it sits, a
   procedure as ordered quoted steps; a convention found present by where it lives, never restated
 - any uncommitted work you found outside this ticket's scope — left as it was, and still on the branch
+- that the ticket is closed, or what refused the close
 - when the branch already covered the ticket, the commit that covered it

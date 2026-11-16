@@ -58,6 +58,8 @@ only — the brief, and the glossary entries and ADRs stage 1 lands, are yours t
 
 1. **The idea.** Your argument names it; when it names none, ask the human for one. Name the epic from it once, as a
    short **slug**: the brief's filename, the tasks and the published artifacts all carry it, so two epics never collide.
+   Where the argument names an item on the project's tracker, that item is the epic's **origin**: read it as the idea,
+   and leave it as you found it — it is the human's.
 2. **The default branch.** Fetch it before anything else. Where the checkout is behind, say so and ask whether to pull
    — in the first question round. The pull is the human's call.
 3. **How far it got.** Look for the epic's artifacts: `<slug>-brief.md` in the OS temporary directory, a published spec,
@@ -97,7 +99,7 @@ only — the brief, and the glossary entries and ADRs stage 1 lands, are yours t
    relies on is in the glossary or listed in the brief as missing from it.
 2. **Write the brief.** Finish the draft from stage 1 (**The brief**) and close it on the line `Confirmed by the human.`
    — written now, at the end, since that line is how a resumed run tells a finished stage 1 from one cut short. **Done
-   when** each of the five things the brief carries is written out of the conversation or stated to hold nothing, a
+   when** each of the six things the brief carries is written out of the conversation or stated to hold nothing, a
    fresh agent could carry the design forward from the brief alone, and the line closes it.
 3. **Write the spec.** Dispatch `spec-writer` with the slug and the brief's path. It publishes the spec to the project's
    issue tracker, and its report raises the **fork**s its reading forced — among them each decision a killed **claim**
@@ -182,17 +184,19 @@ report. The reading has nowhere else to go, and a human cannot fix a host's conf
 
 The brief is the whole **hand-off** of stage 1: the spec writer has it and nothing else of the conversation. Write it to
 the OS temporary directory as `<slug>-brief.md`, where a later run can find it; the workspace holds only what this run
-publishes. It carries five things:
+publishes. It carries six things:
 
 1. **The idea**, and the problem behind it in the human's own terms.
-2. **Every decision the grilling settled**, each with its **grounds**. What a sweep settled rides here, in the grounds
+2. **The origin**, by the reference the tracker uses, or that the idea has none. The spec carries it forward, and the
+   delivery names its branch and change request from it, so a human tracks the epic from the item they filed.
+3. **Every decision the grilling settled**, each with its **grounds**. What a sweep settled rides here, in the grounds
    of the decision it settled.
-3. **Every fork the grilling left open**, marked as the human's to close.
-4. **The artifacts the session landed or touched**, by path and never copied in: glossary entries, ADRs, prior specs,
+4. **Every fork the grilling left open**, marked as the human's to close.
+5. **The artifacts the session landed or touched**, by path and never copied in: glossary entries, ADRs, prior specs,
    code, every path a sweep reported, and every checkout a sweep kept by its path and ref. Mark each glossary or ADR
    file the session wrote as **landed** — stage 5 commits those. List every term a settled decision relies on that the
    glossary lacks as missing from it. This is where the looking happened, not what it found.
-5. **Every claim** the design rests on that the session never checked — a fact the human handed you, a precedent you
+6. **Every claim** the design rests on that the session never checked — a fact the human handed you, a precedent you
    took to generalise, a tool you took to have a feature — each with the **cheapest** path that settles it.
 
 A **claim** is written as a claim: the writer's first-hand look is what turns it into a fact or kills it, and a claim
@@ -225,6 +229,7 @@ itself. Create all five as the run opens, whatever the tracker, named for the st
 The human sat through stage 1, so report what came of it:
 
 - the epic's location, the spec's within it, and the brief's path
+- the origin the spec carries, or that the epic has none
 - how many tickets, and which can start immediately
 - stage 5's outcome:
   - where it committed: the epic branch, the change request's URL, every change left uncommitted in the tree (one line
