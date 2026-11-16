@@ -30,24 +30,30 @@ comment already.
    it produces, adding nothing of your own but the spec's location and the commits' evidence. When it is not
    installed, report the skill as missing and stop, having pushed, opened and edited nothing.
 2. **Get onto the epic branch** — the one your dispatch names. Switch to it and pull from the remote. Where it names
-   none, take the branch named from the epic's **slug** among the branches already there: that is how the first
-   `implementer` named it. You are done when the working tree is on the epic branch and level with its remote.
+   none, take the branch named from the epic's **slug** — with the **origin**'s number where the branches' style puts a
+   ticket's number — among the branches already there: that is how the first `implementer` named it. You are done when
+   the working tree is on the epic branch and level with its remote.
 3. **Read the epic and every commit on the branch** — the epic is what the work set out to do, the commits are what it
    did, the fix waves' included. You are done when you hold, for every commit, whether it carries a `Ticket:` line,
    its `Assumptions:` entries and its `Evidence:` entries — **Which entries** and **Evidence** below say how each
    section is read.
-4. **Open the change request as a draft**, titled from step 3 and described by calling the Skill tool with
-   `mattpocock-skills:pr` — the branch has to be on the remote for one to exist, so push it when whoever committed did
-   not. When one is already open for the branch — draft or ready — that is the change request: bring its title and
-   description up to date rather than opening a second, and put it back to draft where someone took it out (`gh pr
-   ready <number> --undo`, `glab mr update <iid> --draft`). A change request stays a draft while a round is still owed,
-   and taking it out is the delivery's last stage, not yours.
+4. **Open the change request as a draft**, titled from step 3 — preceded by the **origin**'s number where the project's
+   conventions put a ticket's number on a change request or a commit subject — and described by calling the Skill tool
+   with `mattpocock-skills:pr` — the branch has to be on the remote for one to exist, so push it when whoever committed
+   did not. When one is already open for the branch — draft or ready — that is the change request: bring its title and
+   description up to date rather than opening a second, and put it back to draft where someone took it out (`gh pr ready
+   <number> --undo`, `glab mr update <iid> --draft`). A change request stays a draft while a round is still owed, and
+   taking it out is the delivery's last stage, not yours.
 
    **The description names the epic's spec location**, word for word — its path in the repository, or its issue's
    URL, exactly as the placeholder you are replacing named it where there was one. Where what the skill produced does
    not, add one line that does: `Spec: <spec location>`. A delivery resuming, and a refinement run again, recognise
    the epic branch by an open change request whose description names that location, so a description that drops it
    leaves the branch one neither of them can find.
+
+   **The description names the origin**, where your prompt names one, as one line: `Origin: <reference>`. Never in a
+   form the forge reads as closing it on merge — `Closes`, `Fixes`, `Resolves` and their kin: the origin is the
+   human's to test the epic against and to close.
 
    **The description carries every commit's evidence**, marked as reported — **Evidence** below.
 5. **Collect the assumption comments already on it**, from every channel the change request has — **Comment channels**

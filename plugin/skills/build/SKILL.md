@@ -15,19 +15,19 @@ Your argument names the epic; when it names none, report that and stop rather th
 
 - **An epic on the forge's issues** is read there. Then fetch, and look for its epic branch — a refinement leaves one
   when its grilling landed glossary entries or ADRs, and an earlier run of this delivery leaves the one it opened its
-  change request from. It is a branch named from the epic's **slug** (the slug the spec's issue is titled from), in
-  the style of the branches already there, with an open change request whose description names the epic's spec
-  location — `change-request-creator` keeps that location in every description it writes. Both have to hold: a
-  branch of that name with no such change request is someone else's. Where none matches, no branch carries the epic
-  yet, and the first `implementer` creates the epic branch.
+  change request from. It is a branch named from the epic's **slug** (the slug the spec's issue is titled from), in the
+  style of the branches already there and carrying the **origin**'s number where that style puts a ticket's, with an
+  open change request whose description names the epic's spec location — `change-request-creator` keeps that location in
+  every description it writes. Both have to hold: a branch of that name with no such change request is someone else's.
+  Where none matches, no branch carries the epic yet, and the first `implementer` creates the epic branch.
 - **An epic in the repository**: fetch first, and read it on the default branch where that carries it. Where it does
   not, the epic sits on its epic branch alone — a refinement publishes its spec and tickets there and nowhere else —
   and that branch is the one on the remote carrying the epic location: look first under the name from the epic's
   **slug** in the style of the branches already there, then across the remote's other branches, and read the epic off
   the one that carries it. Where no branch carries the epic location, report that and stop.
 
-You are done when you hold every ticket the epic lists, in its order, and either the epic branch's name or the
-finding that no branch carries the epic yet.
+You are done when you hold every ticket the epic lists, in its order, the epic's **origin** — the spec's `Origin:`
+line, or that it carries none — and either the epic branch's name or the finding that no branch carries the epic yet.
 
 Every stage below is made of agent dispatches — **one stage, one task** (**Progress**) — and each dispatched agent's
 **report** is all you get back: what it names is what you know. Where a report leaves you unsure, put the stage back
@@ -48,7 +48,9 @@ branch and the change request are what say how far it got, and nothing else does
   of what it wrote into the repository, or a **fix wave**'s. The last ticket named may be part-delivered with nothing
   anywhere saying so, because an `implementer` commits each coherent piece as it lands: dispatch it again, ahead of
   the tickets carrying no commit at all. That implementer reads the commits, implements only what they left undone,
-  and reports the commit that covered it where the branch covered it in full already.
+  and reports the commit that covered it where the branch covered it in full already. So does every earlier ticket
+  carrying a commit that the tracker still shows open — whether an item is open is a fact of the forge, and yours to
+  read: its implementer died before the close, and a dispatch finds the commit and closes it.
 - **The change request's description says whether stage 1 is over.** One that does not read
   `This description is a placeholder` was written by stage 2, which runs only once every ticket has a report, so no
   `implementer` goes out again. An open change request alone says nothing — a refinement may have opened it before any
@@ -69,11 +71,11 @@ because each one resumes on its own and adds only what is missing; `code-reviewe
 dispatch opens a fresh **round** (**Rounds**). You are done with your bearings when you can name that stage and the
 task list is open as **Progress** has it.
 
-**Dispatch.** Every dispatch carries the epic, and — once each exists — the change request's URL and the **epic branch's
-name**, so none of them has to find it again: the branch's name from the first stage-1 dispatch where you found the epic
-branch, and from that implementer's report otherwise, since it creates the branch; the URL from stage 2's report. Beyond
-that, every agent meets the repo first-hand, because that is what its own judgement must rest on — with two deliberate
-exceptions, each carrying what exists nowhere the agent could read:
+**Dispatch.** Every dispatch carries the epic and its **origin**, or that it has none, and — once each exists — the
+change request's URL and the **epic branch's name**, so none of them has to find it again: the branch's name from the
+first stage-1 dispatch where you found the epic branch, and from that implementer's report otherwise, since it creates
+the branch; the URL from stage 2's report. Beyond that, every agent meets the repo first-hand, because that is what its
+own judgement must rest on — with two deliberate exceptions, each carrying what exists nowhere the agent could read:
 
 - **Each `implementer` after the first, and each `comments-addresser`,** carries the **ledger**: what the dispatches
   before it established, accumulating as the run goes. It holds the **gates** that bit and what satisfied them — where
@@ -199,16 +201,19 @@ addressable, or once continuing it fails. A continued `code-reviewer` opens no *
    nothing will adjudicate now, and rides into your report as a **hand-off**. This stage runs whatever stage 10 then
    does, flip or draft — a change request left a draft is the one a human has the most to judge. A report naming `pr`
    missing ends the run as it does at stage 2. You are done when its report is in hand.
-10. **Flip it ready.** Once **two rounds have completed** (**Rounds**) and you have read on the forge that the change
-    request's **checks** are green and that it can merge (**Dispatch**), take the change request out of draft and
-    report. The fix wave reports the checks too; where its account and the forge disagree, put the stage back rather
-    than choosing between them. Escalations and declined findings ride into the report rather than holding the flip:
-    they are what the human review is for. When the checks are not green, leave it a draft and report that instead.
-    When it cannot merge, leave it a draft and report the conflict as a **hand-off**: a change request flipped ready
-    with a conflict hands its human a merge to fix. When the bar cannot be met — no round completed, or one did and
-    the second cannot — leave it a draft the same way, and report the review stage as a **hand-off** with the reason
-    each round ended on. You are done when the change request is ready, or a draft whose reason your report names, and
-    the report is written (**What to report**).
+10. **Close the spec and flip it ready.** Once **two rounds have completed** (**Rounds**) and you have read on the forge
+    that the change request's **checks** are green and that it can merge (**Dispatch**), close the spec, where the
+    tracker holds it as an item with a state, then take the change request out of draft and report. Every ticket
+    carrying a commit and showing closed is the spec delivered, read off the forge as the checks are; a ticket still
+    open goes back to its `implementer` first, which closes it. The **origin** stays open: it is the human's to test
+    against and to close. The fix wave reports the checks too; where its account and the forge disagree, put the stage
+    back rather than choosing between them. Escalations and declined findings ride into the report rather than holding
+    the flip: they are what the human review is for. When the checks are not green, leave it a draft and the spec open,
+    and report that instead. When it cannot merge, leave it a draft and report the conflict as a **hand-off**: a change
+    request flipped ready with a conflict hands its human a merge to fix. When the bar cannot be met — no round
+    completed, or one did and the second cannot — leave it a draft the same way, and report the review stage as a
+    **hand-off** with the reason each round ended on. You are done when the change request is ready, or a draft whose
+    reason your report names, and the report is written (**What to report**).
 
 ## Rounds
 
@@ -273,6 +278,8 @@ the code** is the one to trust:
 The report then carries:
 
 - the change request's URL, and whether it ended draft or ready
+- whether the spec was closed, and the origin it was delivered against — every ticket a report said it could not
+  close among the hand-offs
 - how many tickets were implemented, and how many rounds completed — with the reason each round that did not complete
   ended on, so the count says why the rest did not
 - what the rounds cost — each round's total tokens and its provider-labelled dollar estimate, unknown where a round

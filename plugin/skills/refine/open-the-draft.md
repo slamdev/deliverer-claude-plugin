@@ -20,7 +20,8 @@ Read them off the project's tracker conventions, the same ones the writers publi
 ## The branch
 
 Fetch first. The epic branch is a branch on the remote named from the epic's **slug** in the style of the branches
-already there — the rule `implementer` names it by. Where the spec sits decides how you recognise it:
+already there, carrying the **origin**'s number where that style puts a ticket's number — the rule `implementer` names
+it by. Where the spec sits decides how you recognise it:
 
 - **Spec in the repository**: the branch that carries the epic's spec at its location. Look under that name first, then
   across the remote's other branches.
@@ -51,9 +52,10 @@ The message follows the project's own commit conventions and carries no `Ticket:
 
 ## The change request
 
-Push the branch and open its change request as a **draft**, titled with the spec's title. Its description is this text
-and nothing else, the two placeholders filled in, passed through a file — on the command line the backticks would run as
-a command:
+Push the branch and open its change request as a **draft**, titled with the spec's title — preceded by the **origin**'s
+number where the project's conventions put a ticket's number on a change request or a commit subject. Its description is
+this text and nothing else, the two placeholders filled in, passed through a file — on the command line the backticks
+would run as a command:
 
 ```
 The spec for this epic is at `<spec location>`, broken into <ticket count> tickets.

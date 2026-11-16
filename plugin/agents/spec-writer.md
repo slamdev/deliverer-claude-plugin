@@ -73,12 +73,14 @@ whole.
    statement of what an existing test covers was read out of that test's body.
 6. **Write the spec to the template below and publish it** where the project's conventions put a spec, named from the
    epic's slug so two epics never collide, and carrying the triage label those conventions name for work ready for an
-   agent — where the project names no vocabulary, no label is owed. Every fork goes in one of the two states **Forks**
-   names, and the spec publishes with its open forks in it; two settled decisions you find cannot both hold as you set
-   them down are step 4's collision, and go the same way. Write to the project's own conventions — its column, its
-   notation, its numbering — number the stories once the list is final, and settle a count by the one method that
-   answers it. You are done when the published spec carries:
-   1. that label, where one is owed, and every section of the template;
+   agent — where the project names no vocabulary, no label is owed. Where the brief names an **origin** and the tracker
+   links items to one another, link the spec to it, so the origin's own page shows the spec; the origin is otherwise
+   left as you found it. Every fork goes in one of the two states **Forks** names, and the spec publishes with its open
+   forks in it; two settled decisions you find cannot both hold as you set them down are step 4's collision, and go the
+   same way. Write to the project's own conventions — its column, its notation, its numbering — number the stories once
+   the list is final, and settle a count by the one method that answers it. You are done when the published spec
+   carries:
+   1. that label, where one is owed, every section of the template, and the brief's origin on its `Origin:` line;
    2. every claim that survived step 3, written up as the fact it now is;
    3. every decision and open fork from step 1 — a decision whose claim step 3 killed carried as a fork, in either
       state;
@@ -119,6 +121,8 @@ it and nobody downstream does, so that naming is what makes one answer from the 
 ## Spec template
 
 ```
+Origin: <the tracker reference the brief names as the origin — the line omitted where the brief names none>
+
 ## Problem Statement
 
 The problem that the user is facing, from the user's perspective.
@@ -200,6 +204,7 @@ Anything else the epic's readers need, including:
 Whoever reads this has your report and nothing else.
 
 - the spec's location — the dispatch after yours is handed it
+- the origin the spec carries, or that the brief named none
 - the seams you named, and any new one you proposed
 - every open fork the spec carries, one line each, carrying the road you recommend where you hold one and every road
   marked *proven* or *unchecked* — still the human's

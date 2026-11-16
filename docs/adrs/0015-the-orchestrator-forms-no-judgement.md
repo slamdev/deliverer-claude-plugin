@@ -11,7 +11,9 @@ forge or the web is its own to settle — does it build, does this symbol exist,
 change request's **checks** green — because that asks whether a report's fact is true rather than whether its judgement
 is right. The sources are one exception and not several: whether a check is green, or whether a published document says
 what a report claims it says, is as mechanical as whether the tree builds, and reading either is the same move as
-reading the branch.
+reading the branch. Its two writes at the end are of the same kind: it closes the **spec** once every **ticket** carries
+a commit and shows closed, and takes the change request out of draft — each on evidence the forge holds, and neither on
+a view it formed.
 
 Each dispatch carries paths rather than the contents behind them, so the dispatched agent opens the document for itself
 and meets the repository first-hand. What a dispatch names in its report is the whole of what the orchestrator knows,
